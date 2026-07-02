@@ -69,9 +69,12 @@ export const EMOTIONS: Emotion[] = [
   { key: 'ashamed', label: '羞愧', description: '想搵個窿匿埋', color: '#F0B7A4', icon: 'frown' },
   { key: 'hopeless', label: '絕望', description: '睇唔到前面嘅路', color: '#B0BEC5', icon: 'cloud-off' },
 
-  // Anger
+  // Anger / intense
   { key: 'frustrated', label: '沮喪', description: '好似卡住咗', color: '#F4D0C9', image: EMOTION_IMAGES.frustrated },
   { key: 'angry', label: '嬲', description: '心入面有把火', color: '#FFAAA5', image: EMOTION_IMAGES.angry },
+  { key: 'furious', label: '激嬲', description: '把火燒到頂', color: '#FF8A80', icon: 'zap' },
+  { key: 'in-pain', label: '痛苦', description: '心 / 身好痛', color: '#F0918B', icon: 'activity' },
+  { key: 'in-agony', label: '煎熬', description: '痛得好難捱', color: '#9D8DB8', icon: 'cloud-lightning' },
 ];
 
 export const EMOTION_BY_KEY: Record<string, Emotion> = EMOTIONS.reduce(

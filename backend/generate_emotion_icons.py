@@ -77,6 +77,11 @@ EMOTIONS = [
     ("guilty",       "looking down with a small worried frown, one tiny arm hiding its face partially, a small dark cloud with a tiny raindrop above it", "pale mustard"),
     ("ashamed",      "with both little hands covering its face, only tiny pink blushing cheeks peeking through, tiny embarrassment lines around the head", "dusty coral"),
     ("hopeless",     "with eyes closed and a small resigned downturned mouth, a single dark grey cloud floating heavy above the head, muted colors", "storm grey"),
+
+    # Intense pain / fury (added after user request)
+    ("furious",      "with fiery angry v-shaped eyebrows and a wide open shouting mouth, both little arms raised in the air clenched, a large red steam puff exploding from the top of the rice, small red anger cross marks on both sides", "warm coral"),
+    ("in-pain",      "hugging itself with both tiny arms crossed tight over its front, tears welling up in both eyes and a small wincing pained mouth, small bandage on the side of the bowl", "muted rose"),
+    ("in-agony",     "with tightly shut eyes and a small trembling wide-open mouth as if crying silently, an aching dark grey cloud with tiny lightning zigzags above its head, tears streaming down its cheeks", "dusty plum"),
 ]
 
 
