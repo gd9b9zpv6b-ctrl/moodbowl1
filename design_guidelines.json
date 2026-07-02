@@ -1,0 +1,179 @@
+{
+  "theme_and_archetype": {
+    "theme": "LIGHT",
+    "archetype": "Organic & Earthy / Soft Pastel Fusion",
+    "description": "A healing, calming, gentle design tailored for individuals managing depression. Uses soothing pastels, warm creams, sage greens, and gentle blues to promote tranquility. Avoids all harsh contrasts, sharp edges, and over-stimulating visuals."
+  },
+  "typography": {
+    "primary_font": "Nunito",
+    "fallback_font": "System (sans-serif)",
+    "description": "Nunito is a well-balanced, rounded sans-serif font that feels approachable, friendly, and non-intimidating.",
+    "scale": {
+      "h1": { "size": 32, "weight": "700", "tracking": "tight" },
+      "h2": { "size": 24, "weight": "600", "tracking": "normal" },
+      "h3": { "size": 20, "weight": "600", "tracking": "normal" },
+      "body_large": { "size": 18, "weight": "400", "tracking": "normal" },
+      "body_base": { "size": 16, "weight": "400", "tracking": "normal" },
+      "caption": { "size": 14, "weight": "500", "tracking": "wide", "textTransform": "uppercase" }
+    }
+  },
+  "color_palette": {
+    "backgrounds": {
+      "main": "#F9F8F6",
+      "card": "#FFFFFF",
+      "input": "#F0EFEB"
+    },
+    "brand": {
+      "primary": "#A3C4BC",
+      "primary_light": "#D1E2DE",
+      "secondary": "#B8C0FF",
+      "accent": "#F4D0C9"
+    },
+    "text": {
+      "primary": "#2D3142",
+      "secondary": "#7D8297",
+      "disabled": "#B0B3C1",
+      "inverse": "#FFFFFF"
+    },
+    "borders": {
+      "light": "rgba(45, 49, 66, 0.05)",
+      "focus": "#A3C4BC"
+    },
+    "emotions": {
+      "happy": "#FDFD96",
+      "sad": "#A2D2FF",
+      "anxious": "#FFD6A5",
+      "hopeful": "#D6E5D8",
+      "numb": "#D3D3D3",
+      "angry": "#FFAAA5",
+      "grateful": "#FFC8DD",
+      "lonely": "#BDE0FE",
+      "calm": "#A3C4BC",
+      "overwhelmed": "#E8A598",
+      "exhausted": "#CDB4DB",
+      "content": "#C8E6C9",
+      "frustrated": "#F08080",
+      "peaceful": "#E0EAFC",
+      "worried": "#FFE4B5",
+      "proud": "#FFD700",
+      "insecure": "#E0BBE4",
+      "loved": "#FFB6C1",
+      "empty": "#F5F5F5",
+      "restless": "#FFDEAD"
+    }
+  },
+  "layout_and_spacing": {
+    "spacing_scale": {
+      "xs": 4,
+      "sm": 8,
+      "md": 16,
+      "lg": 24,
+      "xl": 32,
+      "xxl": 48
+    },
+    "border_radius": {
+      "sm": 8,
+      "md": 16,
+      "lg": 24,
+      "pill": 9999
+    },
+    "shadows": {
+      "soft_card": "0px 4px 20px rgba(45, 49, 66, 0.04)",
+      "floating_button": "0px 8px 24px rgba(163, 196, 188, 0.25)"
+    },
+    "guidelines": [
+      "Use extremely generous padding (24px - 32px) around main content areas to reduce cognitive load.",
+      "Avoid sharp corners completely. Cards should use 24px radius, buttons should be pill-shaped.",
+      "Ensure minimum touch target size is 48x48px for all interactive elements."
+    ]
+  },
+  "component_guidelines": {
+    "buttons": {
+      "primary": "Pill-shaped, #A3C4BC background, #2D3142 text, 56px height. Use soft floating shadow.",
+      "secondary": "Pill-shaped, #F0EFEB background, #2D3142 text, no shadow.",
+      "emotion_picker": "Circular button (64x64px), background color maps to emotion color palette, centered icon. Active state adds a 2px border of the same color with 4px offset."
+    },
+    "cards": {
+      "base": "White background, 24px border radius, soft_card shadow, 24px internal padding.",
+      "journal_entry": "Soft pastel background depending on logged mood (10% opacity of emotion color), no shadow, 16px border radius."
+    },
+    "inputs": {
+      "text": "Background #F0EFEB, no border, 16px border radius, 16px padding. On focus, add 2px #A3C4BC border.",
+      "journal_textarea": "Same as text input but minHeight 120px, textAlignVertical 'top'."
+    },
+    "calendar": {
+      "style": "Use react-native-calendars. Hide standard borders. Day markers should be perfectly round colored dots/backgrounds corresponding to the primary emotion logged that day. Use soft pastel fills for the days.",
+      "header": "Bold Nunito font, centered, no arrows (use swipe) or very soft pastel arrows."
+    }
+  },
+  "iconography": {
+    "library": "@expo/vector-icons/Feather",
+    "stroke_width": 2,
+    "size": {
+      "small": 20,
+      "medium": 28,
+      "large": 40
+    },
+    "emotion_mapping": {
+      "happy": "smile",
+      "sad": "cloud-rain",
+      "anxious": "wind",
+      "hopeful": "sun",
+      "numb": "minus",
+      "angry": "zap",
+      "grateful": "heart",
+      "lonely": "user",
+      "calm": "coffee",
+      "overwhelmed": "layers",
+      "exhausted": "battery",
+      "content": "check-circle",
+      "frustrated": "x-octagon",
+      "peaceful": "moon",
+      "worried": "alert-circle",
+      "proud": "award",
+      "insecure": "shield-off",
+      "loved": "heart",
+      "empty": "circle",
+      "restless": "activity"
+    },
+    "navigation_mapping": {
+      "Home": "home",
+      "Calendar": "calendar",
+      "Community": "users",
+      "Tasks": "check-square",
+      "Profile": "settings"
+    }
+  },
+  "image_urls": [
+    {
+      "category": "backgrounds",
+      "description": "Multicolored pastel abstract painting, very soft, good for login/welcome screen background",
+      "url": "https://images.unsplash.com/photo-1533158388470-9a56699990c6?crop=entropy&cs=srgb&fm=jpg&ixid=M3w4NjAzNDR8MHwxfHNlYXJjaHwyfHxjYWxtJTIwcGFzdGVsJTIwYWJzdHJhY3QlMjB0ZXh0dXJlfGVufDB8fHx8MTc4MzAyNjE1Mnww&ixlib=rb-4.1.0&q=85"
+    },
+    {
+      "category": "backgrounds",
+      "description": "Blue pink and green textile pastel gradient, very calm, good for empty states or profile headers",
+      "url": "https://images.unsplash.com/photo-1604937455095-ef2fe3d46fcd?crop=entropy&cs=srgb&fm=jpg&ixid=M3w4NjAzNDR8MHwxfHNlYXJjaHwxfHxjYWxtJTIwcGFzdGVsJTIwYWJzdHJhY3QlMjB0ZXh0dXJlfGVufDB8fHx8MTc4MzAyNjE1Mnww&ixlib=rb-4.1.0&q=85"
+    },
+    {
+      "category": "illustrations",
+      "description": "White sand dunes at sunset, minimalist and peaceful",
+      "url": "https://images.unsplash.com/photo-1554147090-e1221a04a025?crop=entropy&cs=srgb&fm=jpg&ixid=M3w3NTY2Njd8MHwxfHNlYXJjaHwxfHxzb2Z0JTIwZ2VudGxlJTIwbmF0dXJlJTIwbWluaW1hbGlzdHxlbnwwfHx8fDE3ODMwMjYxNTF8MA&ixlib=rb-4.1.0&q=85"
+    }
+  ],
+  "accessibility_and_testing": {
+    "data_testid_rules": "All interactive elements MUST include a data-testid attribute in kebab-case, specifying the role (e.g., login-submit-button, emotion-happy-picker, toggle-community-share).",
+    "touch_targets": "Minimum 48x48px for all touchable elements.",
+    "contrast": "Avoid pure white on pure black. Use charcoal #2D3142 for text against pastel backgrounds to maintain AAA readability while keeping a soft emotional tone."
+  },
+  "instructions_to_main_agent": [
+    "This is an Expo React Native app. Do not use web HTML tags (div, span) or Tailwind CSS classes. Use React Native StyleSheet, Views, Texts, and Pressables.",
+    "For icons, strictly use @expo/vector-icons/Feather. See the emotion_mapping block for exact icon names corresponding to emotions.",
+    "The mood tracker should display emotions as a horizontal or wrap-around flex layout of large circular touchables with the emotion icon inside.",
+    "When an emotion is selected, transition to a journaling screen where the background gently tints to the color of the selected emotion.",
+    "Use react-native-calendars for the calendar tab. Customize the 'dayComponent' or 'markedDates' to show the specific emotion color for that day.",
+    "Implement navigation using react-navigation bottom tabs. Ensure the active tab icon color is the primary brand color (#A3C4BC) and inactive is disabled grey (#B0B3C1).",
+    "Store the JWT in Expo SecureStore after login/registration.",
+    "In the Community feed, use 'Anonymous' as the default display name. Add a soft, gentle heart icon for users to show support on posts."
+  ]
+}
