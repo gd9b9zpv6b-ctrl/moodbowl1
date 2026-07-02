@@ -64,11 +64,27 @@ EMOTIONS = [
     ("insecure",    "in a shy pose, both tiny hands raised halfway to cover the face, only one dot eye peeking out between the hands, cheeks extra pink", "pale mauve"),
     ("frustrated",  "with puffed slightly red cheeks, a small pouty frown, both tiny hands on its hips, a small angry cross mark near the head", "warm blush red"),
     ("angry",       "with angry v-shaped eyebrows and a tiny grumpy frown, a small red steam puff rising from the top of the rice, a small red chili pepper resting on top of the rice", "soft warm rose"),
+
+    # Self-worth wounds ⚠ (added after user request)
+    ("worthless",    "with a resigned neutral flat mouth and eyes looking down at itself, one tiny arm limply pointing at itself as if to say 'me?', a tiny question mark floating over its head", "muted periwinkle"),
+    ("unloved",      "sitting with head slightly lowered, eyes downcast, holding a tiny grey broken/cracked heart in its two little hands", "dusty rose"),
+    ("unappreciated","holding up a tiny finished star / medal in its hand but the head is turned sideways as if no one is looking, a small dot indicating a sigh", "pale lilac"),
+    ("disrespected", "with eyes looking a bit down and slightly furrowed brows, one tiny arm crossed over its chest defensively, a tiny downward arrow behind it", "warm peach"),
+    ("invisible",    "the whole bowl is drawn semi-transparent / ghost-like with a very faint outline, with a small quiet sad expression", "cool grey blue"),
+    ("rejected",     "turned slightly away with a small sad expression, a tiny closed door with an X mark nearby", "warm apricot"),
+    ("abandoned",    "sitting alone on the ground with tiny footprints of another character walking away in the background", "faded aqua"),
+    ("misunderstood","with a small confused frown, a tiny speech bubble containing a small tangled scribble above its head", "soft lavender"),
+    ("guilty",       "looking down with a small worried frown, one tiny arm hiding its face partially, a small dark cloud with a tiny raindrop above it", "pale mustard"),
+    ("ashamed",      "with both little hands covering its face, only tiny pink blushing cheeks peeking through, tiny embarrassment lines around the head", "dusty coral"),
+    ("hopeless",     "with eyes closed and a small resigned downturned mouth, a single dark grey cloud floating heavy above the head, muted colors", "storm grey"),
 ]
 
 
 async def generate_one(key: str, emotion_desc: str, bg_hint: str) -> None:
     out = OUT_DIR / f"{key}.png"
+    if out.exists() and out.stat().st_size > 5000:
+        print(f"[skip] {key} already exists")
+        return
 
     prompt = (
         f"{BASE_CHARACTER} The character is {emotion_desc}. "

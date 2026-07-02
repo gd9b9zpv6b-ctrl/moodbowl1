@@ -1,5 +1,4 @@
 import { Feather } from '@expo/vector-icons';
-import { Image } from 'expo-image';
 import { useFocusEffect, useRouter } from 'expo-router';
 import { useCallback, useMemo, useState } from 'react';
 import {
@@ -21,6 +20,7 @@ import { EMOTIONS, Emotion, EMOTION_BY_KEY } from '@/src/constants/emotions';
 import { COLORS, RADIUS, SPACING } from '@/src/constants/theme';
 import { api, Entry } from '@/src/lib/api';
 import { useAuth } from '@/src/lib/auth-context';
+import { EmotionVisual } from '@/src/components/emotion-visual';
 
 function todayISO() {
   const d = new Date();
@@ -157,7 +157,9 @@ export default function Home() {
                       active && styles.emotionBtnActive,
                     ]}
                   >
-                    <Image source={e.image} style={styles.emotionImg} contentFit="cover" />
+                    <View style={styles.emotionImgWrap}>
+                      <EmotionVisual emotion={e} size={90} radius={RADIUS.md} />
+                    </View>
                     <Text style={styles.emotionLabel}>{e.label}</Text>
                   </Pressable>
                 );
@@ -167,7 +169,7 @@ export default function Home() {
             {selected && (
               <View style={styles.journalCard} testID="journal-card">
                 <View style={styles.journalHeader}>
-                  <Image source={selected.image} style={styles.journalHeaderImg} />
+                  <EmotionVisual emotion={selected} size={60} radius={RADIUS.md} />
                   <View style={{ flex: 1 }}>
                     <Text style={styles.journalTitle}>而家覺得 {selected.label}</Text>
                     <Text style={styles.journalHint}>{selected.description}</Text>
@@ -241,7 +243,7 @@ export default function Home() {
                       ]}
                     >
                       <View style={styles.entryHeader}>
-                        {em?.image && <Image source={em.image} style={styles.entryImg} />}
+                        <EmotionVisual emotion={em} size={40} radius={RADIUS.sm} />
                         <Text style={styles.entryEmotion}>{em?.label || entry.emotion}</Text>
                         {entry.is_public && (
                           <View style={styles.publicBadge}>
@@ -331,11 +333,13 @@ const styles = StyleSheet.create({
     borderWidth: 3,
     borderColor: COLORS.textPrimary,
   },
-  emotionImg: {
+  emotionImgWrap: {
     width: '100%',
     aspectRatio: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
     borderRadius: RADIUS.md,
-    backgroundColor: COLORS.bgCard,
+    overflow: 'hidden',
   },
   emotionLabel: {
     marginTop: SPACING.xs,

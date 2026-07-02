@@ -1,11 +1,11 @@
 import { Feather } from '@expo/vector-icons';
-import { Image } from 'expo-image';
 import { useFocusEffect } from 'expo-router';
 import { useCallback, useMemo, useState } from 'react';
 import { ActivityIndicator, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { Calendar, DateData } from 'react-native-calendars';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
+import { EmotionVisual } from '@/src/components/emotion-visual';
 import { EMOTION_BY_KEY } from '@/src/constants/emotions';
 import { COLORS, RADIUS, SPACING } from '@/src/constants/theme';
 import { api, Entry } from '@/src/lib/api';
@@ -127,7 +127,7 @@ export default function CalendarScreen() {
                 style={[styles.entryCard, { backgroundColor: (em?.color || COLORS.primaryLight) + '40' }]}
               >
                 <View style={styles.entryHeader}>
-                  {em?.image && <Image source={em.image} style={styles.entryImg} />}
+                  <EmotionVisual emotion={em} size={40} radius={RADIUS.sm} />
                   <Text style={styles.entryLabel}>{em?.label || entry.emotion}</Text>
                 </View>
                 {entry.note ? <Text style={styles.entryNote}>{entry.note}</Text> : null}

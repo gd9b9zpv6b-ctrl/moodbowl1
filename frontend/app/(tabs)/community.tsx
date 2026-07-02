@@ -1,5 +1,4 @@
 import { Feather } from '@expo/vector-icons';
-import { Image } from 'expo-image';
 import { useFocusEffect } from 'expo-router';
 import { useCallback, useState } from 'react';
 import {
@@ -13,6 +12,7 @@ import {
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
+import { EmotionVisual } from '@/src/components/emotion-visual';
 import { EMOTION_BY_KEY } from '@/src/constants/emotions';
 import { COLORS, RADIUS, SPACING } from '@/src/constants/theme';
 import { api, Entry } from '@/src/lib/api';
@@ -104,7 +104,7 @@ export default function Community() {
                   style={styles.card}
                 >
                   <View style={styles.cardHeader}>
-                    {em?.image && <Image source={em.image} style={styles.iconWrap} />}
+                    <EmotionVisual emotion={em} size={44} radius={RADIUS.sm} />
                     <View style={{ flex: 1 }}>
                       <Text style={styles.emotionLabel}>{em?.label || entry.emotion}</Text>
                       <Text style={styles.author}>匿名朋友 · {entry.entry_date}</Text>
