@@ -1,7 +1,7 @@
 import { Feather } from '@expo/vector-icons';
 import { useFocusEffect } from 'expo-router';
 import { useCallback, useMemo, useState } from 'react';
-import { ActivityIndicator, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { ActivityIndicator, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { Calendar, DateData } from 'react-native-calendars';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
@@ -43,37 +43,14 @@ export default function CalendarScreen() {
     }, [load, month]),
   );
 
-  const markedDates = useMemo(() => {
-    const map: Record<string, any> = {};
+  // Latest entry per date, so each day cell shows one representative emotion.
+  const entryByDate = useMemo(() => {
+    const map: Record<string, Entry> = {};
     for (const e of entries) {
-      const em = EMOTION_BY_KEY[e.emotion];
-      map[e.entry_date] = {
-        customStyles: {
-          container: {
-            backgroundColor: em?.color || COLORS.primaryLight,
-            borderRadius: RADIUS.pill,
-          },
-          text: { color: COLORS.textPrimary, fontWeight: '700' },
-        },
-      };
+      if (!map[e.entry_date]) map[e.entry_date] = e;
     }
-    map[selectedDate] = {
-      ...(map[selectedDate] || {}),
-      customStyles: {
-        ...((map[selectedDate] || {}).customStyles || {}),
-        container: {
-          ...((map[selectedDate]?.customStyles?.container as any) || {}),
-          borderWidth: 2,
-          borderColor: COLORS.textPrimary,
-          borderRadius: RADIUS.pill,
-          backgroundColor:
-            ((map[selectedDate]?.customStyles?.container as any) || {}).backgroundColor ||
-            COLORS.bgCard,
-        },
-      },
-    };
     return map;
-  }, [entries, selectedDate]);
+  }, [entries]);
 
   const entriesForDay = entries.filter((e) => e.entry_date === selectedDate);
 
@@ -83,26 +60,68 @@ export default function CalendarScreen() {
         <Text style={styles.title} testID="calendar-title">
           你嘅心路
         </Text>
-        <Text style={styles.subtitle}>每一個顏色,都係你曾經好好感受過嘅心情。</Text>
+        <Text style={styles.subtitle}>每一個小小嘅感受,都值得記低。</Text>
 
         <View style={styles.calendarWrap}>
           <Calendar
             testID="calendar"
             current={`${month}-01`}
             onMonthChange={(d: DateData) => setMonth(currentMonthKey(new Date(d.dateString)))}
-            markingType="custom"
-            markedDates={markedDates}
             onDayPress={(d: DateData) => setSelectedDate(d.dateString)}
             monthFormat="yyyy 年 M 月"
+            firstDay={1}
+            hideExtraDays
+            dayComponent={({ date, state }) => {
+              if (!date) return <View style={styles.dayCell} />;
+              const entry = entryByDate[date.dateString];
+              const em = entry ? EMOTION_BY_KEY[entry.emotion] : undefined;
+              const isSelected = selectedDate === date.dateString;
+              const isToday = todayISO() === date.dateString;
+              const isDisabled = state === 'disabled';
+
+              return (
+                <Pressable
+                  testID={`calendar-day-${date.dateString}`}
+                  onPress={() => setSelectedDate(date.dateString)}
+                  style={styles.dayCell}
+                >
+                  {em ? (
+                    <View
+                      style={[
+                        styles.dayIconWrap,
+                        isSelected && styles.dayIconWrapSelected,
+                      ]}
+                    >
+                      <EmotionVisual emotion={em} size={38} radius={RADIUS.sm} />
+                    </View>
+                  ) : (
+                    <View
+                      style={[
+                        styles.dayNumWrap,
+                        isSelected && styles.dayNumWrapSelected,
+                        isToday && !isSelected && styles.dayNumWrapToday,
+                      ]}
+                    >
+                      <Text
+                        style={[
+                          styles.dayNum,
+                          isToday && { color: COLORS.primary, fontWeight: '700' },
+                          isDisabled && { color: COLORS.textDisabled },
+                        ]}
+                      >
+                        {date.day}
+                      </Text>
+                    </View>
+                  )}
+                </Pressable>
+              );
+            }}
             theme={{
               calendarBackground: COLORS.bgCard,
               monthTextColor: COLORS.textPrimary,
               textMonthFontWeight: '700',
               textMonthFontSize: 18,
-              dayTextColor: COLORS.textPrimary,
-              todayTextColor: COLORS.primary,
               arrowColor: COLORS.primary,
-              textDayFontWeight: '500',
               textSectionTitleColor: COLORS.textSecondary,
             }}
             style={{ borderRadius: RADIUS.lg }}
@@ -153,6 +172,38 @@ const styles = StyleSheet.create({
     padding: SPACING.sm,
     marginBottom: SPACING.lg,
   },
+  dayCell: {
+    width: 44,
+    height: 48,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  dayIconWrap: {
+    width: 42,
+    height: 42,
+    borderRadius: RADIUS.pill,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  dayIconWrapSelected: {
+    borderWidth: 2,
+    borderColor: COLORS.textPrimary,
+  },
+  dayNumWrap: {
+    width: 34,
+    height: 34,
+    borderRadius: RADIUS.pill,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  dayNumWrapSelected: {
+    borderWidth: 2,
+    borderColor: COLORS.textPrimary,
+  },
+  dayNumWrapToday: {
+    backgroundColor: COLORS.primaryLight,
+  },
+  dayNum: { fontSize: 14, color: COLORS.textPrimary, fontWeight: '500' },
   sectionTitle: { fontSize: 17, fontWeight: '700', color: COLORS.textPrimary, marginBottom: SPACING.md },
   emptyCard: {
     backgroundColor: COLORS.bgCard,
@@ -164,7 +215,6 @@ const styles = StyleSheet.create({
   emptyText: { color: COLORS.textSecondary },
   entryCard: { borderRadius: RADIUS.md, padding: SPACING.md, marginBottom: SPACING.sm },
   entryHeader: { flexDirection: 'row', alignItems: 'center', gap: SPACING.sm },
-  entryImg: { width: 40, height: 40, borderRadius: RADIUS.sm },
   entryLabel: { fontSize: 15, fontWeight: '700', color: COLORS.textPrimary },
   entryNote: { marginTop: SPACING.sm, fontSize: 14, color: COLORS.textPrimary, lineHeight: 20 },
 });
