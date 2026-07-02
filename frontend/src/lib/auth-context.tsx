@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useEffect, useState } from 'react';
+import React, { createContext, useCallback, useContext, useEffect, useMemo, useState } from 'react';
 
 import { api, loadToken, setToken, User, AuthResponse } from './api';
 
@@ -32,37 +32,45 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     })();
   }, []);
 
-  const login = async (email: string, password: string) => {
+  const login = useCallback(async (email: string, password: string) => {
     const res = await api.post<AuthResponse>('/auth/login', { email, password });
     await setToken(res.access_token);
     setUser(res.user);
-  };
+  }, []);
 
-  const register = async (email: string, password: string, displayName?: string) => {
-    const res = await api.post<AuthResponse>('/auth/register', {
-      email,
-      password,
-      display_name: displayName,
-    });
-    await setToken(res.access_token);
-    setUser(res.user);
-  };
+  const register = useCallback(
+    async (email: string, password: string, displayName?: string) => {
+      const res = await api.post<AuthResponse>('/auth/register', {
+        email,
+        password,
+        display_name: displayName,
+      });
+      await setToken(res.access_token);
+      setUser(res.user);
+    },
+    [],
+  );
 
-  const logout = async () => {
+  const logout = useCallback(async () => {
     await setToken(null);
     setUser(null);
-  };
+  }, []);
 
-  const refreshUser = async () => {
+  const refreshUser = useCallback(async () => {
     try {
       const me = await api.get<User>('/auth/me');
       setUser(me);
     } catch {
       // ignore
     }
-  };
+  }, []);
 
-  return <Ctx.Provider value={{ user, loading, login, register, logout, refreshUser }}>{children}</Ctx.Provider>;
+  const value = useMemo(
+    () => ({ user, loading, login, register, logout, refreshUser }),
+    [user, loading, login, register, logout, refreshUser],
+  );
+
+  return <Ctx.Provider value={value}>{children}</Ctx.Provider>;
 }
 
 export function useAuth() {
