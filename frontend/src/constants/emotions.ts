@@ -29,6 +29,20 @@ export const EMOTION_IMAGES: Record<string, any> = {
   insecure: require('../../assets/emotions/insecure.png'),
   frustrated: require('../../assets/emotions/frustrated.png'),
   angry: require('../../assets/emotions/angry.png'),
+  worthless: require('../../assets/emotions/worthless.png'),
+  unloved: require('../../assets/emotions/unloved.png'),
+  unappreciated: require('../../assets/emotions/unappreciated.png'),
+  disrespected: require('../../assets/emotions/disrespected.png'),
+  invisible: require('../../assets/emotions/invisible.png'),
+  rejected: require('../../assets/emotions/rejected.png'),
+  abandoned: require('../../assets/emotions/abandoned.png'),
+  misunderstood: require('../../assets/emotions/misunderstood.png'),
+  guilty: require('../../assets/emotions/guilty.png'),
+  ashamed: require('../../assets/emotions/ashamed.png'),
+  hopeless: require('../../assets/emotions/hopeless.png'),
+  furious: require('../../assets/emotions/furious.png'),
+  'in-pain': require('../../assets/emotions/in-pain.png'),
+  'in-agony': require('../../assets/emotions/in-agony.png'),
 };
 
 export const EMOTIONS: Emotion[] = [
@@ -56,25 +70,25 @@ export const EMOTIONS: Emotion[] = [
   { key: 'overwhelmed', label: '透唔到氣', description: '好多嘢一齊嚟', color: '#E8A598', image: EMOTION_IMAGES.overwhelmed },
 
   // Self-worth wounds  ⚠ often central for depression
-  { key: 'worthless', label: '冇價值', description: '覺得自己毫無價值', color: '#C7CEEA', icon: 'meh' },
+  { key: 'worthless', label: '冇價值', description: '覺得自己毫無價值', color: '#C7CEEA', image: EMOTION_IMAGES.worthless },
   { key: 'insecure', label: '冇自信', description: '覺得自己唔夠好', color: '#E0BBE4', image: EMOTION_IMAGES.insecure },
-  { key: 'unloved', label: '唔被愛', description: '冇人真心錫我', color: '#F5B7B1', icon: 'user-minus' },
-  { key: 'unappreciated', label: '唔被欣賞', description: '做咗好多都冇人睇到', color: '#D5AAFF', icon: 'eye-off' },
-  { key: 'disrespected', label: '唔被尊重', description: '好似被人睇小', color: '#FFAB91', icon: 'trending-down' },
-  { key: 'invisible', label: '被忽視', description: '好似冇人見到我', color: '#B5B9C4', icon: 'user-x' },
-  { key: 'rejected', label: '被拒絕', description: '唔被接納', color: '#F5CBA7', icon: 'slash' },
-  { key: 'abandoned', label: '被拋棄', description: '感覺被人丟低', color: '#AED9E0', icon: 'log-out' },
-  { key: 'misunderstood', label: '唔被理解', description: '講極都冇人明', color: '#B39DDB', icon: 'message-square' },
-  { key: 'guilty', label: '內疚', description: '覺得係自己嘅錯', color: '#F9E79F', icon: 'alert-triangle' },
-  { key: 'ashamed', label: '羞愧', description: '想搵個窿匿埋', color: '#F0B7A4', icon: 'frown' },
-  { key: 'hopeless', label: '絕望', description: '睇唔到前面嘅路', color: '#B0BEC5', icon: 'cloud-off' },
+  { key: 'unloved', label: '唔被愛', description: '冇人真心錫我', color: '#F5B7B1', image: EMOTION_IMAGES.unloved },
+  { key: 'unappreciated', label: '唔被欣賞', description: '做咗好多都冇人睇到', color: '#D5AAFF', image: EMOTION_IMAGES.unappreciated },
+  { key: 'disrespected', label: '唔被尊重', description: '好似被人睇小', color: '#FFAB91', image: EMOTION_IMAGES.disrespected },
+  { key: 'invisible', label: '被忽視', description: '好似冇人見到我', color: '#B5B9C4', image: EMOTION_IMAGES.invisible },
+  { key: 'rejected', label: '被拒絕', description: '唔被接納', color: '#F5CBA7', image: EMOTION_IMAGES.rejected },
+  { key: 'abandoned', label: '被拋棄', description: '感覺被人丟低', color: '#AED9E0', image: EMOTION_IMAGES.abandoned },
+  { key: 'misunderstood', label: '唔被理解', description: '講極都冇人明', color: '#B39DDB', image: EMOTION_IMAGES.misunderstood },
+  { key: 'guilty', label: '內疚', description: '覺得係自己嘅錯', color: '#F9E79F', image: EMOTION_IMAGES.guilty },
+  { key: 'ashamed', label: '羞愧', description: '想搵個窿匿埋', color: '#F0B7A4', image: EMOTION_IMAGES.ashamed },
+  { key: 'hopeless', label: '絕望', description: '睇唔到前面嘅路', color: '#B0BEC5', image: EMOTION_IMAGES.hopeless },
 
   // Anger / intense
   { key: 'frustrated', label: '沮喪', description: '好似卡住咗', color: '#F4D0C9', image: EMOTION_IMAGES.frustrated },
   { key: 'angry', label: '嬲', description: '心入面有把火', color: '#FFAAA5', image: EMOTION_IMAGES.angry },
-  { key: 'furious', label: '激嬲', description: '把火燒到頂', color: '#FF8A80', icon: 'zap' },
-  { key: 'in-pain', label: '痛苦', description: '心 / 身好痛', color: '#F0918B', icon: 'activity' },
-  { key: 'in-agony', label: '煎熬', description: '痛得好難捱', color: '#9D8DB8', icon: 'cloud-lightning' },
+  { key: 'furious', label: '激嬲', description: '把火燒到頂', color: '#FF8A80', image: EMOTION_IMAGES.furious },
+  { key: 'in-pain', label: '痛苦', description: '心 / 身好痛', color: '#F0918B', image: EMOTION_IMAGES['in-pain'] },
+  { key: 'in-agony', label: '煎熬', description: '痛得好難捱', color: '#9D8DB8', image: EMOTION_IMAGES['in-agony'] },
 ];
 
 export const EMOTION_BY_KEY: Record<string, Emotion> = EMOTIONS.reduce(
