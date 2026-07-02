@@ -1,4 +1,5 @@
 import { Feather } from '@expo/vector-icons';
+import { Image } from 'expo-image';
 import { useFocusEffect } from 'expo-router';
 import { useCallback, useState } from 'react';
 import {
@@ -41,7 +42,6 @@ export default function Community() {
   );
 
   const toggleHeart = async (id: string) => {
-    // Optimistic update
     setEntries((prev) =>
       prev.map((e) =>
         e.id === id
@@ -57,7 +57,6 @@ export default function Community() {
       const updated = await api.post<Entry>(`/entries/${id}/react`);
       setEntries((prev) => prev.map((e) => (e.id === id ? updated : e)));
     } catch {
-      // revert
       load();
     }
   };
@@ -66,11 +65,9 @@ export default function Community() {
     <SafeAreaView style={styles.safe} edges={['top']}>
       <View style={styles.header}>
         <Text style={styles.title} testID="community-title">
-          Community
+          社群
         </Text>
-        <Text style={styles.subtitle}>
-          Gentle words from others. You&apos;re never alone.
-        </Text>
+        <Text style={styles.subtitle}>其他朋友嘅心聲。你唔係孤單一個。</Text>
       </View>
 
       {loading ? (
@@ -94,7 +91,7 @@ export default function Community() {
             <View style={styles.emptyCard} testID="community-empty">
               <Feather name="cloud" size={30} color={COLORS.textDisabled} />
               <Text style={styles.emptyText}>
-                Nothing shared yet. When someone shares, their words will land here — gently.
+                仲未有人分享。當有人願意分享,佢哋嘅心聲會溫柔咁停喺呢度。
               </Text>
             </View>
           ) : (
@@ -107,18 +104,10 @@ export default function Community() {
                   style={styles.card}
                 >
                   <View style={styles.cardHeader}>
-                    <View
-                      style={[styles.iconWrap, { backgroundColor: em?.color || COLORS.primaryLight }]}
-                    >
-                      <Feather
-                        name={(em?.icon as any) || 'circle'}
-                        size={18}
-                        color={COLORS.textPrimary}
-                      />
-                    </View>
+                    {em?.image && <Image source={em.image} style={styles.iconWrap} />}
                     <View style={{ flex: 1 }}>
                       <Text style={styles.emotionLabel}>{em?.label || entry.emotion}</Text>
-                      <Text style={styles.author}>Anonymous · {entry.entry_date}</Text>
+                      <Text style={styles.author}>匿名朋友 · {entry.entry_date}</Text>
                     </View>
                   </View>
                   {entry.note ? <Text style={styles.note}>{entry.note}</Text> : null}
@@ -138,7 +127,7 @@ export default function Community() {
                         entry.hearted_by_me && { color: '#E86A6A', fontWeight: '700' },
                       ]}
                     >
-                      {entry.hearts} {entry.hearts === 1 ? 'heart' : 'hearts'}
+                      {entry.hearts} 個心心
                     </Text>
                   </Pressable>
                 </View>
@@ -174,13 +163,7 @@ const styles = StyleSheet.create({
     marginBottom: SPACING.md,
   },
   cardHeader: { flexDirection: 'row', alignItems: 'center', gap: SPACING.sm },
-  iconWrap: {
-    width: 40,
-    height: 40,
-    borderRadius: RADIUS.pill,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
+  iconWrap: { width: 44, height: 44, borderRadius: RADIUS.sm },
   emotionLabel: { fontSize: 16, fontWeight: '700', color: COLORS.textPrimary },
   author: { fontSize: 12, color: COLORS.textSecondary, marginTop: 2 },
   note: { marginTop: SPACING.md, fontSize: 15, color: COLORS.textPrimary, lineHeight: 22 },

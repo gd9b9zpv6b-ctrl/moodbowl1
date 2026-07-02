@@ -32,7 +32,7 @@ export default function Welcome() {
             Moodful
           </Text>
           <Text style={styles.subtitle} testID="welcome-subtitle">
-            A gentle space to feel your feelings, one day at a time.
+            一個溫柔嘅小空間{'\n'}一日一日 慢慢感受自己
           </Text>
 
           <View style={styles.actions}>
@@ -41,14 +41,14 @@ export default function Welcome() {
               style={styles.primaryBtn}
               onPress={() => router.push('/auth/register')}
             >
-              <Text style={styles.primaryBtnText}>Get started</Text>
+              <Text style={styles.primaryBtnText}>開始</Text>
             </Pressable>
             <Pressable
               testID="welcome-login-btn"
               style={styles.secondaryBtn}
               onPress={() => router.push('/auth/login')}
             >
-              <Text style={styles.secondaryBtnText}>I already have an account</Text>
+              <Text style={styles.secondaryBtnText}>我已經有帳戶</Text>
             </Pressable>
           </View>
         </View>

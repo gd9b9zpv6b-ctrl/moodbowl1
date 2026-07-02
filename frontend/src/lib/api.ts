@@ -59,6 +59,7 @@ export type User = {
   email: string;
   display_name?: string | null;
   created_at: string;
+  credits: number;
 };
 
 export type AuthResponse = {

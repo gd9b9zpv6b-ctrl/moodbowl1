@@ -1,5 +1,6 @@
 import { Feather } from '@expo/vector-icons';
-import { useFocusEffect } from 'expo-router';
+import { Image } from 'expo-image';
+import { useFocusEffect, useRouter } from 'expo-router';
 import { useCallback, useMemo, useState } from 'react';
 import {
   ActivityIndicator,
@@ -15,6 +16,7 @@ import {
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
+import { randomAffirmation } from '@/src/constants/affirmations';
 import { EMOTIONS, Emotion, EMOTION_BY_KEY } from '@/src/constants/emotions';
 import { COLORS, RADIUS, SPACING } from '@/src/constants/theme';
 import { api, Entry } from '@/src/lib/api';
@@ -30,6 +32,7 @@ function todayISO() {
 
 export default function Home() {
   const { user } = useAuth();
+  const router = useRouter();
   const [selected, setSelected] = useState<Emotion | null>(null);
   const [note, setNote] = useState('');
   const [share, setShare] = useState(false);
@@ -37,6 +40,7 @@ export default function Home() {
   const [saved, setSaved] = useState(false);
   const [todayEntries, setTodayEntries] = useState<Entry[]>([]);
   const [loading, setLoading] = useState(true);
+  const [affirmation, setAffirmation] = useState(randomAffirmation());
 
   const today = useMemo(() => todayISO(), []);
 
@@ -54,6 +58,7 @@ export default function Home() {
 
   useFocusEffect(
     useCallback(() => {
+      setAffirmation(randomAffirmation());
       load();
     }, [load]),
   );
@@ -96,9 +101,47 @@ export default function Home() {
             keyboardShouldPersistTaps="handled"
           >
             <Text style={styles.greeting} testID="home-greeting">
-              Hi {user?.display_name || 'friend'}
+              你好,{user?.display_name || '朋友'}
             </Text>
-            <Text style={styles.prompt}>How are you feeling right now?</Text>
+            <Text style={styles.prompt}>而家你有咩感受?</Text>
+
+            <Pressable
+              testID="affirmation-card"
+              onPress={() => setAffirmation(randomAffirmation())}
+              style={styles.affirmationCard}
+            >
+              <View style={styles.affirmationHeader}>
+                <Feather name="feather" size={14} color={COLORS.primary} />
+                <Text style={styles.affirmationHeaderText}>今日嘅溫柔提醒</Text>
+                <Feather name="refresh-cw" size={12} color={COLORS.textDisabled} />
+              </View>
+              <Text style={styles.affirmationText}>{affirmation}</Text>
+            </Pressable>
+
+            <View style={styles.ctaRow}>
+              <Pressable
+                testID="cta-help"
+                style={[styles.ctaCard, { backgroundColor: '#FFE4E4' }]}
+                onPress={() => router.push('/help')}
+              >
+                <View style={[styles.ctaIcon, { backgroundColor: '#FFCECE' }]}>
+                  <Feather name="life-buoy" size={20} color="#E86A6A" />
+                </View>
+                <Text style={styles.ctaTitle}>尋求幫助</Text>
+                <Text style={styles.ctaSub}>熱線 · 專業人士</Text>
+              </Pressable>
+              <Pressable
+                testID="cta-activities"
+                style={[styles.ctaCard, { backgroundColor: COLORS.primaryLight }]}
+                onPress={() => router.push('/activities')}
+              >
+                <View style={[styles.ctaIcon, { backgroundColor: COLORS.primary }]}>
+                  <Feather name="sun" size={20} color={COLORS.textPrimary} />
+                </View>
+                <Text style={styles.ctaTitle}>行出去 · 探索</Text>
+                <Text style={styles.ctaSub}>感受下呢個世界</Text>
+              </Pressable>
+            </View>
 
             <View style={styles.grid} testID="emotion-grid">
               {EMOTIONS.map((e) => {
@@ -110,11 +153,11 @@ export default function Home() {
                     onPress={() => setSelected(e)}
                     style={[
                       styles.emotionBtn,
-                      { backgroundColor: e.color },
-                      active && { borderWidth: 3, borderColor: COLORS.textPrimary },
+                      { backgroundColor: e.color + '80' },
+                      active && styles.emotionBtnActive,
                     ]}
                   >
-                    <Feather name={e.icon as any} size={26} color={COLORS.textPrimary} />
+                    <Image source={e.image} style={styles.emotionImg} contentFit="cover" />
                     <Text style={styles.emotionLabel}>{e.label}</Text>
                   </Pressable>
                 );
@@ -123,13 +166,16 @@ export default function Home() {
 
             {selected && (
               <View style={styles.journalCard} testID="journal-card">
-                <Text style={styles.journalTitle}>
-                  Feeling {selected.label.toLowerCase()}
-                </Text>
-                <Text style={styles.journalHint}>{selected.description}</Text>
+                <View style={styles.journalHeader}>
+                  <Image source={selected.image} style={styles.journalHeaderImg} />
+                  <View style={{ flex: 1 }}>
+                    <Text style={styles.journalTitle}>而家覺得 {selected.label}</Text>
+                    <Text style={styles.journalHint}>{selected.description}</Text>
+                  </View>
+                </View>
                 <TextInput
                   testID="journal-note-input"
-                  placeholder="What's on your mind? Why do you think you feel this way?"
+                  placeholder="諗緊乜嘢?想寫啲咩都可以..."
                   placeholderTextColor={COLORS.textDisabled}
                   value={note}
                   onChangeText={setNote}
@@ -139,9 +185,9 @@ export default function Home() {
                 />
                 <View style={styles.shareRow}>
                   <View style={{ flex: 1 }}>
-                    <Text style={styles.shareLabel}>Share anonymously with community</Text>
+                    <Text style={styles.shareLabel}>匿名分享俾社群</Text>
                     <Text style={styles.shareHint}>
-                      Others may send you a gentle heart of support.
+                      其他朋友可能會送你一個心心
                     </Text>
                   </View>
                   <Switch
@@ -161,7 +207,7 @@ export default function Home() {
                   {saving ? (
                     <ActivityIndicator color={COLORS.textPrimary} />
                   ) : (
-                    <Text style={styles.saveBtnText}>Save my check-in</Text>
+                    <Text style={styles.saveBtnText}>記錄呢一刻</Text>
                   )}
                 </Pressable>
               </View>
@@ -170,17 +216,17 @@ export default function Home() {
             {saved && (
               <View style={styles.savedBanner} testID="saved-banner">
                 <Feather name="check-circle" size={18} color={COLORS.primary} />
-                <Text style={styles.savedText}>Saved. Be gentle with yourself.</Text>
+                <Text style={styles.savedText}>記低咗喇。對自己溫柔啲。</Text>
               </View>
             )}
 
             <View style={{ marginTop: SPACING.xl }}>
-              <Text style={styles.sectionTitle}>Today&apos;s check-ins</Text>
+              <Text style={styles.sectionTitle}>今日嘅記錄</Text>
               {loading ? (
                 <ActivityIndicator color={COLORS.primary} style={{ marginTop: SPACING.md }} />
               ) : todayEntries.length === 0 ? (
                 <Text style={styles.emptyText} testID="today-empty">
-                  No entries yet today. Pick how you feel above.
+                  今日仲未有記錄。撳上面揀下你嘅感受。
                 </Text>
               ) : (
                 todayEntries.map((entry) => {
@@ -195,23 +241,12 @@ export default function Home() {
                       ]}
                     >
                       <View style={styles.entryHeader}>
-                        <View
-                          style={[
-                            styles.entryIconWrap,
-                            { backgroundColor: em?.color || COLORS.primaryLight },
-                          ]}
-                        >
-                          <Feather
-                            name={(em?.icon as any) || 'circle'}
-                            size={18}
-                            color={COLORS.textPrimary}
-                          />
-                        </View>
+                        {em?.image && <Image source={em.image} style={styles.entryImg} />}
                         <Text style={styles.entryEmotion}>{em?.label || entry.emotion}</Text>
                         {entry.is_public && (
                           <View style={styles.publicBadge}>
                             <Feather name="users" size={12} color={COLORS.textSecondary} />
-                            <Text style={styles.publicText}>Shared</Text>
+                            <Text style={styles.publicText}>已分享</Text>
                           </View>
                         )}
                       </View>
@@ -238,17 +273,69 @@ const styles = StyleSheet.create({
     fontSize: 17,
     color: COLORS.textSecondary,
     marginTop: SPACING.xs,
-    marginBottom: SPACING.lg,
+    marginBottom: SPACING.md,
   },
-  grid: { flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'space-between', gap: SPACING.sm },
-  emotionBtn: {
-    width: '30%',
-    minHeight: 90,
+  affirmationCard: {
+    backgroundColor: COLORS.bgCard,
     borderRadius: RADIUS.lg,
-    padding: SPACING.sm,
+    padding: SPACING.lg,
+    marginBottom: SPACING.lg,
+    borderLeftWidth: 4,
+    borderLeftColor: COLORS.primary,
+  },
+  affirmationHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: SPACING.xs,
+    marginBottom: SPACING.sm,
+  },
+  affirmationHeaderText: {
+    flex: 1,
+    fontSize: 12,
+    fontWeight: '700',
+    color: COLORS.textSecondary,
+    letterSpacing: 1,
+  },
+  affirmationText: {
+    fontSize: 18,
+    lineHeight: 30,
+    color: COLORS.textPrimary,
+    fontWeight: '500',
+  },
+  ctaRow: { flexDirection: 'row', gap: SPACING.sm, marginBottom: SPACING.lg },
+  ctaCard: {
+    flex: 1,
+    borderRadius: RADIUS.lg,
+    padding: SPACING.md,
+  },
+  ctaIcon: {
+    width: 40,
+    height: 40,
+    borderRadius: RADIUS.pill,
     alignItems: 'center',
     justifyContent: 'center',
     marginBottom: SPACING.sm,
+  },
+  ctaTitle: { fontSize: 15, fontWeight: '700', color: COLORS.textPrimary },
+  ctaSub: { fontSize: 12, color: COLORS.textSecondary, marginTop: 2 },
+  grid: { flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'space-between' },
+  emotionBtn: {
+    width: '31%',
+    borderRadius: RADIUS.lg,
+    padding: SPACING.xs,
+    alignItems: 'center',
+    marginBottom: SPACING.sm,
+    paddingBottom: SPACING.sm,
+  },
+  emotionBtnActive: {
+    borderWidth: 3,
+    borderColor: COLORS.textPrimary,
+  },
+  emotionImg: {
+    width: '100%',
+    aspectRatio: 1,
+    borderRadius: RADIUS.md,
+    backgroundColor: COLORS.bgCard,
   },
   emotionLabel: {
     marginTop: SPACING.xs,
@@ -263,8 +350,15 @@ const styles = StyleSheet.create({
     borderRadius: RADIUS.lg,
     padding: SPACING.lg,
   },
+  journalHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: SPACING.md,
+    marginBottom: SPACING.md,
+  },
+  journalHeaderImg: { width: 60, height: 60, borderRadius: RADIUS.md },
   journalTitle: { fontSize: 20, fontWeight: '700', color: COLORS.textPrimary },
-  journalHint: { fontSize: 14, color: COLORS.textSecondary, marginTop: 2, marginBottom: SPACING.md },
+  journalHint: { fontSize: 14, color: COLORS.textSecondary, marginTop: 2 },
   journalInput: {
     backgroundColor: COLORS.bgInput,
     borderRadius: RADIUS.md,
@@ -302,19 +396,9 @@ const styles = StyleSheet.create({
   savedText: { color: COLORS.textPrimary, fontWeight: '600' },
   sectionTitle: { fontSize: 18, fontWeight: '700', color: COLORS.textPrimary, marginBottom: SPACING.md },
   emptyText: { color: COLORS.textSecondary, fontSize: 14 },
-  entryCard: {
-    borderRadius: RADIUS.md,
-    padding: SPACING.md,
-    marginBottom: SPACING.sm,
-  },
+  entryCard: { borderRadius: RADIUS.md, padding: SPACING.md, marginBottom: SPACING.sm },
   entryHeader: { flexDirection: 'row', alignItems: 'center', gap: SPACING.sm },
-  entryIconWrap: {
-    width: 32,
-    height: 32,
-    borderRadius: RADIUS.pill,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
+  entryImg: { width: 40, height: 40, borderRadius: RADIUS.sm },
   entryEmotion: { flex: 1, fontSize: 15, fontWeight: '700', color: COLORS.textPrimary },
   publicBadge: {
     flexDirection: 'row',

@@ -24,8 +24,8 @@ async function scheduleReminder(hour: number) {
   await Notifications.cancelAllScheduledNotificationsAsync();
   await Notifications.scheduleNotificationAsync({
     content: {
-      title: 'A gentle nudge',
-      body: 'Take a moment to check in with how you feel today.',
+      title: '溫柔提醒',
+      body: '停一停 · 感受下自己而家嘅心情。',
     },
     trigger: {
       type: Notifications.SchedulableTriggerInputTypes.DAILY,
@@ -36,7 +36,7 @@ async function scheduleReminder(hour: number) {
 }
 
 export default function Profile() {
-  const { user, logout } = useAuth();
+  const { user, logout, refreshUser } = useAuth();
   const router = useRouter();
   const [reminder, setReminder] = useState(false);
   const [hour, setHour] = useState(20);
@@ -47,16 +47,17 @@ export default function Profile() {
       const h = await storage.getItem<number>(REMINDER_HOUR_KEY, 20);
       setReminder(!!enabled);
       setHour(typeof h === 'number' ? h : 20);
+      refreshUser();
     })();
-  }, []);
+  }, [refreshUser]);
 
   const onToggleReminder = async (val: boolean) => {
     if (val) {
       const ok = await ensurePermission();
       if (!ok) {
         Alert.alert(
-          'Notifications disabled',
-          'Please enable notifications in your device settings to receive gentle daily reminders.',
+          '通知未開啟',
+          '請喺裝置設定入面開啟通知,先可以收到每日嘅溫柔提醒。',
         );
         return;
       }
@@ -87,7 +88,7 @@ export default function Profile() {
     <SafeAreaView style={styles.safe} edges={['top']}>
       <ScrollView contentContainerStyle={styles.scroll} showsVerticalScrollIndicator={false}>
         <Text style={styles.title} testID="profile-title">
-          Your space
+          你嘅小空間
         </Text>
 
         <View style={styles.card}>
@@ -95,19 +96,54 @@ export default function Profile() {
             <Feather name="user" size={30} color={COLORS.textPrimary} />
           </View>
           <Text style={styles.name} testID="profile-name">
-            {user?.display_name || 'Friend'}
+            {user?.display_name || '朋友'}
           </Text>
           <Text style={styles.email} testID="profile-email">
             {user?.email}
           </Text>
+          <View style={styles.creditsChip} testID="profile-credits">
+            <Feather name="heart" size={14} color="#E86A6A" />
+            <Text style={styles.creditsText}>已累積 {user?.credits ?? 0} 個小心心</Text>
+          </View>
         </View>
 
-        <Text style={styles.sectionTitle}>Daily reminder</Text>
+        <Text style={styles.sectionTitle}>支援</Text>
+        <Pressable
+          testID="link-help"
+          style={styles.linkRow}
+          onPress={() => router.push('/help')}
+        >
+          <View style={[styles.linkIcon, { backgroundColor: '#FFE4E4' }]}>
+            <Feather name="life-buoy" size={18} color="#E86A6A" />
+          </View>
+          <View style={{ flex: 1 }}>
+            <Text style={styles.linkTitle}>尋求幫助</Text>
+            <Text style={styles.linkHint}>24 小時熱線 · 註冊專業人士</Text>
+          </View>
+          <Feather name="chevron-right" size={20} color={COLORS.textDisabled} />
+        </Pressable>
+
+        <Pressable
+          testID="link-activities"
+          style={styles.linkRow}
+          onPress={() => router.push('/activities')}
+        >
+          <View style={[styles.linkIcon, { backgroundColor: COLORS.primaryLight }]}>
+            <Feather name="sun" size={18} color={COLORS.primary} />
+          </View>
+          <View style={{ flex: 1 }}>
+            <Text style={styles.linkTitle}>行出去 · 探索</Text>
+            <Text style={styles.linkHint}>溫柔嘅活動提議</Text>
+          </View>
+          <Feather name="chevron-right" size={20} color={COLORS.textDisabled} />
+        </Pressable>
+
+        <Text style={styles.sectionTitle}>每日提醒</Text>
         <View style={styles.rowCard}>
           <View style={{ flex: 1 }}>
-            <Text style={styles.rowTitle}>Gentle check-in reminder</Text>
+            <Text style={styles.rowTitle}>溫柔嘅每日提醒</Text>
             <Text style={styles.rowHint}>
-              A soft notification once a day to help you pause.
+              每日一次輕輕嘅通知,幫你停一停。
             </Text>
           </View>
           <Switch
@@ -122,9 +158,9 @@ export default function Profile() {
         {reminder && (
           <View style={styles.rowCard}>
             <View style={{ flex: 1 }}>
-              <Text style={styles.rowTitle}>Reminder time</Text>
+              <Text style={styles.rowTitle}>提醒時間</Text>
               <Text style={styles.rowHint}>
-                {String(hour).padStart(2, '0')}:00 each day
+                每日 {String(hour).padStart(2, '0')}:00
               </Text>
             </View>
             <View style={{ flexDirection: 'row', gap: SPACING.sm }}>
@@ -146,14 +182,14 @@ export default function Profile() {
           </View>
         )}
 
-        <Text style={styles.sectionTitle}>Account</Text>
+        <Text style={styles.sectionTitle}>帳戶</Text>
         <Pressable testID="logout-btn" style={styles.logoutBtn} onPress={doLogout}>
           <Feather name="log-out" size={18} color={COLORS.danger} />
-          <Text style={styles.logoutText}>Sign out</Text>
+          <Text style={styles.logoutText}>登出</Text>
         </Pressable>
 
         <Text style={styles.footer}>
-          You are worthy of care. Take one soft breath. 🌿
+          你值得被好好對待{'\n'}深呼吸一下 🌿
         </Text>
         <View style={{ height: SPACING.xxl }} />
       </ScrollView>
@@ -183,15 +219,43 @@ const styles = StyleSheet.create({
   },
   name: { fontSize: 20, fontWeight: '700', color: COLORS.textPrimary },
   email: { color: COLORS.textSecondary, marginTop: 2 },
+  creditsChip: {
+    marginTop: SPACING.md,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: SPACING.xs,
+    paddingHorizontal: SPACING.md,
+    paddingVertical: 6,
+    borderRadius: RADIUS.pill,
+    backgroundColor: '#FFE4E4',
+  },
+  creditsText: { color: '#8B4513', fontWeight: '700', fontSize: 13 },
   sectionTitle: {
     fontSize: 13,
     fontWeight: '700',
     color: COLORS.textSecondary,
     letterSpacing: 0.6,
-    textTransform: 'uppercase',
     marginTop: SPACING.md,
     marginBottom: SPACING.sm,
   },
+  linkRow: {
+    backgroundColor: COLORS.bgCard,
+    borderRadius: RADIUS.md,
+    padding: SPACING.md,
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: SPACING.sm,
+    gap: SPACING.md,
+  },
+  linkIcon: {
+    width: 40,
+    height: 40,
+    borderRadius: RADIUS.pill,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  linkTitle: { fontSize: 15, fontWeight: '700', color: COLORS.textPrimary },
+  linkHint: { fontSize: 12, color: COLORS.textSecondary, marginTop: 2 },
   rowCard: {
     backgroundColor: COLORS.bgCard,
     borderRadius: RADIUS.md,

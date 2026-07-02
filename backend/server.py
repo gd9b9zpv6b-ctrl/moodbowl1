@@ -88,6 +88,7 @@ class UserOut(BaseModel):
     email: EmailStr
     display_name: Optional[str] = None
     created_at: str
+    credits: int = 0
 
 
 class AuthOut(BaseModel):
@@ -152,12 +153,13 @@ async def register(data: RegisterIn):
         "display_name": display_name,
         "hashed_password": hash_password(data.password),
         "created_at": created_at,
+        "credits": 0,
     }
     await db.users.insert_one(user_doc)
     token = create_access_token(user_id)
     return AuthOut(
         access_token=token,
-        user=UserOut(id=user_id, email=email_lower, display_name=display_name, created_at=created_at),
+        user=UserOut(id=user_id, email=email_lower, display_name=display_name, created_at=created_at, credits=0),
     )
 
 
@@ -175,6 +177,7 @@ async def login(data: LoginIn):
             email=user["email"],
             display_name=user.get("display_name"),
             created_at=user["created_at"],
+            credits=user.get("credits", 0),
         ),
     )
 
@@ -317,6 +320,11 @@ async def update_task(task_id: str, data: TaskUpdate, current=Depends(get_curren
         raise HTTPException(status_code=404, detail="Task not found")
     update = {k: v for k, v in data.dict(exclude_unset=True).items() if v is not None}
     if update:
+        # Award / revoke a credit when the completed flag flips.
+        if "completed" in update and update["completed"] != task.get("completed", False):
+            delta = 1 if update["completed"] else -1
+            new_credits = max(0, current.get("credits", 0) + delta)
+            await db.users.update_one({"id": current["id"]}, {"$set": {"credits": new_credits}})
         await db.tasks.update_one({"id": task_id}, {"$set": update})
     task = await db.tasks.find_one({"id": task_id}, {"_id": 0})
     return TaskOut(**task)

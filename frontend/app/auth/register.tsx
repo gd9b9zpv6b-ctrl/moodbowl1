@@ -29,7 +29,7 @@ export default function Register() {
   const submit = async () => {
     setError(null);
     if (password.length < 6) {
-      setError('Password must be at least 6 characters');
+      setError('密碼至少要 6 個字元');
       return;
     }
     setLoading(true);
@@ -37,7 +37,7 @@ export default function Register() {
       await register(email.trim(), password, displayName.trim() || undefined);
       router.replace('/(tabs)');
     } catch (e: any) {
-      setError(e?.message || 'Registration failed');
+      setError(e?.message || '註冊失敗');
     } finally {
       setLoading(false);
     }
@@ -55,19 +55,19 @@ export default function Register() {
           </Pressable>
 
           <Text style={styles.title} testID="register-title">
-            Create your space
+            建立你嘅小天地
           </Text>
           <Text style={styles.subtitle}>
-            A little sanctuary for how you feel. Only for you, unless you choose to share.
+            一個屬於你嘅小小角落{'\n'}只有你睇到,除非你主動分享。
           </Text>
 
           <View style={styles.field}>
-            <Text style={styles.label}>Your name (optional)</Text>
+            <Text style={styles.label}>你嘅名 (可以唔填)</Text>
             <TextInput
               testID="register-name-input"
               value={displayName}
               onChangeText={setDisplayName}
-              placeholder="What should we call you?"
+              placeholder="點稱呼你好呢?"
               placeholderTextColor={COLORS.textDisabled}
               style={styles.input}
               autoCapitalize="words"
@@ -75,7 +75,7 @@ export default function Register() {
           </View>
 
           <View style={styles.field}>
-            <Text style={styles.label}>Email</Text>
+            <Text style={styles.label}>電郵</Text>
             <TextInput
               testID="register-email-input"
               value={email}
@@ -90,12 +90,12 @@ export default function Register() {
           </View>
 
           <View style={styles.field}>
-            <Text style={styles.label}>Password</Text>
+            <Text style={styles.label}>密碼</Text>
             <TextInput
               testID="register-password-input"
               value={password}
               onChangeText={setPassword}
-              placeholder="At least 6 characters"
+              placeholder="至少 6 個字元"
               placeholderTextColor={COLORS.textDisabled}
               secureTextEntry
               style={styles.input}
@@ -117,7 +117,7 @@ export default function Register() {
             {loading ? (
               <ActivityIndicator color={COLORS.textPrimary} />
             ) : (
-              <Text style={styles.primaryBtnText}>Create account</Text>
+              <Text style={styles.primaryBtnText}>建立帳戶</Text>
             )}
           </Pressable>
 
@@ -127,7 +127,7 @@ export default function Register() {
             style={{ marginTop: SPACING.md, alignSelf: 'center' }}
           >
             <Text style={styles.link}>
-              Have an account? <Text style={{ fontWeight: '700' }}>Sign in</Text>
+              已經有帳戶?<Text style={{ fontWeight: '700' }}> 登入</Text>
             </Text>
           </Pressable>
         </ScrollView>

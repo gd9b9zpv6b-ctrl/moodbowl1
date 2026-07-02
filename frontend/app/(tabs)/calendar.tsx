@@ -1,4 +1,5 @@
 import { Feather } from '@expo/vector-icons';
+import { Image } from 'expo-image';
 import { useFocusEffect } from 'expo-router';
 import { useCallback, useMemo, useState } from 'react';
 import { ActivityIndicator, ScrollView, StyleSheet, Text, View } from 'react-native';
@@ -80,9 +81,9 @@ export default function CalendarScreen() {
     <SafeAreaView style={styles.safe} edges={['top']}>
       <ScrollView contentContainerStyle={styles.scroll} showsVerticalScrollIndicator={false}>
         <Text style={styles.title} testID="calendar-title">
-          Your journey
+          你嘅心路
         </Text>
-        <Text style={styles.subtitle}>Every color is a feeling you honored.</Text>
+        <Text style={styles.subtitle}>每一個顏色,都係你曾經好好感受過嘅心情。</Text>
 
         <View style={styles.calendarWrap}>
           <Calendar
@@ -92,6 +93,7 @@ export default function CalendarScreen() {
             markingType="custom"
             markedDates={markedDates}
             onDayPress={(d: DateData) => setSelectedDate(d.dateString)}
+            monthFormat="yyyy 年 M 月"
             theme={{
               calendarBackground: COLORS.bgCard,
               monthTextColor: COLORS.textPrimary,
@@ -113,7 +115,7 @@ export default function CalendarScreen() {
         ) : entriesForDay.length === 0 ? (
           <View style={styles.emptyCard} testID="calendar-empty">
             <Feather name="feather" size={22} color={COLORS.textDisabled} />
-            <Text style={styles.emptyText}>No check-ins on this day.</Text>
+            <Text style={styles.emptyText}>呢一日冇記錄。</Text>
           </View>
         ) : (
           entriesForDay.map((entry) => {
@@ -125,9 +127,7 @@ export default function CalendarScreen() {
                 style={[styles.entryCard, { backgroundColor: (em?.color || COLORS.primaryLight) + '40' }]}
               >
                 <View style={styles.entryHeader}>
-                  <View style={[styles.entryIcon, { backgroundColor: em?.color || COLORS.primaryLight }]}>
-                    <Feather name={(em?.icon as any) || 'circle'} size={18} color={COLORS.textPrimary} />
-                  </View>
+                  {em?.image && <Image source={em.image} style={styles.entryImg} />}
                   <Text style={styles.entryLabel}>{em?.label || entry.emotion}</Text>
                 </View>
                 {entry.note ? <Text style={styles.entryNote}>{entry.note}</Text> : null}
@@ -164,13 +164,7 @@ const styles = StyleSheet.create({
   emptyText: { color: COLORS.textSecondary },
   entryCard: { borderRadius: RADIUS.md, padding: SPACING.md, marginBottom: SPACING.sm },
   entryHeader: { flexDirection: 'row', alignItems: 'center', gap: SPACING.sm },
-  entryIcon: {
-    width: 32,
-    height: 32,
-    borderRadius: RADIUS.pill,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
+  entryImg: { width: 40, height: 40, borderRadius: RADIUS.sm },
   entryLabel: { fontSize: 15, fontWeight: '700', color: COLORS.textPrimary },
   entryNote: { marginTop: SPACING.sm, fontSize: 14, color: COLORS.textPrimary, lineHeight: 20 },
 });

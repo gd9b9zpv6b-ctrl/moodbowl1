@@ -14,8 +14,10 @@ import {
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
+import { HABITS } from '@/src/constants/habits';
 import { COLORS, RADIUS, SPACING } from '@/src/constants/theme';
 import { api, Task } from '@/src/lib/api';
+import { useAuth } from '@/src/lib/auth-context';
 
 function todayISO() {
   const d = new Date();
@@ -24,10 +26,12 @@ function todayISO() {
 
 export default function Tasks() {
   const today = useMemo(() => todayISO(), []);
+  const { user, refreshUser } = useAuth();
   const [tasks, setTasks] = useState<Task[]>([]);
   const [loading, setLoading] = useState(true);
   const [newTitle, setNewTitle] = useState('');
   const [adding, setAdding] = useState(false);
+  const [rewardFlash, setRewardFlash] = useState(false);
 
   const load = useCallback(async () => {
     try {
@@ -44,19 +48,21 @@ export default function Tasks() {
     useCallback(() => {
       setLoading(true);
       load();
-    }, [load]),
+      refreshUser();
+    }, [load, refreshUser]),
   );
 
-  const addTask = async () => {
-    if (!newTitle.trim()) return;
+  const addTask = async (title: string) => {
+    const t = title.trim();
+    if (!t) return;
     setAdding(true);
     try {
       const created = await api.post<Task>('/tasks', {
-        title: newTitle.trim(),
+        title: t,
         task_date: today,
       });
       setTasks((prev) => [...prev, created]);
-      setNewTitle('');
+      if (title === newTitle) setNewTitle('');
     } catch {
       // ignore
     } finally {
@@ -65,9 +71,15 @@ export default function Tasks() {
   };
 
   const toggle = async (t: Task) => {
-    setTasks((prev) => prev.map((x) => (x.id === t.id ? { ...x, completed: !x.completed } : x)));
+    const next = !t.completed;
+    setTasks((prev) => prev.map((x) => (x.id === t.id ? { ...x, completed: next } : x)));
     try {
-      await api.patch<Task>(`/tasks/${t.id}`, { completed: !t.completed });
+      await api.patch<Task>(`/tasks/${t.id}`, { completed: next });
+      await refreshUser();
+      if (next) {
+        setRewardFlash(true);
+        setTimeout(() => setRewardFlash(false), 1600);
+      }
     } catch {
       load();
     }
@@ -95,27 +107,64 @@ export default function Tasks() {
           keyboardShouldPersistTaps="handled"
           showsVerticalScrollIndicator={false}
         >
-          <Text style={styles.title} testID="tasks-title">
-            Small kind things
-          </Text>
-          <Text style={styles.subtitle}>
-            One tiny act at a time. Today, {done} of {tasks.length} done.
-          </Text>
+          <View style={styles.headerRow}>
+            <View style={{ flex: 1 }}>
+              <Text style={styles.title} testID="tasks-title">
+                小小溫柔事
+              </Text>
+              <Text style={styles.subtitle}>
+                一次做一件小事{'\n'}今日已完成 {done} / {tasks.length}
+              </Text>
+            </View>
+            <View style={styles.creditBadge} testID="credits-badge">
+              <Feather name="heart" size={16} color="#E86A6A" />
+              <Text style={styles.creditText}>{user?.credits ?? 0}</Text>
+            </View>
+          </View>
+
+          {rewardFlash && (
+            <View style={styles.rewardFlash} testID="reward-flash">
+              <Feather name="heart" size={16} color="#E86A6A" />
+              <Text style={styles.rewardText}>+1 小心心 · 為自己驕傲一下</Text>
+            </View>
+          )}
+
+          <Text style={styles.sectionTitle}>習慣庫</Text>
+          <Text style={styles.sectionHint}>撳一下 加入今日</Text>
+          <ScrollView
+            horizontal
+            showsHorizontalScrollIndicator={false}
+            contentContainerStyle={styles.habitRow}
+          >
+            {HABITS.map((h) => (
+              <Pressable
+                key={h.key}
+                testID={`habit-${h.key}`}
+                style={[styles.habitChip, { backgroundColor: h.color + 'B0' }]}
+                onPress={() => addTask(h.title)}
+              >
+                <Feather name={h.icon as any} size={18} color={COLORS.textPrimary} />
+                <Text style={styles.habitText} numberOfLines={1}>
+                  {h.title}
+                </Text>
+              </Pressable>
+            ))}
+          </ScrollView>
 
           <View style={styles.addRow}>
             <TextInput
               testID="new-task-input"
               value={newTitle}
               onChangeText={setNewTitle}
-              placeholder="Add a gentle intention for today…"
+              placeholder="或者自己加一件今日想做嘅小事…"
               placeholderTextColor={COLORS.textDisabled}
               style={styles.input}
-              onSubmitEditing={addTask}
+              onSubmitEditing={() => addTask(newTitle)}
               returnKeyType="done"
             />
             <Pressable
               testID="add-task-btn"
-              onPress={addTask}
+              onPress={() => addTask(newTitle)}
               disabled={adding || !newTitle.trim()}
               style={[styles.addBtn, (adding || !newTitle.trim()) && { opacity: 0.5 }]}
             >
@@ -123,13 +172,14 @@ export default function Tasks() {
             </Pressable>
           </View>
 
+          <Text style={[styles.sectionTitle, { marginTop: SPACING.lg }]}>今日清單</Text>
           {loading ? (
             <ActivityIndicator style={{ marginTop: SPACING.xl }} color={COLORS.primary} />
           ) : tasks.length === 0 ? (
             <View style={styles.emptyCard} testID="tasks-empty">
               <Feather name="check-square" size={30} color={COLORS.textDisabled} />
               <Text style={styles.emptyText}>
-                Nothing yet today. Something as small as {'"'}drink water{'"'} counts.
+                今日仲未有事。細如「飲一杯水」都算數。
               </Text>
             </View>
           ) : (
@@ -171,9 +221,49 @@ export default function Tasks() {
 const styles = StyleSheet.create({
   safe: { flex: 1, backgroundColor: COLORS.bgMain },
   scroll: { padding: SPACING.lg },
+  headerRow: { flexDirection: 'row', alignItems: 'flex-start', gap: SPACING.md },
   title: { fontSize: 28, fontWeight: '700', color: COLORS.textPrimary },
-  subtitle: { fontSize: 15, color: COLORS.textSecondary, marginTop: 4, marginBottom: SPACING.lg },
-  addRow: { flexDirection: 'row', alignItems: 'center', gap: SPACING.sm },
+  subtitle: { fontSize: 14, color: COLORS.textSecondary, marginTop: 4, lineHeight: 20 },
+  creditBadge: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: SPACING.xs,
+    paddingHorizontal: SPACING.md,
+    paddingVertical: SPACING.sm,
+    borderRadius: RADIUS.pill,
+    backgroundColor: '#FFE4E4',
+  },
+  creditText: { color: '#E86A6A', fontWeight: '800', fontSize: 16 },
+  rewardFlash: {
+    marginTop: SPACING.md,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: SPACING.sm,
+    backgroundColor: '#FFE4E4',
+    padding: SPACING.md,
+    borderRadius: RADIUS.md,
+  },
+  rewardText: { color: '#E86A6A', fontWeight: '700' },
+  sectionTitle: {
+    fontSize: 17,
+    fontWeight: '700',
+    color: COLORS.textPrimary,
+    marginTop: SPACING.lg,
+  },
+  sectionHint: { fontSize: 13, color: COLORS.textSecondary, marginTop: 2 },
+  habitRow: { gap: SPACING.sm, paddingVertical: SPACING.md, paddingRight: SPACING.md },
+  habitChip: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: SPACING.xs,
+    paddingHorizontal: SPACING.md,
+    paddingVertical: SPACING.sm,
+    borderRadius: RADIUS.pill,
+    flexShrink: 0,
+    minHeight: 40,
+  },
+  habitText: { fontSize: 14, color: COLORS.textPrimary, fontWeight: '600' },
+  addRow: { flexDirection: 'row', alignItems: 'center', gap: SPACING.sm, marginTop: SPACING.sm },
   input: {
     flex: 1,
     backgroundColor: COLORS.bgInput,

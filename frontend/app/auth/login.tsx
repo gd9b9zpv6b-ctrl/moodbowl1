@@ -32,7 +32,7 @@ export default function Login() {
       await login(email.trim(), password);
       router.replace('/(tabs)');
     } catch (e: any) {
-      setError(e?.message || 'Login failed');
+      setError(e?.message || '登入失敗');
     } finally {
       setLoading(false);
     }
@@ -50,14 +50,12 @@ export default function Login() {
           </Pressable>
 
           <Text style={styles.title} testID="login-title">
-            Welcome back
+            歡迎返嚟
           </Text>
-          <Text style={styles.subtitle}>
-            Take a gentle breath. We&apos;re glad you&apos;re here.
-          </Text>
+          <Text style={styles.subtitle}>深呼吸一下,好開心你返嚟。</Text>
 
           <View style={styles.field}>
-            <Text style={styles.label}>Email</Text>
+            <Text style={styles.label}>電郵</Text>
             <TextInput
               testID="login-email-input"
               value={email}
@@ -72,12 +70,12 @@ export default function Login() {
           </View>
 
           <View style={styles.field}>
-            <Text style={styles.label}>Password</Text>
+            <Text style={styles.label}>密碼</Text>
             <TextInput
               testID="login-password-input"
               value={password}
               onChangeText={setPassword}
-              placeholder="Your password"
+              placeholder="你嘅密碼"
               placeholderTextColor={COLORS.textDisabled}
               secureTextEntry
               style={styles.input}
@@ -99,7 +97,7 @@ export default function Login() {
             {loading ? (
               <ActivityIndicator color={COLORS.textPrimary} />
             ) : (
-              <Text style={styles.primaryBtnText}>Sign in</Text>
+              <Text style={styles.primaryBtnText}>登入</Text>
             )}
           </Pressable>
 
@@ -109,7 +107,7 @@ export default function Login() {
             style={{ marginTop: SPACING.md, alignSelf: 'center' }}
           >
             <Text style={styles.link}>
-              New here? <Text style={{ fontWeight: '700' }}>Create an account</Text>
+              第一次嚟?<Text style={{ fontWeight: '700' }}> 開個帳戶</Text>
             </Text>
           </Pressable>
         </ScrollView>
