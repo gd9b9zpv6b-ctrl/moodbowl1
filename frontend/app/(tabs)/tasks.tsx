@@ -131,11 +131,7 @@ export default function Tasks() {
 
           <Text style={styles.sectionTitle}>習慣庫</Text>
           <Text style={styles.sectionHint}>撳一下 加入今日</Text>
-          <ScrollView
-            horizontal
-            showsHorizontalScrollIndicator={false}
-            contentContainerStyle={styles.habitRow}
-          >
+          <View style={styles.habitList}>
             {HABITS.map((h) => (
               <Pressable
                 key={h.key}
@@ -147,9 +143,10 @@ export default function Tasks() {
                 <Text style={styles.habitText} numberOfLines={1}>
                   {h.title}
                 </Text>
+                <Feather name="plus" size={16} color={COLORS.textSecondary} />
               </Pressable>
             ))}
-          </ScrollView>
+          </View>
 
           <View style={styles.addRow}>
             <TextInput
@@ -251,18 +248,17 @@ const styles = StyleSheet.create({
     marginTop: SPACING.lg,
   },
   sectionHint: { fontSize: 13, color: COLORS.textSecondary, marginTop: 2 },
-  habitRow: { gap: SPACING.sm, paddingVertical: SPACING.md, paddingRight: SPACING.md },
+  habitList: { marginTop: SPACING.md, gap: SPACING.sm },
   habitChip: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: SPACING.xs,
+    gap: SPACING.md,
     paddingHorizontal: SPACING.md,
-    paddingVertical: SPACING.sm,
-    borderRadius: RADIUS.pill,
-    flexShrink: 0,
-    minHeight: 40,
+    paddingVertical: SPACING.md,
+    borderRadius: RADIUS.md,
+    minHeight: 52,
   },
-  habitText: { fontSize: 14, color: COLORS.textPrimary, fontWeight: '600' },
+  habitText: { flex: 1, fontSize: 15, color: COLORS.textPrimary, fontWeight: '600' },
   addRow: { flexDirection: 'row', alignItems: 'center', gap: SPACING.sm, marginTop: SPACING.sm },
   input: {
     flex: 1,
