@@ -29,6 +29,8 @@ export const EMOTION_IMAGES: Record<string, any> = {
   insecure: require('../../assets/emotions/insecure.png'),
   frustrated: require('../../assets/emotions/frustrated.png'),
   angry: require('../../assets/emotions/angry.png'),
+  irritable: require('../../assets/emotions/irritable.png'),
+  trapped: require('../../assets/emotions/trapped.png'),
   worthless: require('../../assets/emotions/worthless.png'),
   unloved: require('../../assets/emotions/unloved.png'),
   unappreciated: require('../../assets/emotions/unappreciated.png'),
@@ -65,9 +67,11 @@ export const EMOTIONS: Emotion[] = [
 
   // Nervous / tense
   { key: 'restless', label: '心煩', description: '坐唔定 靜唔到', color: '#FFDEAD', image: EMOTION_IMAGES.restless },
+  { key: 'irritable', label: '煩躁', description: '個火開始上湧', color: '#FFB088', image: EMOTION_IMAGES.irritable },
   { key: 'anxious', label: '焦慮', description: '好似有啲嘢唔妥', color: '#FFD6A5', image: EMOTION_IMAGES.anxious },
   { key: 'worried', label: '擔心', description: '諗嘢停唔到', color: '#FFE4B5', image: EMOTION_IMAGES.worried },
   { key: 'overwhelmed', label: '透唔到氣', description: '好多嘢一齊嚟', color: '#E8A598', image: EMOTION_IMAGES.overwhelmed },
+  { key: 'trapped', label: '被困', description: '好似逃唔到出去', color: '#7FB3C8', image: EMOTION_IMAGES.trapped },
 
   // Self-worth wounds  ⚠ often central for depression
   { key: 'worthless', label: '冇價值', description: '覺得自己毫無價值', color: '#C7CEEA', image: EMOTION_IMAGES.worthless },

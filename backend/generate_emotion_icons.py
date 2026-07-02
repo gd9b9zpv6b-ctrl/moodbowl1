@@ -1,12 +1,12 @@
 """Regenerate the emotion mascot family.
 
-Every icon shares the same underlying rice-bowl character (chubby ceramic
+Each icon shares the same underlying rice-bowl character (chubby ceramic
 bowl of rice with tiny stubby arms & legs, dot eyes, blush cheeks) so the
-set stays a coherent family, but the bowl color and rice amount now vary
-per emotion so each mascot has its own personality — perfect for stickers
-and merch.
+set stays a coherent family, but the bowl color, rice amount and props
+vary per emotion so every mascot has its own personality — ready for merch.
 
 Run: `python /app/backend/generate_emotion_icons.py`
+Script skips PNGs that already exist. Delete a file to regenerate just it.
 """
 from __future__ import annotations
 
@@ -60,9 +60,11 @@ EMOTIONS = [
     ("content",      "warm terracotta orange",          RICE_FULL,
      "showing a gentle satisfied closed-eye smile, a small curl of white steam rising from the rice",
      "sage green"),
-    ("grateful",     "soft blush pink",                 RICE_FULL,
-     "showing a soft smile with both tiny hands pressed together in a thank-you gesture, tiny pink sparkle dots floating around",
-     "warm blush pink"),
+    # grateful — heart-shaped bowl, hands pressed together
+    ("grateful",     "soft blush pink (the entire bowl is shaped like a heart with a pointed bottom and two rounded lobes on top)",
+     RICE_FULL,
+     "showing a soft smile with both tiny hands pressed together in a thank-you gesture, tiny pink sparkle dots and one small heart floating around",
+     "warm rose pink"),
     ("hopeful",      "pale morning blue",               RICE_FULL,
      "showing a hopeful upward gaze and gentle smile, a tiny sunshine peeking from behind the top of the bowl with soft rays",
      "pale sky blue"),
@@ -72,43 +74,58 @@ EMOTIONS = [
     ("peaceful",     "soft lavender purple",            RICE_FULL,
      "sleeping softly with a small sleepy smile and a tiny snore bubble, a small crescent moon and one tiny star floating beside it",
      "misty lavender"),
-    ("loved",        "rose pink",                       RICE_HEAP,
-     "with a small heart-shaped smiling mouth, extra pink blushing cheeks, three tiny pink hearts floating around the bowl",
+    # loved — TWO heart-shaped bowls holding hands
+    ("loved",        "rose pink (both bowls are shaped like hearts with pointed bottoms and rounded lobes)",
+     RICE_HEAP,
+     "actually drawn as TWO identical heart-shaped rice-bowl mascots standing side by side holding each other's tiny stubby hands, both with small heart-shaped smiling mouths and blushing cheeks, three tiny floating pink hearts between them",
      "cotton candy pink"),
     ("proud",        "shiny gold",                      RICE_HEAP,
      "with a confident wide grin, one little arm raised holding a tiny golden star, a tiny sparkle above its head",
      "buttery cream"),
 
     # ---- Sadness / low energy ----
-    ("sad",          "dusty muted blue",                RICE_HALF,
-     "with a small downturned mouth and one big shiny teardrop under one eye, a tiny grey raincloud floating above the bowl with a couple of raindrops",
+    # sad — heart-shaped bowl with a visible crack + teardrop
+    ("sad",          "deep dusty blue (the entire bowl is shaped like a heart with a jagged CRACK line running down the middle of the heart)",
+     RICE_HALF,
+     "with a small downturned mouth and one big shiny teardrop under one eye; the heart-shaped bowl has an obvious dark crack line across it",
      "powder blue"),
-    ("lonely",       "faded slate blue",                RICE_HALF,
+    # lonely — round bowl, distinct dusty green-grey to differ from sad
+    ("lonely",       "muted sage grey-green",           RICE_HALF,
      "sitting with arms lowered and looking sideways with a lonely quiet expression, a tiny paper boat floating on gentle wavy lines next to the bowl",
-     "hazy pale blue"),
+     "misty pale seafoam"),
     ("empty",        "bone white cream",                RICE_TINY,
      "with a completely blank flat straight-line mouth and simple dot eyes, no accessories, the rice inside is almost gone",
      "warm ivory cream"),
     ("numb",         "muted stone grey",                RICE_LOW,
      "with half-closed sleepy tired eyes and a straight flat mouth, one tiny grey wispy cloud drifting around it",
      "dove grey"),
-    ("exhausted",    "washed-out mauve",                RICE_LOW,
-     "with two X-shaped closed eyes and a small tired open mouth, both little arms drooping down, a tiny sweat drop and a small puff of steam floating up",
+    # exhausted — bowl LYING DOWN on its side sleeping
+    ("exhausted",    "washed-out mauve purple",         RICE_LOW,
+     "shown LYING DOWN on its side sideways on the ground as if collapsed asleep, both little arms and legs relaxed limply, eyes closed with two X shapes, a small Z Z Z sleep symbol above its head; some rice grains gently spilled out around it",
      "soft lilac"),
 
     # ---- Nervous / tense ----
     ("restless",     "warm peach",                      RICE_FULL,
      "with wide alert eyes, a small worried o-shaped mouth, tiny motion swirls and wobble lines around the bowl as if it cannot sit still",
      "peach cream"),
+    # NEW: irritable — chili on head, BIGGER chili, red steam
+    ("irritable",    "burnt sienna orange",             RICE_FULL,
+     "with an irritable frown and slightly furrowed brows, a LARGE bright red chili pepper the size of half the bowl balanced on top of the rice, small red steam puffs rising from around the chili",
+     "warm salmon orange"),
     ("anxious",      "pale butter yellow",              RICE_FULL,
      "with worried curved eyebrows, small dot eyes looking sideways, one big sweat drop on the side of the bowl, a couple of tiny nervous squiggle marks around the head",
      "buttermilk yellow"),
     ("worried",      "warm oatmeal beige",              RICE_FULL,
      "with slightly furrowed brows and a small frown, one tiny arm raised touching the side of the bowl as if thinking anxiously",
      "oatmeal beige"),
+    # overwhelmed — BIG stones piled on top (not blocks)
     ("overwhelmed",  "muted coral",                     RICE_HEAP,
-     "with a slightly overwhelmed dizzy expression (small spirals in the eyes), a tall wobbly stack of three tiny colored blocks balanced on top of the heaping rice",
-     "muted coral"),
+     "with a strained overwhelmed expression, small spirals in the eyes and a tiny grimace; balancing a wobbling stack of THREE BIG rounded grey pebble stones (each stone almost as tall as the bowl itself) piled precariously on top of its head",
+     "muted salmon"),
+    # NEW: trapped — inside a small birdcage with vertical bars
+    ("trapped",      "cool teal blue",                  RICE_HALF,
+     "sitting INSIDE a small round metal birdcage with clear vertical dark grey bars around the character (bars must be visible in front of and behind the bowl); with a small sad worried expression, one tiny hand gripping one of the bars",
+     "soft grey blue"),
 
     # ---- Self-worth wounds ----
     ("worthless",    "dull periwinkle grey-blue",       RICE_TINY,
@@ -120,17 +137,20 @@ EMOTIONS = [
     ("unloved",      "faded dusty rose",                RICE_LOW,
      "sitting with head slightly lowered and eyes downcast, holding a tiny grey cracked/broken heart in its two little hands",
      "dusty rose"),
+    # unappreciated — main bowl + a SECOND bowl looking away in background
     ("unappreciated","pale lilac",                      RICE_FULL,
-     "holding up a tiny gold star / medal in its hand but the head is turned sideways as if no one is looking, a small sigh dot above the head",
+     "holding up a tiny gold medal star in its little raised hand hoping to be noticed; a SECOND smaller identical rice-bowl mascot stands in the background clearly TURNED AWAY facing the other direction, ignoring the main character; a small sad sigh dot above the main character's head",
      "pale lilac"),
     ("disrespected", "warm terracotta peach",           RICE_HALF,
      "with eyes looking a bit down and slightly furrowed brows, one tiny arm crossed defensively over its front, a tiny downward arrow behind it",
      "warm peach"),
-    ("invisible",    "ghost pale blue-grey (very translucent)", RICE_LOW,
-     "drawn semi-transparent and ghost-like with a very faint outline, a small quiet sad expression",
+    # invisible — sitting looking down at own toes
+    ("invisible",    "ghost pale blue-grey (very translucent, semi see-through)", RICE_LOW,
+     "shown drawn semi-transparent and ghost-like with a very faint outline; sitting on the ground cross-legged, head bowed low looking straight down at its own tiny stubby toes, a small quiet resigned expression",
      "cool grey blue"),
+    # rejected — big red X across the bowl
     ("rejected",     "warm apricot orange",             RICE_HALF,
-     "turned slightly away with a small sad expression, a tiny closed door with a small X mark nearby",
+     "with a small sad expression; a LARGE bold bright red X mark drawn diagonally right across the front of the bowl covering most of it, like a stamp of rejection",
      "warm apricot"),
     ("abandoned",    "faded teal blue",                 RICE_LOW,
      "sitting alone on the ground with tiny footprints of another character walking away in the background",
@@ -149,20 +169,24 @@ EMOTIONS = [
      "storm grey"),
 
     # ---- Anger / intense ----
-    ("frustrated",   "warm brick red",                  RICE_FULL,
-     "with puffed slightly red cheeks, a small pouty frown, both tiny hands on its hips, a small angry cross mark near its head",
+    # frustrated — new: arms crossed, sighing steam, muted grey-brown bowl
+    ("frustrated",   "muted taupe grey-brown",          RICE_LOW,
+     "with both little arms crossed firmly across its front, a small tired sighing mouth and half-lidded eyes, a small grey deflated cloud sigh puff drifting up from its head; the whole mascot slumped slightly forward",
+     "warm sandy beige"),
+    # angry — puffed red cheeks + hands on hips + frown
+    ("angry",        "bright hot red",                  RICE_FULL,
+     "with puffed slightly red cheeks, a small pouty grumpy frown, both tiny hands firmly on its hips like it is upset; a couple of small red anger cross marks and tiny steam puffs from the sides of its head",
      "warm blush red"),
-    ("angry",        "bright red",                      RICE_HEAP,
-     "with angry v-shaped eyebrows and a tiny grumpy frown, a small red steam puff rising from the top of the rice, a small red chili pepper resting on top of the rice",
-     "soft warm rose"),
     ("furious",      "fiery scarlet red",               RICE_HEAP,
-     "with fiery angry v-shaped eyebrows and a wide open shouting mouth, both little arms raised in the air clenched, a large red steam explosion and a small fire flame bursting from the top of the rice",
+     "with fiery angry v-shaped eyebrows and a wide open shouting mouth, both little arms raised in the air clenched, a large red steam explosion and a small orange fire flame bursting from the top of the rice",
      "warm coral"),
     ("in-pain",      "deep muted rose",                 RICE_LOW,
      "hugging itself with both tiny arms crossed tight over its front, tears welling up in both eyes and a small wincing pained mouth, a small white bandage on the side of the bowl",
      "muted rose"),
-    ("in-agony",     "dark dusty plum",                 RICE_TINY,
-     "with tightly shut eyes and a small trembling wide-open mouth as if crying silently, a heavy dark grey cloud with tiny lightning zigzags above its head, tears streaming down its cheeks",
+    # in-agony — FRYING PAN with rice being pan-fried, fire underneath
+    ("in-agony",     "black cast-iron frying pan with a wooden handle sticking out to the side (NOT a ceramic bowl this time — a shallow FRYING PAN skillet)",
+     "with a small pile of rice being fried inside the pan (not filled like a bowl)",
+     "the frying-pan mascot has two round dot eyes, small blush cheeks, and a suffering tightly shut eyes and open trembling silent-scream mouth; several bright orange and yellow FIRE flames dancing directly UNDERNEATH the pan; a couple of tiny sweat drops around its head",
      "dusty plum"),
 ]
 
