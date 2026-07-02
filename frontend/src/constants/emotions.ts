@@ -66,7 +66,7 @@ export const EMOTIONS: Emotion[] = [
   { key: 'exhausted', label: '好攰', description: '身心都攰晒', color: '#E0BBE4', image: EMOTION_IMAGES.exhausted },
 
   // Nervous / tense
-  { key: 'restless', label: '心煩', description: '坐唔定 靜唔到', color: '#FFDEAD', image: EMOTION_IMAGES.restless },
+  { key: 'restless', label: '不知所措', description: '唔知點算好', color: '#FFF3B0', image: EMOTION_IMAGES.restless },
   { key: 'irritable', label: '煩躁', description: '個火開始上湧', color: '#FFB088', image: EMOTION_IMAGES.irritable },
   { key: 'anxious', label: '焦慮', description: '好似有啲嘢唔妥', color: '#FFD6A5', image: EMOTION_IMAGES.anxious },
   { key: 'worried', label: '擔心', description: '諗嘢停唔到', color: '#FFE4B5', image: EMOTION_IMAGES.worried },
