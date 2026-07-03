@@ -89,3 +89,13 @@ export type Task = {
   task_date: string;
   created_at: string;
 };
+
+export type Memory = {
+  id: string;
+  user_id: string;
+  prompt_key: string;
+  prompt_text: string;
+  stage: string;
+  response: string;
+  created_at: string;
+};

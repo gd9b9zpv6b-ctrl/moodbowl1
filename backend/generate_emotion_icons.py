@@ -66,18 +66,19 @@ EMOTIONS = [
      "showing a soft smile with both tiny hands pressed together in a thank-you gesture, tiny pink sparkle dots and one small heart floating around",
      "warm rose pink"),
     ("hopeful",      "pale morning blue",               RICE_FULL,
-     "showing a hopeful upward gaze and gentle smile, a tiny sunshine peeking from behind the top of the bowl with soft rays",
+     "showing a hopeful upward gaze and gentle smile, a LARGE bright cheerful cartoon sun with a smiling face rising up from behind the top of the bowl — the sun should be sized about as big as the bowl itself, with several wavy sunshine rays extending out",
      "pale sky blue"),
     ("calm",         "sage green",                      RICE_FULL,
      "with peacefully closed eyes and a serene tiny smile, a single small green leaf resting neatly on top of the rice",
      "sea foam mint"),
+    # peaceful — leaning against / sitting inside a large crescent moon
     ("peaceful",     "soft lavender purple",            RICE_FULL,
-     "sleeping softly with a small sleepy smile and a tiny snore bubble, a small crescent moon and one tiny star floating beside it",
+     "actually SITTING inside a large soft pastel cream-colored CRESCENT MOON that curves around behind the bowl like a hammock or cradle, the bowl leaning back gently against the inside curve of the moon; the bowl is sleeping softly with a small sleepy smile and a tiny snore bubble, a couple of tiny stars floating around",
      "misty lavender"),
-    # loved — TWO HEART-SHAPED bowls holding hands (stronger heart emphasis)
+    # loved — TWO heart-shaped bowls filled with HEART-SHAPED rice
     ("loved",        "rose pink",
-     RICE_HEAP,
-     "actually drawn as TWO identical mascots STANDING SIDE BY SIDE HOLDING HANDS: each mascot is a bowl of rice where the BOWL ITSELF is clearly shaped like a HEART with a distinct pointed V-shape at the bottom and two rounded lobes on top forming a heart silhouette (NOT a round bowl). Both have small heart-shaped smiling mouths and blushing cheeks; three tiny floating pink hearts between them",
+     "with a plump generously heaped mound of white rice inside where the rice mound itself is clearly shaped like a heart (with a pointed V bottom and rounded lobes on top)",
+     "actually drawn as TWO identical mascots STANDING SIDE BY SIDE HOLDING HANDS: each mascot is a bowl of rice where BOTH the bowl silhouette AND the mound of rice inside are clearly HEART-SHAPED (V-bottom + two rounded lobes). Both mascots have small heart-shaped smiling mouths and blushing cheeks; three tiny floating pink hearts between them",
      "cotton candy pink"),
     ("proud",        "shiny gold",                      RICE_HEAP,
      "with a confident wide grin, one little arm raised holding a tiny golden star, a tiny sparkle above its head",
@@ -89,12 +90,13 @@ EMOTIONS = [
      RICE_HALF,
      "with a small downturned mouth and one big shiny teardrop under one eye; the heart-shaped bowl has an obvious dark crack line across it",
      "powder blue"),
-    # lonely — sighing gesture added
+    # lonely — visible sigh puff of breath
     ("lonely",       "muted sage grey-green",           RICE_HALF,
-     "sitting with arms lowered and a lonely quiet expression, looking sideways, letting out a small SIGH shown as a puff of pale grey air breath coming from its small o-shaped mouth (a tiny curved sigh cloud in front of the face); a tiny paper boat floating nearby on gentle wavy lines",
+     "sitting with arms lowered and a lonely quiet expression, mouth slightly open in a small o-shape releasing a VISIBLE PUFF OF PALE WHITE BREATH / SIGH CLOUD directly in front of its mouth (a small rounded fluffy puff, clearly visible); a tiny paper boat floating nearby on gentle wavy lines",
      "misty pale seafoam"),
+    # empty — hollow-eyed vacant stare
     ("empty",        "bone white cream",                RICE_TINY,
-     "with a completely blank flat straight-line mouth and simple dot eyes, no accessories, the rice inside is almost gone",
+     "with a HOLLOW VACANT expression: both eyes drawn as small empty circles (just outlines, like empty rings, no filled black pupils) staring into nothing, mouth slightly open in a small droopy o-shape. No accessories. The rice inside is almost gone, only a few grains at the bottom",
      "warm ivory cream"),
     ("numb",         "muted stone grey",                RICE_LOW,
      "with half-closed sleepy tired eyes and a straight flat mouth, one tiny grey wispy cloud drifting around it",
@@ -138,9 +140,9 @@ EMOTIONS = [
     ("unloved",      "faded dusty rose",                RICE_LOW,
      "sitting with head slightly lowered and eyes downcast, holding a tiny grey cracked/broken heart in its two little hands",
      "dusty rose"),
-    # unappreciated — main bowl + a SECOND bowl looking away in background
+    # unappreciated — SITTING down, holding a star hopelessly, second bowl looking away
     ("unappreciated","pale lilac",                      RICE_FULL,
-     "holding up a tiny gold medal star in its little raised hand hoping to be noticed; a SECOND smaller identical rice-bowl mascot stands in the background clearly TURNED AWAY facing the other direction, ignoring the main character; a small sad sigh dot above the main character's head",
+     "SITTING on the ground with legs stretched out in front, one tiny hand lifted up holding a tiny gold medal star hoping to be noticed, small sad quiet expression; a SECOND smaller identical rice-bowl mascot stands in the background clearly TURNED AWAY facing the other direction, ignoring the main character; a small sad sigh dot above the main character's head",
      "pale lilac"),
     ("disrespected", "warm terracotta peach",           RICE_HALF,
      "with eyes looking a bit down and slightly furrowed brows, one tiny arm crossed defensively over its front, a tiny downward arrow behind it",
@@ -149,9 +151,9 @@ EMOTIONS = [
     ("invisible",    "ghost pale blue-grey (very translucent, semi see-through)", RICE_LOW,
      "shown drawn semi-transparent and ghost-like with a very faint outline; sitting on the ground cross-legged, head bowed low looking straight down at its own tiny stubby toes, a small quiet resigned expression",
      "cool grey blue"),
-    # rejected — big red X across the bowl
+    # rejected — X eyes + o mouth + big red X across bowl
     ("rejected",     "warm apricot orange",             RICE_HALF,
-     "with a small sad expression; a LARGE bold bright red X mark drawn diagonally right across the front of the bowl covering most of it, like a stamp of rejection",
+     "with both eyes drawn as small X shapes (crossed-out eyes) and mouth open in a shocked o-shape; a LARGE bold bright red X mark drawn diagonally right across the front of the bowl covering most of it, like a stamp of rejection",
      "warm apricot"),
     ("abandoned",    "faded teal blue",                 RICE_LOW,
      "sitting alone on the ground with tiny footprints of another character walking away in the background",
@@ -159,6 +161,10 @@ EMOTIONS = [
     ("misunderstood","soft dusty purple",               RICE_FULL,
      "with a small confused frown, a tiny speech bubble containing a small tangled scribble above its head",
      "soft lavender"),
+    # NEW: unfair (唔公平) — witnessing an unjust situation
+    ("unfair",       "cool slate blue",                 RICE_HALF,
+     "with both tiny hands raised palms-up in an exasperated 'why?!' gesture, a small indignant frustrated frown; next to the bowl is a small unbalanced tilting scale / weighing balance where one pan is empty going up and one pan is heavy going down, clearly out of balance; a tiny exclamation mark above its head",
+     "cool grey blue"),
     # guilty — deeply bowing / apologizing, hands together in front
     ("guilty",       "soft mustard yellow",             RICE_HALF,
      "bowing its head DEEPLY DOWN low toward the ground in a heartfelt apology, both tiny stubby hands pressed together in front of the bowl in a sorry gesture, eyes closed with a small regretful downturned mouth, a small dark cloud raincloud with a tiny raindrop floating above its bowed head",

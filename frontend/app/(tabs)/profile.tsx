@@ -138,6 +138,21 @@ export default function Profile() {
           <Feather name="chevron-right" size={20} color={COLORS.textDisabled} />
         </Pressable>
 
+        <Pressable
+          testID="link-explore"
+          style={styles.linkRow}
+          onPress={() => router.push('/explore')}
+        >
+          <View style={[styles.linkIcon, { backgroundColor: '#FFC8DD' }]}>
+            <Feather name="book-open" size={18} color={COLORS.textPrimary} />
+          </View>
+          <View style={{ flex: 1 }}>
+            <Text style={styles.linkTitle}>探索自己 · 回望</Text>
+            <Text style={styles.linkHint}>寫低過去 · 認識自己</Text>
+          </View>
+          <Feather name="chevron-right" size={20} color={COLORS.textDisabled} />
+        </Pressable>
+
         <Text style={styles.sectionTitle}>每日提醒</Text>
         <View style={styles.rowCard}>
           <View style={{ flex: 1 }}>

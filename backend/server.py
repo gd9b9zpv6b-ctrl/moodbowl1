@@ -136,6 +136,23 @@ class TaskOut(BaseModel):
     created_at: str
 
 
+class MemoryIn(BaseModel):
+    prompt_key: str
+    prompt_text: str
+    stage: str  # childhood / teen / young-adult / adult / reflection
+    response: str
+
+
+class MemoryOut(BaseModel):
+    id: str
+    user_id: str
+    prompt_key: str
+    prompt_text: str
+    stage: str
+    response: str
+    created_at: str
+
+
 # ============ Auth Routes ============
 @api_router.post("/auth/register", response_model=AuthOut)
 async def register(data: RegisterIn):
@@ -335,6 +352,36 @@ async def delete_task(task_id: str, current=Depends(get_current_user)):
     r = await db.tasks.delete_one({"id": task_id, "user_id": current["id"]})
     if r.deleted_count == 0:
         raise HTTPException(status_code=404, detail="Task not found")
+    return {"ok": True}
+
+
+# ============ Memory Routes ============
+@api_router.post("/memories", response_model=MemoryOut)
+async def create_memory(data: MemoryIn, current=Depends(get_current_user)):
+    doc = {
+        "id": str(uuid.uuid4()),
+        "user_id": current["id"],
+        "prompt_key": data.prompt_key,
+        "prompt_text": data.prompt_text,
+        "stage": data.stage,
+        "response": data.response,
+        "created_at": now_iso(),
+    }
+    await db.memories.insert_one(doc)
+    return MemoryOut(**doc)
+
+
+@api_router.get("/memories", response_model=List[MemoryOut])
+async def list_memories(current=Depends(get_current_user)):
+    docs = await db.memories.find({"user_id": current["id"]}, {"_id": 0}).sort("created_at", -1).to_list(500)
+    return [MemoryOut(**d) for d in docs]
+
+
+@api_router.delete("/memories/{memory_id}")
+async def delete_memory(memory_id: str, current=Depends(get_current_user)):
+    r = await db.memories.delete_one({"id": memory_id, "user_id": current["id"]})
+    if r.deleted_count == 0:
+        raise HTTPException(status_code=404, detail="Memory not found")
     return {"ok": True}
 
 
