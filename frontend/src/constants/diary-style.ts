@@ -1,6 +1,8 @@
 import { Platform } from 'react-native';
 
-// Premium diary style presets. Extendable — add new backgrounds/fonts here.
+// Premium diary style presets.
+// `bg` = raw color (used by home tab background & preview only).
+// `paper_tint` + `paper` describe the full-screen diary detail look.
 
 export const DIARY_BACKGROUNDS = [
   { key: 'classic', label: '溫柔米白', color: '#F9F8F6' },
@@ -12,9 +14,31 @@ export const DIARY_BACKGROUNDS = [
   { key: 'night', label: '深夜寧靜', color: '#2C2D3A' },
 ];
 
-// Use real platform font family names so each option is visually distinct.
+// Full-screen diary detail paper tints (used with DiaryPaper component).
+export const PAPER_TINTS = [
+  { key: 'cream', label: '溫暖米白', bg: '#FBF6E9', line: '#B4A88A' },
+  { key: 'mint', label: '薄荷抹茶', bg: '#EAF2E6', line: '#8FA88A' },
+  { key: 'sky', label: '晴朗天空', bg: '#E9F0F8', line: '#8FA0BB' },
+  { key: 'rose', label: '溫柔粉紅', bg: '#FBEBEB', line: '#C29999' },
+  { key: 'sand', label: '沙灘暖啡', bg: '#F3E9D8', line: '#B79E75' },
+  { key: 'night', label: '深夜寧靜', bg: '#2E2F3E', line: '#7B7C90' },
+];
+
+// Paper line style.
+export const PAPER_KINDS = [
+  { key: 'ruled', label: '橫線', icon: 'menu' },
+  { key: 'grid', label: '方格', icon: 'grid' },
+  { key: 'dot', label: '點陣', icon: 'more-horizontal' },
+  { key: 'none', label: '空白', icon: 'square' },
+];
+
+// Handwritten Chinese fonts loaded via useDiaryFonts hook (expo-font).
+// Family names MUST match the useFonts keys in use-diary-fonts.ts.
 export const DIARY_FONT_FAMILIES = [
   { key: 'default', label: '系統預設', family: undefined as string | undefined },
+  { key: 'brush', label: '毛筆手寫', family: 'MaShanZheng' },
+  { key: 'chunky', label: '圓潤手寫', family: 'ZCOOLKuaiLe' },
+  { key: 'cursive', label: '行草流動', family: 'LongCang' },
   {
     key: 'serif',
     label: '書卷宋體',
@@ -25,34 +49,16 @@ export const DIARY_FONT_FAMILIES = [
     label: '手寫機字',
     family: Platform.select({ ios: 'Courier New', android: 'monospace', default: '"Courier New", monospace' }),
   },
-  {
-    key: 'rounded',
-    label: '柔和圓體',
-    family: Platform.select({
-      ios: 'Avenir Next Rounded',
-      android: 'sans-serif-medium',
-      default: '"Avenir Next Rounded", "Nunito", sans-serif',
-    }),
-  },
-  {
-    key: 'handwriting',
-    label: '手寫感',
-    family: Platform.select({
-      ios: 'Snell Roundhand',
-      android: 'casual',
-      default: '"Snell Roundhand", "Brush Script MT", cursive',
-    }),
-  },
 ];
 
 export const DIARY_TEXT_COLORS = [
   { key: 'dark', label: '深墨', color: '#2D3142' },
   { key: 'brown', label: '暖啡', color: '#5D4037' },
   { key: 'navy', label: '海軍藍', color: '#1F3A5F' },
-  { key: 'ivory', label: '象牙白', color: '#FFFFFF' },
+  { key: 'ivory', label: '象牙白', color: '#F0EEE7' },
 ];
 
-export const DIARY_FONT_SIZES = [13, 15, 17, 19, 22];
+export const DIARY_FONT_SIZES = [15, 17, 19, 22, 26];
 
 export type IconPack = {
   key: string;

@@ -59,6 +59,8 @@ export type DiaryStyle = {
   font_family?: string;
   font_size?: number;
   text_color?: string;
+  paper_tint?: string;    // 'cream' | 'mint' | 'sky' | 'rose' | 'sand' | 'night'
+  paper_kind?: string;    // 'ruled' | 'grid' | 'dot' | 'none'
 };
 
 export type User = {
