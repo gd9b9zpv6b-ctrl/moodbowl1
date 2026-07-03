@@ -9,6 +9,7 @@ import { ENERGY_META, EnergyLevel } from '@/src/constants/energy';
 import { RoleHeader } from '@/src/components/role-header';
 import { RoleSelfCareCard } from '@/src/components/role-selfcare-card';
 import { AlertPolicy, DEFAULT_POLICY, SchoolAlertPolicy } from '@/src/lib/school-alert-policy';
+import { CommunityConfig, DEFAULT_CONFIG, SchoolCommunityConfig, StudentAnonymity } from '@/src/lib/school-community-config';
 import { EnergyMap, SchoolEnergyConfig } from '@/src/lib/school-energy-config';
 import { COLORS, RADIUS, SPACING } from '@/src/constants/theme';
 

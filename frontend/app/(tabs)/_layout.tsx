@@ -3,6 +3,7 @@ import { Tabs, Redirect } from 'expo-router';
 import { ActivityIndicator, StyleSheet, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
+import { BackToRoleBanner } from '@/src/components/back-to-role-banner';
 import { COLORS } from '@/src/constants/theme';
 import { useAuth } from '@/src/lib/auth-context';
 
@@ -20,7 +21,8 @@ export default function TabsLayout() {
   if (!user) return <Redirect href="/auth/welcome" />;
 
   return (
-    <Tabs
+    <View style={{ flex: 1 }}>
+      <Tabs
       screenOptions={{
         headerShown: false,
         tabBarActiveTintColor: COLORS.primary,
@@ -81,7 +83,10 @@ export default function TabsLayout() {
           tabBarIcon: ({ color, size }) => <Feather name="settings" size={size} color={color} />,
         }}
       />
-    </Tabs>
+      </Tabs>
+      {/* Floating banner: only shows if the logged-in user is a non-student role */}
+      <BackToRoleBanner />
+    </View>
   );
 }
 

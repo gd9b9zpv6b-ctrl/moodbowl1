@@ -66,22 +66,32 @@ export default function Home() {
   const { recent, track } = useRecentEmotions();
 
   // Show onboarding on EVERY app launch (once per session — not on every navigation)
-  // Non-student roles skip onboarding entirely and go directly to their portal.
+  // - Non-student REAL roles (user.role !== 'student'): skip onboarding entirely
+  //   AND if their local RoleStorage still points to their role, redirect to dashboard.
+  //   If RoleStorage was set to 'student' (via self-care card), just stay on student home.
   useEffect(() => {
     (async () => {
       const { RoleStorage, ROLE_META } = await import('@/src/lib/role-storage');
-      const role = await RoleStorage.get();
-      if (role !== 'student') {
-        router.replace(ROLE_META[role].homePath as never);
+      const localRole = await RoleStorage.get();
+      const realRole = (user?.role || 'student') as typeof localRole;
+
+      // If non-student user hasn't opted into student mode (RoleStorage still their role),
+      // redirect them to their dashboard.
+      if (realRole !== 'student' && localRole === realRole) {
+        router.replace(ROLE_META[realRole].homePath as never);
         return;
       }
+
+      // Skip onboarding entirely for non-students (even if they're temporarily in student mode)
+      if (realRole !== 'student') return;
+
       // Student: show onboarding once per session
       if (!onboardingShownThisSession) {
         onboardingShownThisSession = true;
         router.replace('/onboarding');
       }
     })();
-  }, [router]);
+  }, [router, user?.role]);
 
   const selectedEmotions = useMemo(
     () => selectedKeys.map((k) => EMOTION_BY_KEY[k]).filter(Boolean) as Emotion[],

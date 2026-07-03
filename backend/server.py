@@ -345,8 +345,25 @@ async def calendar_entries(month: str, current=Depends(get_current_user)):
 
 
 @api_router.get("/entries/community", response_model=List[EntryOut])
-async def community_entries(current=Depends(get_current_user)):
-    docs = await db.entries.find({"is_public": True}, {"_id": 0}).sort("created_at", -1).to_list(200)
+async def community_entries(scope: Optional[str] = None, current=Depends(get_current_user)):
+    """Community feed with strict role-based scope enforcement.
+    HARD RULE: students can NEVER see adult community — enforced at API level.
+    Adults can request either scope · 'both' is the default (school policy can filter
+    on the frontend via SchoolCommunityConfig).
+    """
+    user_role = current.get("role", "student")
+    filters: dict = {"is_public": True}
+
+    if user_role == "student":
+        # HARD RULE — students see student community only, no exception
+        filters["community_scope"] = "student"
+    else:
+        # Adults may request a specific scope
+        if scope in ("student", "adult"):
+            filters["community_scope"] = scope
+        # otherwise return both — school policy filters on frontend
+
+    docs = await db.entries.find(filters, {"_id": 0}).sort("created_at", -1).to_list(200)
     return await _entries_with_hearts(docs, current["id"])
 
 
