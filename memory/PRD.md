@@ -35,3 +35,27 @@ A gentle Cantonese Traditional Chinese mood-tracking app for people managing dep
 
 ## Notifications
 Local-only daily reminder scheduled with `expo-notifications`. Works on device / dev build; not fully testable in Expo Go on Android.
+
+## 2026-07-03 · Anti-fake-happy features
+Concern: students may keep tapping "happy" bowls out of social pressure. Added two features:
+
+### 樹洞 · Secret Hollow (`/hollow`)
+- Dark forest-green themed page for absolutely private entries
+- Uses existing `is_secret: true` entries flag — filtered client-side
+- No emotion picker required (defaults to 'blank'), just free-form text
+- Prominent privacy banner: "老師 · 家長 · 輔導 · 冇一個會見到"
+- Entry point: dark card on home screen below the garden card
+- Users can delete secrets from within the hollow page
+
+### Teacher Dashboard v2 (`/teacher-dashboard`)
+- FIXED: `BOWL_POS` undefined crash; `c.positive/neutral/negative` data mismatch
+- Replaced 😊😐😔 emojis with rice bowl `EmotionVisual` icons (happy/calm/sad)
+- Added 能量分類圖例 section — 高能量 / 能量平穩 / 低能量 with representative bowls & descriptions
+- Added 行為異常偵測 (Behavioral Anomaly Detection) box — flags usage-pattern changes (login drop, late-night usage, mood swings) because behavior is harder to fake than self-report
+- Progress bars now correctly use `ENERGY_META` colors from `src/constants/energy.ts`
+
+### Pending (backlog for anti-fake-happy)
+- Battery/energy slider companion on emotion picker (dual-track validation)
+- Peer normalization after emotion pick ("32% of classmates also picked tired")
+- Configurable school-level keyword alert (e.g. "想死") — per-school policy toggle
+- Backend `is_secret` filter endpoint (currently filtered client-side)

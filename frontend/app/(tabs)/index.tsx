@@ -494,6 +494,24 @@ export default function Home() {
               <Feather name="chevron-right" size={20} color={COLORS.textPrimary} />
             </Pressable>
 
+            <Pressable
+              testID="hollow-card"
+              onPress={() => router.push('/hollow')}
+              style={styles.hollowCard}
+            >
+              <View style={styles.hollowEmojiWrap}>
+                <Text style={styles.hollowEmoji}>🌳</Text>
+              </View>
+              <View style={{ flex: 1 }}>
+                <Text style={styles.hollowTitle}>樹洞 · 只有你自己睇到</Text>
+                <Text style={styles.hollowSub}>唔想畀人聽嘅嘢 · 可以放喺呢度</Text>
+              </View>
+              <View style={styles.hollowLockPill}>
+                <Feather name="lock" size={11} color="#E8C97A" />
+              </View>
+              <Feather name="chevron-right" size={20} color="#F5F0E4" />
+            </Pressable>
+
             <View style={{ marginTop: SPACING.xl }}>
               <SupportCtaRow title="需要陪伴嘅時候" />
               <Pressable
@@ -748,6 +766,34 @@ const styles = StyleSheet.create({
     backgroundColor: '#7BA88C',
   },
   gardenBadgeText: { fontSize: 10, fontWeight: '800', color: COLORS.bgCard },
+  hollowCard: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: SPACING.md,
+    backgroundColor: '#2A3E37',
+    borderRadius: RADIUS.lg,
+    padding: SPACING.md,
+    marginTop: SPACING.sm,
+  },
+  hollowEmojiWrap: {
+    width: 48,
+    height: 48,
+    borderRadius: RADIUS.pill,
+    backgroundColor: '#1E2E28',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  hollowEmoji: { fontSize: 24 },
+  hollowTitle: { fontSize: 15, fontWeight: '700', color: '#F5F0E4' },
+  hollowSub: { fontSize: 12, color: '#B8C4BE', marginTop: 2 },
+  hollowLockPill: {
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    borderRadius: RADIUS.pill,
+    backgroundColor: 'rgba(232, 201, 122, 0.15)',
+    borderWidth: 1,
+    borderColor: 'rgba(232, 201, 122, 0.4)',
+  },
   ctaRow: { flexDirection: 'row', gap: SPACING.sm, marginBottom: SPACING.lg },
   ctaCard: {
     flex: 1,
