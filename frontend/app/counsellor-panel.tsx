@@ -3,6 +3,7 @@ import { ScrollView, StyleSheet, Text, View, Pressable, Alert } from 'react-nati
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { RoleHeader } from '@/src/components/role-header';
+import { RoleSelfCareCard } from '@/src/components/role-selfcare-card';
 import { COLORS, RADIUS, SPACING } from '@/src/constants/theme';
 
 const URGENT = [
@@ -59,6 +60,16 @@ export default function CounsellorPanel() {
           <Text style={styles.heroGreet}>李輔導 · 早晨</Text>
           <Text style={styles.heroSub}>今日 {URGENT.length + FOLLOW_UP.length} 個 case 等你 · 2 個緊急</Text>
         </View>
+
+        {/* Self-care CTA — counsellor themselves also need to check in */}
+        <RoleSelfCareCard
+          bg="#DDE9F9"
+          border="#B6CFEF"
+          bowlBg="#EEF6FF"
+          bowlKey="calm"
+          title="幫人之前 · 記得幫自己"
+          subtitle="輔導工作情緒負荷大 · 撳我用返呢個 App 為自己打卡"
+        />
 
         <View style={styles.statsRow}>
           <View style={[styles.stat, { backgroundColor: '#FDE0E0' }]}>

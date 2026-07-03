@@ -7,6 +7,7 @@ import { EmotionVisual } from '@/src/components/emotion-visual';
 import { EMOTIONS, EMOTION_BY_KEY } from '@/src/constants/emotions';
 import { ENERGY_META, EnergyLevel } from '@/src/constants/energy';
 import { RoleHeader } from '@/src/components/role-header';
+import { RoleSelfCareCard } from '@/src/components/role-selfcare-card';
 import { useSchoolEnergyMap } from '@/src/hooks/use-school-energy-map';
 import { COLORS, RADIUS, SPACING } from '@/src/constants/theme';
 
@@ -64,6 +65,16 @@ export default function ParentHome() {
             <Text style={styles.streakText}>🔥 12 日</Text>
           </View>
         </View>
+
+        {/* Self-care CTA — parents care for kids · but also for themselves */}
+        <RoleSelfCareCard
+          bg="#FFE4E4"
+          border="#F8C4C4"
+          bowlBg="#FFF"
+          bowlKey="loved"
+          title="家長都要照顧自己"
+          subtitle="親子關係最緊要 · 你先健康 · 小朋友先安心 · 撳我打卡"
+        />
 
         <Text style={styles.privacyBanner}>
           🔒 你只會見到小朋友嘅整體 vibe · 睇唔到佢寫嘅內容 · 呢個係佢私人空間

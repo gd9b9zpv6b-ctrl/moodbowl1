@@ -155,3 +155,23 @@ User request: schools should decide which emotion goes to which energy bucket.
 ### Notes for future
 - Storage still AsyncStorage — needs to move to backend per-school schema
 - No screenshots taken this session (user request to save credits)
+
+## 2026-07-03 · Self-care CTA on all role dashboards
+User feedback: every role portal (not just teacher) should encourage the adult user
+to also check in with themselves.
+
+### RoleSelfCareCard component (new)
+- `/app/frontend/src/components/role-selfcare-card.tsx`
+- Reusable card: bowl icon + title + subtitle + chevron
+- Tapping switches RoleStorage to 'student' and navigates to '/'
+- Props: `bg`, `border`, `bowlBg`, `title`, `subtitle`, `bowlKey`, `testID`
+
+### Applied to all 4 role portals with themed palettes
+- `teacher-dashboard.tsx` — beige/gold theme, 開心 bowl. 「老師都可以用呢個 App」
+- `counsellor-panel.tsx` — blue theme, 平靜 bowl. 「幫人之前 · 記得幫自己」
+- `parent-home.tsx` — pink theme, 被愛 bowl. 「家長都要照顧自己」
+- `school-admin.tsx` — purple theme, 安寧 bowl. 「校長 · 主任都用得到」
+
+### Cleanup
+- Removed teacher-dashboard's local `selfCard/selfBowlWrap/selfTitle/selfSub` styles (now in shared component)
+- Removed unused `RoleStorage`/`useRouter` imports in teacher-dashboard

@@ -1,14 +1,13 @@
 import { Feather } from '@expo/vector-icons';
-import { useRouter } from 'expo-router';
 import { useMemo } from 'react';
 import { ScrollView, StyleSheet, Text, View, Pressable, Alert } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { EmotionVisual } from '@/src/components/emotion-visual';
+import { RoleSelfCareCard } from '@/src/components/role-selfcare-card';
 import { EMOTIONS, EMOTION_BY_KEY } from '@/src/constants/emotions';
 import { ENERGY_META, EnergyLevel } from '@/src/constants/energy';
 import { RoleHeader } from '@/src/components/role-header';
-import { RoleStorage } from '@/src/lib/role-storage';
 import { useSchoolEnergyMap } from '@/src/hooks/use-school-energy-map';
 import { COLORS, RADIUS, SPACING } from '@/src/constants/theme';
 
@@ -83,7 +82,6 @@ function ClassCard({ c, bowls }: { c: typeof CLASS_DATA[number]; bowls: typeof F
 }
 
 export default function TeacherDashboard() {
-  const router = useRouter();
   const { map: energyMap } = useSchoolEnergyMap();
 
   // Pick the FIRST emotion mapped to each bucket in EMOTIONS order — the "representative bowl".
@@ -109,25 +107,15 @@ export default function TeacherDashboard() {
         </View>
 
         {/* Teacher self-care card */}
-        <Pressable
+        {/* Self-care CTA — teachers also deserve to check in */}
+        <RoleSelfCareCard
           testID="teacher-selfcare"
-          onPress={async () => {
-            await RoleStorage.set('student');
-            router.replace('/');
-          }}
-          style={styles.selfCard}
-        >
-          <View style={styles.selfBowlWrap}>
-            {bowls.high && <EmotionVisual emotion={bowls.high} size={48} radius={RADIUS.md} />}
-          </View>
-          <View style={{ flex: 1 }}>
-            <Text style={styles.selfTitle}>老師都可以用呢個 App</Text>
-            <Text style={styles.selfSub}>
-              關心學生之前 · 先關心自己 · 撳我打卡今日心情
-            </Text>
-          </View>
-          <Feather name="chevron-right" size={20} color={COLORS.textPrimary} />
-        </Pressable>
+          bg="#FFF6E5"
+          border="#F0D8A8"
+          bowlKey="happy"
+          title="老師都可以用呢個 App"
+          subtitle="關心學生之前 · 先關心自己 · 撳我打卡今日心情"
+        />
 
         {/* 需要關注嘅學生 */}
         <View style={styles.alertBox}>

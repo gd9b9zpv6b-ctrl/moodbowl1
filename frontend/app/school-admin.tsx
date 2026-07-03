@@ -7,6 +7,7 @@ import { EmotionVisual } from '@/src/components/emotion-visual';
 import { EMOTIONS } from '@/src/constants/emotions';
 import { ENERGY_META, EnergyLevel } from '@/src/constants/energy';
 import { RoleHeader } from '@/src/components/role-header';
+import { RoleSelfCareCard } from '@/src/components/role-selfcare-card';
 import { AlertPolicy, DEFAULT_POLICY, SchoolAlertPolicy } from '@/src/lib/school-alert-policy';
 import { EnergyMap, SchoolEnergyConfig } from '@/src/lib/school-energy-config';
 import { COLORS, RADIUS, SPACING } from '@/src/constants/theme';
@@ -100,6 +101,16 @@ export default function SchoolAdmin() {
           <Text style={styles.heroSchool}>飯碗小學（示範）</Text>
           <Text style={styles.heroSub}>訂閱狀態 · Enterprise · 2025-08 至 2026-08</Text>
         </View>
+
+        {/* Self-care CTA — school leaders also carry emotional weight */}
+        <RoleSelfCareCard
+          bg="#F0E6F5"
+          border="#D7BEE8"
+          bowlBg="#FFF"
+          bowlKey="peaceful"
+          title="校長 · 主任都用得到"
+          subtitle="決策壓力大 · 撳我體驗學生嘅版面 · 幫自己 recharge"
+        />
 
         {/* Big stats */}
         <View style={styles.statsGrid}>
