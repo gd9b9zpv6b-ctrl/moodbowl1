@@ -2,10 +2,36 @@ import { Feather } from '@expo/vector-icons';
 import { ScrollView, StyleSheet, Text, View, Pressable, Alert } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
+import { EmotionVisual } from '@/src/components/emotion-visual';
+import { EMOTION_BY_KEY } from '@/src/constants/emotions';
+import { ENERGY_META } from '@/src/constants/energy';
 import { RoleHeader } from '@/src/components/role-header';
 import { COLORS, RADIUS, SPACING } from '@/src/constants/theme';
 
+// Mocked week data — each day maps to an energy level (high/steady/low).
+// Family only sees the energy category · not the specific emotion inside.
+const WEEK: { day: string; energy: 'high' | 'steady' | 'low' }[] = [
+  { day: '一', energy: 'high' },
+  { day: '二', energy: 'high' },
+  { day: '三', energy: 'steady' },
+  { day: '四', energy: 'low' },
+  { day: '五', energy: 'steady' },
+  { day: '六', energy: 'high' },
+  { day: '日', energy: 'high' },
+];
+
+// Representative rice bowl for each energy level
+const ENERGY_BOWLS = {
+  high: EMOTION_BY_KEY['happy'],
+  steady: EMOTION_BY_KEY['calm'],
+  low: EMOTION_BY_KEY['sad'],
+};
+
 export default function ParentHome() {
+  const highCount = WEEK.filter((w) => w.energy === 'high').length;
+  const steadyCount = WEEK.filter((w) => w.energy === 'steady').length;
+  const lowCount = WEEK.filter((w) => w.energy === 'low').length;
+
   return (
     <SafeAreaView style={styles.safe} edges={['top']}>
       <RoleHeader role="parent" title="家長版 · 陪伴小朋友" />
@@ -32,18 +58,37 @@ export default function ParentHome() {
 
         <View style={styles.weekCard}>
           <View style={styles.weekRow}>
-            {['一', '二', '三', '四', '五', '六', '日'].map((d, i) => {
-              const emojis = ['😊', '😊', '😐', '😔', '😐', '😊', '😊'];
+            {WEEK.map((w) => {
+              const bowl = ENERGY_BOWLS[w.energy];
               return (
-                <View key={d} style={styles.dayCol}>
-                  <Text style={styles.dayEmoji}>{emojis[i]}</Text>
-                  <Text style={styles.dayLabel}>{d}</Text>
+                <View key={w.day} style={styles.dayCol}>
+                  <View style={[styles.dayBowlWrap, { borderColor: ENERGY_META[w.energy].color + '55' }]}>
+                    {bowl && <EmotionVisual emotion={bowl} size={30} radius={15} />}
+                  </View>
+                  <Text style={styles.dayLabel}>{w.day}</Text>
                 </View>
               );
             })}
           </View>
+
+          {/* Legend */}
+          <View style={styles.weekLegend}>
+            <View style={styles.legendItem}>
+              <View style={[styles.legendDot, { backgroundColor: ENERGY_META.high.color }]} />
+              <Text style={styles.legendText}>{ENERGY_META.high.label} {highCount} 日</Text>
+            </View>
+            <View style={styles.legendItem}>
+              <View style={[styles.legendDot, { backgroundColor: ENERGY_META.steady.color }]} />
+              <Text style={styles.legendText}>{ENERGY_META.steady.label} {steadyCount} 日</Text>
+            </View>
+            <View style={styles.legendItem}>
+              <View style={[styles.legendDot, { backgroundColor: ENERGY_META.low.color }]} />
+              <Text style={styles.legendText}>{ENERGY_META.low.label} {lowCount} 日</Text>
+            </View>
+          </View>
+
           <Text style={styles.weekSummary}>
-            5 日開心 · 2 日平淡 · 1 日低落 · 整體 <Text style={styles.weekBold}>穩定</Text>
+            整體 <Text style={styles.weekBold}>穩定</Text> · 星期四低咗少少 · 可以柔和咁問下小朋友
           </Text>
         </View>
 
@@ -160,8 +205,33 @@ const styles = StyleSheet.create({
     marginBottom: SPACING.md,
   },
   dayCol: { alignItems: 'center' },
-  dayEmoji: { fontSize: 24 },
-  dayLabel: { fontSize: 11, color: COLORS.textSecondary, marginTop: 4 },
+  dayBowlWrap: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    borderWidth: 2,
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: '#FBEFD4',
+  },
+  dayLabel: { fontSize: 11, color: COLORS.textSecondary, marginTop: 6 },
+  weekLegend: {
+    flexDirection: 'row',
+    justifyContent: 'space-around',
+    marginBottom: SPACING.sm,
+    paddingHorizontal: 4,
+  },
+  legendItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 5,
+  },
+  legendDot: {
+    width: 8,
+    height: 8,
+    borderRadius: 4,
+  },
+  legendText: { fontSize: 11, color: COLORS.textSecondary, fontWeight: '600' },
   weekSummary: {
     fontSize: 12,
     color: COLORS.textPrimary,
