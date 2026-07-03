@@ -10,15 +10,18 @@ import { COLORS, RADIUS, SPACING } from '@/src/constants/theme';
 type CatKey = Activity['category'];
 const CATEGORIES: CatKey[] = ['micro', 'outdoor', 'sensory', 'creative', 'social'];
 
+const FEATURED = ACTIVITIES.filter((a) => a.featured);
+
 export default function Activities() {
   const router = useRouter();
   const [cat, setCat] = useState<CatKey | 'all'>('all');
   const [pickedKey, setPickedKey] = useState<string | null>(null);
 
-  const filtered = useMemo(
-    () => (cat === 'all' ? ACTIVITIES : ACTIVITIES.filter((a) => a.category === cat)),
-    [cat],
-  );
+  // Random picker only uses lightweight (non-featured) activities
+  const filtered = useMemo(() => {
+    const pool = ACTIVITIES.filter((a) => !a.featured);
+    return cat === 'all' ? pool : pool.filter((a) => a.category === cat);
+  }, [cat]);
 
   const pickRandom = () => {
     const pool = filtered;
@@ -46,10 +49,51 @@ export default function Activities() {
       </View>
 
       <ScrollView
-        stickyHeaderIndices={[0]}
+        stickyHeaderIndices={cat === 'all' && FEATURED.length > 0 ? [1] : [0]}
         contentContainerStyle={{ paddingBottom: SPACING.xxl }}
         showsVerticalScrollIndicator={false}
       >
+        {/* Featured events section - only shown when 'all' is active */}
+        {cat === 'all' && FEATURED.length > 0 && (
+          <View style={styles.featuredWrap}>
+            <View style={styles.featuredHeader}>
+              <Feather name="star" size={14} color={COLORS.primary} />
+              <Text style={styles.featuredLabel}>精選活動 · 值得試下</Text>
+            </View>
+            {FEATURED.map((a) => (
+              <Pressable
+                key={a.key}
+                testID={`featured-${a.key}`}
+                onPress={() => router.push(`/activities/${a.key}`)}
+                style={({ pressed }) => [
+                  styles.featuredCard,
+                  { backgroundColor: a.color + '99' },
+                  pressed && { opacity: 0.85 },
+                ]}
+              >
+                <View style={styles.featuredEmojiWrap}>
+                  <Text style={styles.featuredEmoji}>{a.emoji || '✨'}</Text>
+                </View>
+                <View style={{ flex: 1 }}>
+                  <View style={styles.featuredBadge}>
+                    <Feather name="star" size={10} color={COLORS.textPrimary} />
+                    <Text style={styles.featuredBadgeText}>精選</Text>
+                  </View>
+                  <Text style={styles.featuredTitle}>{a.title}</Text>
+                  <Text style={styles.featuredDesc}>{a.desc}</Text>
+                  {a.time && (
+                    <View style={styles.featuredMeta}>
+                      <Feather name="clock" size={11} color={COLORS.textSecondary} />
+                      <Text style={styles.featuredMetaText}>{a.time}</Text>
+                    </View>
+                  )}
+                </View>
+                <Feather name="chevron-right" size={20} color={COLORS.textPrimary} />
+              </Pressable>
+            ))}
+          </View>
+        )}
+
         <View style={styles.stickyHeader}>
           <ScrollView
             horizontal
@@ -162,6 +206,70 @@ const styles = StyleSheet.create({
     color: COLORS.textPrimary,
   },
   stickyHeader: { backgroundColor: COLORS.bgMain },
+  featuredWrap: {
+    paddingHorizontal: SPACING.lg,
+    paddingTop: SPACING.xs,
+    paddingBottom: SPACING.md,
+  },
+  featuredHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    marginBottom: SPACING.sm,
+  },
+  featuredLabel: {
+    fontSize: 12,
+    fontWeight: '700',
+    color: COLORS.primary,
+    letterSpacing: 0.5,
+  },
+  featuredCard: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: SPACING.md,
+    padding: SPACING.md,
+    borderRadius: RADIUS.lg,
+    marginBottom: SPACING.sm,
+  },
+  featuredEmojiWrap: {
+    width: 56,
+    height: 56,
+    borderRadius: RADIUS.md,
+    backgroundColor: 'rgba(255,255,255,0.6)',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  featuredEmoji: { fontSize: 28 },
+  featuredBadge: {
+    alignSelf: 'flex-start',
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 3,
+    paddingHorizontal: SPACING.sm,
+    paddingVertical: 2,
+    borderRadius: RADIUS.pill,
+    backgroundColor: 'rgba(255,255,255,0.7)',
+    marginBottom: 4,
+  },
+  featuredBadgeText: { fontSize: 10, fontWeight: '700', color: COLORS.textPrimary },
+  featuredTitle: {
+    fontSize: 15,
+    fontWeight: '700',
+    color: COLORS.textPrimary,
+  },
+  featuredDesc: {
+    fontSize: 12,
+    color: COLORS.textSecondary,
+    marginTop: 2,
+    lineHeight: 18,
+  },
+  featuredMeta: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+    marginTop: 4,
+  },
+  featuredMetaText: { fontSize: 11, color: COLORS.textSecondary },
   chipRow: { paddingHorizontal: SPACING.lg, gap: SPACING.sm, paddingVertical: SPACING.sm, height: 56, alignItems: 'center' },
   chip: {
     height: 36,
