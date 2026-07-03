@@ -94,10 +94,10 @@ EMOTIONS = [
      RICE_HALF,
      "with a small downturned mouth and one big shiny teardrop under one eye; the heart-shaped bowl has an obvious dark crack line across it",
      "powder blue"),
-    # lonely — a single lonely bowl alone on the plain pastel background
-    ("lonely",       "muted denim blue",                RICE_HALF,
-     "sitting alone with a small quiet lonely expression, downcast eyes looking sideways, tiny sad frown mouth, one tiny stubby hand raised as if reaching out into empty space; a small pale sigh puff floating beside its face; NO table, NO chairs, NO room, NO furniture — just the bowl mascot on the plain pastel background",
-     "dusk lavender blue"),
+    # lonely — a single lonely bowl with a soft spotlight beam from above
+    ("lonely",       "dusty mauve",                     RICE_HALF,
+     "the bowl mascot sitting alone with a small quiet lonely expression, downcast eyes looking sideways, tiny sad frown mouth, one tiny stubby hand raised as if reaching out into empty space; a small pale sigh puff floating beside its face; a soft translucent SPOTLIGHT BEAM of pale warm light shining down onto the mascot from directly above (a subtle cone-shaped light beam like a stage spotlight, wider at the top narrower at the bottom around the bowl, semi-transparent white/cream color, edges soft not hard); the light emphasizes how the mascot is alone in the spotlight; NO table, NO chairs, NO room, NO furniture — just the bowl mascot under the spotlight beam on the plain pastel background",
+     "dusty mauve"),
     # unmotivated — the original 'sigh puff' bowl now describes 冇心機
     ("unmotivated",  "muted sage grey-green",           RICE_HALF,
      "sitting with arms lowered and a lonely quiet expression, mouth slightly open in a small o-shape releasing a VISIBLE PUFF OF PALE WHITE BREATH / SIGH CLOUD directly in front of its mouth (a small rounded fluffy puff, clearly visible); a tiny paper boat floating nearby on gentle wavy lines",
