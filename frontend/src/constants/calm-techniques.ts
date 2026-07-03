@@ -79,7 +79,7 @@ export const CALM_TECHNIQUES: CalmTechnique[] = [
       '講出 2 種你「聞」到嘅味',
       '講出 1 種你「食 / 飲」到嘅味（飲啖水都得）',
     ],
-    science: '呢個係心理治療常用嘅 grounding 技巧 · 專治「情緒失控」嗰種抽離感 · 將個腦由「戰或逃」拉返嚟現在。',
+    science: '呢個係心理治療常用嘅 grounding 技巧 · 專治「情緒失控」嗰種抽離感 · 將個腦由「戰或逃」拉返嚟而家。',
   },
   {
     key: 'heart-touch',

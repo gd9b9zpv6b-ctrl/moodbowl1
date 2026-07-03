@@ -84,7 +84,7 @@ export default function DiaryStyleScreen() {
                     lineHeight: 34,
                   }}
                 >
-                  今日雖然行得慢啲{'\n'}但我都有向前走過{'\n'}為自己驕傲一下 🌿
+                  今日雖然行得慢啲{'\n'}但我都有向前行過{'\n'}讚吓自己啦 🌿
                 </Text>
               </View>
             </DiaryPaper>
@@ -98,7 +98,7 @@ export default function DiaryStyleScreen() {
                   lineHeight: 34,
                 }}
               >
-                今日雖然行得慢啲{'\n'}但我都有向前走過{'\n'}為自己驕傲一下 🌿
+                今日雖然行得慢啲{'\n'}但我都有向前行過{'\n'}讚吓自己啦 🌿
               </Text>
             </View>
           )}

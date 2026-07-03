@@ -126,7 +126,7 @@ export default function Tasks() {
           {rewardFlash && (
             <View style={styles.rewardFlash} testID="reward-flash">
               <Feather name="heart" size={16} color="#E86A6A" />
-              <Text style={styles.rewardText}>+1 小心心 · 為自己驕傲一下</Text>
+              <Text style={styles.rewardText}>+1 小心心 · 讚吓自己啦</Text>
             </View>
           )}
 

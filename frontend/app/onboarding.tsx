@@ -119,7 +119,7 @@ export default function Onboarding() {
       accent: '#DDB86A',
       visual: <BowlHero emotionKey="peaceful" tint="#E4F0E8" />,
       title: '一切都可以慢慢嚟',
-      desc: '冇壓力 · 冇目標 · 只要你今日有嚟 · 就已經好棒。準備好未？我哋一齊行呢段路 🌸',
+      desc: '冇壓力 · 冇目標 · 只要你今日有嚟 · 就已經好得啊。準備好未？我哋一齊行呢段路 🌸',
     },
   ];
 
