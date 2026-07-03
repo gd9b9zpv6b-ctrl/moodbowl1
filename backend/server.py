@@ -155,6 +155,10 @@ class EntryOut(BaseModel):
     created_at: str
     hearts: int = 0
     hearted_by_me: bool = False
+    # NEW: which community the entry belongs to (auto-set from author's role at post time)
+    community_scope: str = "student"          # 'student' | 'adult'
+    author_role: str = "student"              # snapshot of role at post time
+    author_role_label: Optional[str] = None   # 班主任 · 家長 · etc — for display in adult community
 
 
 class TaskIn(BaseModel):
@@ -237,6 +241,20 @@ async def me(current=Depends(get_current_user)):
     return _user_to_out(current)
 
 
+# Role labels shown in adult community
+ROLE_LABELS = {
+    "student": "學生",
+    "teacher": "班主任",
+    "counsellor": "輔導老師",
+    "parent": "家長",
+    "school_admin": "校方",
+}
+
+# Which roles post into which community
+def community_scope_for(role: str) -> str:
+    return "student" if role == "student" else "adult"
+
+
 # ============ Entry Routes ============
 async def _entries_with_hearts(cursor_docs: List[dict], user_id: str) -> List[EntryOut]:
     entry_ids = [d["id"] for d in cursor_docs]
@@ -268,6 +286,9 @@ async def _entries_with_hearts(cursor_docs: List[dict], user_id: str) -> List[En
             created_at=d["created_at"],
             hearts=hearts_map.get(d["id"], 0),
             hearted_by_me=d["id"] in my_hearts,
+            community_scope=d.get("community_scope", "student"),
+            author_role=d.get("author_role", "student"),
+            author_role_label=d.get("author_role_label"),
         )
         for d in cursor_docs
     ]
@@ -283,6 +304,7 @@ async def create_entry(data: EntryIn, current=Depends(get_current_user)):
     primary = emotions_list[0]
     # secret entries are always private
     is_public = data.is_public and not data.is_secret
+    author_role = current.get("role", "student")
     doc = {
         "id": entry_id,
         "user_id": current["id"],
@@ -295,9 +317,16 @@ async def create_entry(data: EntryIn, current=Depends(get_current_user)):
         "energy_level": data.energy_level,
         "entry_date": data.entry_date,
         "created_at": now_iso(),
+        "author_role": author_role,
+        "author_role_label": ROLE_LABELS.get(author_role, author_role),
+        "community_scope": community_scope_for(author_role),
     }
     await db.entries.insert_one(doc)
-    return EntryOut(**{k: v for k, v in doc.items() if k != "_id"}, hearts=0, hearted_by_me=False)
+    return EntryOut(
+        **{k: v for k, v in doc.items() if k != "_id"},
+        hearts=0,
+        hearted_by_me=False,
+    )
 
 
 @api_router.get("/entries", response_model=List[EntryOut])
