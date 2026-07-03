@@ -74,7 +74,7 @@ export const EMOTION_IMAGES: Record<string, any> = {
   foggy: require('../../assets/emotions/foggy.png'),
   questioning: require('../../assets/emotions/questioning.png'),
   blank: require('../../assets/emotions/blank.png'),
-  indescribable: require('../../assets/emotions/indescribable.png'),
+  awkward: require('../../assets/emotions/awkward.png'),
 };
 
 export const EMOTIONS: Emotion[] = [
@@ -122,6 +122,7 @@ export const EMOTIONS: Emotion[] = [
   { key: 'unfair', label: '唔公平', description: '點解會咁對我?', color: '#58768E', category: 'wound', image: EMOTION_IMAGES.unfair },
   { key: 'guilty', label: '內疚', description: '覺得係自己嘅錯', color: '#DCC15E', category: 'wound', image: EMOTION_IMAGES.guilty },
   { key: 'ashamed', label: '羞愧', description: '想搵個窿匿埋', color: '#D48570', category: 'wound', image: EMOTION_IMAGES.ashamed },
+  { key: 'awkward', label: '尷尬', description: '有啲下不了台', color: '#9BA8CE', category: 'wound', image: EMOTION_IMAGES.awkward },
   { key: 'hopeless', label: '絕望', description: '睇唔到前面嘅路', color: '#7E8A94', category: 'wound', image: EMOTION_IMAGES.hopeless },
   { key: 'suppressed', label: '被打壓', description: '俾人壓住 · 仲要撐住', color: '#8A7563', category: 'wound', image: EMOTION_IMAGES.suppressed },
 
@@ -134,7 +135,6 @@ export const EMOTIONS: Emotion[] = [
   { key: 'in-agony', label: '煎熬', description: '痛得好難捱', color: '#786095', category: 'anger', image: EMOTION_IMAGES['in-agony'] },
 
   // Unspoken / 講唔出 — fallback when nothing else fits
-  { key: 'indescribable', label: '一言難盡', description: '有嘢想講 · 但講唔出口', color: '#8E9FC4', category: 'unspoken', image: EMOTION_IMAGES.indescribable },
   { key: 'foggy', label: '濛查查', description: '腦入面一片模糊', color: '#B8C1CE', category: 'unspoken', image: EMOTION_IMAGES.foggy },
   { key: 'questioning', label: '唔知乜感覺', description: '有嘢喺度 · 但講唔出', color: '#E8CE8A', category: 'unspoken', image: EMOTION_IMAGES.questioning },
   { key: 'blank', label: '一片空白', description: '腦入面咩都冇', color: '#CFC9BC', category: 'unspoken', image: EMOTION_IMAGES.blank },
