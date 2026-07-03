@@ -25,6 +25,7 @@ db = client[os.environ['DB_NAME']]
 JWT_SECRET = os.environ.get('JWT_SECRET', 'moodful-healing-secret-key-change-me')
 JWT_ALGORITHM = 'HS256'
 JWT_EXPIRE_DAYS = 30
+ADMIN_EMAILS = {e.strip().lower() for e in os.environ.get('ADMIN_EMAILS', 'testuser1@example.com').split(',') if e.strip()}
 
 pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 security = HTTPBearer()
@@ -89,6 +90,11 @@ class UserOut(BaseModel):
     display_name: Optional[str] = None
     created_at: str
     credits: int = 0
+    is_premium: bool = False
+    is_admin: bool = False
+    has_secret_pin: bool = False
+    diary_style: dict = Field(default_factory=dict)
+    active_icon_pack: str = "classic"
 
 
 class AuthOut(BaseModel):
@@ -97,10 +103,26 @@ class AuthOut(BaseModel):
     user: UserOut
 
 
+def _user_to_out(u: dict) -> UserOut:
+    return UserOut(
+        id=u["id"],
+        email=u["email"],
+        display_name=u.get("display_name"),
+        created_at=u["created_at"],
+        credits=u.get("credits", 0),
+        is_premium=u.get("is_premium", False),
+        is_admin=u["email"].lower() in ADMIN_EMAILS,
+        has_secret_pin=bool(u.get("secret_pin_hash")),
+        diary_style=u.get("diary_style", {}),
+        active_icon_pack=u.get("active_icon_pack", "classic"),
+    )
+
+
 class EntryIn(BaseModel):
     emotion: str
     note: str = ""
     is_public: bool = False
+    is_secret: bool = False
     entry_date: str  # YYYY-MM-DD
 
 
@@ -111,6 +133,7 @@ class EntryOut(BaseModel):
     emotion: str
     note: str
     is_public: bool
+    is_secret: bool = False
     entry_date: str
     created_at: str
     hearts: int = 0
@@ -171,13 +194,14 @@ async def register(data: RegisterIn):
         "hashed_password": hash_password(data.password),
         "created_at": created_at,
         "credits": 0,
+        "is_premium": False,
+        "secret_pin_hash": None,
+        "diary_style": {},
+        "active_icon_pack": "classic",
     }
     await db.users.insert_one(user_doc)
     token = create_access_token(user_id)
-    return AuthOut(
-        access_token=token,
-        user=UserOut(id=user_id, email=email_lower, display_name=display_name, created_at=created_at, credits=0),
-    )
+    return AuthOut(access_token=token, user=_user_to_out(user_doc))
 
 
 @api_router.post("/auth/login", response_model=AuthOut)
@@ -187,21 +211,12 @@ async def login(data: LoginIn):
     if not user or not verify_password(data.password, user["hashed_password"]):
         raise HTTPException(status_code=401, detail="Incorrect email or password")
     token = create_access_token(user["id"])
-    return AuthOut(
-        access_token=token,
-        user=UserOut(
-            id=user["id"],
-            email=user["email"],
-            display_name=user.get("display_name"),
-            created_at=user["created_at"],
-            credits=user.get("credits", 0),
-        ),
-    )
+    return AuthOut(access_token=token, user=_user_to_out(user))
 
 
 @api_router.get("/auth/me", response_model=UserOut)
 async def me(current=Depends(get_current_user)):
-    return UserOut(**current)
+    return _user_to_out(current)
 
 
 # ============ Entry Routes ============
@@ -228,6 +243,7 @@ async def _entries_with_hearts(cursor_docs: List[dict], user_id: str) -> List[En
             emotion=d["emotion"],
             note=d.get("note", ""),
             is_public=d.get("is_public", False),
+            is_secret=d.get("is_secret", False),
             entry_date=d["entry_date"],
             created_at=d["created_at"],
             hearts=hearts_map.get(d["id"], 0),
@@ -240,13 +256,16 @@ async def _entries_with_hearts(cursor_docs: List[dict], user_id: str) -> List[En
 @api_router.post("/entries", response_model=EntryOut)
 async def create_entry(data: EntryIn, current=Depends(get_current_user)):
     entry_id = str(uuid.uuid4())
+    # secret entries are always private
+    is_public = data.is_public and not data.is_secret
     doc = {
         "id": entry_id,
         "user_id": current["id"],
         "display_name": current.get("display_name"),
         "emotion": data.emotion,
         "note": data.note,
-        "is_public": data.is_public,
+        "is_public": is_public,
+        "is_secret": data.is_secret,
         "entry_date": data.entry_date,
         "created_at": now_iso(),
     }
@@ -382,6 +401,139 @@ async def delete_memory(memory_id: str, current=Depends(get_current_user)):
     r = await db.memories.delete_one({"id": memory_id, "user_id": current["id"]})
     if r.deleted_count == 0:
         raise HTTPException(status_code=404, detail="Memory not found")
+    return {"ok": True}
+
+
+# ============ Premium / Settings ============
+class UpgradeIn(BaseModel):
+    plan: str = "lifetime"  # placeholder — this is a mocked unlock
+
+
+@api_router.post("/premium/upgrade", response_model=UserOut)
+async def upgrade_premium(_: UpgradeIn, current=Depends(get_current_user)):
+    """Mock upgrade — flips is_premium to True. Replace with real Stripe/IAP later."""
+    await db.users.update_one({"id": current["id"]}, {"$set": {"is_premium": True}})
+    user = await db.users.find_one({"id": current["id"]}, {"_id": 0})
+    return _user_to_out(user)
+
+
+class PinIn(BaseModel):
+    pin: str = Field(min_length=4, max_length=4)
+
+
+@api_router.post("/premium/set-pin", response_model=UserOut)
+async def set_pin(data: PinIn, current=Depends(get_current_user)):
+    if not current.get("is_premium"):
+        raise HTTPException(status_code=402, detail="Premium required")
+    if not data.pin.isdigit():
+        raise HTTPException(status_code=400, detail="PIN must be 4 digits")
+    await db.users.update_one({"id": current["id"]}, {"$set": {"secret_pin_hash": hash_password(data.pin)}})
+    user = await db.users.find_one({"id": current["id"]}, {"_id": 0})
+    return _user_to_out(user)
+
+
+@api_router.post("/premium/verify-pin")
+async def verify_pin(data: PinIn, current=Depends(get_current_user)):
+    if not current.get("secret_pin_hash"):
+        raise HTTPException(status_code=400, detail="No PIN set")
+    ok = verify_password(data.pin, current["secret_pin_hash"])
+    return {"ok": ok}
+
+
+class StyleIn(BaseModel):
+    diary_style: Optional[dict] = None
+    active_icon_pack: Optional[str] = None
+
+
+@api_router.patch("/premium/settings", response_model=UserOut)
+async def update_settings(data: StyleIn, current=Depends(get_current_user)):
+    if not current.get("is_premium"):
+        raise HTTPException(status_code=402, detail="Premium required")
+    update: dict = {}
+    if data.diary_style is not None:
+        update["diary_style"] = data.diary_style
+    if data.active_icon_pack is not None:
+        update["active_icon_pack"] = data.active_icon_pack
+    if update:
+        await db.users.update_one({"id": current["id"]}, {"$set": update})
+    user = await db.users.find_one({"id": current["id"]}, {"_id": 0})
+    return _user_to_out(user)
+
+
+# ============ Admin ============
+def _require_admin(current: dict):
+    if current["email"].lower() not in ADMIN_EMAILS:
+        raise HTTPException(status_code=403, detail="Admin only")
+
+
+class AdminUserOut(BaseModel):
+    id: str
+    email: EmailStr
+    display_name: Optional[str] = None
+    created_at: str
+    is_premium: bool
+    credits: int
+    entry_count: int
+
+
+class AdminStats(BaseModel):
+    users: int
+    entries: int
+    public_entries: int
+    tasks: int
+    memories: int
+    premium_users: int
+
+
+@api_router.get("/admin/stats", response_model=AdminStats)
+async def admin_stats(current=Depends(get_current_user)):
+    _require_admin(current)
+    users = await db.users.count_documents({})
+    entries = await db.entries.count_documents({})
+    public_entries = await db.entries.count_documents({"is_public": True})
+    tasks = await db.tasks.count_documents({})
+    memories = await db.memories.count_documents({})
+    premium_users = await db.users.count_documents({"is_premium": True})
+    return AdminStats(
+        users=users,
+        entries=entries,
+        public_entries=public_entries,
+        tasks=tasks,
+        memories=memories,
+        premium_users=premium_users,
+    )
+
+
+@api_router.get("/admin/users", response_model=List[AdminUserOut])
+async def admin_users(current=Depends(get_current_user)):
+    _require_admin(current)
+    users = await db.users.find({}, {"_id": 0, "hashed_password": 0, "secret_pin_hash": 0}).sort("created_at", -1).to_list(500)
+    out: List[AdminUserOut] = []
+    for u in users:
+        count = await db.entries.count_documents({"user_id": u["id"]})
+        out.append(AdminUserOut(
+            id=u["id"], email=u["email"], display_name=u.get("display_name"),
+            created_at=u["created_at"], is_premium=u.get("is_premium", False),
+            credits=u.get("credits", 0), entry_count=count,
+        ))
+    return out
+
+
+@api_router.get("/admin/community", response_model=List[EntryOut])
+async def admin_community(current=Depends(get_current_user)):
+    _require_admin(current)
+    docs = await db.entries.find({"is_public": True}, {"_id": 0}).sort("created_at", -1).to_list(500)
+    return await _entries_with_hearts(docs, current["id"])
+
+
+@api_router.delete("/admin/entries/{entry_id}")
+async def admin_delete_entry(entry_id: str, current=Depends(get_current_user)):
+    _require_admin(current)
+    entry = await db.entries.find_one({"id": entry_id})
+    if not entry:
+        raise HTTPException(status_code=404, detail="Entry not found")
+    await db.entries.delete_one({"id": entry_id})
+    await db.reactions.delete_many({"entry_id": entry_id})
     return {"ok": True}
 
 

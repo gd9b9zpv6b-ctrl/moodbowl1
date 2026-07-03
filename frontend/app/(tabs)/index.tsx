@@ -3,6 +3,7 @@ import { useFocusEffect, useRouter } from 'expo-router';
 import { useCallback, useMemo, useState } from 'react';
 import {
   ActivityIndicator,
+  Alert,
   KeyboardAvoidingView,
   Platform,
   Pressable,
@@ -20,6 +21,7 @@ import { EMOTIONS, Emotion, EMOTION_BY_KEY } from '@/src/constants/emotions';
 import { COLORS, RADIUS, SPACING } from '@/src/constants/theme';
 import { api, Entry } from '@/src/lib/api';
 import { useAuth } from '@/src/lib/auth-context';
+import { isDiaryUnlocked, unlockDiary } from '@/src/lib/diary-lock';
 import { EmotionVisual } from '@/src/components/emotion-visual';
 
 function todayISO() {
@@ -36,11 +38,13 @@ export default function Home() {
   const [selected, setSelected] = useState<Emotion | null>(null);
   const [note, setNote] = useState('');
   const [share, setShare] = useState(false);
+  const [secret, setSecret] = useState(false);
   const [saving, setSaving] = useState(false);
   const [saved, setSaved] = useState(false);
   const [todayEntries, setTodayEntries] = useState<Entry[]>([]);
   const [loading, setLoading] = useState(true);
   const [affirmation, setAffirmation] = useState(randomAffirmation());
+  const [unlocked, setUnlocked] = useState(isDiaryUnlocked());
 
   const today = useMemo(() => todayISO(), []);
 
@@ -71,11 +75,13 @@ export default function Home() {
         emotion: selected.key,
         note,
         is_public: share,
+        is_secret: secret,
         entry_date: today,
       });
       setSelected(null);
       setNote('');
       setShare(false);
+      setSecret(false);
       setSaved(true);
       setTimeout(() => setSaved(false), 2500);
       await load();
@@ -86,7 +92,36 @@ export default function Home() {
     }
   };
 
-  const bg = selected ? selected.color + '30' : COLORS.bgMain;
+  const promptUnlock = () => {
+    // Trigger a system prompt for the 4-digit PIN.
+    // eslint-disable-next-line no-alert
+    Alert.prompt?.(
+      '輸入密碼',
+      '輸入 4 位數字密碼解鎖秘密日記',
+      async (value?: string) => {
+        if (!value) return;
+        try {
+          const res = await api.post<{ ok: boolean }>('/premium/verify-pin', { pin: value });
+          if (res.ok) {
+            unlockDiary();
+            setUnlocked(true);
+          } else {
+            Alert.alert('密碼錯誤', '請再試一次');
+          }
+        } catch {
+          Alert.alert('出錯', '請稍後再試');
+        }
+      },
+      'secure-text',
+      '',
+      'number-pad',
+    );
+  };
+
+  const styleBg = user?.diary_style?.bg;
+  const bg = selected
+    ? selected.color + '30'
+    : (styleBg || COLORS.bgMain);
 
   return (
     <View style={[styles.root, { backgroundColor: bg }]}>
@@ -212,8 +247,41 @@ export default function Home() {
                   <Switch
                     testID="share-toggle"
                     value={share}
-                    onValueChange={setShare}
+                    onValueChange={(v) => { setShare(v); if (v) setSecret(false); }}
                     trackColor={{ true: COLORS.primary, false: COLORS.bgInput }}
+                    thumbColor={COLORS.bgCard}
+                  />
+                </View>
+                <View style={styles.shareRow}>
+                  <View style={{ flex: 1, flexDirection: 'row', alignItems: 'center', gap: 6 }}>
+                    <Feather name="lock" size={14} color="#E86A6A" />
+                    <View>
+                      <Text style={styles.shareLabel}>秘密日記 · 密碼保護</Text>
+                      <Text style={styles.shareHint}>
+                        {user?.is_premium
+                          ? user?.has_secret_pin
+                            ? '要輸入密碼先睇到內容'
+                            : '未設定密碼 · 撳去設定'
+                          : '會員專屬功能'}
+                      </Text>
+                    </View>
+                  </View>
+                  <Switch
+                    testID="secret-toggle"
+                    value={secret}
+                    onValueChange={(v) => {
+                      if (!user?.is_premium) {
+                        router.push('/premium');
+                        return;
+                      }
+                      if (v && !user?.has_secret_pin) {
+                        router.push('/premium/pin');
+                        return;
+                      }
+                      setSecret(v);
+                      if (v) setShare(false);
+                    }}
+                    trackColor={{ true: '#E86A6A', false: COLORS.bgInput }}
                     thumbColor={COLORS.bgCard}
                   />
                 </View>
@@ -250,6 +318,7 @@ export default function Home() {
               ) : (
                 todayEntries.map((entry) => {
                   const em = EMOTION_BY_KEY[entry.emotion];
+                  const locked = entry.is_secret && !unlocked;
                   return (
                     <View
                       key={entry.id}
@@ -262,6 +331,12 @@ export default function Home() {
                       <View style={styles.entryHeader}>
                         <EmotionVisual emotion={em} size={40} radius={RADIUS.sm} />
                         <Text style={styles.entryEmotion}>{em?.label || entry.emotion}</Text>
+                        {entry.is_secret && (
+                          <View style={[styles.publicBadge, { backgroundColor: '#FFE4E4' }]}>
+                            <Feather name="lock" size={12} color="#E86A6A" />
+                            <Text style={[styles.publicText, { color: '#E86A6A' }]}>秘密</Text>
+                          </View>
+                        )}
                         {entry.is_public && (
                           <View style={styles.publicBadge}>
                             <Feather name="users" size={12} color={COLORS.textSecondary} />
@@ -269,7 +344,29 @@ export default function Home() {
                           </View>
                         )}
                       </View>
-                      {entry.note ? <Text style={styles.entryNote}>{entry.note}</Text> : null}
+                      {locked ? (
+                        <Pressable
+                          testID={`entry-unlock-${entry.id}`}
+                          onPress={promptUnlock}
+                          style={styles.lockedBox}
+                        >
+                          <Feather name="lock" size={16} color="#E86A6A" />
+                          <Text style={styles.lockedText}>撳一下 輸入密碼解鎖</Text>
+                        </Pressable>
+                      ) : entry.note ? (
+                        <Text
+                          style={[
+                            styles.entryNote,
+                            user?.diary_style && {
+                              fontFamily: user.diary_style.font_family,
+                              fontSize: user.diary_style.font_size,
+                              color: user.diary_style.text_color,
+                            },
+                          ]}
+                        >
+                          {entry.note}
+                        </Text>
+                      ) : null}
                     </View>
                   );
                 })
@@ -451,4 +548,14 @@ const styles = StyleSheet.create({
   },
   publicText: { fontSize: 11, fontWeight: '600', color: COLORS.textSecondary },
   entryNote: { marginTop: SPACING.sm, fontSize: 14, color: COLORS.textPrimary, lineHeight: 20 },
+  lockedBox: {
+    marginTop: SPACING.sm,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: SPACING.sm,
+    padding: SPACING.md,
+    borderRadius: RADIUS.md,
+    backgroundColor: '#FFE4E4',
+  },
+  lockedText: { color: '#E86A6A', fontWeight: '700', fontSize: 13 },
 });

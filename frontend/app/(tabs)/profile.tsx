@@ -153,6 +153,60 @@ export default function Profile() {
           <Feather name="chevron-right" size={20} color={COLORS.textDisabled} />
         </Pressable>
 
+        <Pressable
+          testID="link-premium"
+          style={styles.linkRow}
+          onPress={() => router.push('/premium')}
+        >
+          <View style={[styles.linkIcon, { backgroundColor: '#FFE4E4' }]}>
+            <Feather name="star" size={18} color="#E86A6A" />
+          </View>
+          <View style={{ flex: 1 }}>
+            <Text style={styles.linkTitle}>
+              {user?.is_premium ? '會員專屬設定' : '解鎖溫柔會員'}
+            </Text>
+            <Text style={styles.linkHint}>
+              {user?.is_premium
+                ? '秘密日記 · 自訂風格 · 飯碗系列'
+                : '密碼保護 · 自訂風格 · 更多系列'}
+            </Text>
+          </View>
+          <Feather name="chevron-right" size={20} color={COLORS.textDisabled} />
+        </Pressable>
+
+        <Text style={styles.sectionTitle}>更多</Text>
+        <Pressable
+          testID="link-privacy"
+          style={styles.linkRow}
+          onPress={() => router.push('/privacy')}
+        >
+          <View style={[styles.linkIcon, { backgroundColor: COLORS.bgInput }]}>
+            <Feather name="shield" size={18} color={COLORS.textSecondary} />
+          </View>
+          <View style={{ flex: 1 }}>
+            <Text style={styles.linkTitle}>私隱政策</Text>
+            <Text style={styles.linkHint}>你嘅資料 · 你嘅控制</Text>
+          </View>
+          <Feather name="chevron-right" size={20} color={COLORS.textDisabled} />
+        </Pressable>
+
+        {user?.is_admin && (
+          <Pressable
+            testID="link-admin"
+            style={styles.linkRow}
+            onPress={() => router.push('/admin')}
+          >
+            <View style={[styles.linkIcon, { backgroundColor: '#2D3142' }]}>
+              <Feather name="settings" size={18} color="#FFFFFF" />
+            </View>
+            <View style={{ flex: 1 }}>
+              <Text style={styles.linkTitle}>管理員後台</Text>
+              <Text style={styles.linkHint}>用戶 · 社群 · 統計</Text>
+            </View>
+            <Feather name="chevron-right" size={20} color={COLORS.textDisabled} />
+          </Pressable>
+        )}
+
         <Text style={styles.sectionTitle}>每日提醒</Text>
         <View style={styles.rowCard}>
           <View style={{ flex: 1 }}>

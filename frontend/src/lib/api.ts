@@ -54,12 +54,24 @@ export const api = {
 };
 
 // Types
+export type DiaryStyle = {
+  bg?: string;
+  font_family?: string;
+  font_size?: number;
+  text_color?: string;
+};
+
 export type User = {
   id: string;
   email: string;
   display_name?: string | null;
   created_at: string;
   credits: number;
+  is_premium: boolean;
+  is_admin: boolean;
+  has_secret_pin: boolean;
+  diary_style: DiaryStyle;
+  active_icon_pack: string;
 };
 
 export type AuthResponse = {
@@ -75,6 +87,7 @@ export type Entry = {
   emotion: string;
   note: string;
   is_public: boolean;
+  is_secret?: boolean;
   entry_date: string;
   created_at: string;
   hearts: number;
