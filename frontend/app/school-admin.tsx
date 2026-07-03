@@ -24,11 +24,18 @@ export default function SchoolAdmin() {
   const [policy, setPolicy] = useState<AlertPolicy>(DEFAULT_POLICY);
   const [newKeyword, setNewKeyword] = useState('');
   const [energyMap, setEnergyMap] = useState<EnergyMap>(SchoolEnergyConfig.DEFAULT_MAP);
+  const [communityConfig, setCommunityConfig] = useState<CommunityConfig>(DEFAULT_CONFIG);
 
   useEffect(() => {
     SchoolAlertPolicy.get().then(setPolicy);
     SchoolEnergyConfig.get().then(setEnergyMap);
+    SchoolCommunityConfig.get().then(setCommunityConfig);
   }, []);
+
+  const saveCommunity = async (next: CommunityConfig) => {
+    setCommunityConfig(next);
+    await SchoolCommunityConfig.set(next);
+  };
 
   const savePolicy = async (next: AlertPolicy) => {
     setPolicy(next);
@@ -333,6 +340,106 @@ export default function SchoolAdmin() {
           <Text style={styles.resetBtnText}>還原預設分類</Text>
         </Pressable>
 
+        {/* Community settings — school-configurable */}
+        <Text style={styles.sectionTitle}>社群權限設定</Text>
+
+        <View style={styles.commCard}>
+          {/* Toggle 1: student community enabled */}
+          <View style={styles.policyRow}>
+            <View style={[styles.actIcon, { backgroundColor: '#DFF0DE' }]}>
+              <Feather name="users" size={20} color="#5A7A6C" />
+            </View>
+            <View style={{ flex: 1 }}>
+              <Text style={styles.actTitle}>學生社群</Text>
+              <Text style={styles.actSub}>學生同學生之間匿名分享心情</Text>
+            </View>
+            <Switch
+              testID="comm-student-enabled"
+              value={communityConfig.studentCommunityEnabled}
+              onValueChange={(v) => saveCommunity({ ...communityConfig, studentCommunityEnabled: v })}
+              trackColor={{ true: '#7BA88C', false: COLORS.bgInput }}
+              thumbColor={COLORS.bgCard}
+            />
+          </View>
+
+          <View style={styles.policyDivider} />
+
+          {/* Toggle 2: adult community enabled */}
+          <View style={styles.policyRow}>
+            <View style={[styles.actIcon, { backgroundColor: '#E0EAFC' }]}>
+              <Feather name="briefcase" size={20} color="#5A7A8C" />
+            </View>
+            <View style={{ flex: 1 }}>
+              <Text style={styles.actTitle}>大人社群</Text>
+              <Text style={styles.actSub}>老師 · 家長 · 輔導之間分享（學生一定睇唔到）</Text>
+            </View>
+            <Switch
+              testID="comm-adult-enabled"
+              value={communityConfig.adultCommunityEnabled}
+              onValueChange={(v) => saveCommunity({ ...communityConfig, adultCommunityEnabled: v })}
+              trackColor={{ true: '#7DBEE8', false: COLORS.bgInput }}
+              thumbColor={COLORS.bgCard}
+            />
+          </View>
+
+          <View style={styles.policyDivider} />
+
+          {/* Toggle 3: adults can view student community */}
+          <View style={styles.policyRow}>
+            <View style={[styles.actIcon, { backgroundColor: '#FFEAC2' }]}>
+              <Feather name="eye" size={20} color="#DDB86A" />
+            </View>
+            <View style={{ flex: 1 }}>
+              <Text style={styles.actTitle}>大人可睇學生社群</Text>
+              <Text style={styles.actSub}>
+                打開 → 老師/家長可以匿名瀏覽學生 post（監察用）{'\n'}
+                關咗 → 大人完全睇唔到學生講咩（更保護細路）
+              </Text>
+            </View>
+            <Switch
+              testID="comm-adult-view-student"
+              value={communityConfig.adultCanViewStudentCommunity}
+              onValueChange={(v) => saveCommunity({ ...communityConfig, adultCanViewStudentCommunity: v })}
+              trackColor={{ true: '#DDB86A', false: COLORS.bgInput }}
+              thumbColor={COLORS.bgCard}
+            />
+          </View>
+
+          <View style={styles.policyDivider} />
+
+          {/* Anonymity level for student community */}
+          <Text style={styles.policyLabel}>學生社群 · 顯示方式</Text>
+          <View style={styles.chipRow}>
+            {(['full', 'nickname'] as StudentAnonymity[]).map((level) => {
+              const active = communityConfig.studentAnonymity === level;
+              const label = level === 'full' ? '完全匿名（顯示「同學」）' : '顯示暱稱';
+              return (
+                <Pressable
+                  key={level}
+                  testID={`comm-anon-${level}`}
+                  onPress={() => saveCommunity({ ...communityConfig, studentAnonymity: level })}
+                  style={[styles.roleChip, active && styles.roleChipActive]}
+                >
+                  {active && <Feather name="check" size={11} color="#FFF" />}
+                  <Text style={[styles.roleChipText, active && { color: '#FFF' }]}>
+                    {label}
+                  </Text>
+                </Pressable>
+              );
+            })}
+          </View>
+          <Text style={styles.anonHint}>
+            推薦「完全匿名」· 細路仔講心事時更放心
+          </Text>
+        </View>
+
+        <View style={styles.policyHint}>
+          <Feather name="shield" size={12} color="#7A5C3F" />
+          <Text style={styles.policyHintText}>
+            硬性規則：學生**永遠**唔會見到大人社群 · 呢個係 backend 級別鎖死 · 家長/校方冇權限可以 override。
+          </Text>
+        </View>
+
         <Text style={styles.sectionTitle}>數據 · 報告</Text>
 
         <View style={styles.reportCard}>
@@ -607,5 +714,19 @@ const styles = StyleSheet.create({
     fontSize: 12,
     color: COLORS.textSecondary,
     fontWeight: '600',
+  },
+
+  // Community config card
+  commCard: {
+    backgroundColor: COLORS.bgCard,
+    borderRadius: RADIUS.md,
+    padding: SPACING.md,
+    marginBottom: SPACING.sm,
+  },
+  anonHint: {
+    fontSize: 11,
+    color: COLORS.textSecondary,
+    fontStyle: 'italic',
+    marginTop: SPACING.sm,
   },
 });
