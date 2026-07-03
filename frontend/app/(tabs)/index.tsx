@@ -1,6 +1,7 @@
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import { Feather } from '@expo/vector-icons';
 import { useFocusEffect, useRouter } from 'expo-router';
-import { useCallback, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import {
   ActivityIndicator,
   KeyboardAvoidingView,
@@ -54,6 +55,20 @@ export default function Home() {
   const [searchQuery, setSearchQuery] = useState('');
   const [activeCategory, setActiveCategory] = useState<EmotionCategory | 'all'>('all');
   const { recent, track } = useRecentEmotions();
+
+  // First-run onboarding check
+  useEffect(() => {
+    (async () => {
+      try {
+        const done = await AsyncStorage.getItem('@onboarding/completed/v1');
+        if (!done) {
+          router.replace('/onboarding');
+        }
+      } catch {
+        // ignore
+      }
+    })();
+  }, [router]);
 
   const selectedEmotions = useMemo(
     () => selectedKeys.map((k) => EMOTION_BY_KEY[k]).filter(Boolean) as Emotion[],

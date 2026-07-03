@@ -1,4 +1,5 @@
 import { Feather } from '@expo/vector-icons';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import * as Notifications from 'expo-notifications';
 import { useFocusEffect, useRouter } from 'expo-router';
 import { useCallback, useEffect, useState } from 'react';
@@ -284,6 +285,24 @@ export default function Profile() {
         </Pressable>
 
         <Text style={styles.sectionTitle}>更多</Text>
+        <Pressable
+          testID="link-onboarding"
+          style={styles.linkRow}
+          onPress={async () => {
+            await AsyncStorage.removeItem('@onboarding/completed/v1');
+            router.push('/onboarding');
+          }}
+        >
+          <View style={[styles.linkIcon, { backgroundColor: '#FFEAC2' }]}>
+            <Feather name="book" size={18} color="#DDB86A" />
+          </View>
+          <View style={{ flex: 1 }}>
+            <Text style={styles.linkTitle}>新手教學 · 重看</Text>
+            <Text style={styles.linkHint}>認識吓成個 app 有咩玩</Text>
+          </View>
+          <Feather name="chevron-right" size={20} color={COLORS.textDisabled} />
+        </Pressable>
+
         <Pressable
           testID="link-privacy"
           style={styles.linkRow}
