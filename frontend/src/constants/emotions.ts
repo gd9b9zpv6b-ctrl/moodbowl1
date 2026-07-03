@@ -83,21 +83,21 @@ export const EMOTIONS: Emotion[] = [
   { key: 'proud', label: '自豪', description: '我做咗啲好嘢', color: '#FFDA5E', category: 'warm', image: EMOTION_IMAGES.proud },
   { key: 'empowered', label: '有力量', description: '我夠力面對', color: '#FF9151', category: 'warm', image: EMOTION_IMAGES.empowered },
 
-  // Sadness / low energy — clearly different blues + earth
+  // Sadness / low energy — spread across hues (藍/青/綠/米/灰/紫)
   { key: 'sad', label: '傷心', description: '心入面有種柔和嘅沉重', color: '#A2CCFF', category: 'sad', image: EMOTION_IMAGES.sad },
-  { key: 'lonely', label: '寂寞', description: '好想有人喺身邊', color: '#5E88C0', category: 'sad', image: EMOTION_IMAGES.lonely },
+  { key: 'lonely', label: '寂寞', description: '好想有人喺身邊', color: '#7BA5A5', category: 'sad', image: EMOTION_IMAGES.lonely },
   { key: 'unmotivated', label: '冇心機', description: '提唔起勁做嘢', color: '#A6C1A6', category: 'sad', image: EMOTION_IMAGES.unmotivated },
-  { key: 'empty', label: '空虛', description: '而家好似乜都感受唔到', color: '#F0EBDC', category: 'sad', image: EMOTION_IMAGES.empty },
+  { key: 'empty', label: '空虛', description: '而家好似乜都感受唔到', color: '#EDE7D6', category: 'sad', image: EMOTION_IMAGES.empty },
   { key: 'numb', label: '麻木', description: '同自己有距離', color: '#B5B9BE', category: 'sad', image: EMOTION_IMAGES.numb },
   { key: 'exhausted', label: '好攰', description: '身心都攰晒', color: '#C6A3E5', category: 'sad', image: EMOTION_IMAGES.exhausted },
 
-  // Nervous / tense — distinct yellows/oranges + one teal
+  // Nervous / tense — spread across hues (黃/橙/粉/紫/綠/紅/青)
   { key: 'restless', label: '不知所措', description: '唔知點算好', color: '#FFF199', category: 'nervous', image: EMOTION_IMAGES.restless },
   { key: 'irritable', label: '煩躁', description: '個火開始上湧', color: '#FF8264', category: 'nervous', image: EMOTION_IMAGES.irritable },
-  { key: 'anxious', label: '焦慮', description: '心入面亂到停唔到', color: '#FFB673', category: 'nervous', image: EMOTION_IMAGES.anxious },
-  { key: 'scared', label: '驚', description: '心跳好快 · 好唔安', color: '#F4D693', category: 'nervous', image: EMOTION_IMAGES.scared },
-  { key: 'worried', label: '擔心', description: '諗嘢停唔到', color: '#FFE4CC', category: 'nervous', image: EMOTION_IMAGES.worried },
-  { key: 'overwhelmed', label: '透唔到氣', description: '好多嘢一齊嚟', color: '#E89E9E', category: 'nervous', image: EMOTION_IMAGES.overwhelmed },
+  { key: 'anxious', label: '焦慮', description: '心入面亂到停唔到', color: '#D48DB4', category: 'nervous', image: EMOTION_IMAGES.anxious },
+  { key: 'scared', label: '驚', description: '心跳好快 · 好唔安', color: '#9A93C0', category: 'nervous', image: EMOTION_IMAGES.scared },
+  { key: 'worried', label: '擔心', description: '諗嘢停唔到', color: '#D5DBA8', category: 'nervous', image: EMOTION_IMAGES.worried },
+  { key: 'overwhelmed', label: '透唔到氣', description: '好多嘢一齊嚟', color: '#C4756E', category: 'nervous', image: EMOTION_IMAGES.overwhelmed },
   { key: 'trapped', label: '被困', description: '好似逃唔到出去', color: '#6BA8BF', category: 'nervous', image: EMOTION_IMAGES.trapped },
 
   // Self-worth wounds — muted purples/browns/greys
