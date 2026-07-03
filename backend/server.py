@@ -682,11 +682,12 @@ async def promote_all_to_premium():
 
 @app.on_event("startup")
 async def seed_demo_role_accounts():
-    """Seed 5 demo accounts — one per role — for clean demos.
+    """Seed demo accounts — 2 students + one per adult role — for clean demos.
     Idempotent: only creates missing accounts, never overwrites.
     Password for all demo accounts: `demo1234`."""
     DEMO_ACCOUNTS = [
-        {"email": "student@demo.moodful.app",     "role": "student",      "name": "陳小明 (學生)"},
+        {"email": "student@demo.moodful.app",     "role": "student",      "name": "陳小明 (學生 A)"},
+        {"email": "student2@demo.moodful.app",    "role": "student",      "name": "李小美 (學生 B)"},
         {"email": "teacher@demo.moodful.app",     "role": "teacher",      "name": "陳老師 (班主任)"},
         {"email": "counsellor@demo.moodful.app",  "role": "counsellor",   "name": "李輔導 (輔導老師)"},
         {"email": "parent@demo.moodful.app",      "role": "parent",       "name": "王太 (家長)"},
@@ -698,7 +699,6 @@ async def seed_demo_role_accounts():
     for acc in DEMO_ACCOUNTS:
         existing = await db.users.find_one({"email": acc["email"]})
         if existing:
-            # Ensure role is set correctly (in case seed logic changed)
             if existing.get("role") != acc["role"]:
                 await db.users.update_one({"email": acc["email"]}, {"$set": {"role": acc["role"]}})
                 updated += 1
@@ -720,6 +720,57 @@ async def seed_demo_role_accounts():
         created += 1
     if created or updated:
         logger.info(f"Demo accounts seeded — created: {created}, role-updated: {updated}")
+    await _seed_demo_community_entries()
+
+
+async def _seed_demo_community_entries():
+    """Seed a handful of public community entries so the feed isn't empty.
+    Idempotent — checks by (user_email, note fingerprint) before inserting."""
+    demo_posts = [
+        # Student posts — 學生社群
+        {"email": "student@demo.moodful.app",   "emotion": "sad",     "note": "今日測驗成績唔理想 · 有啲失落 · 但知道下次可以再努力",   "days_ago": 0},
+        {"email": "student@demo.moodful.app",   "emotion": "happy",   "note": "同同學一齊食嘢好開心 · 平時好少咁笑",                    "days_ago": 1},
+        {"email": "student2@demo.moodful.app",  "emotion": "anxious", "note": "聽日要小組報告 · 有啲驚 · 希望順利",                       "days_ago": 0},
+        {"email": "student2@demo.moodful.app",  "emotion": "tired",   "note": "呢排功課多 · 有少少頂唔順 · 但仲有 2 日就 weekend",       "days_ago": 2},
+        # Adult posts — 大人社群（學生睇唔到）
+        {"email": "teacher@demo.moodful.app",   "emotion": "tired",   "note": "改完 3 班嘅默書簿 · 眼都花 · 大家點紓緩眼疲勞？",         "days_ago": 0},
+        {"email": "teacher@demo.moodful.app",   "emotion": "content", "note": "見到學生仔今日主動幫其他人 · 覺得好安慰",                 "days_ago": 1},
+        {"email": "counsellor@demo.moodful.app","emotion": "peaceful","note": "同一位家長傾咗個幾鐘 · 佢終於肯放低對小朋友嘅期望 · 好感恩", "days_ago": 0},
+        {"email": "parent@demo.moodful.app",    "emotion": "anxious", "note": "小朋友升中一 · 我比佢仲緊張 · 有冇同路家長分享吓？",       "days_ago": 1},
+        {"email": "parent@demo.moodful.app",    "emotion": "loved",   "note": "細女今日主動 send 心心俾我 · 感動咗一整晚",                "days_ago": 3},
+    ]
+    inserted = 0
+    for p in demo_posts:
+        u = await db.users.find_one({"email": p["email"]})
+        if not u:
+            continue
+        # Idempotent check
+        existing = await db.entries.find_one({"user_id": u["id"], "note": p["note"]})
+        if existing:
+            continue
+        author_role = u.get("role", "student")
+        d = datetime.now(timezone.utc) - timedelta(days=p["days_ago"])
+        entry_date = d.strftime("%Y-%m-%d")
+        doc = {
+            "id": str(uuid.uuid4()),
+            "user_id": u["id"],
+            "display_name": u.get("display_name"),
+            "emotion": p["emotion"],
+            "emotions": [p["emotion"]],
+            "note": p["note"],
+            "is_public": True,
+            "is_secret": False,
+            "energy_level": None,
+            "entry_date": entry_date,
+            "created_at": d.isoformat(),
+            "author_role": author_role,
+            "author_role_label": ROLE_LABELS.get(author_role, author_role),
+            "community_scope": community_scope_for(author_role),
+        }
+        await db.entries.insert_one(doc)
+        inserted += 1
+    if inserted:
+        logger.info(f"Community demo entries seeded: {inserted}")
 
 
 @app.on_event("shutdown")

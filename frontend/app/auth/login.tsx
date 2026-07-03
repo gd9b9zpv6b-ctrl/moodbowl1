@@ -18,10 +18,11 @@ import { COLORS, RADIUS, SPACING } from '@/src/constants/theme';
 import { useAuth } from '@/src/lib/auth-context';
 
 const DEMO_ACCOUNTS: { role: string; email: string; label: string; emoji: string; color: string }[] = [
-  { role: 'student',      email: 'student@demo.moodful.app',    label: '學生', emoji: '🎒', color: '#B9DBBC' },
-  { role: 'teacher',      email: 'teacher@demo.moodful.app',    label: '班主任', emoji: '👩‍🏫', color: '#F0AE64' },
+  { role: 'student',      email: 'student@demo.moodful.app',    label: '學生 A',   emoji: '🎒', color: '#B9DBBC' },
+  { role: 'student',      email: 'student2@demo.moodful.app',   label: '學生 B',   emoji: '🎒', color: '#A2D2FF' },
+  { role: 'teacher',      email: 'teacher@demo.moodful.app',    label: '班主任',   emoji: '👩‍🏫', color: '#F0AE64' },
   { role: 'counsellor',   email: 'counsellor@demo.moodful.app', label: '輔導老師', emoji: '💚', color: '#7DBEE8' },
-  { role: 'parent',       email: 'parent@demo.moodful.app',     label: '家長', emoji: '👨‍👩‍👧', color: '#E499B4' },
+  { role: 'parent',       email: 'parent@demo.moodful.app',     label: '家長',     emoji: '👨‍👩‍👧', color: '#E499B4' },
   { role: 'school_admin', email: 'school@demo.moodful.app',     label: '校方管理', emoji: '🏫', color: '#C7A6D1' },
 ];
 const DEMO_PASSWORD = 'demo1234';
@@ -50,7 +51,7 @@ export default function Login() {
 
   const quickDemoLogin = async (acc: (typeof DEMO_ACCOUNTS)[number]) => {
     setError(null);
-    setDemoLoading(acc.role);
+    setDemoLoading(acc.email);
     try {
       await login(acc.email, DEMO_PASSWORD);
       // Route to the correct home path per role
@@ -155,17 +156,17 @@ export default function Login() {
 
           <View style={styles.demoGrid}>
             {DEMO_ACCOUNTS.map((acc) => {
-              const isLoading = demoLoading === acc.role;
+              const isLoading = demoLoading === acc.email;
               return (
                 <Pressable
-                  key={acc.role}
-                  testID={`demo-login-${acc.role}`}
+                  key={acc.email}
+                  testID={`demo-login-${acc.email}`}
                   onPress={() => quickDemoLogin(acc)}
                   disabled={!!demoLoading}
                   style={[
                     styles.demoCard,
                     { backgroundColor: acc.color + '25', borderColor: acc.color },
-                    demoLoading && demoLoading !== acc.role && { opacity: 0.4 },
+                    demoLoading && demoLoading !== acc.email && { opacity: 0.4 },
                   ]}
                 >
                   <Text style={styles.demoEmoji}>{acc.emoji}</Text>
