@@ -1,6 +1,6 @@
 import { Feather } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
-import { Alert, Pressable, StyleSheet, Text, View } from 'react-native';
+import { Pressable, StyleSheet, Text, View } from 'react-native';
 
 import { ROLE_META, UserRole } from '@/src/lib/role-storage';
 import { useAuth } from '@/src/lib/auth-context';
@@ -17,22 +17,14 @@ export function RoleHeader({ role, title }: { role: UserRole; title: string }) {
   const { logout } = useAuth();
   const meta = ROLE_META[role];
 
-  const handleLogout = () => {
-    Alert.alert(
-      '登出？',
-      '你會被返去登入版面 · 可以再撳其他示範帳戶睇下其他角色。',
-      [
-        { text: '取消', style: 'cancel' },
-        {
-          text: '登出',
-          style: 'destructive',
-          onPress: async () => {
-            await logout();
-            router.replace('/auth/login');
-          },
-        },
-      ],
-    );
+  const handleLogout = async () => {
+    // Immediate logout — Alert.alert can be flaky on web, and this is a demo flow anyway.
+    // If the user regrets, re-login from the login screen (which is where we go).
+    try {
+      await logout();
+    } finally {
+      router.replace('/auth/login');
+    }
   };
 
   return (
