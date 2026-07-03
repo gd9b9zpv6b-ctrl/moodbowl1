@@ -1,23 +1,33 @@
 import { Feather } from '@expo/vector-icons';
+import { useRouter } from 'expo-router';
 import { ScrollView, StyleSheet, Text, View, Pressable, Alert } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
+import { EmotionVisual } from '@/src/components/emotion-visual';
+import { EMOTION_BY_KEY } from '@/src/constants/emotions';
+import { ENERGY_META } from '@/src/constants/energy';
 import { RoleHeader } from '@/src/components/role-header';
+import { RoleStorage } from '@/src/lib/role-storage';
 import { COLORS, RADIUS, SPACING } from '@/src/constants/theme';
 
 const CLASS_DATA = [
-  { name: '6A · 我班', students: 28, positive: 68, neutral: 20, negative: 12, alerts: 1 },
-  { name: '5B', students: 30, positive: 55, neutral: 25, negative: 20, alerts: 2 },
-  { name: '4C', students: 26, positive: 72, neutral: 18, negative: 10, alerts: 0 },
+  { name: '6A · 我班', students: 28, high: 30, steady: 55, low: 15, alerts: 1 },
+  { name: '5B',       students: 30, high: 45, steady: 30, low: 25, alerts: 2 },
+  { name: '4C',       students: 26, high: 25, steady: 60, low: 15, alerts: 0 },
 ];
 
 const ALERTS = [
-  { name: '陳 * 文', className: '6A', reason: '連續 5 日負面情緒', severity: 'high' },
+  { name: '陳 * 文', className: '6A', reason: '連續 5 日低能量情緒', severity: 'high' },
   { name: '李 * 美', className: '5B', reason: '7 日冇打卡', severity: 'mid' },
   { name: '王 * 明', className: '5B', reason: '日記出現關注字詞', severity: 'high' },
 ];
 
+const BOWL_HIGH = EMOTION_BY_KEY['happy'];
+const BOWL_STEADY = EMOTION_BY_KEY['calm'];
+const BOWL_LOW = EMOTION_BY_KEY['sad'];
+
 export default function TeacherDashboard() {
+  const router = useRouter();
   return (
     <SafeAreaView style={styles.safe} edges={['top']}>
       <RoleHeader role="teacher" title="老師 · Dashboard" />
@@ -27,6 +37,27 @@ export default function TeacherDashboard() {
           <Text style={styles.heroGreet}>陳老師 · 早晨</Text>
           <Text style={styles.heroSub}>你有 3 位學生需要關注 · 揀返嚟先睇下</Text>
         </View>
+
+        {/* Teacher self-care card */}
+        <Pressable
+          testID="teacher-selfcare"
+          onPress={async () => {
+            await RoleStorage.set('student');
+            router.replace('/');
+          }}
+          style={styles.selfCard}
+        >
+          <View style={styles.selfBowlWrap}>
+            {BOWL_POS && <EmotionVisual emotion={BOWL_POS} size={54} radius={RADIUS.md} />}
+          </View>
+          <View style={{ flex: 1 }}>
+            <Text style={styles.selfTitle}>老師都可以用呢個 App</Text>
+            <Text style={styles.selfSub}>
+              關心學生之前 · 先關心自己 · 撳我打卡今日心情
+            </Text>
+          </View>
+          <Feather name="chevron-right" size={20} color={COLORS.textPrimary} />
+        </Pressable>
 
         {/* Alerts section */}
         <View style={styles.alertBox}>
