@@ -187,6 +187,21 @@ export default function Home() {
               </View>
             </Pressable>
 
+            <Pressable
+              testID="sos-calm-card"
+              onPress={() => router.push('/calm')}
+              style={styles.sosCard}
+            >
+              <View style={styles.sosIcon}>
+                <Feather name="wind" size={22} color={COLORS.bgCard} />
+              </View>
+              <View style={{ flex: 1 }}>
+                <Text style={styles.sosTitle}>情緒好激動？</Text>
+                <Text style={styles.sosSub}>試吓平復情緒嘅小錦囊 · 5 個溫柔方法</Text>
+              </View>
+              <Feather name="chevron-right" size={20} color={COLORS.textPrimary} />
+            </Pressable>
+
             <View style={styles.emotionPromptRow}>
               <Text style={styles.emotionPromptTitle}>你今日嘅感受點啊?</Text>
               <Text style={styles.emotionPromptHint}>
@@ -644,6 +659,25 @@ const styles = StyleSheet.create({
     fontWeight: '600',
     color: COLORS.primary,
   },
+  sosCard: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: SPACING.md,
+    backgroundColor: '#EEE0F0',
+    borderRadius: RADIUS.lg,
+    padding: SPACING.md,
+    marginBottom: SPACING.lg,
+  },
+  sosIcon: {
+    width: 48,
+    height: 48,
+    borderRadius: RADIUS.pill,
+    backgroundColor: '#C7A6D1',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  sosTitle: { fontSize: 16, fontWeight: '700', color: COLORS.textPrimary },
+  sosSub: { fontSize: 12, color: COLORS.textSecondary, marginTop: 2 },
   ctaRow: { flexDirection: 'row', gap: SPACING.sm, marginBottom: SPACING.lg },
   ctaCard: {
     flex: 1,

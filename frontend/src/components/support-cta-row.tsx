@@ -27,15 +27,26 @@ export function SupportCtaRow({ title, compact }: Props) {
       {title && <Text style={styles.title}>{title}</Text>}
       <View style={styles.row}>
         <Pressable
+          testID="cta-calm"
+          style={[styles.card, { backgroundColor: '#EEE0F0' }]}
+          onPress={() => router.push('/calm')}
+        >
+          <View style={[styles.icon, { backgroundColor: '#C7A6D1' }]}>
+            <Feather name="wind" size={18} color={COLORS.bgCard} />
+          </View>
+          <Text style={styles.cardTitle}>平復情緒</Text>
+          <Text style={styles.cardSub}>激動嗰陣試吓</Text>
+        </Pressable>
+        <Pressable
           testID="cta-help"
           style={[styles.card, { backgroundColor: '#FFE4E4' }]}
           onPress={() => router.push('/help')}
         >
           <View style={[styles.icon, { backgroundColor: '#FFCECE' }]}>
-            <Feather name="life-buoy" size={20} color="#E86A6A" />
+            <Feather name="life-buoy" size={18} color="#E86A6A" />
           </View>
           <Text style={styles.cardTitle}>尋求幫助</Text>
-          <Text style={styles.cardSub}>熱線 · 專業人士</Text>
+          <Text style={styles.cardSub}>熱線 · 專業</Text>
         </Pressable>
         <Pressable
           testID="cta-activities"
@@ -43,10 +54,10 @@ export function SupportCtaRow({ title, compact }: Props) {
           onPress={() => router.push('/activities')}
         >
           <View style={[styles.icon, { backgroundColor: COLORS.primary }]}>
-            <Feather name="sun" size={20} color={COLORS.textPrimary} />
+            <Feather name="sun" size={18} color={COLORS.textPrimary} />
           </View>
-          <Text style={styles.cardTitle}>行出去 · 探索</Text>
-          <Text style={styles.cardSub}>感受下呢個世界</Text>
+          <Text style={styles.cardTitle}>行出去</Text>
+          <Text style={styles.cardSub}>感受世界</Text>
         </Pressable>
       </View>
     </View>
@@ -67,15 +78,16 @@ const styles = StyleSheet.create({
     flex: 1,
     borderRadius: RADIUS.lg,
     padding: SPACING.md,
+    minWidth: 0,
   },
   icon: {
-    width: 40,
-    height: 40,
+    width: 36,
+    height: 36,
     borderRadius: RADIUS.pill,
     alignItems: 'center',
     justifyContent: 'center',
     marginBottom: SPACING.sm,
   },
-  cardTitle: { fontSize: 15, fontWeight: '700', color: COLORS.textPrimary },
-  cardSub: { fontSize: 12, color: COLORS.textSecondary, marginTop: 2 },
+  cardTitle: { fontSize: 14, fontWeight: '700', color: COLORS.textPrimary },
+  cardSub: { fontSize: 11, color: COLORS.textSecondary, marginTop: 2 },
 });
