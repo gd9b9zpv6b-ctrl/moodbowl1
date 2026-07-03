@@ -15,7 +15,7 @@ import {
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
-import { randomAffirmation } from '@/src/constants/affirmations';
+import { randomAdjective, randomAffirmation } from '@/src/constants/affirmations';
 import { EMOTIONS, Emotion, EMOTION_BY_KEY } from '@/src/constants/emotions';
 import { COLORS, RADIUS, SPACING } from '@/src/constants/theme';
 import { api, Entry } from '@/src/lib/api';
@@ -46,6 +46,7 @@ export default function Home() {
   const [todayEntries, setTodayEntries] = useState<Entry[]>([]);
   const [loading, setLoading] = useState(true);
   const [affirmation, setAffirmation] = useState(randomAffirmation());
+  const [adjective, setAdjective] = useState(randomAdjective());
   const [unlocked, setUnlocked] = useState(isDiaryUnlocked());
   const [pinModalVisible, setPinModalVisible] = useState(false);
   const [editingEntry, setEditingEntry] = useState<Entry | null>(null);
@@ -79,6 +80,7 @@ export default function Home() {
   useFocusEffect(
     useCallback(() => {
       setAffirmation(randomAffirmation());
+      setAdjective(randomAdjective());
       load();
     }, [load]),
   );
@@ -130,7 +132,9 @@ export default function Home() {
             keyboardShouldPersistTaps="handled"
           >
             <Text style={styles.greeting} testID="home-greeting">
-              你好,{user?.display_name || '朋友'}
+              你好,
+              <Text style={styles.greetingAdj}>{adjective}</Text>
+              {user?.display_name || '朋友'}
             </Text>
             <Text style={styles.prompt}>而家你有咩感受?</Text>
 
@@ -456,7 +460,8 @@ export default function Home() {
 const styles = StyleSheet.create({
   root: { flex: 1 },
   scroll: { padding: SPACING.lg, paddingBottom: SPACING.xl },
-  greeting: { fontSize: 28, fontWeight: '700', color: COLORS.textPrimary },
+  greeting: { fontSize: 26, fontWeight: '700', color: COLORS.textPrimary, lineHeight: 34 },
+  greetingAdj: { color: COLORS.primary },
   prompt: {
     fontSize: 17,
     color: COLORS.textSecondary,
