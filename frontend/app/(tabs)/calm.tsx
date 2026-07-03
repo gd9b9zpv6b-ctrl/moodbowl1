@@ -121,17 +121,9 @@ export default function Calm() {
   const router = useRouter();
 
   return (
-    <SafeAreaView style={styles.safe} edges={['top', 'bottom']}>
+    <SafeAreaView style={styles.safe} edges={['top']}>
       <View style={styles.header}>
-        <Pressable
-          testID="calm-back-btn"
-          onPress={() => router.back()}
-          style={styles.backBtn}
-        >
-          <Feather name="arrow-left" size={22} color={COLORS.textPrimary} />
-        </Pressable>
         <Text style={styles.headerTitle}>平復情緒 · 小錦囊</Text>
-        <View style={{ width: 40 }} />
       </View>
 
       <ScrollView
@@ -186,7 +178,6 @@ export default function Calm() {
 const styles = StyleSheet.create({
   safe: { flex: 1, backgroundColor: '#FBF7F2' },
   header: {
-    flexDirection: 'row',
     alignItems: 'center',
     paddingHorizontal: SPACING.lg,
     paddingVertical: SPACING.md,
@@ -200,8 +191,6 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   headerTitle: {
-    flex: 1,
-    textAlign: 'center',
     fontSize: 18,
     fontWeight: '700',
     color: COLORS.textPrimary,

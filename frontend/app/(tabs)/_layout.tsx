@@ -47,6 +47,13 @@ export default function TabsLayout() {
         }}
       />
       <Tabs.Screen
+        name="calm"
+        options={{
+          title: '深呼吸',
+          tabBarIcon: ({ color, size }) => <Feather name="wind" size={size} color={color} />,
+        }}
+      />
+      <Tabs.Screen
         name="calendar"
         options={{
           title: '心情曆',
