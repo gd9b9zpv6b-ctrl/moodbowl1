@@ -206,7 +206,7 @@ async def register(data: RegisterIn):
         "hashed_password": hash_password(data.password),
         "created_at": created_at,
         "credits": 0,
-        "is_premium": False,
+        "is_premium": True,
         "secret_pin_hash": None,
         "diary_style": {},
         "active_icon_pack": "classic",
@@ -484,8 +484,6 @@ class PinIn(BaseModel):
 
 @api_router.post("/premium/set-pin", response_model=UserOut)
 async def set_pin(data: PinIn, current=Depends(get_current_user)):
-    if not current.get("is_premium"):
-        raise HTTPException(status_code=402, detail="Premium required")
     if not data.pin.isdigit():
         raise HTTPException(status_code=400, detail="PIN must be 4 digits")
     await db.users.update_one({"id": current["id"]}, {"$set": {"secret_pin_hash": hash_password(data.pin)}})
@@ -508,8 +506,6 @@ class StyleIn(BaseModel):
 
 @api_router.patch("/premium/settings", response_model=UserOut)
 async def update_settings(data: StyleIn, current=Depends(get_current_user)):
-    if not current.get("is_premium"):
-        raise HTTPException(status_code=402, detail="Premium required")
     update: dict = {}
     if data.diary_style is not None:
         update["diary_style"] = data.diary_style
@@ -615,6 +611,19 @@ app.add_middleware(
 
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(name)s - %(levelname)s - %(message)s')
 logger = logging.getLogger(__name__)
+
+
+@app.on_event("startup")
+async def promote_all_to_premium():
+    """One-time migration: since features are now free for all students, ensure every
+    existing user has is_premium=True so gated UI is unlocked. Idempotent — safe to
+    re-run on every boot."""
+    try:
+        result = await db.users.update_many({"is_premium": {"$ne": True}}, {"$set": {"is_premium": True}})
+        if result.modified_count:
+            logger.info(f"Promoted {result.modified_count} existing users to premium")
+    except Exception as e:
+        logger.warning(f"Premium promotion migration failed: {e}")
 
 
 @app.on_event("shutdown")

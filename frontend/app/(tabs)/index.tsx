@@ -406,6 +406,16 @@ export default function Home() {
                   textAlignVertical="top"
                   style={styles.journalInput}
                 />
+
+                {/* Privacy reassurance banner — always visible */}
+                <View style={styles.privacyBanner}>
+                  <Feather name="eye-off" size={13} color="#7BA88C" />
+                  <Text style={styles.privacyBannerText}>
+                    <Text style={styles.privacyBannerBold}>只有你自己睇到 · </Text>
+                    老師 · 家長 · 冇任何人可以偷睇你嘅日記
+                  </Text>
+                </View>
+
                 <View style={styles.shareRow}>
                   <View style={{ flex: 1 }}>
                     <Text style={styles.shareLabel}>匿名分享俾社群</Text>
@@ -425,13 +435,11 @@ export default function Home() {
                   <View style={{ flex: 1, flexDirection: 'row', alignItems: 'center', gap: 6 }}>
                     <Feather name="lock" size={14} color="#E86A6A" />
                     <View>
-                      <Text style={styles.shareLabel}>秘密日記 · 密碼保護</Text>
+                      <Text style={styles.shareLabel}>加多層密碼保護</Text>
                       <Text style={styles.shareHint}>
-                        {user?.is_premium
-                          ? user?.has_secret_pin
-                            ? '要輸入密碼先睇到內容'
-                            : '未設定密碼 · 撳去設定'
-                          : '會員專屬功能'}
+                        {user?.has_secret_pin
+                          ? '要輸入 4 位密碼先睇到呢篇'
+                          : '未設定密碼 · 撳去設定 4 位密碼'}
                       </Text>
                     </View>
                   </View>
@@ -439,10 +447,6 @@ export default function Home() {
                     testID="secret-toggle"
                     value={secret}
                     onValueChange={(v) => {
-                      if (!user?.is_premium) {
-                        router.push('/premium');
-                        return;
-                      }
                       if (v && !user?.has_secret_pin) {
                         router.push('/premium/pin');
                         return;
@@ -492,24 +496,6 @@ export default function Home() {
                 <Text style={styles.gardenBadgeText}>新</Text>
               </View>
               <Feather name="chevron-right" size={20} color={COLORS.textPrimary} />
-            </Pressable>
-
-            <Pressable
-              testID="hollow-card"
-              onPress={() => router.push('/hollow')}
-              style={styles.hollowCard}
-            >
-              <View style={styles.hollowEmojiWrap}>
-                <Text style={styles.hollowEmoji}>🌳</Text>
-              </View>
-              <View style={{ flex: 1 }}>
-                <Text style={styles.hollowTitle}>樹洞 · 只有你自己睇到</Text>
-                <Text style={styles.hollowSub}>唔想畀人聽嘅嘢 · 可以放喺呢度</Text>
-              </View>
-              <View style={styles.hollowLockPill}>
-                <Feather name="lock" size={11} color="#E8C97A" />
-              </View>
-              <Feather name="chevron-right" size={20} color="#F5F0E4" />
             </Pressable>
 
             <View style={{ marginTop: SPACING.xl }}>
@@ -766,33 +752,26 @@ const styles = StyleSheet.create({
     backgroundColor: '#7BA88C',
   },
   gardenBadgeText: { fontSize: 10, fontWeight: '800', color: COLORS.bgCard },
-  hollowCard: {
+  privacyBanner: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: SPACING.md,
-    backgroundColor: '#2A3E37',
-    borderRadius: RADIUS.lg,
-    padding: SPACING.md,
+    gap: 6,
     marginTop: SPACING.sm,
+    marginBottom: SPACING.sm,
+    paddingHorizontal: SPACING.sm,
+    paddingVertical: 8,
+    borderRadius: RADIUS.sm,
+    backgroundColor: '#E4F0E8',
   },
-  hollowEmojiWrap: {
-    width: 48,
-    height: 48,
-    borderRadius: RADIUS.pill,
-    backgroundColor: '#1E2E28',
-    alignItems: 'center',
-    justifyContent: 'center',
+  privacyBannerText: {
+    flex: 1,
+    fontSize: 11,
+    color: '#4A6B54',
+    lineHeight: 15,
   },
-  hollowEmoji: { fontSize: 24 },
-  hollowTitle: { fontSize: 15, fontWeight: '700', color: '#F5F0E4' },
-  hollowSub: { fontSize: 12, color: '#B8C4BE', marginTop: 2 },
-  hollowLockPill: {
-    paddingHorizontal: 8,
-    paddingVertical: 4,
-    borderRadius: RADIUS.pill,
-    backgroundColor: 'rgba(232, 201, 122, 0.15)',
-    borderWidth: 1,
-    borderColor: 'rgba(232, 201, 122, 0.4)',
+  privacyBannerBold: {
+    fontWeight: '800',
+    color: '#3A5545',
   },
   ctaRow: { flexDirection: 'row', gap: SPACING.sm, marginBottom: SPACING.lg },
   ctaCard: {
