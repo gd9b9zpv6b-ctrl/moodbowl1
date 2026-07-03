@@ -64,6 +64,7 @@ export const EMOTION_IMAGES: Record<string, any> = {
   guilty: require('../../assets/emotions/guilty.png'),
   ashamed: require('../../assets/emotions/ashamed.png'),
   hopeless: require('../../assets/emotions/hopeless.png'),
+  suppressed: require('../../assets/emotions/suppressed.png'),
   furious: require('../../assets/emotions/furious.png'),
   'in-pain': require('../../assets/emotions/in-pain.png'),
   'in-agony': require('../../assets/emotions/in-agony.png'),
@@ -113,6 +114,7 @@ export const EMOTIONS: Emotion[] = [
   { key: 'guilty', label: '內疚', description: '覺得係自己嘅錯', color: '#E8D57A', category: 'wound', image: EMOTION_IMAGES.guilty },
   { key: 'ashamed', label: '羞愧', description: '想搵個窿匿埋', color: '#E6A896', category: 'wound', image: EMOTION_IMAGES.ashamed },
   { key: 'hopeless', label: '絕望', description: '睇唔到前面嘅路', color: '#A0AEB8', category: 'wound', image: EMOTION_IMAGES.hopeless },
+  { key: 'suppressed', label: '被打壓', description: '俾人壓住 · 冇聲出', color: '#6E7C8A', category: 'wound', image: EMOTION_IMAGES.suppressed },
 
   // Anger / intense — reds/deep tones
   { key: 'frustrated', label: '沮喪', description: '好似卡住咗', color: '#EDBEB6', category: 'anger', image: EMOTION_IMAGES.frustrated },
