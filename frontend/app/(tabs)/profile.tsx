@@ -9,7 +9,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { AvatarPickerModal } from '@/src/components/avatar-picker-modal';
 import { EmotionVisual } from '@/src/components/emotion-visual';
 import { EMOTION_BY_KEY } from '@/src/constants/emotions';
-import { RoleStorage, ROLE_META, UserRole } from '@/src/lib/role-storage';
+// RoleStorage no longer used here — role is synced via auth-context after login
 import { COLORS, RADIUS, SPACING } from '@/src/constants/theme';
 import { GardenStorage } from '@/src/lib/garden-storage';
 import { useAuth } from '@/src/lib/auth-context';
@@ -287,36 +287,7 @@ export default function Profile() {
 
         <Text style={styles.sectionTitle}>更多</Text>
 
-        {/* Demo role switcher — 用嚟 pitch demo 唔同角色版面 */}
-        <View style={styles.roleCard}>
-          <View style={styles.roleHeader}>
-            <Feather name="users" size={16} color={COLORS.textPrimary} />
-            <Text style={styles.roleTitle}>身份切換 · Demo</Text>
-          </View>
-          <Text style={styles.roleHint}>
-            揀返你嘅身份 · 睇下對應嘅版面（sales demo 用）
-          </Text>
-          <View style={styles.roleGrid}>
-            {(Object.keys(ROLE_META) as UserRole[]).map((r) => (
-              <Pressable
-                key={r}
-                testID={`role-${r}`}
-                onPress={async () => {
-                  await RoleStorage.set(r);
-                  router.replace(ROLE_META[r].homePath as never);
-                }}
-                style={({ pressed }) => [
-                  styles.roleChip,
-                  { backgroundColor: ROLE_META[r].color + '40' },
-                  pressed && { opacity: 0.7 },
-                ]}
-              >
-                <Text style={styles.roleChipEmoji}>{ROLE_META[r].emoji}</Text>
-                <Text style={styles.roleChipLabel}>{ROLE_META[r].label}</Text>
-              </Pressable>
-            ))}
-          </View>
-        </View>
+        {/* Role switcher hidden — 5 dedicated demo accounts on login screen replace this */}
 
         <Pressable
           testID="link-onboarding"
