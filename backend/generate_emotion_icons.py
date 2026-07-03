@@ -231,9 +231,9 @@ EMOTIONS = [
      "dusty plum"),
 
     # ---- Unspoken / 講唔出 (fallback bucket) ----
-    # foggy — 濛查查, soft misty fog wrapping the bowl
-    ("foggy",        "soft pale dove grey-blue",        RICE_HALF,
-     "half of the bowl (especially the upper head area with the eyes) is gently WRAPPED and PARTIALLY OBSCURED by a soft translucent puffy white MIST / FOG CLOUD swirling around it (like a low-lying fog bank hugging the mascot); through the mist we can only faintly see two vague blurry dot eyes and a small confused parted-lip o-mouth; both tiny stubby arms hang slightly outward as if lost inside the fog; a few tiny extra fog wisps drifting off to the sides; overall dreamy hazy dazed vibe",
+    # foggy — 濛查查, bowl filled with FOG instead of rice, fog rising to blind the mascot
+    ("foggy",        "soft pale dove grey-blue",        RICE_TINY,
+     "the INSIDE of the bowl contains NO RICE OR ALMOST NO RICE — instead the bowl is FILLED WITH A THICK BILLOWING WHITE FOG CLOUD sitting inside it (a dense puffy cotton-like mist mound occupying where the rice normally would be); this fog is RISING UPWARD out of the bowl in big puffy cloud shapes that DRIFT UP AND CURL BACK DOWN over the front of the bowl, completely covering and OBSCURING the mascot's EYE AREA from above (the eyes are HIDDEN behind the fog — do not draw eyes peeking through); only the lower half of the face below the fog is visible, showing pink blush cheeks and a small worried uncertain parted-lip o-shape mouth; ONE tiny stubby arm is raised up waving through the fog in front of its face trying to swat the fog away (fingers spread trying to clear the mist), the other arm hangs down; a small question mark floats above the fog cloud; overall clear vibe of 'the fog is coming from inside me and I can't see'",
      "pale misty grey"),
     # questioning — 問號, big question mark, curious head-tilt
     ("questioning",  "soft warm cream beige",           RICE_FULL,
