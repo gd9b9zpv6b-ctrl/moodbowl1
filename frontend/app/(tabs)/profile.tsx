@@ -1,11 +1,14 @@
 import { Feather } from '@expo/vector-icons';
 import * as Notifications from 'expo-notifications';
-import { useRouter } from 'expo-router';
-import { useEffect, useState } from 'react';
+import { useFocusEffect, useRouter } from 'expo-router';
+import { useCallback, useEffect, useState } from 'react';
 import { Alert, Pressable, ScrollView, StyleSheet, Switch, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
+import { EmotionVisual } from '@/src/components/emotion-visual';
+import { EMOTION_BY_KEY } from '@/src/constants/emotions';
 import { COLORS, RADIUS, SPACING } from '@/src/constants/theme';
+import { GardenStorage } from '@/src/lib/garden-storage';
 import { useAuth } from '@/src/lib/auth-context';
 import { storage } from '@/src/utils/storage';
 
@@ -40,6 +43,8 @@ export default function Profile() {
   const router = useRouter();
   const [reminder, setReminder] = useState(false);
   const [hour, setHour] = useState(20);
+  const [rice, setRice] = useState(0);
+  const [harvests, setHarvests] = useState<Record<string, number>>({});
 
   useEffect(() => {
     (async () => {
@@ -50,6 +55,21 @@ export default function Profile() {
       refreshUser();
     })();
   }, [refreshUser]);
+
+  const loadGarden = useCallback(async () => {
+    const [r, hs] = await Promise.all([
+      GardenStorage.getRice(),
+      GardenStorage.getHarvests(),
+    ]);
+    setRice(r);
+    setHarvests(hs);
+  }, []);
+
+  useFocusEffect(
+    useCallback(() => {
+      loadGarden();
+    }, [loadGarden]),
+  );
 
   const onToggleReminder = async (val: boolean) => {
     if (val) {
@@ -106,6 +126,60 @@ export default function Profile() {
             <Text style={styles.creditsText}>已累積 {user?.credits ?? 0} 個小心心</Text>
           </View>
         </View>
+
+        {/* ---- 米倉 · 收藏 ---- */}
+        <Pressable
+          testID="garden-rice-collection"
+          onPress={() => router.push('/garden')}
+          style={({ pressed }) => [styles.riceCard, pressed && { opacity: 0.9 }]}
+        >
+          <View style={styles.riceHeader}>
+            <View style={styles.riceIconWrap}>
+              <Text style={styles.riceEmoji}>🍚</Text>
+            </View>
+            <View style={{ flex: 1 }}>
+              <Text style={styles.riceTitle}>米倉 · 收藏</Text>
+              <Text style={styles.riceSub}>
+                儲咗 <Text style={styles.riceCount}>{rice}</Text> 粒米 ·
+                {' '}收成 <Text style={styles.riceCount}>{Object.keys(harvests).length}</Text> 種飯碗
+              </Text>
+            </View>
+            <Feather name="chevron-right" size={20} color={COLORS.textSecondary} />
+          </View>
+          {Object.keys(harvests).length === 0 ? (
+            <View style={styles.riceEmpty}>
+              <Text style={styles.riceEmptyText}>
+                仲未有收成 · 去稻田種一粒米睇下
+              </Text>
+            </View>
+          ) : (
+            <ScrollView
+              horizontal
+              showsHorizontalScrollIndicator={false}
+              contentContainerStyle={styles.riceGrid}
+            >
+              {Object.entries(harvests)
+                .sort(([, a], [, b]) => b - a)
+                .map(([key, count]) => {
+                  const em = EMOTION_BY_KEY[key];
+                  if (!em) return null;
+                  return (
+                    <View key={key} style={styles.riceItem} testID={`collection-${key}`}>
+                      <View style={styles.riceItemBowl}>
+                        <EmotionVisual emotion={em} size={54} radius={RADIUS.sm} />
+                        {count > 1 && (
+                          <View style={styles.riceItemBadge}>
+                            <Text style={styles.riceItemBadgeText}>×{count}</Text>
+                          </View>
+                        )}
+                      </View>
+                      <Text style={styles.riceItemLabel}>{em.label}</Text>
+                    </View>
+                  );
+                })}
+            </ScrollView>
+          )}
+        </Pressable>
 
         <Text style={styles.sectionTitle}>支援</Text>
         <Pressable
@@ -354,6 +428,79 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   logoutText: { color: COLORS.danger, fontSize: 15, fontWeight: '700' },
+  riceCard: {
+    backgroundColor: '#FFF9E8',
+    borderRadius: RADIUS.lg,
+    padding: SPACING.md,
+    marginBottom: SPACING.lg,
+    borderLeftWidth: 4,
+    borderLeftColor: '#DDB86A',
+  },
+  riceHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: SPACING.md,
+  },
+  riceIconWrap: {
+    width: 44,
+    height: 44,
+    borderRadius: RADIUS.pill,
+    backgroundColor: '#F0DC9A',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  riceEmoji: { fontSize: 22 },
+  riceTitle: { fontSize: 16, fontWeight: '700', color: COLORS.textPrimary },
+  riceSub: { fontSize: 12, color: COLORS.textSecondary, marginTop: 2 },
+  riceCount: { fontWeight: '800', color: '#B57D2A' },
+  riceEmpty: {
+    marginTop: SPACING.md,
+    padding: SPACING.md,
+    borderRadius: RADIUS.md,
+    backgroundColor: 'rgba(255,255,255,0.6)',
+    alignItems: 'center',
+  },
+  riceEmptyText: { fontSize: 12, color: COLORS.textSecondary, fontStyle: 'italic' },
+  riceGrid: {
+    gap: SPACING.sm,
+    paddingTop: SPACING.md,
+    paddingRight: SPACING.md,
+  },
+  riceItem: {
+    alignItems: 'center',
+    width: 64,
+  },
+  riceItemBowl: {
+    width: 54,
+    height: 54,
+    borderRadius: RADIUS.sm,
+    overflow: 'hidden',
+    position: 'relative',
+  },
+  riceItemBadge: {
+    position: 'absolute',
+    top: -4,
+    right: -4,
+    minWidth: 22,
+    height: 22,
+    borderRadius: 11,
+    backgroundColor: '#B57D2A',
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingHorizontal: 4,
+  },
+  riceItemBadgeText: {
+    fontSize: 10,
+    fontWeight: '800',
+    color: '#FFF',
+  },
+  riceItemLabel: {
+    fontSize: 11,
+    fontWeight: '600',
+    color: COLORS.textPrimary,
+    marginTop: 4,
+    textAlign: 'center',
+  },
   footer: {
     marginTop: SPACING.xl,
     color: COLORS.textSecondary,

@@ -7,6 +7,7 @@ const KEYS = {
   hearts: '@garden/hearts/v1',
   rice: '@garden/rice/v1',
   demo: '@garden/demo/v1',
+  harvests: '@garden/harvests/v1',
 };
 
 function emptyPlots(): Plot[] {
@@ -68,7 +69,23 @@ export const GardenStorage = {
     await AsyncStorage.setItem(KEYS.demo, v ? '1' : '0');
   },
 
+  async getHarvests(): Promise<Record<string, number>> {
+    try {
+      const raw = await AsyncStorage.getItem(KEYS.harvests);
+      return raw ? JSON.parse(raw) : {};
+    } catch {
+      return {};
+    }
+  },
+
+  async addHarvest(cropKey: string): Promise<Record<string, number>> {
+    const cur = await this.getHarvests();
+    cur[cropKey] = (cur[cropKey] || 0) + 1;
+    await AsyncStorage.setItem(KEYS.harvests, JSON.stringify(cur));
+    return cur;
+  },
+
   async reset(): Promise<void> {
-    await AsyncStorage.multiRemove([KEYS.plots, KEYS.hearts, KEYS.rice, KEYS.demo]);
+    await AsyncStorage.multiRemove([KEYS.plots, KEYS.hearts, KEYS.rice, KEYS.demo, KEYS.harvests]);
   },
 };

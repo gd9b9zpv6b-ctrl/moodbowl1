@@ -242,6 +242,7 @@ export default function Garden() {
     const newRice = rice + 1;
     setRice(newRice);
     await GardenStorage.setRice(newRice);
+    await GardenStorage.addHarvest(plot.cropKey);
   };
 
   const toggleDemo = async (v: boolean) => {

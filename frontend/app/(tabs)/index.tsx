@@ -202,24 +202,6 @@ export default function Home() {
               <Feather name="chevron-right" size={20} color={COLORS.textPrimary} />
             </Pressable>
 
-            <Pressable
-              testID="garden-card"
-              onPress={() => router.push('/garden')}
-              style={styles.gardenCard}
-            >
-              <View style={styles.gardenEmojiWrap}>
-                <Text style={styles.gardenEmoji}>🌾</Text>
-              </View>
-              <View style={{ flex: 1 }}>
-                <Text style={styles.gardenTitle}>我嘅稻田</Text>
-                <Text style={styles.gardenSub}>用 ❤️ 種一粒米 · 收成一碗新心情</Text>
-              </View>
-              <View style={styles.gardenBadge}>
-                <Text style={styles.gardenBadgeText}>新</Text>
-              </View>
-              <Feather name="chevron-right" size={20} color={COLORS.textPrimary} />
-            </Pressable>
-
             <View style={styles.emotionPromptRow}>
               <Text style={styles.emotionPromptTitle}>你今日嘅感受點啊?</Text>
               <Text style={styles.emotionPromptHint}>
@@ -470,6 +452,24 @@ export default function Home() {
               </View>
             )}
 
+            <Pressable
+              testID="garden-card"
+              onPress={() => router.push('/garden')}
+              style={styles.gardenCard}
+            >
+              <View style={styles.gardenEmojiWrap}>
+                <Text style={styles.gardenEmoji}>🌾</Text>
+              </View>
+              <View style={{ flex: 1 }}>
+                <Text style={styles.gardenTitle}>我嘅稻田</Text>
+                <Text style={styles.gardenSub}>用 ❤️ 種一粒米 · 收成一碗新心情</Text>
+              </View>
+              <View style={styles.gardenBadge}>
+                <Text style={styles.gardenBadgeText}>新</Text>
+              </View>
+              <Feather name="chevron-right" size={20} color={COLORS.textPrimary} />
+            </Pressable>
+
             <View style={{ marginTop: SPACING.xl }}>
               <SupportCtaRow title="需要陪伴嘅時候" />
               <Pressable
@@ -703,7 +703,8 @@ const styles = StyleSheet.create({
     backgroundColor: '#DFF3E4',
     borderRadius: RADIUS.lg,
     padding: SPACING.md,
-    marginBottom: SPACING.lg,
+    marginTop: SPACING.lg,
+    marginBottom: 0,
   },
   gardenEmojiWrap: {
     width: 48,
