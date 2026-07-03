@@ -16,7 +16,7 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { randomAdjective, randomAffirmation } from '@/src/constants/affirmations';
-import { EMOTIONS, Emotion, EMOTION_BY_KEY } from '@/src/constants/emotions';
+import { EMOTIONS, Emotion, EMOTION_BY_KEY, EMOTION_CATEGORIES, EmotionCategory } from '@/src/constants/emotions';
 import { COLORS, RADIUS, SPACING } from '@/src/constants/theme';
 import { api, Entry } from '@/src/lib/api';
 import { useAuth } from '@/src/lib/auth-context';
@@ -25,6 +25,7 @@ import { EmotionVisual } from '@/src/components/emotion-visual';
 import { PinUnlockModal } from '@/src/components/pin-unlock-modal';
 import { EntryEditModal } from '@/src/components/entry-edit-modal';
 import { SupportCtaRow } from '@/src/components/support-cta-row';
+import { useRecentEmotions } from '@/src/hooks/use-recent-emotions';
 
 function todayISO() {
   const d = new Date();
@@ -50,6 +51,9 @@ export default function Home() {
   const [unlocked, setUnlocked] = useState(isDiaryUnlocked());
   const [pinModalVisible, setPinModalVisible] = useState(false);
   const [editingEntry, setEditingEntry] = useState<Entry | null>(null);
+  const [searchQuery, setSearchQuery] = useState('');
+  const [activeCategory, setActiveCategory] = useState<EmotionCategory | 'all'>('all');
+  const { recent, track } = useRecentEmotions();
 
   const selectedEmotions = useMemo(
     () => selectedKeys.map((k) => EMOTION_BY_KEY[k]).filter(Boolean) as Emotion[],
@@ -62,6 +66,33 @@ export default function Home() {
   const toggleSelect = (e: Emotion) => {
     setSelectedKeys((prev) =>
       prev.includes(e.key) ? prev.filter((k) => k !== e.key) : [...prev, e.key],
+    );
+  };
+
+  const renderEmotionBtn = (e: Emotion) => {
+    const active = selectedKeys.includes(e.key);
+    const orderIdx = selectedKeys.indexOf(e.key);
+    return (
+      <Pressable
+        key={e.key}
+        testID={`emotion-${e.key}-picker`}
+        onPress={() => toggleSelect(e)}
+        style={[
+          styles.emotionBtn,
+          { backgroundColor: e.color + '80' },
+          active && styles.emotionBtnActive,
+        ]}
+      >
+        <View style={styles.emotionImgWrap}>
+          <EmotionVisual emotion={e} size={90} radius={RADIUS.md} />
+        </View>
+        <Text style={styles.emotionLabel}>{e.label}</Text>
+        {active && (
+          <View style={styles.emotionCheckBadge}>
+            <Text style={styles.emotionCheckText}>{orderIdx + 1}</Text>
+          </View>
+        )}
+      </Pressable>
     );
   };
 
@@ -96,6 +127,8 @@ export default function Home() {
         is_secret: secret,
         entry_date: today,
       });
+      // remember recent picks locally
+      await track(selectedKeys);
       setSelectedKeys([]);
       setNote('');
       setShare(false);
@@ -161,33 +194,135 @@ export default function Home() {
               </Text>
             </View>
 
-            <View style={styles.grid} testID="emotion-grid">
-              {EMOTIONS.map((e) => {
-                const active = selectedKeys.includes(e.key);
-                const orderIdx = selectedKeys.indexOf(e.key);
-                return (
+            {/* Search + category chips */}
+            <View style={styles.searchWrap}>
+              <Feather name="search" size={16} color={COLORS.textSecondary} />
+              <TextInput
+                testID="emotion-search"
+                value={searchQuery}
+                onChangeText={setSearchQuery}
+                placeholder="搜尋心情 (例如：焦慮 / 感恩)"
+                placeholderTextColor={COLORS.textDisabled}
+                style={styles.searchInput}
+              />
+              {searchQuery.length > 0 && (
+                <Pressable onPress={() => setSearchQuery('')} hitSlop={8}>
+                  <Feather name="x-circle" size={16} color={COLORS.textSecondary} />
+                </Pressable>
+              )}
+            </View>
+
+            {!searchQuery && (
+              <ScrollView
+                horizontal
+                showsHorizontalScrollIndicator={false}
+                contentContainerStyle={styles.categoryChipsRow}
+              >
+                <Pressable
+                  testID="cat-chip-all"
+                  onPress={() => setActiveCategory('all')}
+                  style={[styles.catChip, activeCategory === 'all' && styles.catChipActive]}
+                >
+                  <Text style={styles.catChipText}>全部</Text>
+                </Pressable>
+                {EMOTION_CATEGORIES.map((c) => (
                   <Pressable
-                    key={e.key}
-                    testID={`emotion-${e.key}-picker`}
-                    onPress={() => toggleSelect(e)}
+                    key={c.key}
+                    testID={`cat-chip-${c.key}`}
+                    onPress={() => setActiveCategory(c.key)}
                     style={[
-                      styles.emotionBtn,
-                      { backgroundColor: e.color + '80' },
-                      active && styles.emotionBtnActive,
+                      styles.catChip,
+                      { backgroundColor: c.color + '80' },
+                      activeCategory === c.key && styles.catChipActive,
                     ]}
                   >
-                    <View style={styles.emotionImgWrap}>
-                      <EmotionVisual emotion={e} size={90} radius={RADIUS.md} />
-                    </View>
-                    <Text style={styles.emotionLabel}>{e.label}</Text>
-                    {active && (
-                      <View style={styles.emotionCheckBadge}>
-                        <Text style={styles.emotionCheckText}>{orderIdx + 1}</Text>
-                      </View>
-                    )}
+                    <Text style={styles.catChipText}>{c.short}</Text>
                   </Pressable>
-                );
-              })}
+                ))}
+              </ScrollView>
+            )}
+
+            {/* Recent emotions quick row */}
+            {!searchQuery && activeCategory === 'all' && recent.length > 0 && (
+              <View style={styles.recentSection}>
+                <View style={styles.recentHeader}>
+                  <Feather name="clock" size={12} color={COLORS.textSecondary} />
+                  <Text style={styles.recentLabel}>你最近用過</Text>
+                </View>
+                <ScrollView
+                  horizontal
+                  showsHorizontalScrollIndicator={false}
+                  contentContainerStyle={styles.recentRow}
+                >
+                  {recent
+                    .map((k) => EMOTION_BY_KEY[k])
+                    .filter(Boolean)
+                    .map((e) => {
+                      const active = selectedKeys.includes(e.key);
+                      return (
+                        <Pressable
+                          key={`recent-${e.key}`}
+                          testID={`recent-${e.key}`}
+                          onPress={() => toggleSelect(e)}
+                          style={[
+                            styles.recentChip,
+                            { backgroundColor: e.color + '80' },
+                            active && styles.emotionBtnActive,
+                          ]}
+                        >
+                          <EmotionVisual emotion={e} size={44} radius={RADIUS.sm} />
+                          <Text style={styles.recentChipLabel}>{e.label}</Text>
+                        </Pressable>
+                      );
+                    })}
+                </ScrollView>
+              </View>
+            )}
+
+            {/* Emotion grid grouped by category (or filtered by search) */}
+            <View testID="emotion-grid">
+              {(() => {
+                const q = searchQuery.trim().toLowerCase();
+                const filtered = q
+                  ? EMOTIONS.filter(
+                      (e) =>
+                        e.label.toLowerCase().includes(q) ||
+                        e.description.toLowerCase().includes(q),
+                    )
+                  : activeCategory === 'all'
+                  ? EMOTIONS
+                  : EMOTIONS.filter((e) => e.category === activeCategory);
+
+                if (filtered.length === 0) {
+                  return (
+                    <Text style={styles.emptyText}>冇對應嘅心情...試下其他字?</Text>
+                  );
+                }
+
+                // Group by category when 'all' & no search — else flat.
+                if (q || activeCategory !== 'all') {
+                  return (
+                    <View style={styles.grid}>
+                      {filtered.map((e) => renderEmotionBtn(e))}
+                    </View>
+                  );
+                }
+
+                return EMOTION_CATEGORIES.map((cat) => {
+                  const items = filtered.filter((e) => e.category === cat.key);
+                  if (items.length === 0) return null;
+                  return (
+                    <View key={cat.key} style={{ marginBottom: SPACING.md }}>
+                      <View style={styles.groupHeader}>
+                        <View style={[styles.groupDot, { backgroundColor: cat.color }]} />
+                        <Text style={styles.groupHeaderText}>{cat.label}</Text>
+                        <Text style={styles.groupHeaderCount}>{items.length}</Text>
+                      </View>
+                      <View style={styles.grid}>{items.map(renderEmotionBtn)}</View>
+                    </View>
+                  );
+                });
+              })()}
             </View>
 
             {primarySelected && (
@@ -685,6 +820,95 @@ const styles = StyleSheet.create({
     fontSize: 13,
     color: COLORS.textSecondary,
     marginTop: 2,
+  },
+  searchWrap: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: SPACING.sm,
+    paddingHorizontal: SPACING.md,
+    paddingVertical: SPACING.sm,
+    borderRadius: RADIUS.pill,
+    backgroundColor: COLORS.bgCard,
+    marginBottom: SPACING.sm,
+  },
+  searchInput: {
+    flex: 1,
+    fontSize: 14,
+    color: COLORS.textPrimary,
+    padding: 0,
+  },
+  categoryChipsRow: {
+    gap: SPACING.xs,
+    paddingBottom: SPACING.sm,
+    paddingRight: SPACING.md,
+  },
+  catChip: {
+    paddingHorizontal: SPACING.md,
+    paddingVertical: 6,
+    borderRadius: RADIUS.pill,
+    backgroundColor: COLORS.bgCard,
+    borderWidth: 2,
+    borderColor: 'transparent',
+  },
+  catChipActive: {
+    borderColor: COLORS.primary,
+  },
+  catChipText: { fontSize: 12, fontWeight: '700', color: COLORS.textPrimary },
+  recentSection: {
+    marginBottom: SPACING.md,
+  },
+  recentHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+    marginBottom: SPACING.xs,
+  },
+  recentLabel: {
+    fontSize: 12,
+    fontWeight: '700',
+    color: COLORS.textSecondary,
+    letterSpacing: 0.5,
+  },
+  recentRow: { gap: SPACING.sm, paddingRight: SPACING.md, paddingBottom: SPACING.xs },
+  recentChip: {
+    borderRadius: RADIUS.md,
+    padding: SPACING.xs,
+    alignItems: 'center',
+    minWidth: 68,
+  },
+  recentChipLabel: {
+    fontSize: 11,
+    fontWeight: '600',
+    color: COLORS.textPrimary,
+    marginTop: 2,
+  },
+  groupHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    marginTop: SPACING.sm,
+    marginBottom: SPACING.sm,
+    paddingHorizontal: 2,
+  },
+  groupDot: {
+    width: 10,
+    height: 10,
+    borderRadius: 5,
+  },
+  groupHeaderText: {
+    flex: 1,
+    fontSize: 14,
+    fontWeight: '700',
+    color: COLORS.textPrimary,
+  },
+  groupHeaderCount: {
+    fontSize: 11,
+    fontWeight: '700',
+    color: COLORS.textSecondary,
+    paddingHorizontal: SPACING.sm,
+    paddingVertical: 2,
+    borderRadius: RADIUS.pill,
+    backgroundColor: COLORS.bgCard,
   },
   entryEmptyNote: {
     marginTop: SPACING.sm,
