@@ -24,6 +24,7 @@ import { isDiaryUnlocked } from '@/src/lib/diary-lock';
 import { EmotionVisual } from '@/src/components/emotion-visual';
 import { PinUnlockModal } from '@/src/components/pin-unlock-modal';
 import { EntryEditModal } from '@/src/components/entry-edit-modal';
+import { SupportCtaRow } from '@/src/components/support-cta-row';
 
 function todayISO() {
   const d = new Date();
@@ -135,48 +136,6 @@ export default function Home() {
                 <Feather name="refresh-cw" size={12} color={COLORS.primary} />
                 <Text style={styles.affirmationFooterText}>撳一下 · 換一句俾自己聽</Text>
               </View>
-            </Pressable>
-
-            <View style={styles.ctaRow}>
-              <Pressable
-                testID="cta-help"
-                style={[styles.ctaCard, { backgroundColor: '#FFE4E4' }]}
-                onPress={() => router.push('/help')}
-              >
-                <View style={[styles.ctaIcon, { backgroundColor: '#FFCECE' }]}>
-                  <Feather name="life-buoy" size={20} color="#E86A6A" />
-                </View>
-                <Text style={styles.ctaTitle}>尋求幫助</Text>
-                <Text style={styles.ctaSub}>熱線 · 專業人士</Text>
-              </Pressable>
-              <Pressable
-                testID="cta-activities"
-                style={[styles.ctaCard, { backgroundColor: COLORS.primaryLight }]}
-                onPress={() => router.push('/activities')}
-              >
-                <View style={[styles.ctaIcon, { backgroundColor: COLORS.primary }]}>
-                  <Feather name="sun" size={20} color={COLORS.textPrimary} />
-                </View>
-                <Text style={styles.ctaTitle}>行出去 · 探索</Text>
-                <Text style={styles.ctaSub}>感受下呢個世界</Text>
-              </Pressable>
-            </View>
-
-            <Pressable
-              testID="cta-explore"
-              style={styles.exploreCard}
-              onPress={() => router.push('/explore')}
-            >
-              <View style={styles.exploreIcon}>
-                <Feather name="book-open" size={22} color={COLORS.textPrimary} />
-              </View>
-              <View style={{ flex: 1 }}>
-                <Text style={styles.exploreTitle}>探索自己 · 回望</Text>
-                <Text style={styles.exploreSub}>
-                  溫柔咁記起過去 · 認識自己多啲
-                </Text>
-              </View>
-              <Feather name="chevron-right" size={20} color={COLORS.textSecondary} />
             </Pressable>
 
             <View style={styles.emotionPromptRow}>
@@ -297,6 +256,26 @@ export default function Home() {
             )}
 
             <View style={{ marginTop: SPACING.xl }}>
+              <SupportCtaRow title="需要陪伴嘅時候" />
+              <Pressable
+                testID="cta-explore"
+                style={styles.exploreCard}
+                onPress={() => router.push('/explore')}
+              >
+                <View style={styles.exploreIcon}>
+                  <Feather name="book-open" size={22} color={COLORS.textPrimary} />
+                </View>
+                <View style={{ flex: 1 }}>
+                  <Text style={styles.exploreTitle}>探索自己 · 回望</Text>
+                  <Text style={styles.exploreSub}>
+                    溫柔咁記起過去 · 認識自己多啲
+                  </Text>
+                </View>
+                <Feather name="chevron-right" size={20} color={COLORS.textSecondary} />
+              </Pressable>
+            </View>
+
+            <View style={{ marginTop: SPACING.lg }}>
               <View style={styles.todayHeaderRow}>
                 <Text style={styles.sectionTitle}>今日故事</Text>
                 {todayEntries.length > 0 && (
@@ -366,14 +345,7 @@ export default function Home() {
                         <>
                           <Text
                             numberOfLines={3}
-                            style={[
-                              styles.entryNote,
-                              user?.diary_style && {
-                                fontFamily: user.diary_style.font_family,
-                                fontSize: user.diary_style.font_size,
-                                color: user.diary_style.text_color,
-                              },
-                            ]}
+                            style={styles.entryNote}
                           >
                             {entry.note}
                           </Text>

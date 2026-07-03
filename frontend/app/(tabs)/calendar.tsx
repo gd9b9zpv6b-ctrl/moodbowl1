@@ -8,6 +8,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { EmotionVisual } from '@/src/components/emotion-visual';
 import { EntryDetailModal } from '@/src/components/entry-detail-modal';
 import { EntryEditModal } from '@/src/components/entry-edit-modal';
+import { SupportCtaRow } from '@/src/components/support-cta-row';
 import { EMOTION_BY_KEY } from '@/src/constants/emotions';
 import { COLORS, RADIUS, SPACING } from '@/src/constants/theme';
 import { api, Entry, User } from '@/src/lib/api';
@@ -271,6 +272,9 @@ export default function CalendarScreen() {
             );
           })
         )}
+        <View style={{ marginTop: SPACING.lg }}>
+          <SupportCtaRow title="需要陪伴嘅時候" />
+        </View>
         <View style={{ height: SPACING.xxl }} />
       </ScrollView>
 
