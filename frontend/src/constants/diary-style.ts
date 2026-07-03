@@ -32,22 +32,20 @@ export const PAPER_KINDS = [
   { key: 'none', label: '空白', icon: 'square' },
 ];
 
-// Handwritten Chinese fonts loaded via useDiaryFonts hook (expo-font).
+// Handwritten / literary Chinese fonts loaded via useDiaryFonts hook (expo-font).
 // Family names MUST match the useFonts keys in use-diary-fonts.ts.
 export const DIARY_FONT_FAMILIES = [
   { key: 'default', label: '系統預設', family: undefined as string | undefined },
+  { key: 'wenkai', label: '手寫明體 · 霞鶩文楷', family: 'LXGWWenKai' },
+  { key: 'iansui', label: '文青一點明體', family: 'Iansui' },
+  { key: 'huninn', label: '奶油粉圓體', family: 'HunInn' },
   { key: 'brush', label: '毛筆手寫', family: 'MaShanZheng' },
-  { key: 'chunky', label: '圓潤手寫', family: 'ZCOOLKuaiLe' },
   { key: 'cursive', label: '行草流動', family: 'LongCang' },
+  { key: 'chunky', label: '圓潤手寫', family: 'ZCOOLKuaiLe' },
   {
     key: 'serif',
     label: '書卷宋體',
     family: Platform.select({ ios: 'Georgia', android: 'serif', default: 'Georgia, "Times New Roman", serif' }),
-  },
-  {
-    key: 'mono',
-    label: '手寫機字',
-    family: Platform.select({ ios: 'Courier New', android: 'monospace', default: '"Courier New", monospace' }),
   },
 ];
 

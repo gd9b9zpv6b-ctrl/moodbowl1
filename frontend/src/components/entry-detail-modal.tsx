@@ -65,9 +65,12 @@ export function EntryDetailModal({ visible, entry, onClose, onEdit }: Props) {
   const paperKindRaw = (user?.diary_style?.paper_kind as 'ruled' | 'grid' | 'dot' | 'none') || 'ruled';
   const showPaperLines = paperKindRaw !== 'none';
   const paperKind = showPaperLines ? (paperKindRaw as 'ruled' | 'grid' | 'dot') : 'ruled';
-  const noteFontFamily = isPremium
-    ? user?.diary_style?.font_family || DIARY_FONTS.chunky
-    : undefined;
+  // Auto-upgrade old chunky default to the new elegant 手寫明體
+  // (users who never explicitly picked a font were auto-assigned ZCOOLKuaiLe before)
+  const savedFont = user?.diary_style?.font_family;
+  const noteFontFamily = !savedFont || savedFont === 'ZCOOLKuaiLe'
+    ? DIARY_FONTS.wenkai
+    : savedFont;
   const noteTextColor = user?.diary_style?.text_color || (isDark ? '#F0EEE7' : '#2D3142');
   const noteFontSize = user?.diary_style?.font_size || 20;
 
