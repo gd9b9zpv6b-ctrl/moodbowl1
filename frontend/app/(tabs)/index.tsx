@@ -23,6 +23,7 @@ import { useAuth } from '@/src/lib/auth-context';
 import { isDiaryUnlocked } from '@/src/lib/diary-lock';
 import { EmotionVisual } from '@/src/components/emotion-visual';
 import { PinUnlockModal } from '@/src/components/pin-unlock-modal';
+import { EntryEditModal } from '@/src/components/entry-edit-modal';
 
 function todayISO() {
   const d = new Date();
@@ -46,6 +47,7 @@ export default function Home() {
   const [affirmation, setAffirmation] = useState(randomAffirmation());
   const [unlocked, setUnlocked] = useState(isDiaryUnlocked());
   const [pinModalVisible, setPinModalVisible] = useState(false);
+  const [editingEntry, setEditingEntry] = useState<Entry | null>(null);
 
   const today = useMemo(() => todayISO(), []);
 
@@ -177,6 +179,11 @@ export default function Home() {
               <Feather name="chevron-right" size={20} color={COLORS.textSecondary} />
             </Pressable>
 
+            <View style={styles.emotionPromptRow}>
+              <Text style={styles.emotionPromptTitle}>你今日嘅感受點啊?</Text>
+              <Text style={styles.emotionPromptHint}>撳一個飯碗 · 記低呢一刻</Text>
+            </View>
+
             <View style={styles.grid} testID="emotion-grid">
               {EMOTIONS.map((e) => {
                 const active = selected?.key === e.key;
@@ -290,24 +297,40 @@ export default function Home() {
             )}
 
             <View style={{ marginTop: SPACING.xl }}>
-              <Text style={styles.sectionTitle}>今日嘅記錄</Text>
+              <View style={styles.todayHeaderRow}>
+                <Text style={styles.sectionTitle}>今日故事</Text>
+                {todayEntries.length > 0 && (
+                  <View style={styles.todayHint}>
+                    <Feather name="edit-2" size={11} color={COLORS.primary} />
+                    <Text style={styles.todayHintText}>撳一下 · 編輯</Text>
+                  </View>
+                )}
+              </View>
               {loading ? (
                 <ActivityIndicator color={COLORS.primary} style={{ marginTop: SPACING.md }} />
               ) : todayEntries.length === 0 ? (
                 <Text style={styles.emptyText} testID="today-empty">
-                  今日仲未有記錄。撳上面揀下你嘅感受。
+                  今日仲未有故事。撳上面揀下你嘅感受,開始寫。
                 </Text>
               ) : (
                 todayEntries.map((entry) => {
                   const em = EMOTION_BY_KEY[entry.emotion];
                   const locked = entry.is_secret && !unlocked;
                   return (
-                    <View
+                    <Pressable
                       key={entry.id}
                       testID={`today-entry-${entry.id}`}
-                      style={[
+                      onPress={() => {
+                        if (locked) {
+                          promptUnlock();
+                        } else {
+                          setEditingEntry(entry);
+                        }
+                      }}
+                      style={({ pressed }) => [
                         styles.entryCard,
                         { backgroundColor: (em?.color || COLORS.primaryLight) + '40' },
+                        pressed && { opacity: 0.7 },
                       ]}
                     >
                       <View style={styles.entryHeader}>
@@ -325,16 +348,20 @@ export default function Home() {
                             <Text style={styles.publicText}>已分享</Text>
                           </View>
                         )}
+                        {!locked && (
+                          <Feather
+                            name="edit-2"
+                            size={14}
+                            color={COLORS.textSecondary}
+                            style={{ opacity: 0.6 }}
+                          />
+                        )}
                       </View>
                       {locked ? (
-                        <Pressable
-                          testID={`entry-unlock-${entry.id}`}
-                          onPress={promptUnlock}
-                          style={styles.lockedBox}
-                        >
+                        <View style={styles.lockedBox}>
                           <Feather name="lock" size={16} color="#E86A6A" />
                           <Text style={styles.lockedText}>撳一下 輸入密碼解鎖</Text>
-                        </Pressable>
+                        </View>
                       ) : entry.note ? (
                         <Text
                           style={[
@@ -348,8 +375,12 @@ export default function Home() {
                         >
                           {entry.note}
                         </Text>
-                      ) : null}
-                    </View>
+                      ) : (
+                        <Text style={styles.entryEmptyNote}>
+                          仲未寫故事 · 撳我加返
+                        </Text>
+                      )}
+                    </Pressable>
                   );
                 })
               )}
@@ -363,6 +394,17 @@ export default function Home() {
         visible={pinModalVisible}
         onClose={() => setPinModalVisible(false)}
         onUnlocked={() => setUnlocked(true)}
+      />
+      <EntryEditModal
+        visible={!!editingEntry}
+        entry={editingEntry}
+        onClose={() => setEditingEntry(null)}
+        onSaved={(updated) => {
+          setTodayEntries((prev) => prev.map((e) => (e.id === updated.id ? updated : e)));
+        }}
+        onDeleted={(id) => {
+          setTodayEntries((prev) => prev.filter((e) => e.id !== id));
+        }}
       />
     </View>
   );
@@ -533,6 +575,42 @@ const styles = StyleSheet.create({
   },
   savedText: { color: COLORS.textPrimary, fontWeight: '600' },
   sectionTitle: { fontSize: 18, fontWeight: '700', color: COLORS.textPrimary, marginBottom: SPACING.md },
+  todayHeaderRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    marginBottom: SPACING.md,
+  },
+  todayHint: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+    paddingHorizontal: SPACING.sm,
+    paddingVertical: 4,
+    borderRadius: RADIUS.pill,
+    backgroundColor: COLORS.primaryLight,
+  },
+  todayHintText: { fontSize: 11, fontWeight: '700', color: COLORS.primary },
+  emotionPromptRow: {
+    marginTop: SPACING.xs,
+    marginBottom: SPACING.md,
+  },
+  emotionPromptTitle: {
+    fontSize: 20,
+    fontWeight: '700',
+    color: COLORS.textPrimary,
+  },
+  emotionPromptHint: {
+    fontSize: 13,
+    color: COLORS.textSecondary,
+    marginTop: 2,
+  },
+  entryEmptyNote: {
+    marginTop: SPACING.sm,
+    fontSize: 13,
+    fontStyle: 'italic',
+    color: COLORS.textSecondary,
+  },
   emptyText: { color: COLORS.textSecondary, fontSize: 14 },
   entryCard: { borderRadius: RADIUS.md, padding: SPACING.md, marginBottom: SPACING.sm },
   entryHeader: { flexDirection: 'row', alignItems: 'center', gap: SPACING.sm },

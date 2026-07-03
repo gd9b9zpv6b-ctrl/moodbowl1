@@ -126,6 +126,13 @@ class EntryIn(BaseModel):
     entry_date: str  # YYYY-MM-DD
 
 
+class EntryUpdate(BaseModel):
+    emotion: Optional[str] = None
+    note: Optional[str] = None
+    is_public: Optional[bool] = None
+    is_secret: Optional[bool] = None
+
+
 class EntryOut(BaseModel):
     id: str
     user_id: str
@@ -323,6 +330,24 @@ async def delete_entry(entry_id: str, current=Depends(get_current_user)):
     await db.entries.delete_one({"id": entry_id})
     await db.reactions.delete_many({"entry_id": entry_id})
     return {"ok": True}
+
+
+@api_router.patch("/entries/{entry_id}", response_model=EntryOut)
+async def update_entry(entry_id: str, data: EntryUpdate, current=Depends(get_current_user)):
+    entry = await db.entries.find_one({"id": entry_id})
+    if not entry:
+        raise HTTPException(status_code=404, detail="Entry not found")
+    if entry["user_id"] != current["id"]:
+        raise HTTPException(status_code=403, detail="Not your entry")
+    update_doc = {k: v for k, v in data.model_dump(exclude_unset=True).items() if v is not None}
+    # secret entries are always private
+    if update_doc.get("is_secret"):
+        update_doc["is_public"] = False
+    if update_doc:
+        await db.entries.update_one({"id": entry_id}, {"$set": update_doc})
+    fresh = await db.entries.find_one({"id": entry_id}, {"_id": 0})
+    result = await _entries_with_hearts([fresh], current["id"])
+    return result[0]
 
 
 # ============ Task Routes ============
