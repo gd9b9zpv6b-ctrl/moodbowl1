@@ -98,9 +98,11 @@ EMOTIONS = [
     ("empty",        "bone white cream",                RICE_TINY,
      "with a HOLLOW VACANT expression: both eyes drawn as small empty circles (just outlines, like empty rings, no filled black pupils) staring into nothing, mouth slightly open in a small droopy o-shape. No accessories. The rice inside is almost gone, only a few grains at the bottom",
      "warm ivory cream"),
-    ("numb",         "muted stone grey",                RICE_LOW,
-     "with half-closed sleepy tired eyes and a straight flat mouth, one tiny grey wispy cloud drifting around it",
-     "dove grey"),
+    # numb — literal wooden / bark texture, stiff
+    ("numb",         "brownish grey with visible wood-grain and tree-bark textures on the surface of the bowl (as if the bowl is carved from a rough wooden log)",
+     RICE_LOW,
+     "with completely stiff wooden expression: two motionless straight-line black eyes, a stiff straight-line closed mouth, both little arms held stiffly straight down like planks; a couple of small dry leaves and a tiny wood-chip flake floating near it",
+     "warm sandy grey"),
     # exhausted — bowl LYING DOWN on its side sleeping
     ("exhausted",    "washed-out mauve purple",         RICE_LOW,
      "shown LYING DOWN on its side sideways on the ground as if collapsed asleep, both little arms and legs relaxed limply, eyes closed with two X shapes, a small Z Z Z sleep symbol above its head; some rice grains gently spilled out around it",
@@ -144,16 +146,17 @@ EMOTIONS = [
     ("unappreciated","pale lilac",                      RICE_FULL,
      "SITTING on the ground with legs stretched out in front, one tiny hand lifted up holding a tiny gold medal star hoping to be noticed, small sad quiet expression; a SECOND smaller identical rice-bowl mascot stands in the background clearly TURNED AWAY facing the other direction, ignoring the main character; a small sad sigh dot above the main character's head",
      "pale lilac"),
+    # disrespected — small main bowl next to a large arrogant bowl looming/pointing
     ("disrespected", "warm terracotta peach",           RICE_HALF,
-     "with eyes looking a bit down and slightly furrowed brows, one tiny arm crossed defensively over its front, a tiny downward arrow behind it",
+     "the picture actually shows TWO characters: on the RIGHT a LARGER dark-red arrogant rice-bowl mascot with a snooty frown looking DOWN dismissively and pointing one tiny finger down at the smaller main character; on the LEFT the smaller MAIN terracotta peach rice-bowl mascot looks up with a sad hurt expression, shoulders slightly drooped, a tiny sad drop next to its head",
      "warm peach"),
     # invisible — sitting looking down at own toes
     ("invisible",    "ghost pale blue-grey (very translucent, semi see-through)", RICE_LOW,
      "shown drawn semi-transparent and ghost-like with a very faint outline; sitting on the ground cross-legged, head bowed low looking straight down at its own tiny stubby toes, a small quiet resigned expression",
      "cool grey blue"),
-    # rejected — X eyes + o mouth + big red X across bowl
+    # rejected — X eyes + X mouth + big red X across bowl
     ("rejected",     "warm apricot orange",             RICE_HALF,
-     "with both eyes drawn as small X shapes (crossed-out eyes) and mouth open in a shocked o-shape; a LARGE bold bright red X mark drawn diagonally right across the front of the bowl covering most of it, like a stamp of rejection",
+     "with both eyes drawn as small X shapes (crossed-out eyes) AND the mouth also drawn as a small X shape (not an o-mouth); a LARGE bold bright red X mark drawn diagonally right across the front of the bowl covering most of it, like a stamp of rejection",
      "warm apricot"),
     ("abandoned",    "faded teal blue",                 RICE_LOW,
      "sitting alone on the ground with tiny footprints of another character walking away in the background",
@@ -161,9 +164,9 @@ EMOTIONS = [
     ("misunderstood","soft dusty purple",               RICE_FULL,
      "with a small confused frown, a tiny speech bubble containing a small tangled scribble above its head",
      "soft lavender"),
-    # NEW: unfair (唔公平) — witnessing an unjust situation
+    # unfair — TWO rice bowls on a see-saw balance, one high one low
     ("unfair",       "cool slate blue",                 RICE_HALF,
-     "with both tiny hands raised palms-up in an exasperated 'why?!' gesture, a small indignant frustrated frown; next to the bowl is a small unbalanced tilting scale / weighing balance where one pan is empty going up and one pan is heavy going down, clearly out of balance; a tiny exclamation mark above its head",
+     "the picture actually shows a WOODEN SEE-SAW BALANCE / weighing scale with a central pivot triangle in the middle; on one end of the beam sits a rice bowl mascot HEAPED FULL with fluffy rice grinning happily (this pan is LOW/DOWN due to the weight), and on the other end sits an identical rice bowl mascot with much less rice looking sad and indignant, tiny arms raised in a 'why?!' gesture (this pan is HIGH/UP in the air); the whole scene shows clear imbalance",
      "cool grey blue"),
     # guilty — deeply bowing / apologizing, hands together in front
     ("guilty",       "soft mustard yellow",             RICE_HALF,
@@ -175,6 +178,14 @@ EMOTIONS = [
     ("hopeless",     "muted storm grey",                RICE_TINY,
      "SITTING on the ground with legs stretched out limply in front, both tiny arms resting weakly on its legs, eyes closed and small resigned downturned mouth, head slumped slightly forward. A single heavy dark grey cloud floating just above its head, muted washed-out colors",
      "storm grey"),
+    # NEW: supported — being helped / accompanied by a friend bowl
+    ("supported",    "warm coral pink",                 RICE_FULL,
+     "the picture actually shows TWO mascots side by side: the LEFT main coral pink rice-bowl mascot has a gentle grateful small smile with a hint of a happy tear in one eye; the RIGHT slightly larger friend rice-bowl mascot in soft mint green has one tiny stubby arm reaching over resting kindly on the main character's shoulder/side in a supportive gesture; a couple of tiny warm pink hearts and small sparkles floating between them",
+     "warm blush cream"),
+    # NEW: offended — indignant gasp, hand on chest
+    ("offended",     "burnt orange terracotta",         RICE_FULL,
+     "with a shocked gasping expression: wide open eyes with dot pupils, mouth open in a small horrified o-shape, one tiny stubby hand placed dramatically on its own chest (front of the bowl) as if saying 'excuse me?!', a small red exclamation mark above its head and a couple of red anger sparks around it",
+     "warm salmon"),
 
     # ---- Anger / intense ----
     # frustrated — sitting cross-legged with arms crossed and sighing
