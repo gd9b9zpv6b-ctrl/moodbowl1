@@ -87,6 +87,10 @@ EMOTIONS = [
     ("empowered",    "warm fiery orange",               RICE_HEAP,
      "with a determined confident smile and slightly narrowed brave eyes, one tiny stubby arm raised up flexing a tiny cartoon bicep muscle (a small round bump on the arm), the other tiny stubby fist clenched at its side; small orange/yellow energy sparks and one tiny lightning bolt bursting outward from its bicep area",
      "warm butter yellow"),
+    # NEW: free — 自由, joyful floating with rainbow aura, arms spread wide
+    ("free",         "soft creamy off-white",           RICE_FULL,
+     "the mascot is JOYFULLY FLOATING / lifting up slightly off the ground with a bright wide radiant smile, eyes closed in pure blissful joy (two upward-curving happy arc lines), BOTH tiny stubby arms stretched OUT WIDE to either side in a liberating 'arms wide open' pose (like celebrating on a mountaintop with the wind); a soft flowing translucent RAINBOW AURA CLOAK made of layered wispy pastel color ribbons (pastel pink, peach, buttery yellow, mint, sky blue, lavender) BILLOWS out behind and around it like flowing streamers in the wind, trailing off dynamically; a few small white feather-like wisps and pastel sparkles floating around; overall vibe of total freedom, weightlessness, unbound joy",
+     "pale sky blue"),
 
     # ---- Sadness / low energy ----
     # sad — heart-shaped bowl with a visible crack + teardrop
@@ -244,10 +248,10 @@ EMOTIONS = [
      "with the DOMED COOKER LID FULLY OPEN / lifted up and tilted back behind the cooker (hinged open like an opened clam shell revealing the inside), and the inner pot COMPLETELY EMPTY — just a shiny empty metallic silver inner bowl with absolutely NO rice, NO grains, nothing at all inside (totally hollow)",
      "the rice cooker mascot has an EXTREMELY BLANK DEAD-INSIDE vacant face: both eyes drawn as just TWO PLAIN TINY DOTS (or optionally two SMALL EMPTY HOLLOW CIRCLES with no pupils), staring STRAIGHT AHEAD into the void with zero expression; NO mouth at all (or optionally just three tiny horizontal dots '...' where the mouth would be, drifting slightly, like a lost thought); NO blush cheeks (skip the blush completely for maximum emptiness); both tiny stubby arms hanging perfectly limp straight down at its sides; a small pale wisp of steam or tiny sigh puff drifting up from the empty inside; overall extremely muted vacant '灵魂出竅' vibe — soulless, expressionless, void",
      "warm ivory white"),
-    # indescribable — 一言難盡, rainbow aura cloak wrapping the bowl
-    ("indescribable","soft creamy off-white",           RICE_FULL,
-     "the whole bowl is gently WRAPPED in a soft flowing translucent RAINBOW CLOAK / AURA made of layered wispy pastel color ribbons (pastel pink, peach, buttery yellow, mint, sky blue, lavender) swirling around the bowl like a soft aurora shawl draped over its shoulders and flowing behind it; the mascot has a soft complicated bittersweet expression — a small closed-eye gentle smile with one tiny sparkly tear dot at the corner of one eye (mix of happy and sad); a few tiny multi-color sparkles and one small pastel five-point star floating around the aurora; overall dreamy poetic 'many feelings at once' vibe",
-     "pale cotton candy pink"),
+    # indescribable — 一言難盡, face is a big ellipsis "..." (欲言又止)
+    ("indescribable","soft dusty periwinkle blue",      RICE_HALF,
+     "the mascot's FACE is minimalist and expressive: two tiny simple black dot eyes look slightly downcast / off to the side (with subtle downward-curved eyebrow arcs above them for a heavy weary vibe); WHERE THE MOUTH WOULD BE there is instead a LARGE PROMINENT ELLIPSIS made of THREE HORIZONTAL BLACK DOTS ' . . . ' arranged in a row across the middle of the bowl's face (each dot is bold and about the same size as the eyes, clearly the dominant expression — this ellipsis IS the mouth/expression); ADDITIONALLY a small round cartoon speech bubble also containing three dots ' . . . ' floats up beside its head (reinforcing the speechless / trailing-off feeling); one tiny stubby hand raised halfway toward its mouth as if trying to speak but stopping; small pink blush cheeks; overall vibe of 'I want to say something but I can't finish it / 欲言又止'",
+     "soft powder blue"),
 ]
 
 

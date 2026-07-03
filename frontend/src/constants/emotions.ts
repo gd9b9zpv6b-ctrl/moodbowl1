@@ -70,6 +70,7 @@ export const EMOTION_IMAGES: Record<string, any> = {
   furious: require('../../assets/emotions/furious.png'),
   'in-pain': require('../../assets/emotions/in-pain.png'),
   'in-agony': require('../../assets/emotions/in-agony.png'),
+  free: require('../../assets/emotions/free.png'),
   foggy: require('../../assets/emotions/foggy.png'),
   questioning: require('../../assets/emotions/questioning.png'),
   blank: require('../../assets/emotions/blank.png'),
@@ -88,6 +89,7 @@ export const EMOTIONS: Emotion[] = [
   { key: 'supported', label: '被支持', description: '有人喺我身邊撐我', color: '#F6C4B7', category: 'warm', image: EMOTION_IMAGES.supported },
   { key: 'proud', label: '自豪', description: '我做咗啲好嘢', color: '#FFDA5E', category: 'warm', image: EMOTION_IMAGES.proud },
   { key: 'empowered', label: '有力量', description: '我夠力面對', color: '#FF9151', category: 'warm', image: EMOTION_IMAGES.empowered },
+  { key: 'free', label: '自由', description: '無拘無束 · 好舒暢', color: '#B8D9F5', category: 'warm', image: EMOTION_IMAGES.free },
 
   // Sadness / low energy — spread across hues (藍/青/綠/米/灰/紫)
   { key: 'sad', label: '傷心', description: '心入面有種柔和嘅沉重', color: '#A2CCFF', category: 'sad', image: EMOTION_IMAGES.sad },
@@ -132,7 +134,7 @@ export const EMOTIONS: Emotion[] = [
   { key: 'in-agony', label: '煎熬', description: '痛得好難捱', color: '#786095', category: 'anger', image: EMOTION_IMAGES['in-agony'] },
 
   // Unspoken / 講唔出 — fallback when nothing else fits
-  { key: 'indescribable', label: '一言難盡', description: '好多感覺 · 講唔清楚', color: '#D9B8E8', category: 'unspoken', image: EMOTION_IMAGES.indescribable },
+  { key: 'indescribable', label: '一言難盡', description: '有嘢想講 · 但講唔出口', color: '#8E9FC4', category: 'unspoken', image: EMOTION_IMAGES.indescribable },
   { key: 'foggy', label: '濛查查', description: '腦入面一片模糊', color: '#B8C1CE', category: 'unspoken', image: EMOTION_IMAGES.foggy },
   { key: 'questioning', label: '唔知乜感覺', description: '有嘢喺度 · 但講唔出', color: '#E8CE8A', category: 'unspoken', image: EMOTION_IMAGES.questioning },
   { key: 'blank', label: '一片空白', description: '腦入面咩都冇', color: '#CFC9BC', category: 'unspoken', image: EMOTION_IMAGES.blank },
