@@ -10,6 +10,7 @@ import { AvatarPickerModal } from '@/src/components/avatar-picker-modal';
 import { EmotionVisual } from '@/src/components/emotion-visual';
 import { EMOTION_BY_KEY } from '@/src/constants/emotions';
 // RoleStorage no longer used here — role is synced via auth-context after login
+import { RoleStorage, ROLE_META, UserRole } from '@/src/lib/role-storage';
 import { COLORS, RADIUS, SPACING } from '@/src/constants/theme';
 import { GardenStorage } from '@/src/lib/garden-storage';
 import { useAuth } from '@/src/lib/auth-context';
@@ -287,7 +288,28 @@ export default function Profile() {
 
         <Text style={styles.sectionTitle}>更多</Text>
 
-        {/* Role switcher hidden — 5 dedicated demo accounts on login screen replace this */}
+        {/* Back-to-dashboard card — ONLY for non-student users who dipped into student mode.
+            User asked for a personalised switch: teacher only sees teacher · parent only sees parent. */}
+        {user?.role && user.role !== 'student' && (
+          <Pressable
+            testID="back-to-dashboard"
+            style={[styles.linkRow, { backgroundColor: ROLE_META[user.role as UserRole].color + '30', borderWidth: 1.5, borderColor: ROLE_META[user.role as UserRole].color }]}
+            onPress={async () => {
+              const r = user.role as UserRole;
+              await RoleStorage.set(r);
+              router.replace(ROLE_META[r].homePath as never);
+            }}
+          >
+            <View style={[styles.linkIcon, { backgroundColor: ROLE_META[user.role as UserRole].color }]}>
+              <Text style={{ fontSize: 18 }}>{ROLE_META[user.role as UserRole].emoji}</Text>
+            </View>
+            <View style={{ flex: 1 }}>
+              <Text style={styles.linkTitle}>返 {ROLE_META[user.role as UserRole].label} Dashboard</Text>
+              <Text style={styles.linkHint}>睇返學生 data · 或者返自己嘅工作版面</Text>
+            </View>
+            <Feather name="chevron-right" size={20} color={COLORS.textPrimary} />
+          </Pressable>
+        )}
 
         <Pressable
           testID="link-onboarding"

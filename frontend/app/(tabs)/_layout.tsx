@@ -1,7 +1,7 @@
 import { Feather } from '@expo/vector-icons';
 import { Tabs, Redirect } from 'expo-router';
 import { ActivityIndicator, StyleSheet, View } from 'react-native';
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { BackToRoleBanner } from '@/src/components/back-to-role-banner';
 import { COLORS } from '@/src/constants/theme';
@@ -20,8 +20,16 @@ export default function TabsLayout() {
   }
   if (!user) return <Redirect href="/auth/welcome" />;
 
+  const nonStudent = user.role && user.role !== 'student';
+
   return (
-    <View style={{ flex: 1 }}>
+    <View style={{ flex: 1, backgroundColor: COLORS.bgMain }}>
+      {/* Persistent role banner — takes actual layout space so it can't be hidden by tab content */}
+      {nonStudent && (
+        <SafeAreaView edges={['top']} style={{ backgroundColor: COLORS.bgMain }}>
+          <BackToRoleBanner />
+        </SafeAreaView>
+      )}
       <Tabs
       screenOptions={{
         headerShown: false,
@@ -84,8 +92,6 @@ export default function TabsLayout() {
         }}
       />
       </Tabs>
-      {/* Floating banner: only shows if the logged-in user is a non-student role */}
-      <BackToRoleBanner />
     </View>
   );
 }
