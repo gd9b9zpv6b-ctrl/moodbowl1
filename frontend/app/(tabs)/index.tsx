@@ -66,18 +66,19 @@ export default function Home() {
   const { recent, track } = useRecentEmotions();
 
   // Show onboarding on EVERY app launch (once per session — not on every navigation)
+  // Non-student roles skip onboarding entirely and go directly to their portal.
   useEffect(() => {
-    if (!onboardingShownThisSession) {
-      onboardingShownThisSession = true;
-      router.replace('/onboarding');
-      return;
-    }
-    // After onboarding, also check role: non-students go to their portal
     (async () => {
       const { RoleStorage, ROLE_META } = await import('@/src/lib/role-storage');
       const role = await RoleStorage.get();
       if (role !== 'student') {
         router.replace(ROLE_META[role].homePath as never);
+        return;
+      }
+      // Student: show onboarding once per session
+      if (!onboardingShownThisSession) {
+        onboardingShownThisSession = true;
+        router.replace('/onboarding');
       }
     })();
   }, [router]);

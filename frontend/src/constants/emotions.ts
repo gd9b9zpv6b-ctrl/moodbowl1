@@ -76,6 +76,7 @@ export const EMOTION_IMAGES: Record<string, any> = {
   questioning: require('../../assets/emotions/questioning.png'),
   blank: require('../../assets/emotions/blank.png'),
   awkward: require('../../assets/emotions/awkward.png'),
+  hollow: require('../../assets/emotions/hollow.png'),
 };
 
 export const EMOTIONS: Emotion[] = [
@@ -140,9 +141,8 @@ export const EMOTIONS: Emotion[] = [
   { key: 'questioning', label: '唔知乜感覺', description: '有嘢喺度 · 但講唔出', color: '#E8CE8A', category: 'unspoken', image: EMOTION_IMAGES.questioning },
   { key: 'blank', label: '一片空白', description: '腦入面咩都冇', color: '#CFC9BC', category: 'unspoken', image: EMOTION_IMAGES.blank },
   // 樹洞 · opt-out signal — kid has feelings but chooses not to label them.
-  // Deep forest color + shield icon = "safe · private · protected".
-  // No PNG needed — renders via icon fallback in EmotionVisual.
-  { key: 'hollow', label: '樹洞', description: '我唔想 label 今日 · 只想寫俾自己', color: '#2A3E37', category: 'unspoken', icon: 'shield', iconTint: '#E8C97A' },
+  // Rice bowl with a hollow center = "留返個位俾自己".
+  { key: 'hollow', label: '樹洞', description: '我唔想 label 今日 · 只想寫俾自己', color: '#BDDDF5', category: 'unspoken', image: EMOTION_IMAGES.hollow },
 ];
 
 export const EMOTION_BY_KEY: Record<string, Emotion> = EMOTIONS.reduce(

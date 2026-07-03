@@ -75,6 +75,7 @@ export type User = {
   diary_style: DiaryStyle;
   active_icon_pack: string;
   featured_by_date?: Record<string, string>;
+  role?: string;  // student | teacher | parent | counsellor | school_admin
 };
 
 export type AuthResponse = {

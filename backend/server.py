@@ -96,6 +96,7 @@ class UserOut(BaseModel):
     diary_style: dict = Field(default_factory=dict)
     active_icon_pack: str = "classic"
     featured_by_date: dict = Field(default_factory=dict)
+    role: str = "student"  # student | teacher | parent | counsellor | school_admin
 
 
 class AuthOut(BaseModel):
@@ -117,6 +118,7 @@ def _user_to_out(u: dict) -> UserOut:
         diary_style=u.get("diary_style", {}),
         active_icon_pack=u.get("active_icon_pack", "classic"),
         featured_by_date=u.get("featured_by_date", {}),
+        role=u.get("role", "student"),
     )
 
 
@@ -213,6 +215,7 @@ async def register(data: RegisterIn):
         "secret_pin_hash": None,
         "diary_style": {},
         "active_icon_pack": "classic",
+        "role": "student",
     }
     await db.users.insert_one(user_doc)
     token = create_access_token(user_id)
@@ -629,6 +632,48 @@ async def promote_all_to_premium():
             logger.info(f"Promoted {result.modified_count} existing users to premium")
     except Exception as e:
         logger.warning(f"Premium promotion migration failed: {e}")
+
+
+@app.on_event("startup")
+async def seed_demo_role_accounts():
+    """Seed 5 demo accounts — one per role — for clean demos.
+    Idempotent: only creates missing accounts, never overwrites.
+    Password for all demo accounts: `demo1234`."""
+    DEMO_ACCOUNTS = [
+        {"email": "student@demo.moodful.app",     "role": "student",      "name": "陳小明 (學生)"},
+        {"email": "teacher@demo.moodful.app",     "role": "teacher",      "name": "陳老師 (班主任)"},
+        {"email": "counsellor@demo.moodful.app",  "role": "counsellor",   "name": "李輔導 (輔導老師)"},
+        {"email": "parent@demo.moodful.app",      "role": "parent",       "name": "王太 (家長)"},
+        {"email": "school@demo.moodful.app",      "role": "school_admin", "name": "校長 (校方管理)"},
+    ]
+    demo_password_hash = hash_password("demo1234")
+    created = 0
+    updated = 0
+    for acc in DEMO_ACCOUNTS:
+        existing = await db.users.find_one({"email": acc["email"]})
+        if existing:
+            # Ensure role is set correctly (in case seed logic changed)
+            if existing.get("role") != acc["role"]:
+                await db.users.update_one({"email": acc["email"]}, {"$set": {"role": acc["role"]}})
+                updated += 1
+            continue
+        doc = {
+            "id": str(uuid.uuid4()),
+            "email": acc["email"],
+            "display_name": acc["name"],
+            "hashed_password": demo_password_hash,
+            "created_at": now_iso(),
+            "credits": 20,
+            "is_premium": True,
+            "secret_pin_hash": None,
+            "diary_style": {},
+            "active_icon_pack": "classic",
+            "role": acc["role"],
+        }
+        await db.users.insert_one(doc)
+        created += 1
+    if created or updated:
+        logger.info(f"Demo accounts seeded — created: {created}, role-updated: {updated}")
 
 
 @app.on_event("shutdown")

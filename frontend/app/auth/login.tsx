@@ -17,6 +17,15 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { COLORS, RADIUS, SPACING } from '@/src/constants/theme';
 import { useAuth } from '@/src/lib/auth-context';
 
+const DEMO_ACCOUNTS: { role: string; email: string; label: string; emoji: string; color: string }[] = [
+  { role: 'student',      email: 'student@demo.moodful.app',    label: '學生', emoji: '🎒', color: '#B9DBBC' },
+  { role: 'teacher',      email: 'teacher@demo.moodful.app',    label: '班主任', emoji: '👩‍🏫', color: '#F0AE64' },
+  { role: 'counsellor',   email: 'counsellor@demo.moodful.app', label: '輔導老師', emoji: '💚', color: '#7DBEE8' },
+  { role: 'parent',       email: 'parent@demo.moodful.app',     label: '家長', emoji: '👨‍👩‍👧', color: '#E499B4' },
+  { role: 'school_admin', email: 'school@demo.moodful.app',     label: '校方管理', emoji: '🏫', color: '#C7A6D1' },
+];
+const DEMO_PASSWORD = 'demo1234';
+
 export default function Login() {
   const router = useRouter();
   const { login } = useAuth();
@@ -24,6 +33,7 @@ export default function Login() {
   const [password, setPassword] = useState('');
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
+  const [demoLoading, setDemoLoading] = useState<string | null>(null);
 
   const submit = async () => {
     setError(null);
@@ -35,6 +45,27 @@ export default function Login() {
       setError(e?.message || '登入失敗');
     } finally {
       setLoading(false);
+    }
+  };
+
+  const quickDemoLogin = async (acc: (typeof DEMO_ACCOUNTS)[number]) => {
+    setError(null);
+    setDemoLoading(acc.role);
+    try {
+      await login(acc.email, DEMO_PASSWORD);
+      // Route to the correct home path per role
+      const routes: Record<string, string> = {
+        student:      '/(tabs)',
+        teacher:      '/teacher-dashboard',
+        counsellor:   '/counsellor-panel',
+        parent:       '/parent-home',
+        school_admin: '/school-admin',
+      };
+      router.replace((routes[acc.role] || '/(tabs)') as never);
+    } catch (e: any) {
+      setError(e?.message || '示範帳戶登入失敗 · 請試下再啟動 backend');
+    } finally {
+      setDemoLoading(null);
     }
   };
 
@@ -110,6 +141,40 @@ export default function Login() {
               第一次嚟?<Text style={{ fontWeight: '700' }}> 開個帳戶</Text>
             </Text>
           </Pressable>
+
+          {/* Demo account quick picker — 5 pre-seeded roles */}
+          <View style={styles.demoDivider}>
+            <View style={styles.demoDividerLine} />
+            <Text style={styles.demoDividerText}>示範帳戶 · 一撳體驗</Text>
+            <View style={styles.demoDividerLine} />
+          </View>
+
+          <Text style={styles.demoHint}>
+            密碼統一為 <Text style={{ fontWeight: '800' }}>demo1234</Text> · 撳角色直接進入相關版面
+          </Text>
+
+          <View style={styles.demoGrid}>
+            {DEMO_ACCOUNTS.map((acc) => {
+              const isLoading = demoLoading === acc.role;
+              return (
+                <Pressable
+                  key={acc.role}
+                  testID={`demo-login-${acc.role}`}
+                  onPress={() => quickDemoLogin(acc)}
+                  disabled={!!demoLoading}
+                  style={[
+                    styles.demoCard,
+                    { backgroundColor: acc.color + '25', borderColor: acc.color },
+                    demoLoading && demoLoading !== acc.role && { opacity: 0.4 },
+                  ]}
+                >
+                  <Text style={styles.demoEmoji}>{acc.emoji}</Text>
+                  <Text style={styles.demoLabel}>{acc.label}</Text>
+                  {isLoading && <ActivityIndicator size="small" color={COLORS.textPrimary} style={{ marginTop: 4 }} />}
+                </Pressable>
+              );
+            })}
+          </View>
         </ScrollView>
       </KeyboardAvoidingView>
     </SafeAreaView>
@@ -151,4 +216,54 @@ const styles = StyleSheet.create({
   },
   primaryBtnText: { color: COLORS.textPrimary, fontSize: 17, fontWeight: '700' },
   link: { color: COLORS.textSecondary, fontSize: 15 },
+
+  demoDivider: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: SPACING.sm,
+    marginTop: SPACING.xl,
+    marginBottom: SPACING.md,
+  },
+  demoDividerLine: {
+    flex: 1,
+    height: 1,
+    backgroundColor: COLORS.borderLight,
+  },
+  demoDividerText: {
+    fontSize: 12,
+    fontWeight: '700',
+    color: COLORS.textSecondary,
+    letterSpacing: 0.4,
+  },
+  demoHint: {
+    fontSize: 11,
+    color: COLORS.textSecondary,
+    textAlign: 'center',
+    marginBottom: SPACING.md,
+    lineHeight: 16,
+  },
+  demoGrid: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: SPACING.sm,
+    marginBottom: SPACING.lg,
+  },
+  demoCard: {
+    width: '31%',
+    minHeight: 84,
+    borderRadius: RADIUS.md,
+    borderWidth: 1.5,
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingVertical: SPACING.sm + 2,
+    paddingHorizontal: 6,
+    gap: 4,
+  },
+  demoEmoji: { fontSize: 22 },
+  demoLabel: {
+    fontSize: 12,
+    fontWeight: '700',
+    color: COLORS.textPrimary,
+    textAlign: 'center',
+  },
 });

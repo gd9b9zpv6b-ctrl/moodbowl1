@@ -175,3 +175,38 @@ to also check in with themselves.
 ### Cleanup
 - Removed teacher-dashboard's local `selfCard/selfBowlWrap/selfTitle/selfSub` styles (now in shared component)
 - Removed unused `RoleStorage`/`useRouter` imports in teacher-dashboard
+
+## 2026-07-03 · Multi-role demo accounts
+User feedback: role-switching via AsyncStorage from Profile page was confusing for demos.
+Solution: 5 pre-seeded accounts, one per role, with quick-login on the login screen.
+
+### Backend
+- Added `role: str = "student"` field to `UserOut` model + `_user_to_out()` builder
+- Register endpoint defaults new users to `role: "student"`
+- New startup event `seed_demo_role_accounts` — idempotent seed of 5 demo accounts:
+  - `student@demo.moodful.app` · student · 陳小明 (學生)
+  - `teacher@demo.moodful.app` · teacher · 陳老師 (班主任)
+  - `counsellor@demo.moodful.app` · counsellor · 李輔導 (輔導老師)
+  - `parent@demo.moodful.app` · parent · 王太 (家長)
+  - `school@demo.moodful.app` · school_admin · 校長 (校方管理)
+  - All share password: `demo1234`
+  - Idempotent: skips existing accounts, only updates role if changed
+
+### Frontend
+- `User` type gained `role?: string`
+- `AuthProvider` new helper `syncRole(user)` — writes server role into `RoleStorage`
+  on login / register / boot / refresh so all dashboards pick it up
+- `logout()` now resets RoleStorage to 'student'
+- Login screen (`app/auth/login.tsx`) new section: 「示範帳戶 · 一撳體驗」
+  - 5 colored cards (matching role palette + emoji) below the standard login form
+  - One-tap login → automatic route to the role's landing page
+- Tabs `index.tsx` useEffect: role check now runs FIRST · non-students skip onboarding
+  and jump straight to their portal
+
+### Files touched
+- `backend/server.py` (UserOut model · register default · startup seed)
+- `frontend/src/lib/api.ts` (User type)
+- `frontend/src/lib/auth-context.tsx` (syncRole helper)
+- `frontend/app/auth/login.tsx` (demo picker UI + one-tap logic)
+- `frontend/app/(tabs)/index.tsx` (role check before onboarding)
+- `memory/test_credentials.md` (documented demo accounts)
