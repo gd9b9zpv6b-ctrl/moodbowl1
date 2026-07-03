@@ -13,30 +13,35 @@ type Props = {
    * Optional inline style so this can also render inside padded containers.
    */
   compact?: boolean;
+  /**
+   * Hide the 平復情緒 card (used on the calm tab itself so we don't loop back).
+   */
+  hideCalm?: boolean;
 };
 
 /**
- * Two side-by-side CTA cards: 尋求幫助 · 行出去.
- * Extracted so it can appear on both the Home tab (below emotions) and
- * the Calendar tab (below the day summary).
+ * Side-by-side CTA cards: 平復情緒 · 尋求幫助 · 行出去.
+ * Extracted so it can appear on Home / Calendar / Calm tabs.
  */
-export function SupportCtaRow({ title, compact }: Props) {
+export function SupportCtaRow({ title, compact, hideCalm }: Props) {
   const router = useRouter();
   return (
     <View style={[styles.wrap, compact && { marginTop: SPACING.md }]}>
       {title && <Text style={styles.title}>{title}</Text>}
       <View style={styles.row}>
-        <Pressable
-          testID="cta-calm"
-          style={[styles.card, { backgroundColor: '#EEE0F0' }]}
-          onPress={() => router.push('/calm')}
-        >
-          <View style={[styles.icon, { backgroundColor: '#C7A6D1' }]}>
-            <Feather name="wind" size={18} color={COLORS.bgCard} />
-          </View>
-          <Text style={styles.cardTitle}>平復情緒</Text>
-          <Text style={styles.cardSub}>激動嗰陣試吓</Text>
-        </Pressable>
+        {!hideCalm && (
+          <Pressable
+            testID="cta-calm"
+            style={[styles.card, { backgroundColor: '#EEE0F0' }]}
+            onPress={() => router.push('/calm')}
+          >
+            <View style={[styles.icon, { backgroundColor: '#C7A6D1' }]}>
+              <Feather name="wind" size={18} color={COLORS.bgCard} />
+            </View>
+            <Text style={styles.cardTitle}>平復情緒</Text>
+            <Text style={styles.cardSub}>激動嗰陣試吓</Text>
+          </Pressable>
+        )}
         <Pressable
           testID="cta-help"
           style={[styles.card, { backgroundColor: '#FFE4E4' }]}

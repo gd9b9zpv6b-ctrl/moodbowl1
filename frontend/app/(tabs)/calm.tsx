@@ -5,6 +5,7 @@ import { Animated, Easing, Pressable, ScrollView, StyleSheet, Text, View } from 
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { CALM_TECHNIQUES, CalmTechnique } from '@/src/constants/calm-techniques';
+import { SupportCtaRow } from '@/src/components/support-cta-row';
 import { COLORS, RADIUS, SPACING } from '@/src/constants/theme';
 
 // Breathing pulse: 4s in · 2s hold · 6s out (a soft 4-2-6 rhythm)
@@ -167,6 +168,10 @@ export default function Calm() {
             <Text style={styles.footerBold}>如果情緒真係好難捱 · </Text>
             打去「情緒通」熱線 <Text style={styles.phone}>18111</Text> 有人聽你講，24 小時免費。
           </Text>
+        </View>
+
+        <View style={{ marginTop: SPACING.lg }}>
+          <SupportCtaRow title="或者試吓另一個方向" hideCalm />
         </View>
 
         <View style={{ height: SPACING.xxl }} />
