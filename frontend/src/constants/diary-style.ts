@@ -1,3 +1,5 @@
+import { Platform } from 'react-native';
+
 // Premium diary style presets. Extendable — add new backgrounds/fonts here.
 
 export const DIARY_BACKGROUNDS = [
@@ -10,10 +12,37 @@ export const DIARY_BACKGROUNDS = [
   { key: 'night', label: '深夜寧靜', color: '#2C2D3A' },
 ];
 
+// Use real platform font family names so each option is visually distinct.
 export const DIARY_FONT_FAMILIES = [
   { key: 'default', label: '系統預設', family: undefined as string | undefined },
-  { key: 'serif', label: '書卷風', family: 'serif' },
-  { key: 'monospace', label: '手寫機字', family: 'monospace' },
+  {
+    key: 'serif',
+    label: '書卷宋體',
+    family: Platform.select({ ios: 'Georgia', android: 'serif', default: 'Georgia, "Times New Roman", serif' }),
+  },
+  {
+    key: 'mono',
+    label: '手寫機字',
+    family: Platform.select({ ios: 'Courier New', android: 'monospace', default: '"Courier New", monospace' }),
+  },
+  {
+    key: 'rounded',
+    label: '柔和圓體',
+    family: Platform.select({
+      ios: 'Avenir Next Rounded',
+      android: 'sans-serif-medium',
+      default: '"Avenir Next Rounded", "Nunito", sans-serif',
+    }),
+  },
+  {
+    key: 'handwriting',
+    label: '手寫感',
+    family: Platform.select({
+      ios: 'Snell Roundhand',
+      android: 'casual',
+      default: '"Snell Roundhand", "Brush Script MT", cursive',
+    }),
+  },
 ];
 
 export const DIARY_TEXT_COLORS = [

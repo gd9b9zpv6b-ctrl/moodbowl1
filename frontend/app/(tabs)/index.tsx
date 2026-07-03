@@ -3,7 +3,6 @@ import { useFocusEffect, useRouter } from 'expo-router';
 import { useCallback, useMemo, useState } from 'react';
 import {
   ActivityIndicator,
-  Alert,
   KeyboardAvoidingView,
   Platform,
   Pressable,
@@ -21,8 +20,9 @@ import { EMOTIONS, Emotion, EMOTION_BY_KEY } from '@/src/constants/emotions';
 import { COLORS, RADIUS, SPACING } from '@/src/constants/theme';
 import { api, Entry } from '@/src/lib/api';
 import { useAuth } from '@/src/lib/auth-context';
-import { isDiaryUnlocked, unlockDiary } from '@/src/lib/diary-lock';
+import { isDiaryUnlocked } from '@/src/lib/diary-lock';
 import { EmotionVisual } from '@/src/components/emotion-visual';
+import { PinUnlockModal } from '@/src/components/pin-unlock-modal';
 
 function todayISO() {
   const d = new Date();
@@ -45,6 +45,7 @@ export default function Home() {
   const [loading, setLoading] = useState(true);
   const [affirmation, setAffirmation] = useState(randomAffirmation());
   const [unlocked, setUnlocked] = useState(isDiaryUnlocked());
+  const [pinModalVisible, setPinModalVisible] = useState(false);
 
   const today = useMemo(() => todayISO(), []);
 
@@ -93,29 +94,7 @@ export default function Home() {
   };
 
   const promptUnlock = () => {
-    // Trigger a system prompt for the 4-digit PIN.
-    // eslint-disable-next-line no-alert
-    Alert.prompt?.(
-      '輸入密碼',
-      '輸入 4 位數字密碼解鎖秘密日記',
-      async (value?: string) => {
-        if (!value) return;
-        try {
-          const res = await api.post<{ ok: boolean }>('/premium/verify-pin', { pin: value });
-          if (res.ok) {
-            unlockDiary();
-            setUnlocked(true);
-          } else {
-            Alert.alert('密碼錯誤', '請再試一次');
-          }
-        } catch {
-          Alert.alert('出錯', '請稍後再試');
-        }
-      },
-      'secure-text',
-      '',
-      'number-pad',
-    );
+    setPinModalVisible(true);
   };
 
   const styleBg = user?.diary_style?.bg;
@@ -147,10 +126,13 @@ export default function Home() {
             >
               <View style={styles.affirmationHeader}>
                 <Feather name="feather" size={14} color={COLORS.primary} />
-                <Text style={styles.affirmationHeaderText}>今日嘅溫柔提醒</Text>
-                <Feather name="refresh-cw" size={12} color={COLORS.textDisabled} />
+                <Text style={styles.affirmationHeaderText}>少少溫柔時光</Text>
               </View>
-              <Text style={styles.affirmationText}>{affirmation}</Text>
+              <Text style={styles.affirmationText}>「{affirmation}」</Text>
+              <View style={styles.affirmationFooter}>
+                <Feather name="refresh-cw" size={12} color={COLORS.primary} />
+                <Text style={styles.affirmationFooterText}>撳一下 · 換一句俾自己聽</Text>
+              </View>
             </Pressable>
 
             <View style={styles.ctaRow}>
@@ -377,6 +359,11 @@ export default function Home() {
           </ScrollView>
         </KeyboardAvoidingView>
       </SafeAreaView>
+      <PinUnlockModal
+        visible={pinModalVisible}
+        onClose={() => setPinModalVisible(false)}
+        onUnlocked={() => setUnlocked(true)}
+      />
     </View>
   );
 }
@@ -417,6 +404,20 @@ const styles = StyleSheet.create({
     lineHeight: 30,
     color: COLORS.textPrimary,
     fontWeight: '500',
+  },
+  affirmationFooter: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    marginTop: SPACING.md,
+    paddingTop: SPACING.sm,
+    borderTopWidth: 1,
+    borderTopColor: COLORS.bgInput,
+  },
+  affirmationFooterText: {
+    fontSize: 12,
+    fontWeight: '600',
+    color: COLORS.primary,
   },
   ctaRow: { flexDirection: 'row', gap: SPACING.sm, marginBottom: SPACING.lg },
   ctaCard: {
