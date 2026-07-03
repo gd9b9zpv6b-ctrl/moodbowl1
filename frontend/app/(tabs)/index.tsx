@@ -842,9 +842,6 @@ const styles = StyleSheet.create({
     padding: SPACING.lg,
   },
   journalHeader: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: SPACING.md,
     marginBottom: SPACING.md,
   },
   journalHeaderImg: { width: 60, height: 60, borderRadius: RADIUS.md },
