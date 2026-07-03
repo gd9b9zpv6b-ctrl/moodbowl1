@@ -8,6 +8,7 @@ export type Emotion = {
   category: EmotionCategory;
   image?: any; // PNG mascot (preferred when available)
   icon?: string; // Feather icon fallback while the mascot is being generated
+  iconTint?: string; // optional override for icon color (used for dark-themed icons like 樹洞)
 };
 
 export const EMOTION_CATEGORIES: {
@@ -138,6 +139,10 @@ export const EMOTIONS: Emotion[] = [
   { key: 'foggy', label: '濛查查', description: '腦入面一片模糊', color: '#B8C1CE', category: 'unspoken', image: EMOTION_IMAGES.foggy },
   { key: 'questioning', label: '唔知乜感覺', description: '有嘢喺度 · 但講唔出', color: '#E8CE8A', category: 'unspoken', image: EMOTION_IMAGES.questioning },
   { key: 'blank', label: '一片空白', description: '腦入面咩都冇', color: '#CFC9BC', category: 'unspoken', image: EMOTION_IMAGES.blank },
+  // 樹洞 · opt-out signal — kid has feelings but chooses not to label them.
+  // Deep forest color + shield icon = "safe · private · protected".
+  // No PNG needed — renders via icon fallback in EmotionVisual.
+  { key: 'hollow', label: '樹洞', description: '我唔想 label 今日 · 只想寫俾自己', color: '#2A3E37', category: 'unspoken', icon: 'shield', iconTint: '#E8C97A' },
 ];
 
 export const EMOTION_BY_KEY: Record<string, Emotion> = EMOTIONS.reduce(

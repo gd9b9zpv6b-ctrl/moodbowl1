@@ -179,14 +179,7 @@ export function EntryDetailModal({ visible, entry, onClose, onEdit }: Props) {
           </Text>
         </View>
 
-        {!isPremium && (
-          <View style={styles.premiumNudge}>
-            <Feather name="star" size={14} color={COLORS.primary} />
-            <Text style={styles.premiumNudgeText}>
-              升級會員 · 解鎖手寫字體同更多紙張款式
-            </Text>
-          </View>
-        )}
+        {/* premium nudge removed — all students have full features now */}
       </ScrollView>
     </SafeAreaView>
   );

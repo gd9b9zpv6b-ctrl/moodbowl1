@@ -59,3 +59,54 @@ Concern: students may keep tapping "happy" bowls out of social pressure. Added t
 - Peer normalization after emotion pick ("32% of classmates also picked tired")
 - Configurable school-level keyword alert (e.g. "想死") — per-school policy toggle
 - Backend `is_secret` filter endpoint (currently filtered client-side)
+
+## 2026-07-03 · Post-hollow pivot (v2)
+User rejected the standalone /hollow page — argued that regular non-public entries already
+achieve "self-only" privacy. Instead, four concrete anti-fake-happy features shipped:
+
+### 1. Removed /hollow page + entry point
+- Deleted `/app/frontend/app/hollow.tsx`
+- Removed hollow card from home screen
+- Deleted hollow styles
+
+### 2. Privacy reassurance banner
+- Added inline banner above the composer share/secret toggles:
+  「只有你自己睇到 · 老師 · 家長 · 冇任何人可以偷睇你嘅日記」
+
+### 3. Democratized premium features (schools = free access)
+- **Backend**: Removed `is_premium` gate on `/premium/set-pin` and `/premium/settings`
+- **Backend**: New users default `is_premium=True`
+- **Backend**: One-time startup migration promotes existing users to premium
+- **Frontend**: Removed premium gate on secret-toggle in home composer
+- **Frontend**: Removed 升級會員 nudge in entry-detail-modal
+- Now every student has: password lock · font/paper customization · icon packs
+
+### 4. 樹洞 emotion icon (`hollow`)
+- New emotion in "unspoken" category — key `hollow` · label 樹洞
+- Description: "我唔想 label 今日 · 只想寫俾自己"
+- Deep forest color (#2A3E37) + warm gold shield icon (via Feather · no PNG needed)
+- Added optional `iconTint?: string` field on `Emotion` type
+- **Auto-behavior**: When picked, if user has `has_secret_pin=true`, auto-turns-on the secret/password toggle
+- Mapped to `steady` energy level for teacher dashboard aggregation
+
+### 5. 電量 slider (energy dimension)
+- New `EnergySlider` component using `@react-native-community/slider@5.0.1`
+- Sits between note input and privacy banner in composer
+- 0-100% with 5-step ticks · shows emoji + label + color that changes by level (快冇電/有啲攰/一般/有精神/好有energy)
+- Backend: added `energy_level: Optional[int]` on EntryIn/EntryUpdate/EntryOut + Mongo doc
+- Frontend `Entry` type updated
+- Dual-track validation: emotion (what) + energy (how much). Harder to fake both.
+
+### 6. School admin — configurable keyword policy
+- New file `/app/frontend/src/lib/school-alert-policy.ts` — AsyncStorage-backed
+  (currently mocked; will move to backend per-school schema in production)
+- New section in `/school-admin`: 私隱與警示政策
+  - Master toggle for keyword monitoring
+  - Editable keywords list with add/remove (default: 想死, 自殺, 傷害自己, 唔想再返學, 打我, 救命)
+  - Configurable notify roles: 輔導老師 / 班主任 / 校方
+  - Toggle: disclose watched words to student (transparency)
+- Every school can customize — no forced default · can be fully disabled
+
+### Screenshots verified
+- Home composer: hollow icon in 講唔出 category · energy slider working
+- School admin: policy section with chips + role selectors rendering correctly

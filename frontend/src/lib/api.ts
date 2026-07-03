@@ -92,6 +92,7 @@ export type Entry = {
   note: string;
   is_public: boolean;
   is_secret?: boolean;
+  energy_level?: number | null;   // 0-100 battery slider
   entry_date: string;
   created_at: string;
   hearts: number;

@@ -126,6 +126,7 @@ class EntryIn(BaseModel):
     note: str = ""
     is_public: bool = False
     is_secret: bool = False
+    energy_level: Optional[int] = None       # 0-100 battery slider (dual-track w/ emotion)
     entry_date: str  # YYYY-MM-DD
 
 
@@ -135,6 +136,7 @@ class EntryUpdate(BaseModel):
     note: Optional[str] = None
     is_public: Optional[bool] = None
     is_secret: Optional[bool] = None
+    energy_level: Optional[int] = None
 
 
 class EntryOut(BaseModel):
@@ -146,6 +148,7 @@ class EntryOut(BaseModel):
     note: str
     is_public: bool
     is_secret: bool = False
+    energy_level: Optional[int] = None
     entry_date: str
     created_at: str
     hearts: int = 0
@@ -257,6 +260,7 @@ async def _entries_with_hearts(cursor_docs: List[dict], user_id: str) -> List[En
             note=d.get("note", ""),
             is_public=d.get("is_public", False),
             is_secret=d.get("is_secret", False),
+            energy_level=d.get("energy_level"),
             entry_date=d["entry_date"],
             created_at=d["created_at"],
             hearts=hearts_map.get(d["id"], 0),
@@ -285,6 +289,7 @@ async def create_entry(data: EntryIn, current=Depends(get_current_user)):
         "note": data.note,
         "is_public": is_public,
         "is_secret": data.is_secret,
+        "energy_level": data.energy_level,
         "entry_date": data.entry_date,
         "created_at": now_iso(),
     }

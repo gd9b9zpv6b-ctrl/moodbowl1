@@ -22,6 +22,7 @@ import { api, Entry } from '@/src/lib/api';
 import { useAuth } from '@/src/lib/auth-context';
 import { isDiaryUnlocked } from '@/src/lib/diary-lock';
 import { EmotionVisual } from '@/src/components/emotion-visual';
+import { EnergySlider } from '@/src/components/energy-slider';
 import { PinUnlockModal } from '@/src/components/pin-unlock-modal';
 import { EntryEditModal } from '@/src/components/entry-edit-modal';
 import { SupportCtaRow } from '@/src/components/support-cta-row';
@@ -58,6 +59,7 @@ export default function Home() {
   const [unlocked, setUnlocked] = useState(isDiaryUnlocked());
   const [pinModalVisible, setPinModalVisible] = useState(false);
   const [editingEntry, setEditingEntry] = useState<Entry | null>(null);
+  const [energy, setEnergy] = useState<number | null>(null);
   const [searchQuery, setSearchQuery] = useState('');
   const [activeCategory, setActiveCategory] = useState<EmotionCategory | 'all'>('all');
   const { recent, track } = useRecentEmotions();
@@ -88,9 +90,15 @@ export default function Home() {
   const today = useMemo(() => todayISO(), []);
 
   const toggleSelect = (e: Emotion) => {
-    setSelectedKeys((prev) =>
-      prev.includes(e.key) ? prev.filter((k) => k !== e.key) : [...prev, e.key],
-    );
+    setSelectedKeys((prev) => {
+      const next = prev.includes(e.key) ? prev.filter((k) => k !== e.key) : [...prev, e.key];
+      // 揀咗樹洞 · 自動 turn on 密碼保護（如果已設密碼）
+      if (e.key === 'hollow' && !prev.includes('hollow') && user?.has_secret_pin) {
+        setSecret(true);
+        setShare(false);
+      }
+      return next;
+    });
   };
 
   const renderEmotionBtn = (e: Emotion) => {
@@ -149,6 +157,7 @@ export default function Home() {
         note,
         is_public: share,
         is_secret: secret,
+        energy_level: energy,
         entry_date: today,
       });
       // remember recent picks locally
@@ -157,6 +166,7 @@ export default function Home() {
       setNote('');
       setShare(false);
       setSecret(false);
+      setEnergy(null);
       setSaved(true);
       setTimeout(() => setSaved(false), 2500);
       await load();
@@ -406,6 +416,9 @@ export default function Home() {
                   textAlignVertical="top"
                   style={styles.journalInput}
                 />
+
+                {/* Battery slider — energy dimension (independent of emotion label) */}
+                <EnergySlider value={energy} onChange={setEnergy} />
 
                 {/* Privacy reassurance banner — always visible */}
                 <View style={styles.privacyBanner}>

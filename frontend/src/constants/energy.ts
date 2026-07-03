@@ -22,6 +22,8 @@ export const ENERGY_BY_KEY: Record<string, EnergyLevel> = {
   calm: 'steady', peaceful: 'steady', content: 'steady', free: 'steady',
   foggy: 'steady', questioning: 'steady', blank: 'steady',
   awkward: 'steady',
+  // 樹洞 · opt-out — counted as steady baseline (but flagged separately)
+  hollow: 'steady',
 
   // 低能量 · 抑鬱 · 疲累 · 無力
   sad: 'low', lonely: 'low', hopeless: 'low', unloved: 'low',

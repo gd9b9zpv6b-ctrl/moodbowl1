@@ -38,7 +38,7 @@ export function EmotionVisual({ emotion, size, radius, style }: Props) {
         style,
       ]}
     >
-      <Feather name={(emotion.icon as any) || 'circle'} size={iconSize} color={COLORS.textPrimary} />
+      <Feather name={(emotion.icon as any) || 'circle'} size={iconSize} color={emotion.iconTint || COLORS.textPrimary} />
     </View>
   );
 }
