@@ -32,6 +32,8 @@ export const EMOTION_IMAGES: Record<string, any> = {
   irritable: require('../../assets/emotions/irritable.png'),
   trapped: require('../../assets/emotions/trapped.png'),
   unfair: require('../../assets/emotions/unfair.png'),
+  supported: require('../../assets/emotions/supported.png'),
+  offended: require('../../assets/emotions/offended.png'),
   worthless: require('../../assets/emotions/worthless.png'),
   unloved: require('../../assets/emotions/unloved.png'),
   unappreciated: require('../../assets/emotions/unappreciated.png'),
@@ -57,6 +59,7 @@ export const EMOTIONS: Emotion[] = [
   { key: 'calm', label: '平靜', description: '溫柔而安定', color: '#A3C4BC', image: EMOTION_IMAGES.calm },
   { key: 'peaceful', label: '安寧', description: '所有嘢都冇事咁', color: '#CDB4DB', image: EMOTION_IMAGES.peaceful },
   { key: 'loved', label: '被愛', description: '感覺被關心緊', color: '#FFB6C1', image: EMOTION_IMAGES.loved },
+  { key: 'supported', label: '被支持', description: '有人喺我身邊撐我', color: '#F4C2C2', image: EMOTION_IMAGES.supported },
   { key: 'proud', label: '自豪', description: '我做咗啲好嘢', color: '#FFF3B0', image: EMOTION_IMAGES.proud },
 
   // Common sadness / low energy
@@ -92,6 +95,7 @@ export const EMOTIONS: Emotion[] = [
   // Anger / intense
   { key: 'frustrated', label: '沮喪', description: '好似卡住咗', color: '#F4D0C9', image: EMOTION_IMAGES.frustrated },
   { key: 'angry', label: '嬲', description: '心入面有把火', color: '#FFAAA5', image: EMOTION_IMAGES.angry },
+  { key: 'offended', label: '被冒犯', description: '個心俾人踩咗一腳', color: '#E8A87C', image: EMOTION_IMAGES.offended },
   { key: 'furious', label: '激嬲', description: '把火燒到頂', color: '#FF8A80', image: EMOTION_IMAGES.furious },
   { key: 'in-pain', label: '痛苦', description: '心 / 身好痛', color: '#F0918B', image: EMOTION_IMAGES['in-pain'] },
   { key: 'in-agony', label: '煎熬', description: '痛得好難捱', color: '#9D8DB8', image: EMOTION_IMAGES['in-agony'] },
