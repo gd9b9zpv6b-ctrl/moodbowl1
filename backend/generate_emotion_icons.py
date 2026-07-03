@@ -94,8 +94,12 @@ EMOTIONS = [
      RICE_HALF,
      "with a small downturned mouth and one big shiny teardrop under one eye; the heart-shaped bowl has an obvious dark crack line across it",
      "powder blue"),
-    # lonely — visible sigh puff of breath
-    ("lonely",       "muted sage grey-green",           RICE_HALF,
+    # lonely — reimagined: on a huge empty table alone (真寂寞)
+    ("lonely",       "muted denim blue",                RICE_HALF,
+     "sitting ALONE in the very center of a huge dark wooden dining TABLE with SEVERAL EMPTY chairs around the table clearly visible in the background; a small warm spotlight from above shining down on the character; the mascot has a small quiet sad expression, one tiny arm reaching out to an empty chair beside it; the whole scene emphasizes emptiness and solitude",
+     "dusk lavender blue"),
+    # unmotivated — the original 'sigh puff' bowl now describes 冇心機
+    ("unmotivated",  "muted sage grey-green",           RICE_HALF,
      "sitting with arms lowered and a lonely quiet expression, mouth slightly open in a small o-shape releasing a VISIBLE PUFF OF PALE WHITE BREATH / SIGH CLOUD directly in front of its mouth (a small rounded fluffy puff, clearly visible); a tiny paper boat floating nearby on gentle wavy lines",
      "misty pale seafoam"),
     # empty — hollow-eyed vacant stare
@@ -113,15 +117,20 @@ EMOTIONS = [
      "soft lilac"),
 
     # ---- Nervous / tense ----
-    # restless slot → repurposed to describe 不知所措 (at a loss / clueless)
+    # restless slot → 不知所措 with cute head-tilt (歪頭殺)
     ("restless",     "soft butter yellow",              RICE_FULL,
-     "with a helpless dazed expression: eyes wide open, mouth slightly open in a small o-shape, both tiny stubby hands lifted upward and outward in a confused shrug gesture, palms open. Two or three tiny black question marks '?' floating around its head",
+     "with a helpless dazed but ADORABLE expression, the WHOLE BOWL clearly TILTED slightly to ONE SIDE (about 20 degrees) in a cute head-tilt pose (歪頭殺); eyes wide open in a curious puzzled look, mouth slightly open in a small o-shape, both tiny stubby hands lifted upward in a confused shrug gesture, palms open. Two or three tiny black question marks '?' floating around its head",
      "warm cream yellow"),
     # NEW: irritable — chili on head, BIGGER chili, red steam
     ("irritable",    "burnt sienna orange",             RICE_FULL,
      "with an irritable frown and slightly furrowed brows, a LARGE bright red chili pepper the size of half the bowl balanced on top of the rice, small red steam puffs rising from around the chili",
      "warm salmon orange"),
+    # anxious — reimagined as truly ANXIOUS (racing thoughts, biting nail)
     ("anxious",      "pale butter yellow",              RICE_FULL,
+     "with an anxious restless expression: wide alert worried eyes with visible strain lines, mouth in a small tight frown, ONE tiny stubby hand raised chewing/biting on its own arm (a nail-biting gesture); AROUND ITS HEAD a swirl of tiny worry symbols floating in a chaotic circle: two tiny question marks, one tiny exclamation mark, two tiny spiral swirls, a small wavy squiggle line — all clearly visible spinning around the bowl in a mental-storm pattern",
+     "buttermilk yellow"),
+    # scared — the original 'sweat + squiggle' bowl now describes 驚
+    ("scared",       "pale butter yellow",              RICE_FULL,
      "with worried curved eyebrows, small dot eyes looking sideways, one big sweat drop on the side of the bowl, a couple of tiny nervous squiggle marks around the head",
      "buttermilk yellow"),
     ("worried",      "warm oatmeal beige",              RICE_FULL,
@@ -131,10 +140,10 @@ EMOTIONS = [
     ("overwhelmed",  "muted coral",                     RICE_HEAP,
      "with a strained overwhelmed expression, small spirals in the eyes and a tiny grimace; balancing a wobbling stack of THREE BIG rounded grey pebble stones (each stone almost as tall as the bowl itself) piled precariously on top of its head",
      "muted salmon"),
-    # NEW: trapped — inside a small birdcage with vertical bars
-    ("trapped",      "cool teal blue",                  RICE_HALF,
-     "sitting INSIDE a small round metal birdcage with clear vertical dark grey bars around the character (bars must be visible in front of and behind the bowl); with a small sad worried expression, one tiny hand gripping one of the bars",
-     "soft grey blue"),
+    # trapped — INSIDE an oven with glowing red interior (被困焗爐)
+    ("trapped",      "warm coral pink",                 RICE_HALF,
+     "sitting INSIDE a vintage kitchen OVEN: the picture shows a stainless-steel oven with the door open on the front, a rectangular glass window at the top, glowing warm orange/red heat coming from around the mascot, small heat-wave curves rising above; the mascot is inside on the oven rack with a distressed sweaty worried expression, both tiny hands raised pressing against the imaginary glass door, small sweat drops beside its head, mouth slightly open in a small 'help' o-shape",
+     "warm terracotta"),
 
     # ---- Self-worth wounds ----
     ("worthless",    "dull periwinkle grey-blue",       RICE_TINY,
@@ -146,9 +155,9 @@ EMOTIONS = [
     ("unloved",      "faded dusty rose",                RICE_LOW,
      "sitting with head slightly lowered and eyes downcast, holding a tiny grey cracked/broken heart in its two little hands",
      "dusty rose"),
-    # unappreciated — SITTING down, holding a star hopelessly, second bowl looking away
+    # unappreciated — a NOODLE bowl surrounded by two rice bowls disdaining it
     ("unappreciated","pale lilac",                      RICE_FULL,
-     "SITTING on the ground with legs stretched out in front, one tiny hand lifted up holding a tiny gold medal star hoping to be noticed, small sad quiet expression; a SECOND smaller identical rice-bowl mascot stands in the background clearly TURNED AWAY facing the other direction, ignoring the main character; a small sad sigh dot above the main character's head",
+     "the picture actually shows THREE bowl mascots side by side in a row: LEFT and RIGHT are two IDENTICAL rice bowls with disdainful sneering expressions looking sideways AT the middle one, one tiny hand each raised as if whispering behind its back or pointing away with a smirk; the CENTER main character is DIFFERENT — a bowl of yellow curly RAMEN NOODLES (clear noodle strands piled up with two thin wooden chopsticks stuck in) instead of rice — the noodle-bowl mascot has a small sad hurt lonely expression, downcast eyes, mouth in a small worried frown; a tiny sigh puff and a small question mark floating above the noodle bowl. Make it clear the noodle bowl feels out of place among the rice bowls",
      "pale lilac"),
     # disrespected — small main bowl next to a large arrogant bowl looming/pointing
     ("disrespected", "warm terracotta peach",           RICE_HALF,

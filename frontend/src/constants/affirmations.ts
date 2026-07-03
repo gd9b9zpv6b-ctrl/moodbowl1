@@ -21,3 +21,19 @@ export const AFFIRMATIONS: string[] = [
 export function randomAffirmation(): string {
   return AFFIRMATIONS[Math.floor(Math.random() * AFFIRMATIONS.length)];
 }
+
+// 溫柔嘅稱呼 — 每次打開主頁隨機抽一個放喺你嘅名前面
+export const NAME_ADJECTIVES: string[] = [
+  '珍貴嘅',
+  '溫柔嘅',
+  '勇敢嘅',
+  '獨一無二嘅',
+  '值得被愛嘅',
+  '好努力嘅',
+  '心地靚嘅',
+  '好特別嘅',
+];
+
+export function randomAdjective(): string {
+  return NAME_ADJECTIVES[Math.floor(Math.random() * NAME_ADJECTIVES.length)];
+}
