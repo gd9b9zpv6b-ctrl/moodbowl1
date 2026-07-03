@@ -1,11 +1,13 @@
 import { Feather } from '@expo/vector-icons';
+import { useMemo } from 'react';
 import { ScrollView, StyleSheet, Text, View, Pressable, Alert } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { EmotionVisual } from '@/src/components/emotion-visual';
-import { EMOTION_BY_KEY } from '@/src/constants/emotions';
-import { ENERGY_META } from '@/src/constants/energy';
+import { EMOTIONS, EMOTION_BY_KEY } from '@/src/constants/emotions';
+import { ENERGY_META, EnergyLevel } from '@/src/constants/energy';
 import { RoleHeader } from '@/src/components/role-header';
+import { useSchoolEnergyMap } from '@/src/hooks/use-school-energy-map';
 import { COLORS, RADIUS, SPACING } from '@/src/constants/theme';
 
 // Mocked week data — each day maps to an energy level (high/steady/low).
@@ -20,14 +22,27 @@ const WEEK: { day: string; energy: 'high' | 'steady' | 'low' }[] = [
   { day: '日', energy: 'high' },
 ];
 
-// Representative rice bowl for each energy level
-const ENERGY_BOWLS = {
+// Fallback representative bowls
+const FALLBACK = {
   high: EMOTION_BY_KEY['happy'],
   steady: EMOTION_BY_KEY['calm'],
   low: EMOTION_BY_KEY['sad'],
 };
 
 export default function ParentHome() {
+  const { map: energyMap } = useSchoolEnergyMap();
+
+  // Representative bowl per energy level — respects school's configuration
+  const ENERGY_BOWLS = useMemo(() => {
+    const findFirst = (level: EnergyLevel) =>
+      EMOTIONS.find((e) => (energyMap[e.key] || 'steady') === level && e.image);
+    return {
+      high: findFirst('high') || FALLBACK.high,
+      steady: findFirst('steady') || FALLBACK.steady,
+      low: findFirst('low') || FALLBACK.low,
+    };
+  }, [energyMap]);
+
   const highCount = WEEK.filter((w) => w.energy === 'high').length;
   const steadyCount = WEEK.filter((w) => w.energy === 'steady').length;
   const lowCount = WEEK.filter((w) => w.energy === 'low').length;

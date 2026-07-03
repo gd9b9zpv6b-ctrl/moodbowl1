@@ -110,3 +110,48 @@ achieve "self-only" privacy. Instead, four concrete anti-fake-happy features shi
 ### Screenshots verified
 - Home composer: hollow icon in 講唔出 category · energy slider working
 - School admin: policy section with chips + role selectors rendering correctly
+
+## 2026-07-03 · School-configurable energy mapping + more UX
+User request: schools should decide which emotion goes to which energy bucket.
+
+### 1. 🎨 School-configurable emotion→energy mapping (P0)
+- **New file** `/app/frontend/src/lib/school-energy-config.ts` — AsyncStorage-backed override
+  layer on top of the default `ENERGY_BY_KEY` from `constants/energy.ts`. Setting an emotion
+  back to its default removes it from overrides (keeps storage lean).
+- **New hook** `/app/frontend/src/hooks/use-school-energy-map.ts` — reactive read of the
+  merged (default + overrides) map for dashboards to consume.
+- **School Admin UI**: new section 「情緒能量分類」in `/school-admin`
+  - 3 buckets displayed as cards with left-border color per level
+  - Each emotion shown as chip with `EmotionVisual` mini icon + label
+  - Tap a chip → cycles level (高 → 平穩 → 低 → 高) and persists immediately
+  - "還原預設分類" button with confirm dialog to reset
+- **Teacher Dashboard**: representative bowls in the legend + self-care card + `ClassCard` legend
+  now dynamically pick the FIRST emotion (in EMOTIONS order) in each bucket per school config.
+  Falls back to happy/calm/sad if a bucket is empty.
+- **Parent Home**: same dynamic representative bowls for the weekly view.
+
+### 2. 👥 Peer normalization tips
+- Home composer now shows small warm cards below the note input when relevant:
+  - Low energy picked → "你唔係一個人 · 今日全校差唔多 35% 同學仔都揀咗低能量情緒。"
+  - High-intensity emotion picked (angry/furious/anxious/irritable/scared) → 
+    "好激動嘅感覺都好正常 · 唔洗擔心 · 慢慢寫低發生咗咩事。"
+- Reduces shame of admitting negative feelings.
+
+### 3. 📊 Emotion vs Energy dissonance flag (teacher dashboard)
+- Added 4th behavior flag: "4 位同學仔今日揀咗高能量情緒 · 但電量只有 20% 以下"
+- Uses the new `energy_level` field alongside self-reported emotion to detect fakes.
+- Currently mocked; real detection = future backend work.
+
+### Files touched
+- Backend: none
+- Frontend:
+  - `src/lib/school-energy-config.ts` (new)
+  - `src/hooks/use-school-energy-map.ts` (new)
+  - `app/school-admin.tsx` (energy config UI section)
+  - `app/teacher-dashboard.tsx` (consume hook + dissonance flag)
+  - `app/parent-home.tsx` (consume hook)
+  - `app/(tabs)/index.tsx` (peer normalization tips)
+
+### Notes for future
+- Storage still AsyncStorage — needs to move to backend per-school schema
+- No screenshots taken this session (user request to save credits)

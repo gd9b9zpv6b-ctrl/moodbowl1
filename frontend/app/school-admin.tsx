@@ -3,16 +3,29 @@ import { useEffect, useState } from 'react';
 import { ScrollView, StyleSheet, Text, View, Pressable, Alert, Switch, TextInput } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
+import { EmotionVisual } from '@/src/components/emotion-visual';
+import { EMOTIONS } from '@/src/constants/emotions';
+import { ENERGY_META, EnergyLevel } from '@/src/constants/energy';
 import { RoleHeader } from '@/src/components/role-header';
 import { AlertPolicy, DEFAULT_POLICY, SchoolAlertPolicy } from '@/src/lib/school-alert-policy';
+import { EnergyMap, SchoolEnergyConfig } from '@/src/lib/school-energy-config';
 import { COLORS, RADIUS, SPACING } from '@/src/constants/theme';
+
+const LEVEL_ORDER: EnergyLevel[] = ['high', 'steady', 'low'];
+
+function nextLevel(level: EnergyLevel): EnergyLevel {
+  const idx = LEVEL_ORDER.indexOf(level);
+  return LEVEL_ORDER[(idx + 1) % LEVEL_ORDER.length];
+}
 
 export default function SchoolAdmin() {
   const [policy, setPolicy] = useState<AlertPolicy>(DEFAULT_POLICY);
   const [newKeyword, setNewKeyword] = useState('');
+  const [energyMap, setEnergyMap] = useState<EnergyMap>(SchoolEnergyConfig.DEFAULT_MAP);
 
   useEffect(() => {
     SchoolAlertPolicy.get().then(setPolicy);
+    SchoolEnergyConfig.get().then(setEnergyMap);
   }, []);
 
   const savePolicy = async (next: AlertPolicy) => {
@@ -45,6 +58,38 @@ export default function SchoolAdmin() {
   const removeKeyword = (k: string) => {
     savePolicy({ ...policy, keywords: policy.keywords.filter((x) => x !== k) });
   };
+
+  const cycleEmotionLevel = async (emotionKey: string) => {
+    const current = energyMap[emotionKey] || 'steady';
+    const next = nextLevel(current);
+    const newMap = await SchoolEnergyConfig.setOverride(emotionKey, next);
+    setEnergyMap(newMap);
+  };
+
+  const resetEnergyMap = () => {
+    Alert.alert(
+      '重設能量分類？',
+      '會將所有 icon 分類還原到 app 預設。',
+      [
+        { text: '取消', style: 'cancel' },
+        {
+          text: '重設',
+          style: 'destructive',
+          onPress: async () => {
+            const fresh = await SchoolEnergyConfig.reset();
+            setEnergyMap(fresh);
+          },
+        },
+      ],
+    );
+  };
+
+  // Group emotions by their currently-configured energy level
+  const bucketed: Record<EnergyLevel, typeof EMOTIONS> = { high: [], steady: [], low: [] };
+  EMOTIONS.forEach((e) => {
+    const level = (energyMap[e.key] || 'steady') as EnergyLevel;
+    bucketed[level].push(e);
+  });
 
   return (
     <SafeAreaView style={styles.safe} edges={['top']}>
@@ -227,6 +272,54 @@ export default function SchoolAdmin() {
             每間學校可以自己決定監察政策 · 冇強制 default · 亦可以完全關閉。
           </Text>
         </View>
+
+        {/* Emotion → Energy mapping · school customizable */}
+        <Text style={styles.sectionTitle}>情緒能量分類</Text>
+        <View style={styles.energyIntro}>
+          <Feather name="info" size={13} color={COLORS.textSecondary} />
+          <Text style={styles.energyIntroText}>
+            撳一撳飯團 · 就會切換去下一個 bucket（高 → 平穩 → 低 → 高）· 每間學校可以自己決定分類。
+          </Text>
+        </View>
+
+        {LEVEL_ORDER.map((level) => {
+          const meta = ENERGY_META[level];
+          const items = bucketed[level];
+          return (
+            <View key={level} style={[styles.energyBucket, { borderLeftColor: meta.color }]}>
+              <View style={styles.energyBucketHeader}>
+                <View style={[styles.energyDot, { backgroundColor: meta.color }]} />
+                <Text style={styles.energyBucketLabel}>{meta.label}</Text>
+                <Text style={styles.energyBucketCount}>{items.length} 個</Text>
+              </View>
+              {items.length === 0 ? (
+                <Text style={styles.energyEmpty}>（呢個 bucket 冇 icon）</Text>
+              ) : (
+                <View style={styles.energyChipRow}>
+                  {items.map((e) => (
+                    <Pressable
+                      key={e.key}
+                      onPress={() => cycleEmotionLevel(e.key)}
+                      style={styles.energyChip}
+                    >
+                      <EmotionVisual emotion={e} size={26} radius={13} />
+                      <Text style={styles.energyChipLabel}>{e.label}</Text>
+                    </Pressable>
+                  ))}
+                </View>
+              )}
+            </View>
+          );
+        })}
+
+        <Pressable
+          testID="reset-energy-map"
+          style={styles.resetBtn}
+          onPress={resetEnergyMap}
+        >
+          <Feather name="rotate-ccw" size={14} color={COLORS.textSecondary} />
+          <Text style={styles.resetBtnText}>還原預設分類</Text>
+        </Pressable>
 
         <Text style={styles.sectionTitle}>數據 · 報告</Text>
 
@@ -423,5 +516,84 @@ const styles = StyleSheet.create({
     color: '#7A5C3F',
     fontStyle: 'italic',
     lineHeight: 15,
+  },
+
+  // Energy bucket config
+  energyIntro: {
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    gap: 6,
+    padding: SPACING.sm,
+    marginBottom: SPACING.sm,
+  },
+  energyIntroText: {
+    flex: 1,
+    fontSize: 11,
+    color: COLORS.textSecondary,
+    lineHeight: 15,
+  },
+  energyBucket: {
+    backgroundColor: COLORS.bgCard,
+    borderRadius: RADIUS.md,
+    borderLeftWidth: 4,
+    padding: SPACING.md,
+    marginBottom: SPACING.sm,
+  },
+  energyBucketHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+    marginBottom: SPACING.sm,
+  },
+  energyDot: { width: 10, height: 10, borderRadius: 5 },
+  energyBucketLabel: {
+    flex: 1,
+    fontSize: 14,
+    fontWeight: '800',
+    color: COLORS.textPrimary,
+  },
+  energyBucketCount: {
+    fontSize: 11,
+    color: COLORS.textSecondary,
+    fontWeight: '700',
+  },
+  energyEmpty: {
+    fontSize: 12,
+    color: COLORS.textDisabled,
+    fontStyle: 'italic',
+    paddingVertical: 4,
+  },
+  energyChipRow: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 6,
+  },
+  energyChip: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 5,
+    paddingHorizontal: 8,
+    paddingVertical: 5,
+    borderRadius: RADIUS.pill,
+    backgroundColor: COLORS.bgInput,
+  },
+  energyChipLabel: {
+    fontSize: 12,
+    fontWeight: '600',
+    color: COLORS.textPrimary,
+  },
+  resetBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 6,
+    paddingVertical: 10,
+    marginTop: 4,
+    marginBottom: SPACING.md,
+  },
+  resetBtnText: {
+    fontSize: 12,
+    color: COLORS.textSecondary,
+    fontWeight: '600',
   },
 });

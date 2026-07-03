@@ -1,13 +1,15 @@
 import { Feather } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
+import { useMemo } from 'react';
 import { ScrollView, StyleSheet, Text, View, Pressable, Alert } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { EmotionVisual } from '@/src/components/emotion-visual';
-import { EMOTION_BY_KEY } from '@/src/constants/emotions';
-import { ENERGY_META } from '@/src/constants/energy';
+import { EMOTIONS, EMOTION_BY_KEY } from '@/src/constants/emotions';
+import { ENERGY_META, EnergyLevel } from '@/src/constants/energy';
 import { RoleHeader } from '@/src/components/role-header';
 import { RoleStorage } from '@/src/lib/role-storage';
+import { useSchoolEnergyMap } from '@/src/hooks/use-school-energy-map';
 import { COLORS, RADIUS, SPACING } from '@/src/constants/theme';
 
 // 每班的能量分佈 (mock)
@@ -29,15 +31,19 @@ const BEHAVIOR_FLAGS = [
   { icon: 'trending-down', text: '5B 呢周 open app 少咗 40%', tone: 'warn' as const },
   { icon: 'moon', text: '3 位同學仔連續 3 晚凌晨 12 點後開 app', tone: 'warn' as const },
   { icon: 'zap', text: '6A 情緒波幅比上周高 · 可能有壓力事件', tone: 'info' as const },
+  // 情緒 vs 電量不一致 (dissonance) — student says one thing but battery says another
+  { icon: 'battery', text: '4 位同學仔今日揀咗高能量情緒 · 但電量只有 20% 以下', tone: 'warn' as const },
 ];
 
-// 三個代表飯團
-const BOWL_HIGH = EMOTION_BY_KEY['happy'];
-const BOWL_STEADY = EMOTION_BY_KEY['calm'];
-const BOWL_LOW = EMOTION_BY_KEY['sad'];
+// Fallback representative bowls (used before school config loads)
+const FALLBACK = {
+  high: EMOTION_BY_KEY['happy'],
+  steady: EMOTION_BY_KEY['calm'],
+  low: EMOTION_BY_KEY['sad'],
+};
 
 // 一班嘅能量 stat card
-function ClassCard({ c }: { c: typeof CLASS_DATA[number] }) {
+function ClassCard({ c, bowls }: { c: typeof CLASS_DATA[number]; bowls: typeof FALLBACK }) {
   const total = c.high + c.steady + c.low;
   return (
     <View style={styles.classCard}>
@@ -54,15 +60,15 @@ function ClassCard({ c }: { c: typeof CLASS_DATA[number] }) {
 
       <View style={styles.legend}>
         <View style={styles.legendItem}>
-          {BOWL_HIGH && <EmotionVisual emotion={BOWL_HIGH} size={20} radius={10} />}
+          {bowls.high && <EmotionVisual emotion={bowls.high} size={20} radius={10} />}
           <Text style={styles.legendText}>{Math.round((c.high / total) * 100)}%</Text>
         </View>
         <View style={styles.legendItem}>
-          {BOWL_STEADY && <EmotionVisual emotion={BOWL_STEADY} size={20} radius={10} />}
+          {bowls.steady && <EmotionVisual emotion={bowls.steady} size={20} radius={10} />}
           <Text style={styles.legendText}>{Math.round((c.steady / total) * 100)}%</Text>
         </View>
         <View style={styles.legendItem}>
-          {BOWL_LOW && <EmotionVisual emotion={BOWL_LOW} size={20} radius={10} />}
+          {bowls.low && <EmotionVisual emotion={bowls.low} size={20} radius={10} />}
           <Text style={styles.legendText}>{Math.round((c.low / total) * 100)}%</Text>
         </View>
         {c.alerts > 0 && (
@@ -78,6 +84,20 @@ function ClassCard({ c }: { c: typeof CLASS_DATA[number] }) {
 
 export default function TeacherDashboard() {
   const router = useRouter();
+  const { map: energyMap } = useSchoolEnergyMap();
+
+  // Pick the FIRST emotion mapped to each bucket in EMOTIONS order — the "representative bowl".
+  // Falls back to hardcoded happy/calm/sad if a bucket is empty in the school's config.
+  const bowls = useMemo(() => {
+    const findFirst = (level: EnergyLevel) =>
+      EMOTIONS.find((e) => (energyMap[e.key] || 'steady') === level && e.image);
+    return {
+      high: findFirst('high') || FALLBACK.high,
+      steady: findFirst('steady') || FALLBACK.steady,
+      low: findFirst('low') || FALLBACK.low,
+    };
+  }, [energyMap]);
+
   return (
     <SafeAreaView style={styles.safe} edges={['top']}>
       <RoleHeader role="teacher" title="老師 · Dashboard" />
@@ -98,7 +118,7 @@ export default function TeacherDashboard() {
           style={styles.selfCard}
         >
           <View style={styles.selfBowlWrap}>
-            {BOWL_HIGH && <EmotionVisual emotion={BOWL_HIGH} size={48} radius={RADIUS.md} />}
+            {bowls.high && <EmotionVisual emotion={bowls.high} size={48} radius={RADIUS.md} />}
           </View>
           <View style={{ flex: 1 }}>
             <Text style={styles.selfTitle}>老師都可以用呢個 App</Text>
@@ -167,7 +187,7 @@ export default function TeacherDashboard() {
         <View style={styles.legendCard}>
           <View style={styles.legendRow}>
             <View style={styles.legendBowl}>
-              {BOWL_HIGH && <EmotionVisual emotion={BOWL_HIGH} size={44} radius={RADIUS.md} />}
+              {bowls.high && <EmotionVisual emotion={bowls.high} size={44} radius={RADIUS.md} />}
             </View>
             <View style={{ flex: 1 }}>
               <Text style={[styles.legendLabel, { color: ENERGY_META.high.color }]}>
@@ -179,7 +199,7 @@ export default function TeacherDashboard() {
           <View style={styles.legendDivider} />
           <View style={styles.legendRow}>
             <View style={styles.legendBowl}>
-              {BOWL_STEADY && <EmotionVisual emotion={BOWL_STEADY} size={44} radius={RADIUS.md} />}
+              {bowls.steady && <EmotionVisual emotion={bowls.steady} size={44} radius={RADIUS.md} />}
             </View>
             <View style={{ flex: 1 }}>
               <Text style={[styles.legendLabel, { color: ENERGY_META.steady.color }]}>
@@ -191,7 +211,7 @@ export default function TeacherDashboard() {
           <View style={styles.legendDivider} />
           <View style={styles.legendRow}>
             <View style={styles.legendBowl}>
-              {BOWL_LOW && <EmotionVisual emotion={BOWL_LOW} size={44} radius={RADIUS.md} />}
+              {bowls.low && <EmotionVisual emotion={bowls.low} size={44} radius={RADIUS.md} />}
             </View>
             <View style={{ flex: 1 }}>
               <Text style={[styles.legendLabel, { color: ENERGY_META.low.color }]}>
@@ -205,7 +225,7 @@ export default function TeacherDashboard() {
         {/* 每班分佈 */}
         <Text style={styles.sectionTitle}>我教嘅班</Text>
         {CLASS_DATA.map((c) => (
-          <ClassCard key={c.name} c={c} />
+          <ClassCard key={c.name} c={c} bowls={bowls} />
         ))}
 
         {/* 老師錦囊 */}

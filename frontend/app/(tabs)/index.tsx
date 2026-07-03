@@ -17,6 +17,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { randomAdjective, randomAffirmation } from '@/src/constants/affirmations';
 import { EMOTIONS, Emotion, EMOTION_BY_KEY, EMOTION_CATEGORIES, EmotionCategory } from '@/src/constants/emotions';
+import { ENERGY_BY_KEY, EnergyLevel } from '@/src/constants/energy';
 import { COLORS, RADIUS, SPACING } from '@/src/constants/theme';
 import { api, Entry } from '@/src/lib/api';
 import { useAuth } from '@/src/lib/auth-context';
@@ -86,6 +87,16 @@ export default function Home() {
     [selectedKeys],
   );
   const primarySelected = selectedEmotions[0];
+
+  // Dominant energy level among selected emotions — used for peer-normalization tip.
+  // Priority: low > high > steady (we surface low first because that's when reassurance matters most).
+  const dominantEnergy: EnergyLevel | null = useMemo(() => {
+    if (selectedEmotions.length === 0) return null;
+    const levels = selectedEmotions.map((e): EnergyLevel => (ENERGY_BY_KEY[e.key] as EnergyLevel) || 'steady');
+    if (levels.includes('low')) return 'low';
+    if (levels.includes('high')) return 'high';
+    return 'steady';
+  }, [selectedEmotions]);
 
   const today = useMemo(() => todayISO(), []);
 
@@ -416,6 +427,26 @@ export default function Home() {
                   textAlignVertical="top"
                   style={styles.journalInput}
                 />
+
+                {/* Peer normalization — reassure kid that low/high energy is normal & shared */}
+                {dominantEnergy === 'low' && (
+                  <View testID="peer-tip-low" style={styles.peerTip}>
+                    <Text style={styles.peerTipEmoji}>💛</Text>
+                    <Text style={styles.peerTipText}>
+                      <Text style={styles.peerTipBold}>你唔係一個人 · </Text>
+                      今日全校差唔多 35% 同學仔都揀咗低能量情緒。
+                    </Text>
+                  </View>
+                )}
+                {dominantEnergy === 'high' && selectedEmotions.some((e) => ['angry', 'furious', 'anxious', 'irritable', 'scared'].includes(e.key)) && (
+                  <View testID="peer-tip-high" style={styles.peerTip}>
+                    <Text style={styles.peerTipEmoji}>🧡</Text>
+                    <Text style={styles.peerTipText}>
+                      <Text style={styles.peerTipBold}>好激動嘅感覺都好正常 · </Text>
+                      唔洗擔心 · 慢慢寫低發生咗咩事。
+                    </Text>
+                  </View>
+                )}
 
                 {/* Battery slider — energy dimension (independent of emotion label) */}
                 <EnergySlider value={energy} onChange={setEnergy} />
@@ -785,6 +816,28 @@ const styles = StyleSheet.create({
   privacyBannerBold: {
     fontWeight: '800',
     color: '#3A5545',
+  },
+  peerTip: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+    padding: SPACING.sm + 2,
+    borderRadius: RADIUS.sm,
+    backgroundColor: '#FFF6E5',
+    borderWidth: 1,
+    borderColor: '#F0D8A8',
+    marginTop: SPACING.sm,
+  },
+  peerTipEmoji: { fontSize: 18 },
+  peerTipText: {
+    flex: 1,
+    fontSize: 12,
+    color: '#7A5C3F',
+    lineHeight: 17,
+  },
+  peerTipBold: {
+    fontWeight: '800',
+    color: '#5A3F1F',
   },
   ctaRow: { flexDirection: 'row', gap: SPACING.sm, marginBottom: SPACING.lg },
   ctaCard: {
