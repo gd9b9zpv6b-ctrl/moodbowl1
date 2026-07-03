@@ -1,4 +1,4 @@
-export type EmotionCategory = 'warm' | 'sad' | 'nervous' | 'wound' | 'anger';
+export type EmotionCategory = 'warm' | 'sad' | 'nervous' | 'wound' | 'anger' | 'unspoken';
 
 export type Emotion = {
   key: string;
@@ -21,6 +21,7 @@ export const EMOTION_CATEGORIES: {
   { key: 'nervous', label: '緊張 · 不安',     short: '緊張',       color: '#FFD6A5' },
   { key: 'wound',   label: '自我懷疑 · 被傷', short: '自我懷疑',   color: '#D5AAFF' },
   { key: 'anger',   label: '憤怒 · 痛楚',     short: '憤怒',       color: '#FFAAA5' },
+  { key: 'unspoken',label: '講唔出 · 一言難盡', short: '講唔出',    color: '#E8D5F0' },
 ];
 
 // Static requires so Metro can bundle the images.
@@ -41,6 +42,7 @@ export const EMOTION_IMAGES: Record<string, any> = {
   restless: require('../../assets/emotions/restless.png'),
   anxious: require('../../assets/emotions/anxious.png'),
   scared: require('../../assets/emotions/scared.png'),
+  uneasy: require('../../assets/emotions/uneasy.png'),
   unmotivated: require('../../assets/emotions/unmotivated.png'),
   worried: require('../../assets/emotions/worried.png'),
   overwhelmed: require('../../assets/emotions/overwhelmed.png'),
@@ -68,6 +70,10 @@ export const EMOTION_IMAGES: Record<string, any> = {
   furious: require('../../assets/emotions/furious.png'),
   'in-pain': require('../../assets/emotions/in-pain.png'),
   'in-agony': require('../../assets/emotions/in-agony.png'),
+  foggy: require('../../assets/emotions/foggy.png'),
+  questioning: require('../../assets/emotions/questioning.png'),
+  blank: require('../../assets/emotions/blank.png'),
+  indescribable: require('../../assets/emotions/indescribable.png'),
 };
 
 export const EMOTIONS: Emotion[] = [
@@ -96,6 +102,7 @@ export const EMOTIONS: Emotion[] = [
   { key: 'irritable', label: '煩躁', description: '個火開始上湧', color: '#FF8264', category: 'nervous', image: EMOTION_IMAGES.irritable },
   { key: 'anxious', label: '焦慮', description: '心入面亂到停唔到', color: '#D48DB4', category: 'nervous', image: EMOTION_IMAGES.anxious },
   { key: 'scared', label: '驚', description: '心跳好快 · 好唔安', color: '#9A93C0', category: 'nervous', image: EMOTION_IMAGES.scared },
+  { key: 'uneasy', label: '不安', description: '心裡總覺得有啲怪怪嘅', color: '#B0A08B', category: 'nervous', image: EMOTION_IMAGES.uneasy },
   { key: 'worried', label: '擔心', description: '諗嘢停唔到', color: '#D5DBA8', category: 'nervous', image: EMOTION_IMAGES.worried },
   { key: 'overwhelmed', label: '透唔到氣', description: '好多嘢一齊嚟', color: '#C4756E', category: 'nervous', image: EMOTION_IMAGES.overwhelmed },
   { key: 'trapped', label: '被困', description: '好似逃唔到出去', color: '#6BA8BF', category: 'nervous', image: EMOTION_IMAGES.trapped },
@@ -123,6 +130,12 @@ export const EMOTIONS: Emotion[] = [
   { key: 'furious', label: '激嬲', description: '把火燒到頂', color: '#D34848', category: 'anger', image: EMOTION_IMAGES.furious },
   { key: 'in-pain', label: '痛苦', description: '心 / 身好痛', color: '#B36663', category: 'anger', image: EMOTION_IMAGES['in-pain'] },
   { key: 'in-agony', label: '煎熬', description: '痛得好難捱', color: '#786095', category: 'anger', image: EMOTION_IMAGES['in-agony'] },
+
+  // Unspoken / 講唔出 — fallback when nothing else fits
+  { key: 'indescribable', label: '一言難盡', description: '好多感覺 · 講唔清楚', color: '#D9B8E8', category: 'unspoken', image: EMOTION_IMAGES.indescribable },
+  { key: 'foggy', label: '濛查查', description: '腦入面一片模糊', color: '#B8C1CE', category: 'unspoken', image: EMOTION_IMAGES.foggy },
+  { key: 'questioning', label: '唔知乜感覺', description: '有嘢喺度 · 但講唔出', color: '#E8CE8A', category: 'unspoken', image: EMOTION_IMAGES.questioning },
+  { key: 'blank', label: '一片空白', description: '腦入面咩都冇', color: '#CFC9BC', category: 'unspoken', image: EMOTION_IMAGES.blank },
 ];
 
 export const EMOTION_BY_KEY: Record<string, Emotion> = EMOTIONS.reduce(

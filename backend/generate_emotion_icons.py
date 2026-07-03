@@ -94,9 +94,9 @@ EMOTIONS = [
      RICE_HALF,
      "with a small downturned mouth and one big shiny teardrop under one eye; the heart-shaped bowl has an obvious dark crack line across it",
      "powder blue"),
-    # lonely — a single lonely bowl with a soft spotlight beam from above
+    # lonely — crouching under a spotlight beam from above (踎喺度嘅寂寞)
     ("lonely",       "dusty mauve",                     RICE_HALF,
-     "the bowl mascot sitting alone with a small quiet lonely expression, downcast eyes looking sideways, tiny sad frown mouth, one tiny stubby hand raised as if reaching out into empty space; a small pale sigh puff floating beside its face; a soft translucent SPOTLIGHT BEAM of pale warm light shining down onto the mascot from directly above (a subtle cone-shaped light beam like a stage spotlight, wider at the top narrower at the bottom around the bowl, semi-transparent white/cream color, edges soft not hard); the light emphasizes how the mascot is alone in the spotlight; NO table, NO chairs, NO room, NO furniture — just the bowl mascot under the spotlight beam on the plain pastel background",
+     "the bowl mascot CROUCHING / squatting DOWN low to the ground, sitting curled up on itself in a small huddled posture with its short stubby legs bent underneath it (like someone squatting knees-close-to-chest); BOTH tiny stubby arms wrapped around its own body/knees in a self-hug; small quiet lonely expression, downcast eyes looking at the ground, tiny sad frown mouth; a small pale sigh puff floating beside its face; a soft translucent SPOTLIGHT BEAM of pale warm light shining down onto the mascot from directly above (a subtle cone-shaped stage-light beam, wider at top narrower at bottom, semi-transparent cream color, soft edges); the light emphasizes how the mascot is alone crouching in the spotlight; NO table, NO chairs, NO room, NO furniture — just the crouching bowl mascot under the spotlight on the plain pastel background",
      "dusty mauve"),
     # unmotivated — the original 'sigh puff' bowl now describes 冇心機
     ("unmotivated",  "muted sage grey-green",           RICE_HALF,
@@ -129,6 +129,10 @@ EMOTIONS = [
     ("anxious",      "pale butter yellow",              RICE_FULL,
      "with an anxious restless expression: wide alert worried eyes with visible strain lines, mouth in a small tight frown, ONE tiny stubby hand raised chewing/biting on its own arm (a nail-biting gesture); AROUND ITS HEAD a swirl of tiny worry symbols floating in a chaotic circle: two tiny question marks, one tiny exclamation mark, two tiny spiral swirls, a small wavy squiggle line — all clearly visible spinning around the bowl in a mental-storm pattern",
      "buttermilk yellow"),
+    # NEW: uneasy — chest-tight, eyes darting warily (不安)
+    ("uneasy",       "muted khaki",                     RICE_FULL,
+     "with an uneasy uncomfortable expression: wide alert eyes glancing SIDEWAYS to one side (darting warily as if watching for something bad to happen), small tense zigzag squiggle mouth (an uncertain wavy line, not a smile not a frown), one tiny stubby hand raised to its own chest area clutching lightly (chest tightness gesture); a couple of small subtle pulse-wave / heartbeat squiggle marks floating near its chest area, one small sweat drop on its cheek; overall a subtle unsettled feeling, not intense panic — just the quiet sense that something feels off",
+     "muted khaki"),
     # scared — the original 'sweat + squiggle' bowl now describes 驚
     ("scared",       "pale butter yellow",              RICE_FULL,
      "with worried curved eyebrows, small dot eyes looking sideways, one big sweat drop on the side of the bowl, a couple of tiny nervous squiggle marks around the head",
@@ -225,6 +229,25 @@ EMOTIONS = [
      "with a small pile of rice being fried inside the pan (not filled like a bowl)",
      "the frying-pan mascot has two round dot eyes, small blush cheeks, and a suffering tightly shut eyes and open trembling silent-scream mouth; several bright orange and yellow FIRE flames dancing directly UNDERNEATH the pan; a couple of tiny sweat drops around its head",
      "dusty plum"),
+
+    # ---- Unspoken / 講唔出 (fallback bucket) ----
+    # foggy — 濛查查, soft misty fog wrapping the bowl
+    ("foggy",        "soft pale dove grey-blue",        RICE_HALF,
+     "half of the bowl (especially the upper head area with the eyes) is gently WRAPPED and PARTIALLY OBSCURED by a soft translucent puffy white MIST / FOG CLOUD swirling around it (like a low-lying fog bank hugging the mascot); through the mist we can only faintly see two vague blurry dot eyes and a small confused parted-lip o-mouth; both tiny stubby arms hang slightly outward as if lost inside the fog; a few tiny extra fog wisps drifting off to the sides; overall dreamy hazy dazed vibe",
+     "pale misty grey"),
+    # questioning — 問號, big question mark, curious head-tilt
+    ("questioning",  "soft warm cream beige",           RICE_FULL,
+     "the whole bowl clearly TILTED to one side (about 20 degrees) in a curious head-tilt pose; both eyes wide open in a genuinely curious puzzled look, small o-shaped mouth slightly open, both tiny stubby hands raised palms-up in a 'huh?' shrug gesture; DIRECTLY ABOVE its head floats ONE VERY LARGE bold black cartoon question mark '?' about the same size as the bowl itself (clearly the dominant symbol), plus two smaller thinner question marks floating to either side for extra emphasis",
+     "warm buttercream"),
+    # blank — 一片空白, an ELECTRIC RICE COOKER with the lid open, completely empty inside
+    ("blank",        "white and cream electric RICE COOKER appliance (NOT a ceramic bowl this time — a chubby rounded rice cooker with a small square digital control panel with two tiny buttons on the front, a short black electric cord trailing off to one side, and a metal handle on top)",
+     "with the DOMED COOKER LID FULLY OPEN / lifted up and tilted back behind the cooker (hinged open like an opened clam shell revealing the inside), and the inner pot COMPLETELY EMPTY — just a shiny empty metallic silver inner bowl with absolutely NO rice, NO grains, nothing at all inside (totally hollow)",
+     "the rice cooker mascot has two small round black dot eyes and small pink blush cheeks on its front body, a completely blank expressionless straight-line closed mouth, both tiny stubby arms hanging limp at its sides, two little stubby legs; a small pale wisp of steam or a tiny sigh puff drifting up from the empty inside of the cooker to emphasize its emptiness; a soft drop shadow beneath",
+     "warm ivory white"),
+    # indescribable — 一言難盡, rainbow aura cloak wrapping the bowl
+    ("indescribable","soft creamy off-white",           RICE_FULL,
+     "the whole bowl is gently WRAPPED in a soft flowing translucent RAINBOW CLOAK / AURA made of layered wispy pastel color ribbons (pastel pink, peach, buttery yellow, mint, sky blue, lavender) swirling around the bowl like a soft aurora shawl draped over its shoulders and flowing behind it; the mascot has a soft complicated bittersweet expression — a small closed-eye gentle smile with one tiny sparkly tear dot at the corner of one eye (mix of happy and sad); a few tiny multi-color sparkles and one small pastel five-point star floating around the aurora; overall dreamy poetic 'many feelings at once' vibe",
+     "pale cotton candy pink"),
 ]
 
 
