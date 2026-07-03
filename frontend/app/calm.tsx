@@ -150,9 +150,24 @@ export default function Calm() {
 
         <Text style={styles.sectionTitle}>五個溫柔嘅小方法</Text>
 
-        {CALM_TECHNIQUES.map((t) => (
+        {CALM_TECHNIQUES.slice(0, 5).map((t) => (
           <TechniqueCard key={t.key} t={t} />
         ))}
+
+        <Pressable
+          testID="calm-more-btn"
+          onPress={() => router.push('/calm-more')}
+          style={({ pressed }) => [styles.moreBtn, pressed && { opacity: 0.9 }]}
+        >
+          <View style={styles.moreIcon}>
+            <Feather name="grid" size={20} color={COLORS.bgCard} />
+          </View>
+          <View style={{ flex: 1 }}>
+            <Text style={styles.moreTitle}>睇多啲 · 分情況揀</Text>
+            <Text style={styles.moreSub}>喺屋企 / 返工 / 訓唔到 · 唔同場合有唔同方法</Text>
+          </View>
+          <Feather name="chevron-right" size={22} color={COLORS.textPrimary} />
+        </Pressable>
 
         <View style={styles.footerNote}>
           <Feather name="heart" size={13} color="#8A7B6B" />
@@ -335,4 +350,24 @@ const styles = StyleSheet.create({
   },
   footerBold: { fontWeight: '700', color: '#8A7B6B' },
   phone: { fontWeight: '800', color: '#E86A6A' },
+  moreBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: SPACING.md,
+    backgroundColor: '#E4E9F5',
+    borderRadius: RADIUS.lg,
+    padding: SPACING.md,
+    marginTop: SPACING.sm,
+    marginBottom: SPACING.lg,
+  },
+  moreIcon: {
+    width: 48,
+    height: 48,
+    borderRadius: RADIUS.pill,
+    backgroundColor: '#8FA5D1',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  moreTitle: { fontSize: 16, fontWeight: '700', color: COLORS.textPrimary },
+  moreSub: { fontSize: 12, color: COLORS.textSecondary, marginTop: 2 },
 });
