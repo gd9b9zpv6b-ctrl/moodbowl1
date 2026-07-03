@@ -7,6 +7,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { EmotionVisual } from '@/src/components/emotion-visual';
 import { EntryDetailModal } from '@/src/components/entry-detail-modal';
+import { EntryEditModal } from '@/src/components/entry-edit-modal';
 import { EMOTION_BY_KEY } from '@/src/constants/emotions';
 import { COLORS, RADIUS, SPACING } from '@/src/constants/theme';
 import { api, Entry, User } from '@/src/lib/api';
@@ -31,6 +32,7 @@ export default function CalendarScreen() {
   const [loading, setLoading] = useState(true);
   const [featuring, setFeaturing] = useState<string | null>(null);
   const [detailEntry, setDetailEntry] = useState<Entry | null>(null);
+  const [editingEntry, setEditingEntry] = useState<Entry | null>(null);
 
   const featuredByDate = useMemo(() => user?.featured_by_date || {}, [user?.featured_by_date]);
 
@@ -276,6 +278,18 @@ export default function CalendarScreen() {
         visible={!!detailEntry}
         entry={detailEntry}
         onClose={() => setDetailEntry(null)}
+        onEdit={() => detailEntry && setEditingEntry(detailEntry)}
+      />
+      <EntryEditModal
+        visible={!!editingEntry}
+        entry={editingEntry}
+        onClose={() => setEditingEntry(null)}
+        onSaved={(updated) => {
+          setEntries((prev) => prev.map((e) => (e.id === updated.id ? updated : e)));
+        }}
+        onDeleted={(id) => {
+          setEntries((prev) => prev.filter((e) => e.id !== id));
+        }}
       />
     </SafeAreaView>
   );

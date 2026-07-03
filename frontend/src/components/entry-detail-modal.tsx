@@ -8,6 +8,7 @@ import {
   Text,
   View,
 } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { EMOTION_BY_KEY } from '@/src/constants/emotions';
 import { COLORS, RADIUS, SPACING } from '@/src/constants/theme';
@@ -18,6 +19,7 @@ type Props = {
   visible: boolean;
   entry: Entry | null;
   onClose: () => void;
+  onEdit?: () => void;
 };
 
 function fmtDate(iso: string) {
@@ -38,155 +40,182 @@ function fmtTime(iso: string) {
   }
 }
 
-export function EntryDetailModal({ visible, entry, onClose }: Props) {
+export function EntryDetailModal({ visible, entry, onClose, onEdit }: Props) {
   if (!entry) return null;
   const em = EMOTION_BY_KEY[entry.emotion];
-  const bg = (em?.color || COLORS.primaryLight) + '30';
+  const bg = (em?.color || COLORS.primaryLight) + '25';
 
   return (
-    <Modal visible={visible} transparent animationType="slide" onRequestClose={onClose}>
-      <View style={styles.backdrop}>
-        <Pressable style={StyleSheet.absoluteFill} onPress={onClose} />
-        <View style={[styles.card, { backgroundColor: bg }]}>
-          <View style={styles.headerRow}>
-            <View style={{ flex: 1 }}>
-              <Text style={styles.date}>{fmtDate(entry.entry_date)}</Text>
-              <Text style={styles.time}>{fmtTime(entry.created_at)}</Text>
-            </View>
-            <Pressable testID="entry-detail-close" onPress={onClose} hitSlop={10} style={styles.closeBtn}>
-              <Feather name="x" size={22} color={COLORS.textPrimary} />
+    <Modal
+      visible={visible}
+      animationType="slide"
+      onRequestClose={onClose}
+      presentationStyle={Platform.OS === 'ios' ? 'fullScreen' : undefined}
+    >
+      <SafeAreaView style={[styles.safe, { backgroundColor: bg }]} edges={['top', 'bottom']}>
+        <View style={styles.header}>
+          <Pressable
+            testID="entry-detail-close"
+            onPress={onClose}
+            style={styles.headerBtn}
+            hitSlop={10}
+          >
+            <Feather name="arrow-left" size={22} color={COLORS.textPrimary} />
+          </Pressable>
+          <View style={styles.headerCenter}>
+            <Text style={styles.headerDate}>{fmtDate(entry.entry_date)}</Text>
+            <Text style={styles.headerTime}>{fmtTime(entry.created_at)}</Text>
+          </View>
+          {onEdit ? (
+            <Pressable
+              testID="entry-detail-edit"
+              onPress={() => {
+                onClose();
+                setTimeout(() => onEdit(), 300);
+              }}
+              style={styles.headerBtn}
+              hitSlop={10}
+            >
+              <Feather name="edit-2" size={20} color={COLORS.textPrimary} />
             </Pressable>
+          ) : (
+            <View style={styles.headerBtn} />
+          )}
+        </View>
+
+        <ScrollView
+          contentContainerStyle={styles.scroll}
+          showsVerticalScrollIndicator={false}
+        >
+          <View style={styles.heroCard}>
+            <EmotionVisual emotion={em} size={140} radius={RADIUS.lg} />
+            <Text style={styles.emotionLabel}>{em?.label || entry.emotion}</Text>
+            <Text style={styles.emotionDesc}>{em?.description}</Text>
+            <View style={styles.badgeRow}>
+              {entry.is_secret && (
+                <View style={[styles.badge, { backgroundColor: '#FFE4E4' }]}>
+                  <Feather name="lock" size={11} color="#E86A6A" />
+                  <Text style={[styles.badgeText, { color: '#E86A6A' }]}>秘密</Text>
+                </View>
+              )}
+              {entry.is_public && (
+                <View style={styles.badge}>
+                  <Feather name="users" size={11} color={COLORS.textSecondary} />
+                  <Text style={styles.badgeText}>已分享</Text>
+                </View>
+              )}
+            </View>
           </View>
 
-          <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={{ paddingBottom: SPACING.xl }}>
-            <View style={styles.emotionRow}>
-              <EmotionVisual emotion={em} size={80} radius={RADIUS.md} />
-              <View style={{ flex: 1 }}>
-                <Text style={styles.emotionLabel}>{em?.label || entry.emotion}</Text>
-                <Text style={styles.emotionDesc}>{em?.description}</Text>
-                <View style={styles.badgeRow}>
-                  {entry.is_secret && (
-                    <View style={[styles.badge, { backgroundColor: '#FFE4E4' }]}>
-                      <Feather name="lock" size={11} color="#E86A6A" />
-                      <Text style={[styles.badgeText, { color: '#E86A6A' }]}>秘密</Text>
-                    </View>
-                  )}
-                  {entry.is_public && (
-                    <View style={styles.badge}>
-                      <Feather name="users" size={11} color={COLORS.textSecondary} />
-                      <Text style={styles.badgeText}>已分享</Text>
-                    </View>
-                  )}
-                </View>
+          {entry.note ? (
+            <View style={styles.noteCard}>
+              <View style={styles.noteHeader}>
+                <Feather name="feather" size={14} color={COLORS.primary} />
+                <Text style={styles.noteHeaderText}>你嘅故事</Text>
               </View>
+              <Text style={styles.noteText} selectable>
+                {entry.note}
+              </Text>
             </View>
-
-            {entry.note ? (
-              <View style={styles.noteCard}>
-                <View style={styles.noteHeader}>
-                  <Feather name="feather" size={14} color={COLORS.primary} />
-                  <Text style={styles.noteHeaderText}>你嘅故事</Text>
-                </View>
-                <Text style={styles.noteText} selectable>
-                  {entry.note}
-                </Text>
-              </View>
-            ) : (
-              <View style={styles.noteCard}>
-                <Text style={styles.emptyNote}>呢一段冇寫故事。</Text>
-              </View>
-            )}
-          </ScrollView>
-        </View>
-      </View>
+          ) : (
+            <View style={styles.noteCard}>
+              <Text style={styles.emptyNote}>呢一段冇寫故事。</Text>
+            </View>
+          )}
+        </ScrollView>
+      </SafeAreaView>
     </Modal>
   );
 }
 
 const styles = StyleSheet.create({
-  backdrop: {
-    flex: 1,
-    backgroundColor: 'rgba(45,49,66,0.55)',
-    justifyContent: 'flex-end',
-  },
-  card: {
-    borderTopLeftRadius: 28,
-    borderTopRightRadius: 28,
-    padding: SPACING.lg,
-    maxHeight: '85%',
-    minHeight: 320,
-    ...Platform.select({
-      web: { boxShadow: '0 -10px 30px rgba(0,0,0,0.15)' },
-      default: { elevation: 12, shadowColor: '#000', shadowOpacity: 0.15, shadowRadius: 20, shadowOffset: { width: 0, height: -6 } },
-    }),
-  },
-  headerRow: {
+  safe: { flex: 1 },
+  header: {
     flexDirection: 'row',
-    alignItems: 'flex-start',
-    marginBottom: SPACING.md,
+    alignItems: 'center',
+    paddingHorizontal: SPACING.md,
+    paddingVertical: SPACING.sm,
   },
-  date: { fontSize: 18, fontWeight: '700', color: COLORS.textPrimary },
-  time: { fontSize: 13, color: COLORS.textSecondary, marginTop: 2 },
-  closeBtn: {
-    width: 36,
-    height: 36,
+  headerBtn: {
+    width: 40,
+    height: 40,
     borderRadius: RADIUS.pill,
     backgroundColor: COLORS.bgCard,
     alignItems: 'center',
     justifyContent: 'center',
   },
-  emotionRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: SPACING.md,
-    padding: SPACING.md,
-    borderRadius: RADIUS.md,
-    backgroundColor: COLORS.bgCard,
+  headerCenter: { flex: 1, alignItems: 'center' },
+  headerDate: { fontSize: 15, fontWeight: '700', color: COLORS.textPrimary },
+  headerTime: { fontSize: 12, color: COLORS.textSecondary, marginTop: 2 },
+  scroll: {
+    padding: SPACING.lg,
+    paddingBottom: SPACING.xxl,
   },
-  emotionLabel: { fontSize: 22, fontWeight: '700', color: COLORS.textPrimary },
-  emotionDesc: { fontSize: 13, color: COLORS.textSecondary, marginTop: 2 },
+  heroCard: {
+    backgroundColor: COLORS.bgCard,
+    borderRadius: RADIUS.lg,
+    padding: SPACING.xl,
+    alignItems: 'center',
+    marginBottom: SPACING.md,
+  },
+  emotionLabel: {
+    fontSize: 28,
+    fontWeight: '700',
+    color: COLORS.textPrimary,
+    marginTop: SPACING.md,
+  },
+  emotionDesc: {
+    fontSize: 14,
+    color: COLORS.textSecondary,
+    marginTop: 4,
+    textAlign: 'center',
+  },
   badgeRow: {
     flexDirection: 'row',
     gap: 6,
-    marginTop: 6,
+    marginTop: SPACING.md,
   },
   badge: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: 4,
     paddingHorizontal: SPACING.sm,
-    paddingVertical: 3,
+    paddingVertical: 4,
     borderRadius: RADIUS.pill,
     backgroundColor: COLORS.bgInput,
   },
-  badgeText: { fontSize: 11, fontWeight: '600', color: COLORS.textSecondary },
+  badgeText: { fontSize: 12, fontWeight: '600', color: COLORS.textSecondary },
   noteCard: {
-    marginTop: SPACING.md,
     backgroundColor: COLORS.bgCard,
-    borderRadius: RADIUS.md,
-    padding: SPACING.lg,
+    borderRadius: RADIUS.lg,
+    padding: SPACING.xl,
+    minHeight: 240,
   },
   noteHeader: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: 6,
-    marginBottom: SPACING.sm,
+    marginBottom: SPACING.md,
+    paddingBottom: SPACING.sm,
+    borderBottomWidth: 1,
+    borderBottomColor: COLORS.bgInput,
   },
   noteHeaderText: {
     fontSize: 12,
     fontWeight: '700',
     color: COLORS.textSecondary,
-    letterSpacing: 0.5,
+    letterSpacing: 1,
   },
   noteText: {
-    fontSize: 16,
+    fontSize: 17,
     color: COLORS.textPrimary,
-    lineHeight: 26,
+    lineHeight: 30,
   },
   emptyNote: {
     fontSize: 14,
     fontStyle: 'italic',
     color: COLORS.textDisabled,
     textAlign: 'center',
+    marginTop: SPACING.xl,
   },
 });

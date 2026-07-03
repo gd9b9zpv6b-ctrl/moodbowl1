@@ -13,6 +13,7 @@ import {
   TextInput,
   View,
 } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { EMOTIONS, EMOTION_BY_KEY } from '@/src/constants/emotions';
 import { COLORS, RADIUS, SPACING } from '@/src/constants/theme';
@@ -26,6 +27,15 @@ type Props = {
   onSaved: (updated: Entry) => void;
   onDeleted: (id: string) => void;
 };
+
+function fmtDate(iso: string) {
+  try {
+    const [y, m, d] = iso.split('-');
+    return `${y} 年 ${parseInt(m, 10)} 月 ${parseInt(d, 10)} 日`;
+  } catch {
+    return iso;
+  }
+}
 
 export function EntryEditModal({ visible, entry, onClose, onSaved, onDeleted }: Props) {
   const [note, setNote] = useState('');
@@ -42,6 +52,7 @@ export function EntryEditModal({ visible, entry, onClose, onSaved, onDeleted }: 
 
   if (!entry) return null;
   const emotion = EMOTION_BY_KEY[emotionKey] || EMOTION_BY_KEY[entry.emotion];
+  const bg = (emotion?.color || COLORS.primaryLight) + '25';
 
   const save = async () => {
     if (!entry) return;
@@ -88,39 +99,56 @@ export function EntryEditModal({ visible, entry, onClose, onSaved, onDeleted }: 
   };
 
   return (
-    <Modal visible={visible} transparent animationType="slide" onRequestClose={onClose}>
-      <KeyboardAvoidingView
-        style={styles.backdrop}
-        behavior={Platform.OS === 'ios' ? 'padding' : undefined}
-      >
-        <Pressable style={StyleSheet.absoluteFill} onPress={onClose} />
-        <View style={styles.card}>
-          <View style={styles.headerRow}>
-            <Text style={styles.title}>編輯今日故事</Text>
-            <Pressable testID="entry-edit-close" onPress={onClose} hitSlop={10}>
-              <Feather name="x" size={22} color={COLORS.textSecondary} />
+    <Modal
+      visible={visible}
+      animationType="slide"
+      onRequestClose={onClose}
+      presentationStyle={Platform.OS === 'ios' ? 'fullScreen' : undefined}
+    >
+      <SafeAreaView style={[styles.safe, { backgroundColor: bg }]} edges={['top', 'bottom']}>
+        <KeyboardAvoidingView
+          style={{ flex: 1 }}
+          behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+        >
+          <View style={styles.header}>
+            <Pressable testID="entry-edit-close" onPress={onClose} style={styles.headerBtn} hitSlop={10}>
+              <Feather name="arrow-left" size={22} color={COLORS.textPrimary} />
+            </Pressable>
+            <View style={styles.headerCenter}>
+              <Text style={styles.headerTitle}>編輯故事</Text>
+              <Text style={styles.headerDate}>{fmtDate(entry.entry_date)}</Text>
+            </View>
+            <Pressable
+              testID="entry-edit-delete-header"
+              onPress={confirmDelete}
+              disabled={deleting}
+              style={styles.headerBtn}
+              hitSlop={10}
+            >
+              {deleting ? (
+                <ActivityIndicator size="small" color="#E86A6A" />
+              ) : (
+                <Feather name="trash-2" size={18} color="#E86A6A" />
+              )}
             </Pressable>
           </View>
 
           <ScrollView
             showsVerticalScrollIndicator={false}
             keyboardShouldPersistTaps="handled"
-            contentContainerStyle={{ paddingBottom: SPACING.md }}
+            contentContainerStyle={styles.scroll}
           >
-            <Text style={styles.sectionLabel}>而家覺得</Text>
-            <View style={styles.selectedRow}>
-              <EmotionVisual emotion={emotion} size={56} radius={RADIUS.md} />
-              <View style={{ flex: 1 }}>
-                <Text style={styles.selectedTitle}>{emotion?.label}</Text>
-                <Text style={styles.selectedHint}>{emotion?.description}</Text>
-              </View>
+            <View style={styles.heroCard}>
+              <EmotionVisual emotion={emotion} size={120} radius={RADIUS.lg} />
+              <Text style={styles.emotionLabel}>{emotion?.label}</Text>
+              <Text style={styles.emotionDesc}>{emotion?.description}</Text>
             </View>
 
-            <Text style={[styles.sectionLabel, { marginTop: SPACING.md }]}>換個心情</Text>
+            <Text style={styles.sectionLabel}>換個心情</Text>
             <ScrollView
               horizontal
               showsHorizontalScrollIndicator={false}
-              contentContainerStyle={{ gap: SPACING.sm, paddingVertical: SPACING.xs }}
+              contentContainerStyle={styles.chipRow}
             >
               {EMOTIONS.map((e) => {
                 const active = emotionKey === e.key;
@@ -135,25 +163,32 @@ export function EntryEditModal({ visible, entry, onClose, onSaved, onDeleted }: 
                       active && styles.chipActive,
                     ]}
                   >
-                    <EmotionVisual emotion={e} size={44} radius={RADIUS.sm} />
+                    <EmotionVisual emotion={e} size={48} radius={RADIUS.sm} />
                     <Text style={styles.chipLabel}>{e.label}</Text>
                   </Pressable>
                 );
               })}
             </ScrollView>
 
-            <Text style={[styles.sectionLabel, { marginTop: SPACING.md }]}>你嘅故事</Text>
-            <TextInput
-              testID="entry-edit-note"
-              value={note}
-              onChangeText={setNote}
-              multiline
-              textAlignVertical="top"
-              placeholder="想寫啲咩就寫啲咩..."
-              placeholderTextColor={COLORS.textDisabled}
-              style={styles.input}
-            />
+            <View style={styles.noteSection}>
+              <View style={styles.noteHeader}>
+                <Feather name="feather" size={14} color={COLORS.primary} />
+                <Text style={styles.noteHeaderText}>你嘅故事</Text>
+              </View>
+              <TextInput
+                testID="entry-edit-note"
+                value={note}
+                onChangeText={setNote}
+                multiline
+                textAlignVertical="top"
+                placeholder="想寫啲咩就寫啲咩..."
+                placeholderTextColor={COLORS.textDisabled}
+                style={styles.input}
+              />
+            </View>
+          </ScrollView>
 
+          <View style={styles.footer}>
             <Pressable
               testID="entry-edit-save"
               disabled={saving}
@@ -169,49 +204,55 @@ export function EntryEditModal({ visible, entry, onClose, onSaved, onDeleted }: 
                 </>
               )}
             </Pressable>
-
-            <Pressable
-              testID="entry-edit-delete"
-              disabled={deleting}
-              onPress={confirmDelete}
-              style={styles.deleteBtn}
-            >
-              {deleting ? (
-                <ActivityIndicator color="#E86A6A" />
-              ) : (
-                <>
-                  <Feather name="trash-2" size={16} color="#E86A6A" />
-                  <Text style={styles.deleteText}>刪除呢一段</Text>
-                </>
-              )}
-            </Pressable>
-          </ScrollView>
-        </View>
-      </KeyboardAvoidingView>
+          </View>
+        </KeyboardAvoidingView>
+      </SafeAreaView>
     </Modal>
   );
 }
 
 const styles = StyleSheet.create({
-  backdrop: {
-    flex: 1,
-    backgroundColor: 'rgba(45,49,66,0.55)',
-    justifyContent: 'flex-end',
-  },
-  card: {
-    backgroundColor: COLORS.bgCard,
-    borderTopLeftRadius: 28,
-    borderTopRightRadius: 28,
-    padding: SPACING.lg,
-    maxHeight: '90%',
-  },
-  headerRow: {
+  safe: { flex: 1 },
+  header: {
     flexDirection: 'row',
     alignItems: 'center',
-    justifyContent: 'space-between',
-    marginBottom: SPACING.md,
+    paddingHorizontal: SPACING.md,
+    paddingVertical: SPACING.sm,
   },
-  title: { fontSize: 20, fontWeight: '700', color: COLORS.textPrimary },
+  headerBtn: {
+    width: 40,
+    height: 40,
+    borderRadius: RADIUS.pill,
+    backgroundColor: COLORS.bgCard,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  headerCenter: { flex: 1, alignItems: 'center' },
+  headerTitle: { fontSize: 16, fontWeight: '700', color: COLORS.textPrimary },
+  headerDate: { fontSize: 12, color: COLORS.textSecondary, marginTop: 2 },
+  scroll: {
+    padding: SPACING.lg,
+    paddingBottom: SPACING.xl,
+  },
+  heroCard: {
+    backgroundColor: COLORS.bgCard,
+    borderRadius: RADIUS.lg,
+    padding: SPACING.xl,
+    alignItems: 'center',
+    marginBottom: SPACING.lg,
+  },
+  emotionLabel: {
+    fontSize: 24,
+    fontWeight: '700',
+    color: COLORS.textPrimary,
+    marginTop: SPACING.md,
+  },
+  emotionDesc: {
+    fontSize: 13,
+    color: COLORS.textSecondary,
+    marginTop: 2,
+    textAlign: 'center',
+  },
   sectionLabel: {
     fontSize: 13,
     fontWeight: '700',
@@ -219,53 +260,57 @@ const styles = StyleSheet.create({
     letterSpacing: 0.5,
     marginBottom: SPACING.sm,
   },
-  selectedRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: SPACING.md,
-    padding: SPACING.md,
-    borderRadius: RADIUS.md,
-    backgroundColor: COLORS.bgInput,
-  },
-  selectedTitle: { fontSize: 17, fontWeight: '700', color: COLORS.textPrimary },
-  selectedHint: { fontSize: 12, color: COLORS.textSecondary, marginTop: 2 },
+  chipRow: { gap: SPACING.sm, paddingVertical: SPACING.xs, paddingBottom: SPACING.md },
   chip: {
     borderRadius: RADIUS.md,
     padding: SPACING.xs,
     alignItems: 'center',
-    minWidth: 64,
+    minWidth: 70,
   },
   chipActive: { borderWidth: 3, borderColor: COLORS.textPrimary },
   chipLabel: { fontSize: 11, fontWeight: '600', color: COLORS.textPrimary, marginTop: 2 },
+  noteSection: {
+    backgroundColor: COLORS.bgCard,
+    borderRadius: RADIUS.lg,
+    padding: SPACING.lg,
+    marginTop: SPACING.sm,
+  },
+  noteHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    marginBottom: SPACING.sm,
+    paddingBottom: SPACING.sm,
+    borderBottomWidth: 1,
+    borderBottomColor: COLORS.bgInput,
+  },
+  noteHeaderText: {
+    fontSize: 12,
+    fontWeight: '700',
+    color: COLORS.textSecondary,
+    letterSpacing: 1,
+  },
   input: {
-    backgroundColor: COLORS.bgInput,
-    borderRadius: RADIUS.md,
-    padding: SPACING.md,
-    minHeight: 140,
-    fontSize: 15,
+    minHeight: 220,
+    fontSize: 16,
     color: COLORS.textPrimary,
-    lineHeight: 22,
+    lineHeight: 26,
+    textAlignVertical: 'top',
+  },
+  footer: {
+    padding: SPACING.lg,
+    paddingTop: SPACING.sm,
+    borderTopWidth: 1,
+    borderTopColor: 'rgba(0,0,0,0.06)',
   },
   saveBtn: {
-    marginTop: SPACING.md,
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
     gap: SPACING.sm,
     backgroundColor: COLORS.primary,
-    height: 52,
+    height: 54,
     borderRadius: RADIUS.pill,
   },
   saveText: { color: COLORS.textPrimary, fontSize: 16, fontWeight: '700' },
-  deleteBtn: {
-    marginTop: SPACING.sm,
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    gap: SPACING.sm,
-    height: 44,
-    borderRadius: RADIUS.pill,
-    backgroundColor: '#FFE4E4',
-  },
-  deleteText: { color: '#E86A6A', fontSize: 14, fontWeight: '700' },
 });
