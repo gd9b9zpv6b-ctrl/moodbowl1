@@ -39,28 +39,35 @@ function fmtDate(iso: string) {
 
 export function EntryEditModal({ visible, entry, onClose, onSaved, onDeleted }: Props) {
   const [note, setNote] = useState('');
-  const [emotionKey, setEmotionKey] = useState<string>('');
+  const [emotionKeys, setEmotionKeys] = useState<string[]>([]);
   const [saving, setSaving] = useState(false);
   const [deleting, setDeleting] = useState(false);
 
   useEffect(() => {
     if (entry && visible) {
       setNote(entry.note || '');
-      setEmotionKey(entry.emotion);
+      setEmotionKeys(entry.emotions?.length ? entry.emotions : [entry.emotion]);
     }
   }, [entry, visible]);
 
   if (!entry) return null;
-  const emotion = EMOTION_BY_KEY[emotionKey] || EMOTION_BY_KEY[entry.emotion];
-  const bg = (emotion?.color || COLORS.primaryLight) + '25';
+  const primaryEmotion = EMOTION_BY_KEY[emotionKeys[0]] || EMOTION_BY_KEY[entry.emotion];
+  const selectedEmotions = emotionKeys.map((k) => EMOTION_BY_KEY[k]).filter(Boolean);
+  const bg = (primaryEmotion?.color || COLORS.primaryLight) + '25';
+
+  const toggleEmotion = (key: string) => {
+    setEmotionKeys((prev) =>
+      prev.includes(key) ? prev.filter((k) => k !== key) : [...prev, key],
+    );
+  };
 
   const save = async () => {
-    if (!entry) return;
+    if (!entry || emotionKeys.length === 0) return;
     setSaving(true);
     try {
       const updated = await api.patch<Entry>(`/entries/${entry.id}`, {
         note,
-        emotion: emotionKey,
+        emotions: emotionKeys,
       });
       onSaved(updated);
       onClose();
@@ -139,24 +146,46 @@ export function EntryEditModal({ visible, entry, onClose, onSaved, onDeleted }: 
             contentContainerStyle={styles.scroll}
           >
             <View style={styles.heroCard}>
-              <EmotionVisual emotion={emotion} size={120} radius={RADIUS.lg} />
-              <Text style={styles.emotionLabel}>{emotion?.label}</Text>
-              <Text style={styles.emotionDesc}>{emotion?.description}</Text>
+              {selectedEmotions.length > 0 ? (
+                <View style={styles.heroStack}>
+                  {selectedEmotions.slice(0, 4).map((e) => (
+                    <View key={e.key} style={styles.heroStackItem}>
+                      <EmotionVisual emotion={e} size={80} radius={RADIUS.md} />
+                    </View>
+                  ))}
+                  {selectedEmotions.length > 4 && (
+                    <View style={styles.heroMore}>
+                      <Text style={styles.heroMoreText}>+{selectedEmotions.length - 4}</Text>
+                    </View>
+                  )}
+                </View>
+              ) : (
+                <EmotionVisual emotion={primaryEmotion} size={100} radius={RADIUS.lg} />
+              )}
+              <Text style={styles.emotionLabel}>
+                {selectedEmotions.map((e) => e.label).join(' · ') || primaryEmotion?.label}
+              </Text>
+              <Text style={styles.emotionDesc}>
+                {selectedEmotions.length <= 1
+                  ? primaryEmotion?.description
+                  : `一次過記低 ${selectedEmotions.length} 種心情`}
+              </Text>
             </View>
 
-            <Text style={styles.sectionLabel}>換個心情</Text>
+            <Text style={styles.sectionLabel}>揀 / 加 / 減 心情 (可以揀多個)</Text>
             <ScrollView
               horizontal
               showsHorizontalScrollIndicator={false}
               contentContainerStyle={styles.chipRow}
             >
               {EMOTIONS.map((e) => {
-                const active = emotionKey === e.key;
+                const active = emotionKeys.includes(e.key);
+                const orderIdx = emotionKeys.indexOf(e.key);
                 return (
                   <Pressable
                     key={e.key}
                     testID={`edit-pick-${e.key}`}
-                    onPress={() => setEmotionKey(e.key)}
+                    onPress={() => toggleEmotion(e.key)}
                     style={[
                       styles.chip,
                       { backgroundColor: e.color + '80' },
@@ -165,6 +194,11 @@ export function EntryEditModal({ visible, entry, onClose, onSaved, onDeleted }: 
                   >
                     <EmotionVisual emotion={e} size={48} radius={RADIUS.sm} />
                     <Text style={styles.chipLabel}>{e.label}</Text>
+                    {active && (
+                      <View style={styles.chipBadge}>
+                        <Text style={styles.chipBadgeText}>{orderIdx + 1}</Text>
+                      </View>
+                    )}
                   </Pressable>
                 );
               })}
@@ -191,9 +225,9 @@ export function EntryEditModal({ visible, entry, onClose, onSaved, onDeleted }: 
           <View style={styles.footer}>
             <Pressable
               testID="entry-edit-save"
-              disabled={saving}
+              disabled={saving || emotionKeys.length === 0}
               onPress={save}
-              style={[styles.saveBtn, saving && { opacity: 0.5 }]}
+              style={[styles.saveBtn, (saving || emotionKeys.length === 0) && { opacity: 0.5 }]}
             >
               {saving ? (
                 <ActivityIndicator color={COLORS.textPrimary} />
@@ -241,6 +275,29 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     marginBottom: SPACING.lg,
   },
+  heroStack: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    flexWrap: 'wrap',
+    gap: SPACING.xs,
+  },
+  heroStackItem: {
+    borderWidth: 2,
+    borderColor: COLORS.bgCard,
+    borderRadius: RADIUS.md + 2,
+  },
+  heroMore: {
+    minWidth: 36,
+    height: 36,
+    borderRadius: 18,
+    backgroundColor: COLORS.primaryLight,
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingHorizontal: 8,
+    marginLeft: 4,
+  },
+  heroMoreText: { fontSize: 13, fontWeight: '800', color: COLORS.primary },
   emotionLabel: {
     fontSize: 24,
     fontWeight: '700',
@@ -266,9 +323,23 @@ const styles = StyleSheet.create({
     padding: SPACING.xs,
     alignItems: 'center',
     minWidth: 70,
+    position: 'relative',
   },
-  chipActive: { borderWidth: 3, borderColor: COLORS.textPrimary },
+  chipActive: { borderWidth: 3, borderColor: COLORS.primary },
   chipLabel: { fontSize: 11, fontWeight: '600', color: COLORS.textPrimary, marginTop: 2 },
+  chipBadge: {
+    position: 'absolute',
+    top: -6,
+    right: -6,
+    minWidth: 22,
+    height: 22,
+    borderRadius: 11,
+    backgroundColor: COLORS.primary,
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingHorizontal: 6,
+  },
+  chipBadgeText: { color: COLORS.textPrimary, fontSize: 12, fontWeight: '800' },
   noteSection: {
     backgroundColor: COLORS.bgCard,
     borderRadius: RADIUS.lg,

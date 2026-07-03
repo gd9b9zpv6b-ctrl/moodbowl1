@@ -91,6 +91,13 @@ export default function Activities() {
                 <Feather name="chevron-right" size={20} color={COLORS.textPrimary} />
               </Pressable>
             ))}
+            <View style={styles.disclaimerCard}>
+              <Feather name="info" size={13} color="#8A7B6B" />
+              <Text style={styles.disclaimerText}>
+                <Text style={styles.disclaimerBold}>溫馨提示 · </Text>
+                呢啲活動係我哋個人分享,唔一定啱每個人。純粹提議 · 唔係專業治療。感覺唔啱嘅時候,揀返適合自己嘅節奏就好。
+              </Text>
+            </View>
           </View>
         )}
 
@@ -270,6 +277,25 @@ const styles = StyleSheet.create({
     marginTop: 4,
   },
   featuredMetaText: { fontSize: 11, color: COLORS.textSecondary },
+  disclaimerCard: {
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    gap: 6,
+    padding: SPACING.md,
+    borderRadius: RADIUS.md,
+    backgroundColor: '#FEF5E6',
+    marginTop: SPACING.xs,
+  },
+  disclaimerText: {
+    flex: 1,
+    fontSize: 12,
+    color: '#7A5C3F',
+    lineHeight: 18,
+  },
+  disclaimerBold: {
+    fontWeight: '700',
+    color: '#8A7B6B',
+  },
   chipRow: { paddingHorizontal: SPACING.lg, gap: SPACING.sm, paddingVertical: SPACING.sm, height: 56, alignItems: 'center' },
   chip: {
     height: 36,

@@ -121,7 +121,8 @@ def _user_to_out(u: dict) -> UserOut:
 
 
 class EntryIn(BaseModel):
-    emotion: str
+    emotion: Optional[str] = None            # legacy single-emotion field
+    emotions: Optional[List[str]] = None     # new multi-select list
     note: str = ""
     is_public: bool = False
     is_secret: bool = False
@@ -130,6 +131,7 @@ class EntryIn(BaseModel):
 
 class EntryUpdate(BaseModel):
     emotion: Optional[str] = None
+    emotions: Optional[List[str]] = None
     note: Optional[str] = None
     is_public: Optional[bool] = None
     is_secret: Optional[bool] = None
@@ -139,7 +141,8 @@ class EntryOut(BaseModel):
     id: str
     user_id: str
     display_name: Optional[str] = None
-    emotion: str
+    emotion: str                             # primary emotion (first of list)
+    emotions: List[str] = Field(default_factory=list)
     note: str
     is_public: bool
     is_secret: bool = False
@@ -250,6 +253,7 @@ async def _entries_with_hearts(cursor_docs: List[dict], user_id: str) -> List[En
             user_id=d["user_id"],
             display_name=d.get("display_name"),
             emotion=d["emotion"],
+            emotions=d.get("emotions") or ([d["emotion"]] if d.get("emotion") else []),
             note=d.get("note", ""),
             is_public=d.get("is_public", False),
             is_secret=d.get("is_secret", False),
@@ -265,13 +269,19 @@ async def _entries_with_hearts(cursor_docs: List[dict], user_id: str) -> List[En
 @api_router.post("/entries", response_model=EntryOut)
 async def create_entry(data: EntryIn, current=Depends(get_current_user)):
     entry_id = str(uuid.uuid4())
+    # Normalize emotions list
+    emotions_list = data.emotions or ([data.emotion] if data.emotion else [])
+    if not emotions_list:
+        raise HTTPException(status_code=400, detail="At least one emotion is required")
+    primary = emotions_list[0]
     # secret entries are always private
     is_public = data.is_public and not data.is_secret
     doc = {
         "id": entry_id,
         "user_id": current["id"],
         "display_name": current.get("display_name"),
-        "emotion": data.emotion,
+        "emotion": primary,
+        "emotions": emotions_list,
         "note": data.note,
         "is_public": is_public,
         "is_secret": data.is_secret,
@@ -279,7 +289,7 @@ async def create_entry(data: EntryIn, current=Depends(get_current_user)):
         "created_at": now_iso(),
     }
     await db.entries.insert_one(doc)
-    return EntryOut(**doc, hearts=0, hearted_by_me=False)
+    return EntryOut(**{k: v for k, v in doc.items() if k != "_id"}, hearts=0, hearted_by_me=False)
 
 
 @api_router.get("/entries", response_model=List[EntryOut])
@@ -342,6 +352,14 @@ async def update_entry(entry_id: str, data: EntryUpdate, current=Depends(get_cur
     if entry["user_id"] != current["id"]:
         raise HTTPException(status_code=403, detail="Not your entry")
     update_doc = {k: v for k, v in data.model_dump(exclude_unset=True).items() if v is not None}
+    # Keep primary emotion + emotions list in sync
+    if "emotions" in update_doc:
+        if not update_doc["emotions"]:
+            raise HTTPException(status_code=400, detail="At least one emotion is required")
+        update_doc["emotion"] = update_doc["emotions"][0]
+    elif "emotion" in update_doc:
+        # single-emotion legacy path — also refresh emotions list
+        update_doc["emotions"] = [update_doc["emotion"]]
     # secret entries are always private
     if update_doc.get("is_secret"):
         update_doc["is_public"] = False

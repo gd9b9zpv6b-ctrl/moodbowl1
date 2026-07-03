@@ -96,7 +96,10 @@ export default function Community() {
             </View>
           ) : (
             entries.map((entry) => {
-              const em = EMOTION_BY_KEY[entry.emotion];
+              const emList = (entry.emotions?.length ? entry.emotions : [entry.emotion])
+                .map((k) => EMOTION_BY_KEY[k])
+                .filter(Boolean);
+              const em = emList[0];
               return (
                 <View
                   key={entry.id}
@@ -104,9 +107,23 @@ export default function Community() {
                   style={styles.card}
                 >
                   <View style={styles.cardHeader}>
-                    <EmotionVisual emotion={em} size={44} radius={RADIUS.sm} />
+                    <View style={styles.emotionStack}>
+                      {emList.slice(0, 3).map((e, i) => (
+                        <View
+                          key={e.key}
+                          style={[
+                            styles.emotionStackItem,
+                            { marginLeft: i === 0 ? 0 : -14, zIndex: 3 - i },
+                          ]}
+                        >
+                          <EmotionVisual emotion={e} size={44} radius={RADIUS.sm} />
+                        </View>
+                      ))}
+                    </View>
                     <View style={{ flex: 1 }}>
-                      <Text style={styles.emotionLabel}>{em?.label || entry.emotion}</Text>
+                      <Text style={styles.emotionLabel} numberOfLines={1}>
+                        {emList.map((e) => e.label).join(' · ') || (em?.label || entry.emotion)}
+                      </Text>
                       <Text style={styles.author}>匿名朋友 · {entry.entry_date}</Text>
                     </View>
                   </View>
@@ -163,6 +180,12 @@ const styles = StyleSheet.create({
     marginBottom: SPACING.md,
   },
   cardHeader: { flexDirection: 'row', alignItems: 'center', gap: SPACING.sm },
+  emotionStack: { flexDirection: 'row', alignItems: 'center' },
+  emotionStackItem: {
+    borderWidth: 2,
+    borderColor: COLORS.bgCard,
+    borderRadius: RADIUS.sm + 2,
+  },
   iconWrap: { width: 44, height: 44, borderRadius: RADIUS.sm },
   emotionLabel: { fontSize: 16, fontWeight: '700', color: COLORS.textPrimary },
   author: { fontSize: 12, color: COLORS.textSecondary, marginTop: 2 },

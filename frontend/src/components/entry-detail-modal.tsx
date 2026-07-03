@@ -52,7 +52,10 @@ const PAPER_TINTS = Object.fromEntries(
 export function EntryDetailModal({ visible, entry, onClose, onEdit }: Props) {
   const { user } = useAuth();
   if (!entry) return null;
-  const em = EMOTION_BY_KEY[entry.emotion];
+  const emList = (entry.emotions?.length ? entry.emotions : [entry.emotion])
+    .map((k) => EMOTION_BY_KEY[k])
+    .filter(Boolean);
+  const em = emList[0];
 
   // Premium selection or default
   const isPremium = !!user?.is_premium;
@@ -109,7 +112,24 @@ export function EntryDetailModal({ visible, entry, onClose, onEdit }: Props) {
         showsVerticalScrollIndicator={false}
       >
         <View style={styles.emotionStrip}>
-          <EmotionVisual emotion={em} size={80} radius={RADIUS.md} />
+          <View style={styles.emotionStripStack}>
+            {emList.slice(0, 3).map((e, i) => (
+              <View
+                key={e.key}
+                style={[
+                  styles.emotionStripItem,
+                  { marginLeft: i === 0 ? 0 : -18, zIndex: 3 - i },
+                ]}
+              >
+                <EmotionVisual emotion={e} size={80} radius={RADIUS.md} />
+              </View>
+            ))}
+            {emList.length > 3 && (
+              <View style={styles.emotionStripMore}>
+                <Text style={styles.emotionStripMoreText}>+{emList.length - 3}</Text>
+              </View>
+            )}
+          </View>
           <View style={{ flex: 1 }}>
             <Text
               style={[
@@ -117,10 +137,10 @@ export function EntryDetailModal({ visible, entry, onClose, onEdit }: Props) {
                 { color: noteTextColor, fontFamily: DIARY_FONTS.brush },
               ]}
             >
-              {em?.label || entry.emotion}
+              {emList.map((e) => e.label).join(' · ') || (em?.label || entry.emotion)}
             </Text>
             <Text style={[styles.emotionDesc, { color: noteTextColor, opacity: 0.7 }]}>
-              {em?.description}
+              {emList.length <= 1 ? em?.description : `混合咗 ${emList.length} 種心情`}
             </Text>
             <View style={styles.badgeRow}>
               {entry.is_secret && (
@@ -224,7 +244,27 @@ const styles = StyleSheet.create({
     borderBottomColor: 'rgba(0,0,0,0.15)',
     borderStyle: 'dashed',
   },
-  emotionLabel: { fontSize: 34, lineHeight: 44 },
+  emotionStripStack: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  emotionStripItem: {
+    borderWidth: 2,
+    borderColor: 'rgba(255,255,255,0.6)',
+    borderRadius: RADIUS.md + 2,
+  },
+  emotionStripMore: {
+    marginLeft: 4,
+    minWidth: 28,
+    height: 28,
+    borderRadius: 14,
+    backgroundColor: 'rgba(255,255,255,0.7)',
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingHorizontal: 6,
+  },
+  emotionStripMoreText: { fontSize: 12, fontWeight: '700', color: COLORS.textPrimary },
+  emotionLabel: { fontSize: 30, lineHeight: 40 },
   emotionDesc: { fontSize: 14, marginTop: 2 },
   badgeRow: { flexDirection: 'row', gap: 6, marginTop: 6 },
   badge: {

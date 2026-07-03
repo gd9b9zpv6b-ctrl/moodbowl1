@@ -87,7 +87,8 @@ export type Entry = {
   id: string;
   user_id: string;
   display_name?: string | null;
-  emotion: string;
+  emotion: string;                // primary (first of list)
+  emotions: string[];             // multi-select list
   note: string;
   is_public: boolean;
   is_secret?: boolean;

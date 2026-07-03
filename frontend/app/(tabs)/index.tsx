@@ -37,7 +37,7 @@ function todayISO() {
 export default function Home() {
   const { user } = useAuth();
   const router = useRouter();
-  const [selected, setSelected] = useState<Emotion | null>(null);
+  const [selectedKeys, setSelectedKeys] = useState<string[]>([]);
   const [note, setNote] = useState('');
   const [share, setShare] = useState(false);
   const [secret, setSecret] = useState(false);
@@ -50,7 +50,19 @@ export default function Home() {
   const [pinModalVisible, setPinModalVisible] = useState(false);
   const [editingEntry, setEditingEntry] = useState<Entry | null>(null);
 
+  const selectedEmotions = useMemo(
+    () => selectedKeys.map((k) => EMOTION_BY_KEY[k]).filter(Boolean) as Emotion[],
+    [selectedKeys],
+  );
+  const primarySelected = selectedEmotions[0];
+
   const today = useMemo(() => todayISO(), []);
+
+  const toggleSelect = (e: Emotion) => {
+    setSelectedKeys((prev) =>
+      prev.includes(e.key) ? prev.filter((k) => k !== e.key) : [...prev, e.key],
+    );
+  };
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -72,17 +84,17 @@ export default function Home() {
   );
 
   const save = async () => {
-    if (!selected) return;
+    if (selectedKeys.length === 0) return;
     setSaving(true);
     try {
       await api.post<Entry>('/entries', {
-        emotion: selected.key,
+        emotions: selectedKeys,
         note,
         is_public: share,
         is_secret: secret,
         entry_date: today,
       });
-      setSelected(null);
+      setSelectedKeys([]);
       setNote('');
       setShare(false);
       setSecret(false);
@@ -101,8 +113,8 @@ export default function Home() {
   };
 
   const styleBg = user?.diary_style?.bg;
-  const bg = selected
-    ? selected.color + '30'
+  const bg = primarySelected
+    ? primarySelected.color + '30'
     : (styleBg || COLORS.bgMain);
 
   return (
@@ -140,17 +152,20 @@ export default function Home() {
 
             <View style={styles.emotionPromptRow}>
               <Text style={styles.emotionPromptTitle}>你今日嘅感受點啊?</Text>
-              <Text style={styles.emotionPromptHint}>撳一個飯碗 · 記低呢一刻</Text>
+              <Text style={styles.emotionPromptHint}>
+                撳一個或多個飯碗 · 記低呢一刻 (可以揀幾個一齊)
+              </Text>
             </View>
 
             <View style={styles.grid} testID="emotion-grid">
               {EMOTIONS.map((e) => {
-                const active = selected?.key === e.key;
+                const active = selectedKeys.includes(e.key);
+                const orderIdx = selectedKeys.indexOf(e.key);
                 return (
                   <Pressable
                     key={e.key}
                     testID={`emotion-${e.key}-picker`}
-                    onPress={() => setSelected(e)}
+                    onPress={() => toggleSelect(e)}
                     style={[
                       styles.emotionBtn,
                       { backgroundColor: e.color + '80' },
@@ -161,18 +176,46 @@ export default function Home() {
                       <EmotionVisual emotion={e} size={90} radius={RADIUS.md} />
                     </View>
                     <Text style={styles.emotionLabel}>{e.label}</Text>
+                    {active && (
+                      <View style={styles.emotionCheckBadge}>
+                        <Text style={styles.emotionCheckText}>{orderIdx + 1}</Text>
+                      </View>
+                    )}
                   </Pressable>
                 );
               })}
             </View>
 
-            {selected && (
+            {primarySelected && (
               <View style={styles.journalCard} testID="journal-card">
                 <View style={styles.journalHeader}>
-                  <EmotionVisual emotion={selected} size={60} radius={RADIUS.md} />
-                  <View style={{ flex: 1 }}>
-                    <Text style={styles.journalTitle}>而家覺得 {selected.label}</Text>
-                    <Text style={styles.journalHint}>{selected.description}</Text>
+                  <View style={styles.selectedRow}>
+                    {selectedEmotions.slice(0, 5).map((e) => (
+                      <Pressable
+                        key={e.key}
+                        testID={`selected-chip-${e.key}`}
+                        onPress={() => toggleSelect(e)}
+                        style={styles.selectedChip}
+                      >
+                        <EmotionVisual emotion={e} size={44} radius={RADIUS.sm} />
+                        <Feather
+                          name="x-circle"
+                          size={14}
+                          color={COLORS.textSecondary}
+                          style={styles.selectedChipRemove}
+                        />
+                      </Pressable>
+                    ))}
+                  </View>
+                  <View style={{ marginTop: SPACING.sm }}>
+                    <Text style={styles.journalTitle}>
+                      而家覺得 {selectedEmotions.map((e) => e.label).join(' · ')}
+                    </Text>
+                    <Text style={styles.journalHint}>
+                      {selectedEmotions.length === 1
+                        ? primarySelected.description
+                        : `一次過記低 ${selectedEmotions.length} 種心情`}
+                    </Text>
                   </View>
                 </View>
                 <TextInput
@@ -293,7 +336,10 @@ export default function Home() {
                 </Text>
               ) : (
                 todayEntries.map((entry) => {
-                  const em = EMOTION_BY_KEY[entry.emotion];
+                  const emList = (entry.emotions?.length ? entry.emotions : [entry.emotion])
+                    .map((k) => EMOTION_BY_KEY[k])
+                    .filter(Boolean);
+                  const em = emList[0];
                   const locked = entry.is_secret && !unlocked;
                   return (
                     <Pressable
@@ -313,8 +359,27 @@ export default function Home() {
                       ]}
                     >
                       <View style={styles.entryHeader}>
-                        <EmotionVisual emotion={em} size={40} radius={RADIUS.sm} />
-                        <Text style={styles.entryEmotion}>{em?.label || entry.emotion}</Text>
+                        <View style={styles.entryEmotionStack}>
+                          {emList.slice(0, 3).map((e, i) => (
+                            <View
+                              key={e.key}
+                              style={[
+                                styles.entryEmotionStackItem,
+                                { marginLeft: i === 0 ? 0 : -14, zIndex: 3 - i },
+                              ]}
+                            >
+                              <EmotionVisual emotion={e} size={40} radius={RADIUS.sm} />
+                            </View>
+                          ))}
+                          {emList.length > 3 && (
+                            <View style={styles.entryMoreBadge}>
+                              <Text style={styles.entryMoreText}>+{emList.length - 3}</Text>
+                            </View>
+                          )}
+                        </View>
+                        <Text style={styles.entryEmotion} numberOfLines={1}>
+                          {emList.map((e) => e.label).join(' · ')}
+                        </Text>
                         {entry.is_secret && (
                           <View style={[styles.publicBadge, { backgroundColor: '#FFE4E4' }]}>
                             <Feather name="lock" size={12} color="#E86A6A" />
@@ -482,10 +547,43 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     marginBottom: SPACING.sm,
     paddingBottom: SPACING.sm,
+    position: 'relative',
   },
   emotionBtnActive: {
     borderWidth: 3,
-    borderColor: COLORS.textPrimary,
+    borderColor: COLORS.primary,
+  },
+  emotionCheckBadge: {
+    position: 'absolute',
+    top: 4,
+    right: 4,
+    minWidth: 22,
+    height: 22,
+    borderRadius: 11,
+    backgroundColor: COLORS.primary,
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingHorizontal: 6,
+  },
+  emotionCheckText: {
+    color: COLORS.textPrimary,
+    fontSize: 12,
+    fontWeight: '800',
+  },
+  selectedRow: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: SPACING.sm,
+  },
+  selectedChip: {
+    position: 'relative',
+  },
+  selectedChipRemove: {
+    position: 'absolute',
+    top: -6,
+    right: -6,
+    backgroundColor: COLORS.bgCard,
+    borderRadius: 10,
   },
   emotionImgWrap: {
     width: '100%',
@@ -598,6 +696,23 @@ const styles = StyleSheet.create({
   emptyText: { color: COLORS.textSecondary, fontSize: 14 },
   entryCard: { borderRadius: RADIUS.md, padding: SPACING.md, marginBottom: SPACING.sm },
   entryHeader: { flexDirection: 'row', alignItems: 'center', gap: SPACING.sm },
+  entryEmotionStack: { flexDirection: 'row', alignItems: 'center' },
+  entryEmotionStackItem: {
+    borderWidth: 2,
+    borderColor: COLORS.bgCard,
+    borderRadius: RADIUS.sm + 2,
+  },
+  entryMoreBadge: {
+    marginLeft: 4,
+    minWidth: 26,
+    height: 26,
+    borderRadius: 13,
+    backgroundColor: COLORS.bgCard,
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingHorizontal: 6,
+  },
+  entryMoreText: { fontSize: 11, fontWeight: '700', color: COLORS.primary },
   entryImg: { width: 40, height: 40, borderRadius: RADIUS.sm },
   entryEmotion: { flex: 1, fontSize: 15, fontWeight: '700', color: COLORS.textPrimary },
   publicBadge: {

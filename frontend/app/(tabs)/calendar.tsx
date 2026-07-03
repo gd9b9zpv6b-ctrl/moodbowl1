@@ -179,7 +179,7 @@ export default function CalendarScreen() {
               <Text style={styles.pickerTitle}>揀個心情擺上日曆</Text>
             </View>
             <Text style={styles.pickerHint}>
-              呢一日有 {entriesForDay.length} 個心情 · 撳一下決定邊個做「代表」
+              呢一日有 {entriesForDay.length} 段記錄 · 撳一下決定邊個做「代表」
             </Text>
             <ScrollView
               horizontal
@@ -187,7 +187,10 @@ export default function CalendarScreen() {
               contentContainerStyle={styles.pickerRow}
             >
               {entriesForDay.map((entry) => {
-                const em = EMOTION_BY_KEY[entry.emotion];
+                const emList = (entry.emotions?.length ? entry.emotions : [entry.emotion])
+                  .map((k) => EMOTION_BY_KEY[k])
+                  .filter(Boolean);
+                const em = emList[0];
                 const active = featuredIdForSelected === entry.id;
                 const isLoading = featuring === entry.id;
                 return (
@@ -203,7 +206,9 @@ export default function CalendarScreen() {
                     ]}
                   >
                     <EmotionVisual emotion={em} size={44} radius={RADIUS.sm} />
-                    <Text style={styles.pickerChipLabel}>{em?.label}</Text>
+                    <Text style={styles.pickerChipLabel} numberOfLines={1}>
+                      {emList.map((e) => e.label).join('·')}
+                    </Text>
                     {active && (
                       <View style={styles.activeBadge}>
                         <Feather name="check" size={10} color={COLORS.textPrimary} />
@@ -228,7 +233,10 @@ export default function CalendarScreen() {
           </View>
         ) : (
           entriesForDay.map((entry) => {
-            const em = EMOTION_BY_KEY[entry.emotion];
+            const emList = (entry.emotions?.length ? entry.emotions : [entry.emotion])
+              .map((k) => EMOTION_BY_KEY[k])
+              .filter(Boolean);
+            const em = emList[0];
             const isFeatured = featuredIdForSelected === entry.id;
             const noteIsLong = (entry.note || '').length > 60;
             return (
@@ -244,9 +252,28 @@ export default function CalendarScreen() {
                 ]}
               >
                 <View style={styles.entryHeader}>
-                  <EmotionVisual emotion={em} size={40} radius={RADIUS.sm} />
+                  <View style={styles.entryEmotionStack}>
+                    {emList.slice(0, 3).map((e, i) => (
+                      <View
+                        key={e.key}
+                        style={[
+                          styles.entryEmotionStackItem,
+                          { marginLeft: i === 0 ? 0 : -14, zIndex: 3 - i },
+                        ]}
+                      >
+                        <EmotionVisual emotion={e} size={40} radius={RADIUS.sm} />
+                      </View>
+                    ))}
+                    {emList.length > 3 && (
+                      <View style={styles.entryMoreBadge}>
+                        <Text style={styles.entryMoreText}>+{emList.length - 3}</Text>
+                      </View>
+                    )}
+                  </View>
                   <View style={{ flex: 1 }}>
-                    <Text style={styles.entryLabel}>{em?.label || entry.emotion}</Text>
+                    <Text style={styles.entryLabel} numberOfLines={1}>
+                      {emList.map((e) => e.label).join(' · ') || (em?.label || entry.emotion)}
+                    </Text>
                     {isFeatured && entriesForDay.length > 1 && (
                       <View style={styles.featuredTag}>
                         <Feather name="star" size={10} color={COLORS.primary} />
@@ -413,6 +440,23 @@ const styles = StyleSheet.create({
     borderColor: COLORS.primary,
   },
   entryHeader: { flexDirection: 'row', alignItems: 'center', gap: SPACING.sm },
+  entryEmotionStack: { flexDirection: 'row', alignItems: 'center' },
+  entryEmotionStackItem: {
+    borderWidth: 2,
+    borderColor: COLORS.bgCard,
+    borderRadius: RADIUS.sm + 2,
+  },
+  entryMoreBadge: {
+    marginLeft: 4,
+    minWidth: 26,
+    height: 26,
+    borderRadius: 13,
+    backgroundColor: COLORS.bgCard,
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingHorizontal: 6,
+  },
+  entryMoreText: { fontSize: 11, fontWeight: '700', color: COLORS.primary },
   entryLabel: { fontSize: 15, fontWeight: '700', color: COLORS.textPrimary },
   featuredTag: {
     flexDirection: 'row',

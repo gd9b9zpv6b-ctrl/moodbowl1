@@ -157,6 +157,14 @@ export default function ActivityDetail() {
             <Text style={styles.footerQuote}>「{activity.footer_quote}」</Text>
           )}
 
+          {/* App disclaimer */}
+          <View style={styles.appDisclaimer}>
+            <Feather name="info" size={12} color="#8A7B6B" />
+            <Text style={styles.appDisclaimerText}>
+              呢個活動係 Moodful 個人分享 · 唔係專業治療或醫療建議。有需要嘅時候,請諮詢相應嘅專業人士。
+            </Text>
+          </View>
+
           <View style={{ height: 100 }} />
         </ScrollView>
 
@@ -317,6 +325,22 @@ const styles = StyleSheet.create({
     textAlign: 'center',
     marginTop: SPACING.md,
     lineHeight: 20,
+  },
+  appDisclaimer: {
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    gap: 6,
+    padding: SPACING.md,
+    marginTop: SPACING.lg,
+    borderRadius: RADIUS.md,
+    backgroundColor: 'rgba(255,255,255,0.6)',
+  },
+  appDisclaimerText: {
+    flex: 1,
+    fontSize: 11,
+    color: '#7A5C3F',
+    lineHeight: 17,
+    fontStyle: 'italic',
   },
   ctaBar: {
     position: 'absolute',
