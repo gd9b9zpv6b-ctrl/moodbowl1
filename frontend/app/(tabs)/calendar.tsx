@@ -1,5 +1,5 @@
 import { Feather } from '@expo/vector-icons';
-import { useFocusEffect } from 'expo-router';
+import { useFocusEffect, useRouter } from 'expo-router';
 import { useCallback, useMemo, useState } from 'react';
 import { ActivityIndicator, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { Calendar, DateData } from 'react-native-calendars';
@@ -27,6 +27,7 @@ const NOTE_PREVIEW_LINES = 3;
 
 export default function CalendarScreen() {
   const { user, setUser } = useAuth();
+  const router = useRouter();
   const [month, setMonth] = useState(currentMonthKey());
   const [entries, setEntries] = useState<Entry[]>([]);
   const [selectedDate, setSelectedDate] = useState<string>(todayISO());
@@ -301,6 +302,22 @@ export default function CalendarScreen() {
         )}
         <View style={{ marginTop: SPACING.lg }}>
           <SupportCtaRow title="需要陪伴嘅時候" />
+          <Pressable
+            testID="cal-cta-explore"
+            style={styles.exploreCard}
+            onPress={() => router.push('/explore')}
+          >
+            <View style={styles.exploreIcon}>
+              <Feather name="book-open" size={22} color={COLORS.textPrimary} />
+            </View>
+            <View style={{ flex: 1 }}>
+              <Text style={styles.exploreTitle}>探索自己 · 回望</Text>
+              <Text style={styles.exploreSub}>
+                溫柔咁記起過去 · 認識自己多啲
+              </Text>
+            </View>
+            <Feather name="chevron-right" size={20} color={COLORS.textSecondary} />
+          </Pressable>
         </View>
         <View style={{ height: SPACING.xxl }} />
       </ScrollView>
@@ -478,4 +495,23 @@ const styles = StyleSheet.create({
     fontWeight: '700',
     color: COLORS.primary,
   },
+  exploreCard: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: SPACING.md,
+    backgroundColor: '#FFC8DD',
+    borderRadius: RADIUS.lg,
+    padding: SPACING.md,
+    marginTop: SPACING.md,
+  },
+  exploreIcon: {
+    width: 44,
+    height: 44,
+    borderRadius: RADIUS.pill,
+    backgroundColor: '#FFB3D1',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  exploreTitle: { fontSize: 16, fontWeight: '700', color: COLORS.textPrimary },
+  exploreSub: { fontSize: 12, color: COLORS.textSecondary, marginTop: 2 },
 });
