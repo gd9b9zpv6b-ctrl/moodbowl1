@@ -8,6 +8,7 @@ const KEYS = {
   rice: '@garden/rice/v1',
   demo: '@garden/demo/v1',
   harvests: '@garden/harvests/v1',
+  avatar: '@garden/avatar/v1',
 };
 
 function emptyPlots(): Plot[] {
@@ -85,7 +86,15 @@ export const GardenStorage = {
     return cur;
   },
 
+  async getAvatarKey(): Promise<string | null> {
+    return AsyncStorage.getItem(KEYS.avatar);
+  },
+
+  async setAvatarKey(key: string): Promise<void> {
+    await AsyncStorage.setItem(KEYS.avatar, key);
+  },
+
   async reset(): Promise<void> {
-    await AsyncStorage.multiRemove([KEYS.plots, KEYS.hearts, KEYS.rice, KEYS.demo, KEYS.harvests]);
+    await AsyncStorage.multiRemove([KEYS.plots, KEYS.hearts, KEYS.rice, KEYS.demo, KEYS.harvests, KEYS.avatar]);
   },
 };

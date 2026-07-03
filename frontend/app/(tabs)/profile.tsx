@@ -5,6 +5,7 @@ import { useCallback, useEffect, useState } from 'react';
 import { Alert, Pressable, ScrollView, StyleSheet, Switch, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
+import { AvatarPickerModal } from '@/src/components/avatar-picker-modal';
 import { EmotionVisual } from '@/src/components/emotion-visual';
 import { EMOTION_BY_KEY } from '@/src/constants/emotions';
 import { COLORS, RADIUS, SPACING } from '@/src/constants/theme';
@@ -45,6 +46,8 @@ export default function Profile() {
   const [hour, setHour] = useState(20);
   const [rice, setRice] = useState(0);
   const [harvests, setHarvests] = useState<Record<string, number>>({});
+  const [avatarKey, setAvatarKey] = useState<string | null>(null);
+  const [pickerOpen, setPickerOpen] = useState(false);
 
   useEffect(() => {
     (async () => {
@@ -57,12 +60,14 @@ export default function Profile() {
   }, [refreshUser]);
 
   const loadGarden = useCallback(async () => {
-    const [r, hs] = await Promise.all([
+    const [r, hs, ak] = await Promise.all([
       GardenStorage.getRice(),
       GardenStorage.getHarvests(),
+      GardenStorage.getAvatarKey(),
     ]);
     setRice(r);
     setHarvests(hs);
+    setAvatarKey(ak);
   }, []);
 
   useFocusEffect(
@@ -104,6 +109,23 @@ export default function Profile() {
     router.replace('/auth/welcome');
   };
 
+  const handleAvatarSelect = async (key: string, riceSpent: number) => {
+    // Deduct rice if unlocking a new (not harvested) bowl
+    if (riceSpent > 0) {
+      const newRice = Math.max(0, rice - riceSpent);
+      setRice(newRice);
+      await GardenStorage.setRice(newRice);
+      // Also add to harvests so it counts as unlocked going forward
+      const updated = await GardenStorage.addHarvest(key);
+      setHarvests(updated);
+    }
+    setAvatarKey(key);
+    await GardenStorage.setAvatarKey(key);
+    setPickerOpen(false);
+  };
+
+  const avatarEmotion = avatarKey ? EMOTION_BY_KEY[avatarKey] : null;
+
   return (
     <SafeAreaView style={styles.safe} edges={['top']}>
       <ScrollView contentContainerStyle={styles.scroll} showsVerticalScrollIndicator={false}>
@@ -112,9 +134,22 @@ export default function Profile() {
         </Text>
 
         <View style={styles.card}>
-          <View style={styles.avatar}>
-            <Feather name="user" size={30} color={COLORS.textPrimary} />
-          </View>
+          <Pressable
+            testID="avatar-tap"
+            onPress={() => setPickerOpen(true)}
+            style={styles.avatarWrap}
+          >
+            {avatarEmotion ? (
+              <EmotionVisual emotion={avatarEmotion} size={72} radius={RADIUS.pill} />
+            ) : (
+              <View style={styles.avatar}>
+                <Feather name="user" size={30} color={COLORS.textPrimary} />
+              </View>
+            )}
+            <View style={styles.avatarEditBadge}>
+              <Feather name="edit-2" size={11} color="#FFF" />
+            </View>
+          </Pressable>
           <Text style={styles.name} testID="profile-name">
             {user?.display_name || '朋友'}
           </Text>
@@ -336,6 +371,14 @@ export default function Profile() {
         </Text>
         <View style={{ height: SPACING.xxl }} />
       </ScrollView>
+      <AvatarPickerModal
+        visible={pickerOpen}
+        currentKey={avatarKey}
+        harvests={harvests}
+        rice={rice}
+        onClose={() => setPickerOpen(false)}
+        onSelect={handleAvatarSelect}
+      />
     </SafeAreaView>
   );
 }
@@ -359,6 +402,27 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     marginBottom: SPACING.sm,
+  },
+  avatarWrap: {
+    position: 'relative',
+    width: 72,
+    height: 72,
+    borderRadius: RADIUS.pill,
+    overflow: 'visible',
+    marginBottom: SPACING.sm,
+  },
+  avatarEditBadge: {
+    position: 'absolute',
+    bottom: 0,
+    right: 0,
+    width: 24,
+    height: 24,
+    borderRadius: 12,
+    backgroundColor: COLORS.primary,
+    borderWidth: 2,
+    borderColor: COLORS.bgCard,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   name: { fontSize: 20, fontWeight: '700', color: COLORS.textPrimary },
   email: { color: COLORS.textSecondary, marginTop: 2 },
