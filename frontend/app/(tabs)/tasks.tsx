@@ -14,7 +14,7 @@ import {
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
-import { HABITS } from '@/src/constants/habits';
+import { HABITS, HABIT_CATEGORIES, HabitCategory, Habit } from '@/src/constants/habits';
 import { COLORS, RADIUS, SPACING } from '@/src/constants/theme';
 import { api, Task } from '@/src/lib/api';
 import { useAuth } from '@/src/lib/auth-context';
@@ -22,6 +22,15 @@ import { useAuth } from '@/src/lib/auth-context';
 function todayISO() {
   const d = new Date();
   return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+}
+
+function shuffleThree(list: Habit[]): Habit[] {
+  const copy = [...list];
+  for (let i = copy.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [copy[i], copy[j]] = [copy[j], copy[i]];
+  }
+  return copy.slice(0, 3);
 }
 
 export default function Tasks() {
@@ -33,6 +42,8 @@ export default function Tasks() {
   const [newTitle, setNewTitle] = useState('');
   const [adding, setAdding] = useState(false);
   const [rewardFlash, setRewardFlash] = useState(false);
+  const [activeCategory, setActiveCategory] = useState<HabitCategory | 'all'>('all');
+  const [suggestions, setSuggestions] = useState<Habit[]>(() => shuffleThree(HABITS));
 
   const load = useCallback(async () => {
     try {
@@ -97,6 +108,11 @@ export default function Tasks() {
 
   const done = tasks.filter((t) => t.completed).length;
 
+  const filteredHabits = useMemo(
+    () => (activeCategory === 'all' ? HABITS : HABITS.filter((h) => h.category === activeCategory)),
+    [activeCategory],
+  );
+
   return (
     <SafeAreaView style={styles.safe} edges={['top']}>
       <KeyboardAvoidingView
@@ -150,19 +166,84 @@ export default function Tasks() {
 
           <Text style={styles.sectionTitle}>習慣庫</Text>
           <Text style={styles.sectionHint}>撳一下 加入今日</Text>
-          <View style={styles.habitList}>
-            {HABITS.map((h) => (
+
+          {/* Quick suggestion card — reduces choice paralysis · shuffle for new ideas */}
+          <View style={styles.suggestCard}>
+            <View style={styles.suggestHeader}>
+              <Text style={styles.suggestTitle}>🎲 今日試試呢 3 樣</Text>
+              <Pressable
+                testID="habit-shuffle"
+                onPress={() => setSuggestions(shuffleThree(HABITS))}
+                style={styles.shuffleBtn}
+                hitSlop={8}
+              >
+                <Feather name="refresh-cw" size={13} color={COLORS.textSecondary} />
+                <Text style={styles.shuffleBtnText}>換過</Text>
+              </Pressable>
+            </View>
+            <View style={styles.suggestRow}>
+              {suggestions.map((h) => (
+                <Pressable
+                  key={h.key}
+                  testID={`suggest-${h.key}`}
+                  onPress={() => addTask(h.title)}
+                  style={[styles.suggestChip, { backgroundColor: h.color + 'C0' }]}
+                >
+                  <Feather name={h.icon as any} size={16} color={COLORS.textPrimary} />
+                  <Text style={styles.suggestChipText} numberOfLines={1}>{h.title}</Text>
+                </Pressable>
+              ))}
+            </View>
+          </View>
+
+          {/* Category tabs — organize the 16 habits by theme */}
+          <ScrollView
+            horizontal
+            showsHorizontalScrollIndicator={false}
+            contentContainerStyle={styles.catRow}
+          >
+            <Pressable
+              testID="habit-cat-all"
+              onPress={() => setActiveCategory('all')}
+              style={[styles.catChip, activeCategory === 'all' && styles.catChipActive]}
+            >
+              <Text style={[styles.catLabel, activeCategory === 'all' && styles.catLabelActive]}>
+                全部 · {HABITS.length}
+              </Text>
+            </Pressable>
+            {HABIT_CATEGORIES.map((c) => {
+              const active = activeCategory === c.key;
+              const count = HABITS.filter((h) => h.category === c.key).length;
+              return (
+                <Pressable
+                  key={c.key}
+                  testID={`habit-cat-${c.key}`}
+                  onPress={() => setActiveCategory(c.key)}
+                  style={[styles.catChip, active && styles.catChipActive]}
+                >
+                  <Text style={styles.catEmoji}>{c.emoji}</Text>
+                  <Text style={[styles.catLabel, active && styles.catLabelActive]}>
+                    {c.label} · {count}
+                  </Text>
+                </Pressable>
+              );
+            })}
+          </ScrollView>
+
+          {/* Compact 2-column grid — dense · minimal scroll */}
+          <View style={styles.habitGrid}>
+            {filteredHabits.map((h) => (
               <Pressable
                 key={h.key}
                 testID={`habit-${h.key}`}
-                style={[styles.habitChip, { backgroundColor: h.color + 'B0' }]}
+                style={[styles.habitCell, { backgroundColor: h.color + 'B0' }]}
                 onPress={() => addTask(h.title)}
               >
-                <Feather name={h.icon as any} size={18} color={COLORS.textPrimary} />
-                <Text style={styles.habitText} numberOfLines={1}>
-                  {h.title}
-                </Text>
-                <Feather name="plus" size={16} color={COLORS.textSecondary} />
+                <View style={styles.habitCellIcon}>
+                  <Feather name={h.icon as any} size={18} color={COLORS.textPrimary} />
+                </View>
+                <Text style={styles.habitCellText} numberOfLines={2}>{h.title}</Text>
+                <Feather name="plus" size={14} color={COLORS.textSecondary} />
               </Pressable>
             ))}
           </View>
@@ -267,18 +348,109 @@ const styles = StyleSheet.create({
     marginTop: SPACING.lg,
   },
   sectionHint: { fontSize: 13, color: COLORS.textSecondary, marginTop: 2 },
-  habitList: { marginTop: SPACING.md, gap: SPACING.sm },
-  habitChip: {
+
+  // Suggestion card (today's 3 picks with shuffle)
+  suggestCard: {
+    marginTop: SPACING.md,
+    padding: SPACING.md,
+    borderRadius: RADIUS.md,
+    backgroundColor: '#FFF6E5',
+    borderWidth: 1,
+    borderColor: '#F0D8A8',
+  },
+  suggestHeader: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: SPACING.md,
-    paddingHorizontal: SPACING.md,
-    paddingVertical: SPACING.md,
-    borderRadius: RADIUS.md,
-    minHeight: 52,
+    justifyContent: 'space-between',
+    marginBottom: SPACING.sm,
   },
-  habitText: { flex: 1, fontSize: 15, color: COLORS.textPrimary, fontWeight: '600' },
-  addRow: { flexDirection: 'row', alignItems: 'center', gap: SPACING.sm, marginTop: SPACING.sm },
+  suggestTitle: { fontSize: 13, fontWeight: '700', color: '#5A3F1F' },
+  shuffleBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+    paddingHorizontal: 10,
+    paddingVertical: 5,
+    borderRadius: RADIUS.pill,
+    backgroundColor: '#F0D8A8',
+  },
+  shuffleBtnText: { fontSize: 11, color: COLORS.textSecondary, fontWeight: '700' },
+  suggestRow: {
+    flexDirection: 'row',
+    gap: 6,
+  },
+  suggestChip: {
+    flex: 1,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 4,
+    paddingHorizontal: 8,
+    paddingVertical: 10,
+    borderRadius: RADIUS.md,
+    minHeight: 42,
+  },
+  suggestChipText: {
+    fontSize: 12,
+    fontWeight: '700',
+    color: COLORS.textPrimary,
+    flexShrink: 1,
+  },
+
+  // Category tabs
+  catRow: {
+    gap: 6,
+    marginTop: SPACING.md,
+    paddingRight: SPACING.lg,
+  },
+  catChip: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 5,
+    paddingHorizontal: 12,
+    paddingVertical: 7,
+    borderRadius: RADIUS.pill,
+    backgroundColor: COLORS.bgInput,
+  },
+  catChipActive: {
+    backgroundColor: COLORS.primary,
+  },
+  catEmoji: { fontSize: 13 },
+  catLabel: { fontSize: 12, fontWeight: '700', color: COLORS.textSecondary },
+  catLabelActive: { color: COLORS.textPrimary },
+
+  // 2-column habit grid
+  habitGrid: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: SPACING.sm,
+    marginTop: SPACING.md,
+  },
+  habitCell: {
+    width: '48%',
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+    padding: SPACING.sm + 2,
+    borderRadius: RADIUS.md,
+    minHeight: 56,
+  },
+  habitCellIcon: {
+    width: 32,
+    height: 32,
+    borderRadius: RADIUS.pill,
+    backgroundColor: 'rgba(255,255,255,0.6)',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  habitCellText: {
+    flex: 1,
+    fontSize: 13,
+    fontWeight: '600',
+    color: COLORS.textPrimary,
+    lineHeight: 17,
+  },
+  addRow: { flexDirection: 'row', alignItems: 'center', gap: SPACING.sm, marginTop: SPACING.md },
   input: {
     flex: 1,
     backgroundColor: COLORS.bgInput,
