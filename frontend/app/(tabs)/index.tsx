@@ -202,6 +202,24 @@ export default function Home() {
               <Feather name="chevron-right" size={20} color={COLORS.textPrimary} />
             </Pressable>
 
+            <Pressable
+              testID="garden-card"
+              onPress={() => router.push('/garden')}
+              style={styles.gardenCard}
+            >
+              <View style={styles.gardenEmojiWrap}>
+                <Text style={styles.gardenEmoji}>🌾</Text>
+              </View>
+              <View style={{ flex: 1 }}>
+                <Text style={styles.gardenTitle}>我嘅稻田</Text>
+                <Text style={styles.gardenSub}>用 ❤️ 種一粒米 · 收成一碗新心情</Text>
+              </View>
+              <View style={styles.gardenBadge}>
+                <Text style={styles.gardenBadgeText}>新</Text>
+              </View>
+              <Feather name="chevron-right" size={20} color={COLORS.textPrimary} />
+            </Pressable>
+
             <View style={styles.emotionPromptRow}>
               <Text style={styles.emotionPromptTitle}>你今日嘅感受點啊?</Text>
               <Text style={styles.emotionPromptHint}>
@@ -678,6 +696,33 @@ const styles = StyleSheet.create({
   },
   sosTitle: { fontSize: 16, fontWeight: '700', color: COLORS.textPrimary },
   sosSub: { fontSize: 12, color: COLORS.textSecondary, marginTop: 2 },
+  gardenCard: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: SPACING.md,
+    backgroundColor: '#DFF3E4',
+    borderRadius: RADIUS.lg,
+    padding: SPACING.md,
+    marginBottom: SPACING.lg,
+  },
+  gardenEmojiWrap: {
+    width: 48,
+    height: 48,
+    borderRadius: RADIUS.pill,
+    backgroundColor: '#B9DBBC',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  gardenEmoji: { fontSize: 26 },
+  gardenTitle: { fontSize: 16, fontWeight: '700', color: COLORS.textPrimary },
+  gardenSub: { fontSize: 12, color: COLORS.textSecondary, marginTop: 2 },
+  gardenBadge: {
+    paddingHorizontal: 8,
+    paddingVertical: 3,
+    borderRadius: RADIUS.pill,
+    backgroundColor: '#7BA88C',
+  },
+  gardenBadgeText: { fontSize: 10, fontWeight: '800', color: COLORS.bgCard },
   ctaRow: { flexDirection: 'row', gap: SPACING.sm, marginBottom: SPACING.lg },
   ctaCard: {
     flex: 1,
