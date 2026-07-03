@@ -1,4 +1,3 @@
-import AsyncStorage from '@react-native-async-storage/async-storage';
 import { Feather } from '@expo/vector-icons';
 import { useFocusEffect, useRouter } from 'expo-router';
 import { useCallback, useEffect, useMemo, useState } from 'react';
@@ -36,6 +35,13 @@ function todayISO() {
   return `${y}-${m}-${day}`;
 }
 
+// Session-scoped flag: reset when app fully closes & reopens.
+// This means onboarding shows once per app launch, not every navigation.
+let onboardingShownThisSession = false;
+export const resetOnboardingSession = () => {
+  onboardingShownThisSession = false;
+};
+
 export default function Home() {
   const { user } = useAuth();
   const router = useRouter();
@@ -56,18 +62,12 @@ export default function Home() {
   const [activeCategory, setActiveCategory] = useState<EmotionCategory | 'all'>('all');
   const { recent, track } = useRecentEmotions();
 
-  // First-run onboarding check
+  // Show onboarding on EVERY app launch (once per session — not on every navigation)
   useEffect(() => {
-    (async () => {
-      try {
-        const done = await AsyncStorage.getItem('@onboarding/completed/v1');
-        if (!done) {
-          router.replace('/onboarding');
-        }
-      } catch {
-        // ignore
-      }
-    })();
+    if (!onboardingShownThisSession) {
+      onboardingShownThisSession = true;
+      router.replace('/onboarding');
+    }
   }, [router]);
 
   const selectedEmotions = useMemo(
