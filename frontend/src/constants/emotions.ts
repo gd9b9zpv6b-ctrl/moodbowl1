@@ -34,6 +34,7 @@ export const EMOTION_IMAGES: Record<string, any> = {
   unfair: require('../../assets/emotions/unfair.png'),
   supported: require('../../assets/emotions/supported.png'),
   offended: require('../../assets/emotions/offended.png'),
+  empowered: require('../../assets/emotions/empowered.png'),
   worthless: require('../../assets/emotions/worthless.png'),
   unloved: require('../../assets/emotions/unloved.png'),
   unappreciated: require('../../assets/emotions/unappreciated.png'),
@@ -61,6 +62,7 @@ export const EMOTIONS: Emotion[] = [
   { key: 'loved', label: '被愛', description: '感覺被關心緊', color: '#FFB6C1', image: EMOTION_IMAGES.loved },
   { key: 'supported', label: '被支持', description: '有人喺我身邊撐我', color: '#F4C2C2', image: EMOTION_IMAGES.supported },
   { key: 'proud', label: '自豪', description: '我做咗啲好嘢', color: '#FFF3B0', image: EMOTION_IMAGES.proud },
+  { key: 'empowered', label: '有力量', description: '我夠力面對', color: '#FFB088', image: EMOTION_IMAGES.empowered },
 
   // Common sadness / low energy
   { key: 'sad', label: '傷心', description: '心入面有種柔和嘅沉重', color: '#A2D2FF', image: EMOTION_IMAGES.sad },

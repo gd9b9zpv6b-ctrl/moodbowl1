@@ -83,6 +83,10 @@ EMOTIONS = [
     ("proud",        "shiny gold",                      RICE_HEAP,
      "with a confident wide grin, one little arm raised holding a tiny golden star, a tiny sparkle above its head",
      "buttery cream"),
+    # NEW: empowered — strong, flexing bicep, confident
+    ("empowered",    "warm fiery orange",               RICE_HEAP,
+     "with a determined confident smile and slightly narrowed brave eyes, one tiny stubby arm raised up flexing a tiny cartoon bicep muscle (a small round bump on the arm), the other tiny stubby fist clenched at its side; small orange/yellow energy sparks and one tiny lightning bolt bursting outward from its bicep area",
+     "warm butter yellow"),
 
     # ---- Sadness / low energy ----
     # sad — heart-shaped bowl with a visible crack + teardrop
@@ -182,9 +186,9 @@ EMOTIONS = [
     ("supported",    "warm coral pink",                 RICE_FULL,
      "the picture actually shows TWO mascots side by side: the LEFT main coral pink rice-bowl mascot has a gentle grateful small smile with a hint of a happy tear in one eye; the RIGHT slightly larger friend rice-bowl mascot in soft mint green has one tiny stubby arm reaching over resting kindly on the main character's shoulder/side in a supportive gesture; a couple of tiny warm pink hearts and small sparkles floating between them",
      "warm blush cream"),
-    # NEW: offended — indignant gasp, hand on chest
-    ("offended",     "burnt orange terracotta",         RICE_FULL,
-     "with a shocked gasping expression: wide open eyes with dot pupils, mouth open in a small horrified o-shape, one tiny stubby hand placed dramatically on its own chest (front of the bowl) as if saying 'excuse me?!', a small red exclamation mark above its head and a couple of red anger sparks around it",
+    # offended — reimagined: red slap-mark on cheek + indignant frown
+    ("offended",     "warm terracotta",                 RICE_FULL,
+     "with an indignant hurt expression: narrowed slightly angry eyes and a small pouty frown, a clear bright red hand-shaped SLAP MARK printed on one side of its front cheek area (as if it just got slapped or shoved), one tiny stubby hand raised in a stop 'don't you dare' gesture, a small red exclamation mark floating above its head",
      "warm salmon"),
 
     # ---- Anger / intense ----
