@@ -72,6 +72,7 @@ export type User = {
   has_secret_pin: boolean;
   diary_style: DiaryStyle;
   active_icon_pack: string;
+  featured_by_date?: Record<string, string>;
 };
 
 export type AuthResponse = {

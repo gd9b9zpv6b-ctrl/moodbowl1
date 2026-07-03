@@ -95,6 +95,7 @@ class UserOut(BaseModel):
     has_secret_pin: bool = False
     diary_style: dict = Field(default_factory=dict)
     active_icon_pack: str = "classic"
+    featured_by_date: dict = Field(default_factory=dict)
 
 
 class AuthOut(BaseModel):
@@ -115,6 +116,7 @@ def _user_to_out(u: dict) -> UserOut:
         has_secret_pin=bool(u.get("secret_pin_hash")),
         diary_style=u.get("diary_style", {}),
         active_icon_pack=u.get("active_icon_pack", "classic"),
+        featured_by_date=u.get("featured_by_date", {}),
     )
 
 
@@ -348,6 +350,22 @@ async def update_entry(entry_id: str, data: EntryUpdate, current=Depends(get_cur
     fresh = await db.entries.find_one({"id": entry_id}, {"_id": 0})
     result = await _entries_with_hearts([fresh], current["id"])
     return result[0]
+
+
+@api_router.post("/entries/{entry_id}/feature", response_model=UserOut)
+async def set_featured_entry(entry_id: str, current=Depends(get_current_user)):
+    """Mark an entry as the 'featured' one whose icon appears on the calendar for its date."""
+    entry = await db.entries.find_one({"id": entry_id})
+    if not entry:
+        raise HTTPException(status_code=404, detail="Entry not found")
+    if entry["user_id"] != current["id"]:
+        raise HTTPException(status_code=403, detail="Not your entry")
+    date_key = entry["entry_date"]
+    featured = current.get("featured_by_date") or {}
+    featured[date_key] = entry_id
+    await db.users.update_one({"id": current["id"]}, {"$set": {"featured_by_date": featured}})
+    fresh = await db.users.find_one({"id": current["id"]})
+    return _user_to_out(fresh)
 
 
 # ============ Task Routes ============

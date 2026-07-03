@@ -6,9 +6,11 @@ import { Calendar, DateData } from 'react-native-calendars';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { EmotionVisual } from '@/src/components/emotion-visual';
+import { EntryDetailModal } from '@/src/components/entry-detail-modal';
 import { EMOTION_BY_KEY } from '@/src/constants/emotions';
 import { COLORS, RADIUS, SPACING } from '@/src/constants/theme';
-import { api, Entry } from '@/src/lib/api';
+import { api, Entry, User } from '@/src/lib/api';
+import { useAuth } from '@/src/lib/auth-context';
 
 function currentMonthKey(d = new Date()) {
   return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`;
@@ -19,11 +21,18 @@ function todayISO() {
   return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
 }
 
+const NOTE_PREVIEW_LINES = 3;
+
 export default function CalendarScreen() {
+  const { user, setUser } = useAuth();
   const [month, setMonth] = useState(currentMonthKey());
   const [entries, setEntries] = useState<Entry[]>([]);
   const [selectedDate, setSelectedDate] = useState<string>(todayISO());
   const [loading, setLoading] = useState(true);
+  const [featuring, setFeaturing] = useState<string | null>(null);
+  const [detailEntry, setDetailEntry] = useState<Entry | null>(null);
+
+  const featuredByDate = useMemo(() => user?.featured_by_date || {}, [user?.featured_by_date]);
 
   const load = useCallback(async (m: string) => {
     setLoading(true);
@@ -43,16 +52,41 @@ export default function CalendarScreen() {
     }, [load, month]),
   );
 
-  // Latest entry per date, so each day cell shows one representative emotion.
-  const entryByDate = useMemo(() => {
-    const map: Record<string, Entry> = {};
+  // Group entries by date. Featured takes priority, else latest.
+  const entriesGroupedByDate = useMemo(() => {
+    const map: Record<string, Entry[]> = {};
     for (const e of entries) {
-      if (!map[e.entry_date]) map[e.entry_date] = e;
+      if (!map[e.entry_date]) map[e.entry_date] = [];
+      map[e.entry_date].push(e);
     }
     return map;
   }, [entries]);
 
-  const entriesForDay = entries.filter((e) => e.entry_date === selectedDate);
+  const featuredEntryFor = useCallback(
+    (date: string): Entry | undefined => {
+      const list = entriesGroupedByDate[date] || [];
+      if (list.length === 0) return undefined;
+      const featuredId = featuredByDate[date];
+      const featured = featuredId ? list.find((e) => e.id === featuredId) : undefined;
+      return featured || list[0];
+    },
+    [entriesGroupedByDate, featuredByDate],
+  );
+
+  const entriesForDay = entriesGroupedByDate[selectedDate] || [];
+  const featuredIdForSelected = featuredByDate[selectedDate] || entriesForDay[0]?.id;
+
+  const setFeatured = async (entryId: string) => {
+    setFeaturing(entryId);
+    try {
+      const updated = await api.post<User>(`/entries/${entryId}/feature`);
+      setUser(updated);
+    } catch {
+      // ignore
+    } finally {
+      setFeaturing(null);
+    }
+  };
 
   return (
     <SafeAreaView style={styles.safe} edges={['top']}>
@@ -73,8 +107,8 @@ export default function CalendarScreen() {
             hideExtraDays
             dayComponent={({ date, state }) => {
               if (!date) return <View style={styles.dayCell} />;
-              const entry = entryByDate[date.dateString];
-              const em = entry ? EMOTION_BY_KEY[entry.emotion] : undefined;
+              const featured = featuredEntryFor(date.dateString);
+              const em = featured ? EMOTION_BY_KEY[featured.emotion] : undefined;
               const isSelected = selectedDate === date.dateString;
               const isToday = todayISO() === date.dateString;
               const isDisabled = state === 'disabled';
@@ -128,7 +162,60 @@ export default function CalendarScreen() {
           />
         </View>
 
-        <Text style={styles.sectionTitle}>{selectedDate}</Text>
+        <View style={styles.dayHeader}>
+          <Text style={styles.sectionTitle}>{selectedDate}</Text>
+          {entriesForDay.length > 0 && (
+            <Text style={styles.dayCount}>{entriesForDay.length} 段故事</Text>
+          )}
+        </View>
+
+        {entriesForDay.length > 1 && (
+          <View style={styles.pickerCard}>
+            <View style={styles.pickerHeader}>
+              <Feather name="star" size={14} color={COLORS.primary} />
+              <Text style={styles.pickerTitle}>揀個心情擺上日曆</Text>
+            </View>
+            <Text style={styles.pickerHint}>
+              呢一日有 {entriesForDay.length} 個心情 · 撳一下決定邊個做「代表」
+            </Text>
+            <ScrollView
+              horizontal
+              showsHorizontalScrollIndicator={false}
+              contentContainerStyle={styles.pickerRow}
+            >
+              {entriesForDay.map((entry) => {
+                const em = EMOTION_BY_KEY[entry.emotion];
+                const active = featuredIdForSelected === entry.id;
+                const isLoading = featuring === entry.id;
+                return (
+                  <Pressable
+                    key={entry.id}
+                    testID={`feature-pick-${entry.id}`}
+                    onPress={() => setFeatured(entry.id)}
+                    disabled={isLoading}
+                    style={[
+                      styles.pickerChip,
+                      { backgroundColor: (em?.color || COLORS.primaryLight) + '80' },
+                      active && styles.pickerChipActive,
+                    ]}
+                  >
+                    <EmotionVisual emotion={em} size={44} radius={RADIUS.sm} />
+                    <Text style={styles.pickerChipLabel}>{em?.label}</Text>
+                    {active && (
+                      <View style={styles.activeBadge}>
+                        <Feather name="check" size={10} color={COLORS.textPrimary} />
+                      </View>
+                    )}
+                    {isLoading && (
+                      <ActivityIndicator size="small" color={COLORS.primary} style={{ marginTop: 4 }} />
+                    )}
+                  </Pressable>
+                );
+              })}
+            </ScrollView>
+          </View>
+        )}
+
         {loading ? (
           <ActivityIndicator color={COLORS.primary} style={{ marginTop: SPACING.md }} />
         ) : entriesForDay.length === 0 ? (
@@ -139,23 +226,57 @@ export default function CalendarScreen() {
         ) : (
           entriesForDay.map((entry) => {
             const em = EMOTION_BY_KEY[entry.emotion];
+            const isFeatured = featuredIdForSelected === entry.id;
+            const noteIsLong = (entry.note || '').length > 60;
             return (
-              <View
+              <Pressable
                 key={entry.id}
                 testID={`calendar-entry-${entry.id}`}
-                style={[styles.entryCard, { backgroundColor: (em?.color || COLORS.primaryLight) + '40' }]}
+                onPress={() => setDetailEntry(entry)}
+                style={({ pressed }) => [
+                  styles.entryCard,
+                  { backgroundColor: (em?.color || COLORS.primaryLight) + '40' },
+                  isFeatured && styles.entryCardFeatured,
+                  pressed && { opacity: 0.75 },
+                ]}
               >
                 <View style={styles.entryHeader}>
                   <EmotionVisual emotion={em} size={40} radius={RADIUS.sm} />
-                  <Text style={styles.entryLabel}>{em?.label || entry.emotion}</Text>
+                  <View style={{ flex: 1 }}>
+                    <Text style={styles.entryLabel}>{em?.label || entry.emotion}</Text>
+                    {isFeatured && entriesForDay.length > 1 && (
+                      <View style={styles.featuredTag}>
+                        <Feather name="star" size={10} color={COLORS.primary} />
+                        <Text style={styles.featuredTagText}>喺日曆上代表呢一日</Text>
+                      </View>
+                    )}
+                  </View>
+                  <Feather name="chevron-right" size={18} color={COLORS.textSecondary} />
                 </View>
-                {entry.note ? <Text style={styles.entryNote}>{entry.note}</Text> : null}
-              </View>
+                {entry.note ? (
+                  <>
+                    <Text style={styles.entryNote} numberOfLines={NOTE_PREVIEW_LINES}>
+                      {entry.note}
+                    </Text>
+                    {noteIsLong && (
+                      <Text style={styles.readMore}>撳入去 · 睇全部故事</Text>
+                    )}
+                  </>
+                ) : (
+                  <Text style={styles.entryEmptyNote}>仲未寫故事 · 撳入去加返</Text>
+                )}
+              </Pressable>
             );
           })
         )}
         <View style={{ height: SPACING.xxl }} />
       </ScrollView>
+
+      <EntryDetailModal
+        visible={!!detailEntry}
+        entry={detailEntry}
+        onClose={() => setDetailEntry(null)}
+      />
     </SafeAreaView>
   );
 }
@@ -204,7 +325,62 @@ const styles = StyleSheet.create({
     backgroundColor: COLORS.primaryLight,
   },
   dayNum: { fontSize: 14, color: COLORS.textPrimary, fontWeight: '500' },
-  sectionTitle: { fontSize: 17, fontWeight: '700', color: COLORS.textPrimary, marginBottom: SPACING.md },
+  dayHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    marginBottom: SPACING.md,
+  },
+  sectionTitle: { fontSize: 17, fontWeight: '700', color: COLORS.textPrimary },
+  dayCount: {
+    fontSize: 12,
+    fontWeight: '700',
+    color: COLORS.primary,
+    paddingHorizontal: SPACING.sm,
+    paddingVertical: 4,
+    borderRadius: RADIUS.pill,
+    backgroundColor: COLORS.primaryLight,
+  },
+  pickerCard: {
+    backgroundColor: COLORS.bgCard,
+    borderRadius: RADIUS.md,
+    padding: SPACING.md,
+    marginBottom: SPACING.md,
+    borderLeftWidth: 4,
+    borderLeftColor: COLORS.primary,
+  },
+  pickerHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    marginBottom: 4,
+  },
+  pickerTitle: { fontSize: 14, fontWeight: '700', color: COLORS.textPrimary },
+  pickerHint: { fontSize: 12, color: COLORS.textSecondary, marginBottom: SPACING.sm },
+  pickerRow: { gap: SPACING.sm, paddingVertical: SPACING.xs },
+  pickerChip: {
+    borderRadius: RADIUS.md,
+    padding: SPACING.xs,
+    alignItems: 'center',
+    minWidth: 68,
+    position: 'relative',
+  },
+  pickerChipActive: {
+    borderWidth: 3,
+    borderColor: COLORS.primary,
+  },
+  pickerChipLabel: { fontSize: 11, fontWeight: '600', color: COLORS.textPrimary, marginTop: 2 },
+  activeBadge: {
+    position: 'absolute',
+    top: -6,
+    right: -6,
+    width: 20,
+    height: 20,
+    borderRadius: 10,
+    backgroundColor: COLORS.primary,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
   emptyCard: {
     backgroundColor: COLORS.bgCard,
     borderRadius: RADIUS.md,
@@ -214,7 +390,30 @@ const styles = StyleSheet.create({
   },
   emptyText: { color: COLORS.textSecondary },
   entryCard: { borderRadius: RADIUS.md, padding: SPACING.md, marginBottom: SPACING.sm },
+  entryCardFeatured: {
+    borderWidth: 2,
+    borderColor: COLORS.primary,
+  },
   entryHeader: { flexDirection: 'row', alignItems: 'center', gap: SPACING.sm },
   entryLabel: { fontSize: 15, fontWeight: '700', color: COLORS.textPrimary },
+  featuredTag: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+    marginTop: 2,
+  },
+  featuredTagText: { fontSize: 11, fontWeight: '600', color: COLORS.primary },
   entryNote: { marginTop: SPACING.sm, fontSize: 14, color: COLORS.textPrimary, lineHeight: 20 },
+  entryEmptyNote: {
+    marginTop: SPACING.sm,
+    fontSize: 13,
+    fontStyle: 'italic',
+    color: COLORS.textSecondary,
+  },
+  readMore: {
+    marginTop: 6,
+    fontSize: 12,
+    fontWeight: '700',
+    color: COLORS.primary,
+  },
 });

@@ -363,18 +363,24 @@ export default function Home() {
                           <Text style={styles.lockedText}>撳一下 輸入密碼解鎖</Text>
                         </View>
                       ) : entry.note ? (
-                        <Text
-                          style={[
-                            styles.entryNote,
-                            user?.diary_style && {
-                              fontFamily: user.diary_style.font_family,
-                              fontSize: user.diary_style.font_size,
-                              color: user.diary_style.text_color,
-                            },
-                          ]}
-                        >
-                          {entry.note}
-                        </Text>
+                        <>
+                          <Text
+                            numberOfLines={3}
+                            style={[
+                              styles.entryNote,
+                              user?.diary_style && {
+                                fontFamily: user.diary_style.font_family,
+                                fontSize: user.diary_style.font_size,
+                                color: user.diary_style.text_color,
+                              },
+                            ]}
+                          >
+                            {entry.note}
+                          </Text>
+                          {entry.note.length > 60 && (
+                            <Text style={styles.readMore}>撳一下 · 睇全部 / 編輯</Text>
+                          )}
+                        </>
                       ) : (
                         <Text style={styles.entryEmptyNote}>
                           仲未寫故事 · 撳我加返
@@ -610,6 +616,12 @@ const styles = StyleSheet.create({
     fontSize: 13,
     fontStyle: 'italic',
     color: COLORS.textSecondary,
+  },
+  readMore: {
+    marginTop: 6,
+    fontSize: 12,
+    fontWeight: '700',
+    color: COLORS.primary,
   },
   emptyText: { color: COLORS.textSecondary, fontSize: 14 },
   entryCard: { borderRadius: RADIUS.md, padding: SPACING.md, marginBottom: SPACING.sm },

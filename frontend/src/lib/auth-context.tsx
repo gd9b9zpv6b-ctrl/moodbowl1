@@ -9,6 +9,7 @@ type AuthCtx = {
   register: (email: string, password: string, displayName?: string) => Promise<void>;
   logout: () => Promise<void>;
   refreshUser: () => Promise<void>;
+  setUser: (u: User | null) => void;
 };
 
 const Ctx = createContext<AuthCtx | undefined>(undefined);
@@ -66,7 +67,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   }, []);
 
   const value = useMemo(
-    () => ({ user, loading, login, register, logout, refreshUser }),
+    () => ({ user, loading, login, register, logout, refreshUser, setUser }),
     [user, loading, login, register, logout, refreshUser],
   );
 
