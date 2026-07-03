@@ -9,6 +9,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { AvatarPickerModal } from '@/src/components/avatar-picker-modal';
 import { EmotionVisual } from '@/src/components/emotion-visual';
 import { EMOTION_BY_KEY } from '@/src/constants/emotions';
+import { RoleStorage, ROLE_META, UserRole } from '@/src/lib/role-storage';
 import { COLORS, RADIUS, SPACING } from '@/src/constants/theme';
 import { GardenStorage } from '@/src/lib/garden-storage';
 import { useAuth } from '@/src/lib/auth-context';
@@ -285,6 +286,38 @@ export default function Profile() {
         </Pressable>
 
         <Text style={styles.sectionTitle}>更多</Text>
+
+        {/* Demo role switcher — 用嚟 pitch demo 唔同角色版面 */}
+        <View style={styles.roleCard}>
+          <View style={styles.roleHeader}>
+            <Feather name="users" size={16} color={COLORS.textPrimary} />
+            <Text style={styles.roleTitle}>身份切換 · Demo</Text>
+          </View>
+          <Text style={styles.roleHint}>
+            揀返你嘅身份 · 睇下對應嘅版面（sales demo 用）
+          </Text>
+          <View style={styles.roleGrid}>
+            {(Object.keys(ROLE_META) as UserRole[]).map((r) => (
+              <Pressable
+                key={r}
+                testID={`role-${r}`}
+                onPress={async () => {
+                  await RoleStorage.set(r);
+                  router.replace(ROLE_META[r].homePath as never);
+                }}
+                style={({ pressed }) => [
+                  styles.roleChip,
+                  { backgroundColor: ROLE_META[r].color + '40' },
+                  pressed && { opacity: 0.7 },
+                ]}
+              >
+                <Text style={styles.roleChipEmoji}>{ROLE_META[r].emoji}</Text>
+                <Text style={styles.roleChipLabel}>{ROLE_META[r].label}</Text>
+              </Pressable>
+            ))}
+          </View>
+        </View>
+
         <Pressable
           testID="link-onboarding"
           style={styles.linkRow}
@@ -299,6 +332,21 @@ export default function Profile() {
           <View style={{ flex: 1 }}>
             <Text style={styles.linkTitle}>新手教學 · 重看</Text>
             <Text style={styles.linkHint}>認識吓成個 app 有咩玩</Text>
+          </View>
+          <Feather name="chevron-right" size={20} color={COLORS.textDisabled} />
+        </Pressable>
+
+        <Pressable
+          testID="link-privacy-tiers"
+          style={styles.linkRow}
+          onPress={() => router.push('/privacy-tiers')}
+        >
+          <View style={[styles.linkIcon, { backgroundColor: '#E0EAFC' }]}>
+            <Feather name="shield" size={18} color="#5A7CB0" />
+          </View>
+          <View style={{ flex: 1 }}>
+            <Text style={styles.linkTitle}>私隱保護 · 5 層權限</Text>
+            <Text style={styles.linkHint}>睇下邊個角色見到咩</Text>
           </View>
           <Feather name="chevron-right" size={20} color={COLORS.textDisabled} />
         </Pressable>
@@ -584,6 +632,37 @@ const styles = StyleSheet.create({
     marginTop: 4,
     textAlign: 'center',
   },
+  roleCard: {
+    backgroundColor: COLORS.bgCard,
+    borderRadius: RADIUS.md,
+    padding: SPACING.md,
+    marginBottom: SPACING.md,
+    borderLeftWidth: 4,
+    borderLeftColor: '#C7A6D1',
+  },
+  roleHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    marginBottom: 4,
+  },
+  roleTitle: { fontSize: 15, fontWeight: '700', color: COLORS.textPrimary },
+  roleHint: { fontSize: 11, color: COLORS.textSecondary, marginBottom: SPACING.md },
+  roleGrid: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: SPACING.sm,
+  },
+  roleChip: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    paddingHorizontal: SPACING.md,
+    paddingVertical: 8,
+    borderRadius: RADIUS.pill,
+  },
+  roleChipEmoji: { fontSize: 18 },
+  roleChipLabel: { fontSize: 13, fontWeight: '700', color: COLORS.textPrimary },
   footer: {
     marginTop: SPACING.xl,
     color: COLORS.textSecondary,

@@ -67,7 +67,16 @@ export default function Home() {
     if (!onboardingShownThisSession) {
       onboardingShownThisSession = true;
       router.replace('/onboarding');
+      return;
     }
+    // After onboarding, also check role: non-students go to their portal
+    (async () => {
+      const { RoleStorage, ROLE_META } = await import('@/src/lib/role-storage');
+      const role = await RoleStorage.get();
+      if (role !== 'student') {
+        router.replace(ROLE_META[role].homePath as never);
+      }
+    })();
   }, [router]);
 
   const selectedEmotions = useMemo(
