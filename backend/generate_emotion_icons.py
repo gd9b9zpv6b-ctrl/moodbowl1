@@ -191,10 +191,10 @@ EMOTIONS = [
     ("hopeless",     "muted storm grey",                RICE_TINY,
      "SITTING on the ground with legs stretched out limply in front, both tiny arms resting weakly on its legs, eyes closed and small resigned downturned mouth, head slumped slightly forward. A single heavy dark grey cloud floating just above its head, muted washed-out colors",
      "storm grey"),
-    # suppressed — a giant hand pressing down on the bowl (被打壓)
-    ("suppressed",   "muted slate grey",                RICE_LOW,
-     "A huge cartoon HUMAN HAND descending from above (palm facing down, fingers slightly spread) firmly pressing down on top of the rice-bowl mascot, the mascot is visibly SQUISHED / compressed shorter than normal under the pressure — the bowl body is squashed wider/shorter, the rice mound flattened flat; the mascot has a distressed struggling expression, eyes squeezed tight, mouth in a small tense grimace, both tiny stubby arms pushed out to the sides in helpless resistance, one small sweat drop on its cheek; small stress lines around the pressure point where the hand meets the top of the rice",
-     "muted slate"),
+    # suppressed — a large elegant BUDDHA hand (如來神掌) pressing down (被打壓)
+    ("suppressed",   "muted olive taupe",               RICE_LOW,
+     "A large ELEGANT BUDDHA HAND / MUDRA HAND descending from above (palm facing down, long graceful slender fingers slightly curved, an elegant golden or bronze-tinted stylized hand — the fingertips are elegantly curled, one finger and thumb slightly bent in a Buddhist mudra pose); the hand has a subtle warm golden glow / halo behind it, a small tiny lotus outline or one small Sanskrit-style seed character floating near its wrist to signal its Buddha origin; the hand is firmly pressing DOWN on top of the rice-bowl mascot; the mascot is visibly SQUISHED / compressed shorter than normal under the pressure — the bowl body squashed wider/shorter, the rice mound flattened flat; the mascot is actively RESISTING: BOTH TINY STUBBY ARMS are raised straight UP over its head, tiny palms open pushing HARD against the underside of the giant buddha hand; determined struggling expression, eyes squeezed with effort, small gritted-teeth mouth, one small sweat drop; small stress lines and radiating exertion lines where its hands meet the underside of the buddha hand",
+     "muted olive taupe"),
     # NEW: supported — being helped / accompanied by a friend bowl
     ("supported",    "warm coral pink",                 RICE_FULL,
      "the picture actually shows TWO mascots side by side: the LEFT main coral pink rice-bowl mascot has a gentle grateful small smile with a hint of a happy tear in one eye; the RIGHT slightly larger friend rice-bowl mascot in soft mint green has one tiny stubby arm reaching over resting kindly on the main character's shoulder/side in a supportive gesture; a couple of tiny warm pink hearts and small sparkles floating between them",

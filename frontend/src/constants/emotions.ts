@@ -71,58 +71,58 @@ export const EMOTION_IMAGES: Record<string, any> = {
 };
 
 export const EMOTIONS: Emotion[] = [
-  // Warm / positive — sage/pink/warm-yellow spectrum
-  { key: 'happy', label: '開心', description: '覺得輕鬆又快樂', color: '#D6E5D8', category: 'warm', image: EMOTION_IMAGES.happy },
-  { key: 'content', label: '滿足', description: '心入面有種靜靜嘅滿足', color: '#B8E0C2', category: 'warm', image: EMOTION_IMAGES.content },
-  { key: 'grateful', label: '感恩', description: '今日有啲嘢想感激', color: '#FFC8DD', category: 'warm', image: EMOTION_IMAGES.grateful },
-  { key: 'hopeful', label: '有希望', description: '前面好似有一絲光', color: '#E0EAFC', category: 'warm', image: EMOTION_IMAGES.hopeful },
-  { key: 'calm', label: '平靜', description: '溫柔而安定', color: '#A3C4BC', category: 'warm', image: EMOTION_IMAGES.calm },
-  { key: 'peaceful', label: '安寧', description: '所有嘢都冇事咁', color: '#D2C1E5', category: 'warm', image: EMOTION_IMAGES.peaceful },
-  { key: 'loved', label: '被愛', description: '感覺被關心緊', color: '#FFB6C1', category: 'warm', image: EMOTION_IMAGES.loved },
-  { key: 'supported', label: '被支持', description: '有人喺我身邊撐我', color: '#F4C2C2', category: 'warm', image: EMOTION_IMAGES.supported },
-  { key: 'proud', label: '自豪', description: '我做咗啲好嘢', color: '#FFE68A', category: 'warm', image: EMOTION_IMAGES.proud },
-  { key: 'empowered', label: '有力量', description: '我夠力面對', color: '#FFA76E', category: 'warm', image: EMOTION_IMAGES.empowered },
+  // Warm / positive — greens · warm pinks · sun colors
+  { key: 'happy', label: '開心', description: '覺得輕鬆又快樂', color: '#A8DBB2', category: 'warm', image: EMOTION_IMAGES.happy },
+  { key: 'content', label: '滿足', description: '心入面有種靜靜嘅滿足', color: '#C7E4A0', category: 'warm', image: EMOTION_IMAGES.content },
+  { key: 'grateful', label: '感恩', description: '今日有啲嘢想感激', color: '#FFC5DE', category: 'warm', image: EMOTION_IMAGES.grateful },
+  { key: 'hopeful', label: '有希望', description: '前面好似有一絲光', color: '#C1DFF8', category: 'warm', image: EMOTION_IMAGES.hopeful },
+  { key: 'calm', label: '平靜', description: '溫柔而安定', color: '#82C4B8', category: 'warm', image: EMOTION_IMAGES.calm },
+  { key: 'peaceful', label: '安寧', description: '所有嘢都冇事咁', color: '#C1B5E8', category: 'warm', image: EMOTION_IMAGES.peaceful },
+  { key: 'loved', label: '被愛', description: '感覺被關心緊', color: '#F8A2B8', category: 'warm', image: EMOTION_IMAGES.loved },
+  { key: 'supported', label: '被支持', description: '有人喺我身邊撐我', color: '#F6C4B7', category: 'warm', image: EMOTION_IMAGES.supported },
+  { key: 'proud', label: '自豪', description: '我做咗啲好嘢', color: '#FFDA5E', category: 'warm', image: EMOTION_IMAGES.proud },
+  { key: 'empowered', label: '有力量', description: '我夠力面對', color: '#FF9151', category: 'warm', image: EMOTION_IMAGES.empowered },
 
-  // Sadness / low energy — cool blues/greys
-  { key: 'sad', label: '傷心', description: '心入面有種柔和嘅沉重', color: '#A2D2FF', category: 'sad', image: EMOTION_IMAGES.sad },
-  { key: 'lonely', label: '寂寞', description: '好想有人喺身邊', color: '#B4CCE8', category: 'sad', image: EMOTION_IMAGES.lonely },
-  { key: 'unmotivated', label: '冇心機', description: '提唔起勁做嘢', color: '#B7CFC0', category: 'sad', image: EMOTION_IMAGES.unmotivated },
-  { key: 'empty', label: '空虛', description: '而家好似乜都感受唔到', color: '#EFECE4', category: 'sad', image: EMOTION_IMAGES.empty },
-  { key: 'numb', label: '麻木', description: '同自己有距離', color: '#CFD3D6', category: 'sad', image: EMOTION_IMAGES.numb },
-  { key: 'exhausted', label: '好攰', description: '身心都攰晒', color: '#DBC5E8', category: 'sad', image: EMOTION_IMAGES.exhausted },
+  // Sadness / low energy — clearly different blues + earth
+  { key: 'sad', label: '傷心', description: '心入面有種柔和嘅沉重', color: '#A2CCFF', category: 'sad', image: EMOTION_IMAGES.sad },
+  { key: 'lonely', label: '寂寞', description: '好想有人喺身邊', color: '#5E88C0', category: 'sad', image: EMOTION_IMAGES.lonely },
+  { key: 'unmotivated', label: '冇心機', description: '提唔起勁做嘢', color: '#A6C1A6', category: 'sad', image: EMOTION_IMAGES.unmotivated },
+  { key: 'empty', label: '空虛', description: '而家好似乜都感受唔到', color: '#F0EBDC', category: 'sad', image: EMOTION_IMAGES.empty },
+  { key: 'numb', label: '麻木', description: '同自己有距離', color: '#B5B9BE', category: 'sad', image: EMOTION_IMAGES.numb },
+  { key: 'exhausted', label: '好攰', description: '身心都攰晒', color: '#C6A3E5', category: 'sad', image: EMOTION_IMAGES.exhausted },
 
-  // Nervous / tense — yellows/oranges/teal
-  { key: 'restless', label: '不知所措', description: '唔知點算好', color: '#FFEB99', category: 'nervous', image: EMOTION_IMAGES.restless },
-  { key: 'irritable', label: '煩躁', description: '個火開始上湧', color: '#FF9E7A', category: 'nervous', image: EMOTION_IMAGES.irritable },
-  { key: 'anxious', label: '焦慮', description: '心入面亂到停唔到', color: '#FFCC99', category: 'nervous', image: EMOTION_IMAGES.anxious },
-  { key: 'scared', label: '驚', description: '心跳好快 · 好唔安', color: '#FFDCA5', category: 'nervous', image: EMOTION_IMAGES.scared },
-  { key: 'worried', label: '擔心', description: '諗嘢停唔到', color: '#FFE9B2', category: 'nervous', image: EMOTION_IMAGES.worried },
-  { key: 'overwhelmed', label: '透唔到氣', description: '好多嘢一齊嚟', color: '#E8B0A8', category: 'nervous', image: EMOTION_IMAGES.overwhelmed },
-  { key: 'trapped', label: '被困', description: '好似逃唔到出去', color: '#7FB3C8', category: 'nervous', image: EMOTION_IMAGES.trapped },
+  // Nervous / tense — distinct yellows/oranges + one teal
+  { key: 'restless', label: '不知所措', description: '唔知點算好', color: '#FFF199', category: 'nervous', image: EMOTION_IMAGES.restless },
+  { key: 'irritable', label: '煩躁', description: '個火開始上湧', color: '#FF8264', category: 'nervous', image: EMOTION_IMAGES.irritable },
+  { key: 'anxious', label: '焦慮', description: '心入面亂到停唔到', color: '#FFB673', category: 'nervous', image: EMOTION_IMAGES.anxious },
+  { key: 'scared', label: '驚', description: '心跳好快 · 好唔安', color: '#F4D693', category: 'nervous', image: EMOTION_IMAGES.scared },
+  { key: 'worried', label: '擔心', description: '諗嘢停唔到', color: '#FFE4CC', category: 'nervous', image: EMOTION_IMAGES.worried },
+  { key: 'overwhelmed', label: '透唔到氣', description: '好多嘢一齊嚟', color: '#E89E9E', category: 'nervous', image: EMOTION_IMAGES.overwhelmed },
+  { key: 'trapped', label: '被困', description: '好似逃唔到出去', color: '#6BA8BF', category: 'nervous', image: EMOTION_IMAGES.trapped },
 
-  // Self-worth wounds — purples/muted greys
-  { key: 'worthless', label: '冇價值', description: '覺得自己毫無價值', color: '#B8BFDF', category: 'wound', image: EMOTION_IMAGES.worthless },
-  { key: 'insecure', label: '冇自信', description: '覺得自己唔夠好', color: '#C7A8D5', category: 'wound', image: EMOTION_IMAGES.insecure },
-  { key: 'unloved', label: '唔被愛', description: '冇人真心錫我', color: '#EAB0AA', category: 'wound', image: EMOTION_IMAGES.unloved },
-  { key: 'unappreciated', label: '被排擠', description: '好似被人剩落', color: '#D5AAFF', category: 'wound', image: EMOTION_IMAGES.unappreciated },
-  { key: 'disrespected', label: '唔被尊重', description: '好似被人睇小', color: '#F5A088', category: 'wound', image: EMOTION_IMAGES.disrespected },
-  { key: 'invisible', label: '被忽視', description: '好似冇人見到我', color: '#A9B0BC', category: 'wound', image: EMOTION_IMAGES.invisible },
-  { key: 'rejected', label: '被拒絕', description: '唔被接納', color: '#F5C69B', category: 'wound', image: EMOTION_IMAGES.rejected },
-  { key: 'abandoned', label: '被拋棄', description: '感覺被人丟低', color: '#B8D5DE', category: 'wound', image: EMOTION_IMAGES.abandoned },
-  { key: 'misunderstood', label: '唔被理解', description: '講極都冇人明', color: '#A899CE', category: 'wound', image: EMOTION_IMAGES.misunderstood },
-  { key: 'unfair', label: '唔公平', description: '點解會咁對我?', color: '#7B93B0', category: 'wound', image: EMOTION_IMAGES.unfair },
-  { key: 'guilty', label: '內疚', description: '覺得係自己嘅錯', color: '#E8D57A', category: 'wound', image: EMOTION_IMAGES.guilty },
-  { key: 'ashamed', label: '羞愧', description: '想搵個窿匿埋', color: '#E6A896', category: 'wound', image: EMOTION_IMAGES.ashamed },
-  { key: 'hopeless', label: '絕望', description: '睇唔到前面嘅路', color: '#A0AEB8', category: 'wound', image: EMOTION_IMAGES.hopeless },
-  { key: 'suppressed', label: '被打壓', description: '俾人壓住 · 冇聲出', color: '#6E7C8A', category: 'wound', image: EMOTION_IMAGES.suppressed },
+  // Self-worth wounds — muted purples/browns/greys
+  { key: 'worthless', label: '冇價值', description: '覺得自己毫無價值', color: '#96A2C8', category: 'wound', image: EMOTION_IMAGES.worthless },
+  { key: 'insecure', label: '冇自信', description: '覺得自己唔夠好', color: '#B394CF', category: 'wound', image: EMOTION_IMAGES.insecure },
+  { key: 'unloved', label: '唔被愛', description: '冇人真心錫我', color: '#E8988D', category: 'wound', image: EMOTION_IMAGES.unloved },
+  { key: 'unappreciated', label: '被排擠', description: '好似被人剩落', color: '#C58AF0', category: 'wound', image: EMOTION_IMAGES.unappreciated },
+  { key: 'disrespected', label: '唔被尊重', description: '好似被人睇小', color: '#E88F65', category: 'wound', image: EMOTION_IMAGES.disrespected },
+  { key: 'invisible', label: '被忽視', description: '好似冇人見到我', color: '#9AA5B2', category: 'wound', image: EMOTION_IMAGES.invisible },
+  { key: 'rejected', label: '被拒絕', description: '唔被接納', color: '#EFB278', category: 'wound', image: EMOTION_IMAGES.rejected },
+  { key: 'abandoned', label: '被拋棄', description: '感覺被人丟低', color: '#93B9C7', category: 'wound', image: EMOTION_IMAGES.abandoned },
+  { key: 'misunderstood', label: '唔被理解', description: '講極都冇人明', color: '#8877B4', category: 'wound', image: EMOTION_IMAGES.misunderstood },
+  { key: 'unfair', label: '唔公平', description: '點解會咁對我?', color: '#58768E', category: 'wound', image: EMOTION_IMAGES.unfair },
+  { key: 'guilty', label: '內疚', description: '覺得係自己嘅錯', color: '#DCC15E', category: 'wound', image: EMOTION_IMAGES.guilty },
+  { key: 'ashamed', label: '羞愧', description: '想搵個窿匿埋', color: '#D48570', category: 'wound', image: EMOTION_IMAGES.ashamed },
+  { key: 'hopeless', label: '絕望', description: '睇唔到前面嘅路', color: '#7E8A94', category: 'wound', image: EMOTION_IMAGES.hopeless },
+  { key: 'suppressed', label: '被打壓', description: '俾人壓住 · 仲要撐住', color: '#8A7563', category: 'wound', image: EMOTION_IMAGES.suppressed },
 
-  // Anger / intense — reds/deep tones
-  { key: 'frustrated', label: '沮喪', description: '好似卡住咗', color: '#EDBEB6', category: 'anger', image: EMOTION_IMAGES.frustrated },
-  { key: 'angry', label: '嬲', description: '心入面有把火', color: '#F58884', category: 'anger', image: EMOTION_IMAGES.angry },
-  { key: 'offended', label: '被冒犯', description: '個心俾人踩咗一腳', color: '#DC9A70', category: 'anger', image: EMOTION_IMAGES.offended },
-  { key: 'furious', label: '激嬲', description: '把火燒到頂', color: '#E86A6A', category: 'anger', image: EMOTION_IMAGES.furious },
-  { key: 'in-pain', label: '痛苦', description: '心 / 身好痛', color: '#D97D77', category: 'anger', image: EMOTION_IMAGES['in-pain'] },
-  { key: 'in-agony', label: '煎熬', description: '痛得好難捱', color: '#8B7AA6', category: 'anger', image: EMOTION_IMAGES['in-agony'] },
+  // Anger / intense — reds ordered by intensity
+  { key: 'frustrated', label: '沮喪', description: '好似卡住咗', color: '#E4A3A0', category: 'anger', image: EMOTION_IMAGES.frustrated },
+  { key: 'angry', label: '嬲', description: '心入面有把火', color: '#F17372', category: 'anger', image: EMOTION_IMAGES.angry },
+  { key: 'offended', label: '被冒犯', description: '個心俾人踩咗一腳', color: '#C08360', category: 'anger', image: EMOTION_IMAGES.offended },
+  { key: 'furious', label: '激嬲', description: '把火燒到頂', color: '#D34848', category: 'anger', image: EMOTION_IMAGES.furious },
+  { key: 'in-pain', label: '痛苦', description: '心 / 身好痛', color: '#B36663', category: 'anger', image: EMOTION_IMAGES['in-pain'] },
+  { key: 'in-agony', label: '煎熬', description: '痛得好難捱', color: '#786095', category: 'anger', image: EMOTION_IMAGES['in-agony'] },
 ];
 
 export const EMOTION_BY_KEY: Record<string, Emotion> = EMOTIONS.reduce(
