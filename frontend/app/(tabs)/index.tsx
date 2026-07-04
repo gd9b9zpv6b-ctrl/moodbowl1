@@ -19,6 +19,7 @@ import { randomAdjective, randomAffirmation } from '@/src/constants/affirmations
 import { EMOTIONS, Emotion, EMOTION_BY_KEY, EMOTION_CATEGORIES, EmotionCategory } from '@/src/constants/emotions';
 import { ENERGY_BY_KEY, EnergyLevel } from '@/src/constants/energy';
 import { COLORS, RADIUS, SPACING } from '@/src/constants/theme';
+import { SchoolCommunityConfig } from '@/src/lib/school-community-config';
 import { api, Entry } from '@/src/lib/api';
 import { useAuth } from '@/src/lib/auth-context';
 import { isDiaryUnlocked } from '@/src/lib/diary-lock';
@@ -61,7 +62,19 @@ export default function Home() {
   const [pinModalVisible, setPinModalVisible] = useState(false);
   const [editingEntry, setEditingEntry] = useState<Entry | null>(null);
   const [energy, setEnergy] = useState<number | null>(null);
+  const [communityOpen, setCommunityOpen] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
+
+  // Read school-level community enablement — students only care about student community
+  useEffect(() => {
+    (async () => {
+      const cfg = await SchoolCommunityConfig.get();
+      const realRole = user?.role || 'student';
+      setCommunityOpen(
+        realRole === 'student' ? cfg.studentCommunityEnabled : cfg.adultCommunityEnabled,
+      );
+    })();
+  }, [user?.role]);
   const [activeCategory, setActiveCategory] = useState<EmotionCategory | 'all'>('all');
   const { recent, track } = useRecentEmotions();
 
@@ -473,14 +486,19 @@ export default function Home() {
 
                 <View style={styles.shareRow}>
                   <View style={{ flex: 1 }}>
-                    <Text style={styles.shareLabel}>匿名分享俾社群</Text>
+                    <Text style={[styles.shareLabel, !communityOpen && { color: COLORS.textDisabled }]}>
+                      匿名分享俾社群
+                    </Text>
                     <Text style={styles.shareHint}>
-                      其他朋友可能會送你一個心心
+                      {communityOpen
+                        ? '其他朋友可能會送你一個心心'
+                        : '校方暫停咗呢個社群 · 你依家淨係寫俾自己'}
                     </Text>
                   </View>
                   <Switch
                     testID="share-toggle"
-                    value={share}
+                    value={share && communityOpen}
+                    disabled={!communityOpen}
                     onValueChange={(v) => { setShare(v); if (v) setSecret(false); }}
                     trackColor={{ true: COLORS.primary, false: COLORS.bgInput }}
                     thumbColor={COLORS.bgCard}

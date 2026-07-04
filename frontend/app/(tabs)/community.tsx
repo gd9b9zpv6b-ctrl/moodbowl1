@@ -59,15 +59,32 @@ export default function Community() {
   // For adults: honor the school config for viewing student community
   const adultCanViewStudent = !isStudent && cfg.adultCanViewStudentCommunity;
 
-  // Determine which scope tabs to display
+  // Determine which scope tabs to display · respecting enabled flags
   const tabs: Scope[] = useMemo(() => {
-    if (isStudent) return ['student']; // students never see adult tab
-    if (!cfg.adultCommunityEnabled && !adultCanViewStudent) return [];
+    if (isStudent) {
+      // Student side: student community is the only possible scope · but school may have disabled it
+      return cfg.studentCommunityEnabled ? ['student'] : [];
+    }
     const list: Scope[] = [];
     if (cfg.adultCommunityEnabled) list.push('adult');
-    if (adultCanViewStudent) list.push('student');
+    if (adultCanViewStudent && cfg.studentCommunityEnabled) list.push('student');
     return list;
-  }, [isStudent, cfg.adultCommunityEnabled, adultCanViewStudent]);
+  }, [isStudent, cfg.adultCommunityEnabled, cfg.studentCommunityEnabled, adultCanViewStudent]);
+
+  // Detect "community closed" state for the current context
+  const communityClosed = useMemo(() => {
+    if (isStudent) return !cfg.studentCommunityEnabled;
+    if (activeScope === 'adult') return !cfg.adultCommunityEnabled;
+    if (activeScope === 'student') return !cfg.studentCommunityEnabled || !adultCanViewStudent;
+    return false;
+  }, [isStudent, activeScope, cfg.studentCommunityEnabled, cfg.adultCommunityEnabled, adultCanViewStudent]);
+
+  // Auto-switch tab if current activeScope becomes unavailable
+  useMemo(() => {
+    if (!isStudent && tabs.length > 0 && !tabs.includes(activeScope)) {
+      setActiveScope(tabs[0]);
+    }
+  }, [isStudent, tabs, activeScope]);
 
   // Filter entries by active scope (backend already blocks students from adult · this is UI-side scope switching for adults)
   const visibleEntries = useMemo(() => {
@@ -178,6 +195,15 @@ export default function Community() {
 
       {loading ? (
         <ActivityIndicator style={{ marginTop: SPACING.xl }} color={COLORS.primary} />
+      ) : communityClosed ? (
+        <View style={styles.closedCard} testID="community-closed">
+          <Feather name="pause-circle" size={36} color={COLORS.textDisabled} />
+          <Text style={styles.closedTitle}>呢個社群已暫停</Text>
+          <Text style={styles.closedText}>
+            校方暫時關閉咗{isStudent ? '學生' : activeScope === 'adult' ? '大人' : '學生'}社群 ·
+            你嘅日記依然可以私人保存 · 只係唔會出現喺社群。
+          </Text>
+        </View>
       ) : (
         <ScrollView
           contentContainerStyle={styles.scroll}
@@ -301,6 +327,17 @@ const styles = StyleSheet.create({
     marginTop: SPACING.xl,
   },
   emptyText: { color: COLORS.textSecondary, textAlign: 'center', lineHeight: 22 },
+  closedCard: {
+    marginHorizontal: SPACING.lg,
+    marginTop: SPACING.xl,
+    padding: SPACING.xl,
+    borderRadius: RADIUS.lg,
+    backgroundColor: COLORS.bgCard,
+    alignItems: 'center',
+    gap: SPACING.md,
+  },
+  closedTitle: { fontSize: 16, fontWeight: '800', color: COLORS.textPrimary },
+  closedText: { fontSize: 13, color: COLORS.textSecondary, textAlign: 'center', lineHeight: 20 },
   card: {
     backgroundColor: COLORS.bgCard,
     borderRadius: RADIUS.lg,
