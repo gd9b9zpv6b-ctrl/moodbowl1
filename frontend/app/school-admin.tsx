@@ -4,13 +4,14 @@ import { ScrollView, StyleSheet, Text, View, Pressable, Alert, Switch, TextInput
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { EmotionVisual } from '@/src/components/emotion-visual';
-import { EMOTIONS } from '@/src/constants/emotions';
+import { EMOTIONS, EMOTION_BY_KEY } from '@/src/constants/emotions';
 import { ENERGY_META, EnergyLevel } from '@/src/constants/energy';
 import { RoleHeader } from '@/src/components/role-header';
 import { RoleSelfCareCard } from '@/src/components/role-selfcare-card';
 import { AlertPolicy, DEFAULT_POLICY, SchoolAlertPolicy } from '@/src/lib/school-alert-policy';
 import { CommunityConfig, DEFAULT_CONFIG, SchoolCommunityConfig, StudentAnonymity } from '@/src/lib/school-community-config';
 import { EnergyMap, SchoolEnergyConfig } from '@/src/lib/school-energy-config';
+import { api, Entry } from '@/src/lib/api';
 import { COLORS, RADIUS, SPACING } from '@/src/constants/theme';
 
 const LEVEL_ORDER: EnergyLevel[] = ['high', 'steady', 'low'];
@@ -25,12 +26,51 @@ export default function SchoolAdmin() {
   const [newKeyword, setNewKeyword] = useState('');
   const [energyMap, setEnergyMap] = useState<EnergyMap>(SchoolEnergyConfig.DEFAULT_MAP);
   const [communityConfig, setCommunityConfig] = useState<CommunityConfig>(DEFAULT_CONFIG);
+  const [historyScope, setHistoryScope] = useState<'student' | 'adult'>('student');
+  const [history, setHistory] = useState<Entry[]>([]);
+  const [historyLoading, setHistoryLoading] = useState(false);
 
   useEffect(() => {
     SchoolAlertPolicy.get().then(setPolicy);
     SchoolEnergyConfig.get().then(setEnergyMap);
     SchoolCommunityConfig.get().then(setCommunityConfig);
   }, []);
+
+  const loadHistory = async (scope: 'student' | 'adult') => {
+    setHistoryLoading(true);
+    setHistoryScope(scope);
+    try {
+      const res = await api.get<Entry[]>(`/admin/community-history?scope=${scope}&limit=50`);
+      setHistory(res);
+    } catch (e: any) {
+      Alert.alert('載入唔到歷史', e?.message || '請確認你係校方/輔導身份');
+      setHistory([]);
+    } finally {
+      setHistoryLoading(false);
+    }
+  };
+
+  const deleteHistoryEntry = (entry: Entry) => {
+    Alert.alert(
+      '刪除呢個 post？',
+      `${entry.note?.slice(0, 80) || '(冇文字內容)'}${(entry.note || '').length > 80 ? '…' : ''}\n\n刪除後對方會睇唔到 · 系統會保留 audit log。`,
+      [
+        { text: '取消', style: 'cancel' },
+        {
+          text: '刪除',
+          style: 'destructive',
+          onPress: async () => {
+            try {
+              await api.del(`/entries/${entry.id}`);
+              setHistory((prev) => prev.filter((e) => e.id !== entry.id));
+            } catch (e: any) {
+              Alert.alert('刪除失敗', e?.message || '請再試');
+            }
+          },
+        },
+      ],
+    );
+  };
 
   const saveCommunity = async (next: CommunityConfig) => {
     setCommunityConfig(next);
@@ -431,6 +471,37 @@ export default function SchoolAdmin() {
           <Text style={styles.anonHint}>
             推薦「完全匿名」· 細路仔講心事時更放心
           </Text>
+
+          <View style={styles.policyDivider} />
+
+          {/* Post TTL — auto expiry from public feed */}
+          <Text style={styles.policyLabel}>Post 自動消失時限</Text>
+          <View style={styles.chipRow}>
+            {[
+              { d: 7,  label: '7 日' },
+              { d: 30, label: '30 日（推薦）' },
+              { d: 90, label: '90 日' },
+              { d: 0,  label: '永久保留' },
+            ].map(({ d, label }) => {
+              const active = communityConfig.postTtlDays === d;
+              return (
+                <Pressable
+                  key={d}
+                  testID={`comm-ttl-${d}`}
+                  onPress={() => saveCommunity({ ...communityConfig, postTtlDays: d })}
+                  style={[styles.roleChip, active && styles.roleChipActive]}
+                >
+                  {active && <Feather name="check" size={11} color="#FFF" />}
+                  <Text style={[styles.roleChipText, active && { color: '#FFF' }]}>
+                    {label}
+                  </Text>
+                </Pressable>
+              );
+            })}
+          </View>
+          <Text style={styles.anonHint}>
+            超過時限嘅 post 唔會再喺 feed 見到 · 但校方/輔導可以喺下面「歷史檢閱」睇返
+          </Text>
         </View>
 
         <View style={styles.policyHint}>
@@ -439,6 +510,80 @@ export default function SchoolAdmin() {
             硬性規則：學生**永遠**唔會見到大人社群 · 呢個係 backend 級別鎖死 · 家長/校方冇權限可以 override。
           </Text>
         </View>
+
+        {/* Community history (admin-only · includes expired posts) */}
+        <Text style={styles.sectionTitle}>社群歷史檢閱</Text>
+
+        <View style={styles.commCard}>
+          <Text style={styles.historyIntro}>
+            檢閱所有公開 post（包括已過期嘅）· 可以刪除唔恰當內容 · 每次刪除都有 audit log。
+          </Text>
+          <View style={styles.chipRow}>
+            <Pressable
+              testID="history-load-student"
+              onPress={() => loadHistory('student')}
+              style={[styles.roleChip, historyScope === 'student' && history.length > 0 && styles.roleChipActive]}
+            >
+              <Feather name="users" size={11} color={historyScope === 'student' && history.length > 0 ? '#FFF' : COLORS.textPrimary} />
+              <Text style={[styles.roleChipText, historyScope === 'student' && history.length > 0 && { color: '#FFF' }]}>
+                學生社群 post
+              </Text>
+            </Pressable>
+            <Pressable
+              testID="history-load-adult"
+              onPress={() => loadHistory('adult')}
+              style={[styles.roleChip, historyScope === 'adult' && history.length > 0 && styles.roleChipActive]}
+            >
+              <Feather name="briefcase" size={11} color={historyScope === 'adult' && history.length > 0 ? '#FFF' : COLORS.textPrimary} />
+              <Text style={[styles.roleChipText, historyScope === 'adult' && history.length > 0 && { color: '#FFF' }]}>
+                大人社群 post
+              </Text>
+            </Pressable>
+          </View>
+
+          {historyLoading && (
+            <Text style={styles.historyLoading}>載入緊…</Text>
+          )}
+
+          {!historyLoading && history.length === 0 && (
+            <Text style={styles.historyEmpty}>撳上面 button 揀要睇邊個社群嘅歷史</Text>
+          )}
+
+          {history.map((e) => {
+            const emKey = e.emotions?.[0] || e.emotion;
+            const em = EMOTION_BY_KEY[emKey];
+            const daysAgo = Math.floor(
+              (Date.now() - new Date(e.created_at).getTime()) / (1000 * 60 * 60 * 24),
+            );
+            const isExpired = daysAgo > communityConfig.postTtlDays && communityConfig.postTtlDays > 0;
+            return (
+              <View key={e.id} style={[styles.historyItem, isExpired && styles.historyItemExpired]}>
+                <View style={styles.historyItemHead}>
+                  {em && <EmotionVisual emotion={em} size={26} radius={13} />}
+                  <View style={{ flex: 1 }}>
+                    <Text style={styles.historyItemAuthor}>
+                      {e.author_role_label || '同學'}
+                      {isExpired && <Text style={styles.expiredBadge}>  已過期</Text>}
+                    </Text>
+                    <Text style={styles.historyItemDate}>
+                      {e.entry_date} · {daysAgo === 0 ? '今日' : `${daysAgo} 日前`}
+                    </Text>
+                  </View>
+                  <Pressable
+                    testID={`history-delete-${e.id}`}
+                    onPress={() => deleteHistoryEntry(e)}
+                    hitSlop={8}
+                    style={styles.historyDelete}
+                  >
+                    <Feather name="trash-2" size={14} color="#B44" />
+                  </Pressable>
+                </View>
+                {e.note ? <Text style={styles.historyItemNote}>{e.note}</Text> : null}
+              </View>
+            );
+          })}
+        </View>
+
 
         <Text style={styles.sectionTitle}>數據 · 報告</Text>
 
@@ -728,5 +873,69 @@ const styles = StyleSheet.create({
     color: COLORS.textSecondary,
     fontStyle: 'italic',
     marginTop: SPACING.sm,
+  },
+
+  // History section
+  historyIntro: {
+    fontSize: 12,
+    color: COLORS.textSecondary,
+    lineHeight: 17,
+    marginBottom: SPACING.sm,
+  },
+  historyLoading: {
+    fontSize: 12,
+    color: COLORS.textSecondary,
+    fontStyle: 'italic',
+    textAlign: 'center',
+    marginTop: SPACING.md,
+  },
+  historyEmpty: {
+    fontSize: 12,
+    color: COLORS.textDisabled,
+    fontStyle: 'italic',
+    textAlign: 'center',
+    marginTop: SPACING.md,
+    paddingVertical: SPACING.sm,
+  },
+  historyItem: {
+    borderTopWidth: 1,
+    borderTopColor: 'rgba(0,0,0,0.05)',
+    paddingTop: SPACING.sm,
+    marginTop: SPACING.sm,
+  },
+  historyItemExpired: { opacity: 0.55 },
+  historyItemHead: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+    marginBottom: 4,
+  },
+  historyItemAuthor: {
+    fontSize: 12,
+    fontWeight: '700',
+    color: COLORS.textPrimary,
+  },
+  expiredBadge: {
+    fontSize: 10,
+    fontWeight: '700',
+    color: '#B44',
+    fontStyle: 'italic',
+  },
+  historyItemDate: {
+    fontSize: 10,
+    color: COLORS.textSecondary,
+    marginTop: 1,
+  },
+  historyItemNote: {
+    fontSize: 12,
+    color: COLORS.textPrimary,
+    lineHeight: 17,
+    marginTop: 4,
+    paddingLeft: 34,
+  },
+  historyDelete: {
+    padding: 6,
+    borderRadius: RADIUS.pill,
+    backgroundColor: '#FDE0E0',
   },
 });

@@ -3,6 +3,7 @@ import { useFocusEffect } from 'expo-router';
 import { useCallback, useMemo, useState } from 'react';
 import {
   ActivityIndicator,
+  Alert,
   Pressable,
   RefreshControl,
   ScrollView,
@@ -37,7 +38,8 @@ export default function Community() {
     try {
       const c = await SchoolCommunityConfig.get();
       setCfg(c);
-      const res = await api.get<Entry[]>('/entries/community');
+      const q = c.postTtlDays > 0 ? `?ttl_days=${c.postTtlDays}` : '?ttl_days=0';
+      const res = await api.get<Entry[]>(`/entries/community${q}`);
       setEntries(res);
     } catch {
       // ignore
@@ -106,6 +108,32 @@ export default function Community() {
     } catch {
       load();
     }
+  };
+
+  // Roles that can moderate — delete other users' public posts
+  const MODERATOR_ROLES = new Set(['school_admin', 'counsellor']);
+  const canModerate = MODERATOR_ROLES.has(realRole);
+
+  const deletePost = (entry: Entry) => {
+    Alert.alert(
+      '刪除呢個 post？',
+      `作者：${entry.author_role_label || '同學'}\n\n${(entry.note || '').slice(0, 80)}${(entry.note || '').length > 80 ? '…' : ''}\n\n刪除後對方會睇唔到 · 系統會記低你嘅刪除記錄（audit）。`,
+      [
+        { text: '取消', style: 'cancel' },
+        {
+          text: '刪除',
+          style: 'destructive',
+          onPress: async () => {
+            try {
+              await api.del(`/entries/${entry.id}`);
+              setEntries((prev) => prev.filter((e) => e.id !== entry.id));
+            } catch (e: any) {
+              Alert.alert('刪除失敗', e?.message || '請再試一次');
+            }
+          },
+        },
+      ],
+    );
   };
 
   // Header banner text explains scope + privacy in one line
@@ -215,25 +243,38 @@ export default function Community() {
                     </View>
                   </View>
                   {entry.note ? <Text style={styles.note}>{entry.note}</Text> : null}
-                  <Pressable
-                    testID={`heart-btn-${entry.id}`}
-                    style={styles.heartBtn}
-                    onPress={() => toggleHeart(entry.id)}
-                  >
-                    <Feather
-                      name="heart"
-                      size={18}
-                      color={entry.hearted_by_me ? '#E86A6A' : COLORS.textSecondary}
-                    />
-                    <Text
-                      style={[
-                        styles.heartCount,
-                        entry.hearted_by_me && { color: '#E86A6A', fontWeight: '700' },
-                      ]}
+                  <View style={styles.actionRow}>
+                    <Pressable
+                      testID={`heart-btn-${entry.id}`}
+                      style={styles.heartBtn}
+                      onPress={() => toggleHeart(entry.id)}
                     >
-                      {entry.hearts} 個心心
-                    </Text>
-                  </Pressable>
+                      <Feather
+                        name="heart"
+                        size={18}
+                        color={entry.hearted_by_me ? '#E86A6A' : COLORS.textSecondary}
+                      />
+                      <Text
+                        style={[
+                          styles.heartCount,
+                          entry.hearted_by_me && { color: '#E86A6A', fontWeight: '700' },
+                        ]}
+                      >
+                        {entry.hearts} 個心心
+                      </Text>
+                    </Pressable>
+                    {canModerate && (
+                      <Pressable
+                        testID={`delete-btn-${entry.id}`}
+                        onPress={() => deletePost(entry)}
+                        style={styles.deleteBtn}
+                        hitSlop={8}
+                      >
+                        <Feather name="trash-2" size={14} color="#B44" />
+                        <Text style={styles.deleteBtnText}>刪除</Text>
+                      </Pressable>
+                    )}
+                  </View>
                 </View>
               );
             })
@@ -329,11 +370,15 @@ const styles = StyleSheet.create({
     lineHeight: 15,
   },
   note: { marginTop: SPACING.md, fontSize: 15, color: COLORS.textPrimary, lineHeight: 22 },
-  heartBtn: {
+  actionRow: {
     marginTop: SPACING.md,
     flexDirection: 'row',
     alignItems: 'center',
-    alignSelf: 'flex-start',
+    justifyContent: 'space-between',
+  },
+  heartBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
     gap: SPACING.sm,
     paddingHorizontal: SPACING.md,
     paddingVertical: SPACING.sm,
@@ -341,4 +386,14 @@ const styles = StyleSheet.create({
     backgroundColor: COLORS.bgInput,
   },
   heartCount: { color: COLORS.textSecondary, fontSize: 13, fontWeight: '500' },
+  deleteBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+    paddingHorizontal: SPACING.sm + 2,
+    paddingVertical: 6,
+    borderRadius: RADIUS.pill,
+    backgroundColor: '#FDE0E0',
+  },
+  deleteBtnText: { color: '#B44', fontSize: 12, fontWeight: '700' },
 });

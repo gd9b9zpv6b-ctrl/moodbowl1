@@ -344,26 +344,56 @@ async def calendar_entries(month: str, current=Depends(get_current_user)):
     return await _entries_with_hearts(docs, current["id"])
 
 
+# How many days a public community post stays visible (server-side default).
+# Frontend school-admin can configure this per school; we honor a query override.
+DEFAULT_COMMUNITY_TTL_DAYS = 30
+
+
 @api_router.get("/entries/community", response_model=List[EntryOut])
-async def community_entries(scope: Optional[str] = None, current=Depends(get_current_user)):
-    """Community feed with strict role-based scope enforcement.
+async def community_entries(
+    scope: Optional[str] = None,
+    ttl_days: Optional[int] = None,
+    current=Depends(get_current_user),
+):
+    """Community feed with strict role-based scope enforcement + optional TTL filter.
     HARD RULE: students can NEVER see adult community — enforced at API level.
-    Adults can request either scope · 'both' is the default (school policy can filter
-    on the frontend via SchoolCommunityConfig).
     """
     user_role = current.get("role", "student")
     filters: dict = {"is_public": True}
 
     if user_role == "student":
-        # HARD RULE — students see student community only, no exception
         filters["community_scope"] = "student"
     else:
-        # Adults may request a specific scope
         if scope in ("student", "adult"):
             filters["community_scope"] = scope
-        # otherwise return both — school policy filters on frontend
+
+    # TTL filter — hides posts older than N days from the feed (data still exists)
+    ttl = ttl_days if ttl_days is not None else DEFAULT_COMMUNITY_TTL_DAYS
+    if ttl and ttl > 0:
+        cutoff = (datetime.now(timezone.utc) - timedelta(days=ttl)).isoformat()
+        filters["created_at"] = {"$gte": cutoff}
 
     docs = await db.entries.find(filters, {"_id": 0}).sort("created_at", -1).to_list(200)
+    return await _entries_with_hearts(docs, current["id"])
+
+
+@api_router.get("/admin/community-history", response_model=List[EntryOut])
+async def community_history(
+    scope: Optional[str] = None,
+    limit: int = 100,
+    current=Depends(get_current_user),
+):
+    """Admin-only endpoint — returns ALL public entries including expired ones.
+    Useful for school_admin / counsellor to audit historical community posts."""
+    user_role = current.get("role", "student")
+    if user_role not in MODERATOR_ROLES:
+        raise HTTPException(status_code=403, detail="Moderator role required")
+
+    filters: dict = {"is_public": True}
+    if scope in ("student", "adult"):
+        filters["community_scope"] = scope
+
+    docs = await db.entries.find(filters, {"_id": 0}).sort("created_at", -1).to_list(min(limit, 500))
     return await _entries_with_hearts(docs, current["id"])
 
 
@@ -386,16 +416,42 @@ async def react_entry(entry_id: str, current=Depends(get_current_user)):
     return result[0]
 
 
+# Roles that can moderate community — delete other users' PUBLIC posts.
+# Keeps private diary entries strictly owner-only.
+MODERATOR_ROLES = {"school_admin", "counsellor"}
+
+
 @api_router.delete("/entries/{entry_id}")
 async def delete_entry(entry_id: str, current=Depends(get_current_user)):
     entry = await db.entries.find_one({"id": entry_id})
     if not entry:
         raise HTTPException(status_code=404, detail="Entry not found")
-    if entry["user_id"] != current["id"]:
-        raise HTTPException(status_code=403, detail="Not your entry")
+
+    is_owner = entry["user_id"] == current["id"]
+    user_role = current.get("role", "student")
+    is_moderator = user_role in MODERATOR_ROLES and entry.get("is_public")
+
+    if not (is_owner or is_moderator):
+        raise HTTPException(status_code=403, detail="Not permitted to delete this entry")
+
     await db.entries.delete_one({"id": entry_id})
     await db.reactions.delete_many({"entry_id": entry_id})
-    return {"ok": True}
+
+    # Audit trail — record moderation actions (not owner self-deletes)
+    if not is_owner and is_moderator:
+        await db.moderation_log.insert_one({
+            "id": str(uuid.uuid4()),
+            "entry_id": entry_id,
+            "entry_note_snippet": (entry.get("note") or "")[:200],
+            "entry_author_id": entry["user_id"],
+            "entry_author_role": entry.get("author_role"),
+            "moderator_id": current["id"],
+            "moderator_email": current["email"],
+            "moderator_role": user_role,
+            "deleted_at": now_iso(),
+        })
+
+    return {"ok": True, "moderated": (not is_owner and is_moderator)}
 
 
 @api_router.patch("/entries/{entry_id}", response_model=EntryOut)

@@ -15,6 +15,7 @@ export type CommunityConfig = {
   studentAnonymity: StudentAnonymity;
   studentCommunityEnabled: boolean;   // school can also disable student community entirely
   adultCommunityEnabled: boolean;     // and adult community
+  postTtlDays: number;                // 0 = keep forever; else hide posts older than N days
 };
 
 export const DEFAULT_CONFIG: CommunityConfig = {
@@ -22,6 +23,7 @@ export const DEFAULT_CONFIG: CommunityConfig = {
   studentAnonymity: 'full',              // safer default — full anonymity
   studentCommunityEnabled: true,
   adultCommunityEnabled: true,
+  postTtlDays: 30,                       // default: posts fade after 30 days
 };
 
 export const SchoolCommunityConfig = {
