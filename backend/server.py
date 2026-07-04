@@ -313,6 +313,15 @@ async def create_entry(data: EntryIn, current=Depends(get_current_user)):
         matched_ban = [kw for kw in DEFAULT_POST_BAN_KEYWORDS if kw in note_text]
         matched_crisis_in_post = [kw for kw in DEFAULT_ALERT_KEYWORDS if kw in note_text]
         if matched_ban or matched_crisis_in_post:
+            # Even though the post is blocked · we STILL log an alert for the counsellor.
+            # Attempts to post aggressive / crisis content are safety signals worth reviewing.
+            await _log_blocked_post_alert(
+                author=current,
+                note_text=note_text,
+                matched_ban=matched_ban,
+                matched_crisis=matched_crisis_in_post,
+                entry_date=data.entry_date,
+            )
             raise HTTPException(
                 status_code=400,
                 detail={
@@ -542,6 +551,8 @@ async def _check_and_create_alert(entry_doc: dict, author: dict):
             "status": "open",           # open · reviewed · resolved
             "reviewed_by": None,
             "reviewed_at": None,
+            "source": "diary",          # NEW · which flow generated this alert
+            "alert_type": "crisis_keyword",
         })
         logger.warning(
             f"ALERT: keywords {matched} detected in entry by {author.get('email')} "
@@ -549,6 +560,51 @@ async def _check_and_create_alert(entry_doc: dict, author: dict):
         )
     except Exception as e:
         logger.error(f"Alert scan failed: {e}")
+
+
+async def _log_blocked_post_alert(
+    *,
+    author: dict,
+    note_text: str,
+    matched_ban: List[str],
+    matched_crisis: List[str],
+    entry_date: Optional[str] = None,
+):
+    """Record an alert when a public post is BLOCKED by content policy.
+    The entry itself is NOT saved (blocked), but counsellors should still know.
+    Non-blocking — errors are logged but never surface to the student."""
+    try:
+        note = (note_text or "").strip()
+        if not (matched_ban or matched_crisis):
+            return
+        # Crisis in an attempted PUBLIC post is more urgent than the same word in a diary.
+        # Give counsellors a distinct alert_type so they can prioritize.
+        alert_type = "blocked_crisis_post" if matched_crisis else "blocked_profanity_post"
+        await db.alerts.insert_one({
+            "id": str(uuid.uuid4()),
+            "entry_id": None,            # nothing persisted · this is a rejected attempt
+            "student_id": author["id"],
+            "student_email": author["email"],
+            "student_display_name": author.get("display_name"),
+            "student_role": author.get("role", "student"),
+            "matched_keywords": matched_crisis + matched_ban,
+            "matched_ban": matched_ban,
+            "matched_crisis": matched_crisis,
+            "note_snippet": note[:400],
+            "entry_date": entry_date,
+            "created_at": now_iso(),
+            "status": "open",
+            "reviewed_by": None,
+            "reviewed_at": None,
+            "source": "community_post",  # blocked post attempt
+            "alert_type": alert_type,
+        })
+        logger.warning(
+            f"BLOCKED-POST ALERT: {alert_type} ban={matched_ban} crisis={matched_crisis} "
+            f"by {author.get('email')} ({author.get('role')})"
+        )
+    except Exception as e:
+        logger.error(f"Blocked-post alert failed: {e}")
 
 
 @api_router.delete("/entries/{entry_id}")

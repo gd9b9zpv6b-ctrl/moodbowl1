@@ -19,6 +19,8 @@ type ApiAlert = {
   note_snippet: string;
   created_at: string;
   status: string;
+  source?: 'diary' | 'community_post';
+  alert_type?: 'crisis_keyword' | 'blocked_crisis_post' | 'blocked_profanity_post';
 };
 
 // 每班的能量分佈 (mock)
@@ -144,19 +146,30 @@ export default function TeacherDashboard() {
                 <Text style={styles.alertCountText}>{alerts.length}</Text>
               </View>
             </View>
-            {alerts.map((a) => (
-              <View key={a.id} style={styles.kwAlertItem}>
-                <Text style={styles.kwStudent}>{a.student_display_name || '學生'}</Text>
-                <View style={styles.kwPillRow}>
-                  {a.matched_keywords.map((k) => (
-                    <View key={k} style={styles.kwPill}>
-                      <Text style={styles.kwPillText}>「{k}」</Text>
-                    </View>
-                  ))}
+            {alerts.map((a) => {
+              const isBlockedPost = a.source === 'community_post';
+              const sourceLabel = a.alert_type === 'blocked_crisis_post'
+                ? '🚫 出 post 被攔截 · 危機字'
+                : a.alert_type === 'blocked_profanity_post'
+                  ? '🚫 出 post 被攔截 · 攻擊/粗口'
+                  : '📔 日記出現危機字';
+              return (
+                <View key={a.id} style={styles.kwAlertItem}>
+                  <Text style={styles.kwSourceLabel}>{sourceLabel}</Text>
+                  <Text style={styles.kwStudent}>{a.student_display_name || '學生'}</Text>
+                  <View style={styles.kwPillRow}>
+                    {a.matched_keywords.map((k) => (
+                      <View key={k} style={styles.kwPill}>
+                        <Text style={styles.kwPillText}>「{k}」</Text>
+                      </View>
+                    ))}
+                  </View>
+                  <Text style={styles.kwSnippet} numberOfLines={2}>
+                    {isBlockedPost ? `嘗試 post：${a.note_snippet}` : a.note_snippet}
+                  </Text>
                 </View>
-                <Text style={styles.kwSnippet} numberOfLines={2}>{a.note_snippet}</Text>
-              </View>
-            ))}
+              );
+            })}
             <Text style={styles.alertHint}>
               🔒 呢啲警示係關鍵字自動觸發 · 只顯示你班同學仔嘅內容。建議先聯絡輔導老師一齊跟進。
             </Text>
@@ -480,6 +493,13 @@ const styles = StyleSheet.create({
     borderTopColor: 'rgba(0,0,0,0.06)',
   },
   kwStudent: { fontSize: 14, fontWeight: '800', color: '#7A2E2E', marginBottom: 4 },
+  kwSourceLabel: {
+    fontSize: 11,
+    fontWeight: '800',
+    color: '#5F4A2E',
+    marginBottom: 4,
+    letterSpacing: 0.3,
+  },
   kwPillRow: {
     flexDirection: 'row',
     flexWrap: 'wrap',

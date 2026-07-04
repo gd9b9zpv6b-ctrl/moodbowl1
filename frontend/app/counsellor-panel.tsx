@@ -10,15 +10,19 @@ import { COLORS, RADIUS, SPACING } from '@/src/constants/theme';
 
 type ApiAlert = {
   id: string;
-  entry_id: string;
+  entry_id: string | null;
   student_id: string;
   student_email: string;
   student_display_name?: string | null;
   matched_keywords: string[];
+  matched_ban?: string[];
+  matched_crisis?: string[];
   note_snippet: string;
   entry_date?: string;
   created_at: string;
   status: 'open' | 'reviewed' | 'resolved';
+  source?: 'diary' | 'community_post';
+  alert_type?: 'crisis_keyword' | 'blocked_crisis_post' | 'blocked_profanity_post';
 };
 
 const URGENT = [
@@ -111,46 +115,65 @@ export default function CounsellorPanel() {
         {alerts.length > 0 && (
           <>
             <Text style={styles.sectionTitle}>🚨 關鍵字警示 · 即時觸發</Text>
-            {alerts.map((a) => (
-              <View key={a.id} style={styles.alertCard}>
-                <View style={styles.alertHead}>
-                  <Feather name="alert-octagon" size={16} color="#E86A6A" />
-                  <Text style={styles.alertStudent}>
-                    {a.student_display_name || '學生'}
+            {alerts.map((a) => {
+              const isBlockedPost = a.source === 'community_post';
+              const isBlockedCrisis = a.alert_type === 'blocked_crisis_post';
+              const isBlockedProfanity = a.alert_type === 'blocked_profanity_post';
+              // Distinct visual cue so counsellor immediately knows what happened.
+              const sourceLabel = isBlockedCrisis
+                ? '🚫 出 post 被攔截 · 含危機字眼'
+                : isBlockedProfanity
+                  ? '🚫 出 post 被攔截 · 含攻擊/粗口'
+                  : '📔 日記出現危機字眼';
+              const sourceColor = isBlockedCrisis
+                ? '#8A3F3F'
+                : isBlockedProfanity
+                  ? '#3E5B7F'
+                  : '#8A5F1F';
+              return (
+                <View key={a.id} style={styles.alertCard}>
+                  <Text style={[styles.alertSource, { color: sourceColor }]}>
+                    {sourceLabel}
                   </Text>
-                  <View style={styles.kwPill}>
-                    <Text style={styles.kwPillText}>
-                      {a.matched_keywords.map((k) => `「${k}」`).join(' · ')}
+                  <View style={styles.alertHead}>
+                    <Feather name="alert-octagon" size={16} color="#E86A6A" />
+                    <Text style={styles.alertStudent}>
+                      {a.student_display_name || '學生'}
                     </Text>
+                    <View style={styles.kwPill}>
+                      <Text style={styles.kwPillText}>
+                        {a.matched_keywords.map((k) => `「${k}」`).join(' · ')}
+                      </Text>
+                    </View>
+                  </View>
+                  <Text style={styles.alertSnippet} numberOfLines={3}>
+                    {isBlockedPost ? `嘗試 post：${a.note_snippet}` : a.note_snippet}
+                  </Text>
+                  <View style={styles.alertActionRow}>
+                    <Text style={styles.alertMeta}>
+                      {new Date(a.created_at).toLocaleString('zh-HK')}
+                    </Text>
+                    <Pressable
+                      testID={`alert-review-${a.id}`}
+                      onPress={() =>
+                        Alert.alert(
+                          '標記已跟進？',
+                          '確認你已聯絡呢位同學仔或者已 escalate · 之後呢條警示會消失喺列表。',
+                          [
+                            { text: '取消', style: 'cancel' },
+                            { text: '標記', onPress: () => markReviewed(a.id) },
+                          ],
+                        )
+                      }
+                      style={styles.reviewBtn}
+                    >
+                      <Feather name="check" size={12} color="#FFF" />
+                      <Text style={styles.reviewBtnText}>已跟進</Text>
+                    </Pressable>
                   </View>
                 </View>
-                <Text style={styles.alertSnippet} numberOfLines={3}>
-                  {a.note_snippet}
-                </Text>
-                <View style={styles.alertActionRow}>
-                  <Text style={styles.alertMeta}>
-                    {new Date(a.created_at).toLocaleString('zh-HK')}
-                  </Text>
-                  <Pressable
-                    testID={`alert-review-${a.id}`}
-                    onPress={() =>
-                      Alert.alert(
-                        '標記已跟進？',
-                        '確認你已聯絡呢位同學仔或者已 escalate · 之後呢條警示會消失喺列表。',
-                        [
-                          { text: '取消', style: 'cancel' },
-                          { text: '標記', onPress: () => markReviewed(a.id) },
-                        ],
-                      )
-                    }
-                    style={styles.reviewBtn}
-                  >
-                    <Feather name="check" size={12} color="#FFF" />
-                    <Text style={styles.reviewBtnText}>已跟進</Text>
-                  </Pressable>
-                </View>
-              </View>
-            ))}
+              );
+            })}
           </>
         )}
 
@@ -244,6 +267,12 @@ const styles = StyleSheet.create({
     borderRadius: RADIUS.md,
     padding: SPACING.md,
     marginBottom: SPACING.sm,
+  },
+  alertSource: {
+    fontSize: 11,
+    fontWeight: '800',
+    marginBottom: 6,
+    letterSpacing: 0.3,
   },
   alertHead: {
     flexDirection: 'row',
