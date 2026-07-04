@@ -9,7 +9,7 @@ import { ENERGY_META, EnergyLevel } from '@/src/constants/energy';
 import { RoleHeader } from '@/src/components/role-header';
 import { RoleSelfCareCard } from '@/src/components/role-selfcare-card';
 import { AlertPolicy, DEFAULT_POLICY, SchoolAlertPolicy } from '@/src/lib/school-alert-policy';
-import { CommunityConfig, DEFAULT_CONFIG, SchoolCommunityConfig, StudentAnonymity } from '@/src/lib/school-community-config';
+import { AdultAnonymity, CommunityConfig, DEFAULT_CONFIG, SchoolCommunityConfig, StudentAnonymity } from '@/src/lib/school-community-config';
 import { EnergyMap, SchoolEnergyConfig } from '@/src/lib/school-energy-config';
 import { api, Entry } from '@/src/lib/api';
 import { COLORS, RADIUS, SPACING } from '@/src/constants/theme';
@@ -470,6 +470,36 @@ export default function SchoolAdmin() {
           </View>
           <Text style={styles.anonHint}>
             推薦「完全匿名」· 細路仔講心事時更放心
+          </Text>
+
+          <View style={styles.policyDivider} />
+
+          {/* Adult community anonymity — controls how adult posts display identity */}
+          <Text style={styles.policyLabel}>大人社群 · 顯示方式</Text>
+          <View style={styles.chipRow}>
+            {([
+              { level: 'role_and_name' as AdultAnonymity, label: '角色 + 名（推薦）' },
+              { level: 'role_only'     as AdultAnonymity, label: '只顯示角色' },
+              { level: 'full'          as AdultAnonymity, label: '完全匿名' },
+            ]).map(({ level, label }) => {
+              const active = communityConfig.adultAnonymity === level;
+              return (
+                <Pressable
+                  key={level}
+                  testID={`comm-adult-anon-${level}`}
+                  onPress={() => saveCommunity({ ...communityConfig, adultAnonymity: level })}
+                  style={[styles.roleChip, active && styles.roleChipActive]}
+                >
+                  {active && <Feather name="check" size={11} color="#FFF" />}
+                  <Text style={[styles.roleChipText, active && { color: '#FFF' }]}>
+                    {label}
+                  </Text>
+                </Pressable>
+              );
+            })}
+          </View>
+          <Text style={styles.anonHint}>
+            大人之間 peer support · 通常「角色 + 名」有助建立關係。學校可以按文化調整。
           </Text>
 
           <View style={styles.policyDivider} />

@@ -10,9 +10,15 @@ export type StudentAnonymity =
   | 'full'          // 完全匿名 · 不顯示任何身份
   | 'nickname';     // 顯示用戶自訂 display_name
 
+export type AdultAnonymity =
+  | 'full'          // 完全匿名 (顯示「同事」· 冇 role · 冇 name)
+  | 'role_only'     // 只顯示角色標籤（例：「班主任」）· 唔顯示 name
+  | 'role_and_name';// 完整顯示 · role + display_name (default)
+
 export type CommunityConfig = {
   adultCanViewStudentCommunity: boolean;
   studentAnonymity: StudentAnonymity;
+  adultAnonymity: AdultAnonymity;
   studentCommunityEnabled: boolean;   // school can also disable student community entirely
   adultCommunityEnabled: boolean;     // and adult community
   postTtlDays: number;                // 0 = keep forever; else hide posts older than N days
@@ -21,6 +27,7 @@ export type CommunityConfig = {
 export const DEFAULT_CONFIG: CommunityConfig = {
   adultCanViewStudentCommunity: false,   // safer default — adults cannot peek
   studentAnonymity: 'full',              // safer default — full anonymity
+  adultAnonymity: 'role_and_name',       // adults default to full transparency (peer support)
   studentCommunityEnabled: true,
   adultCommunityEnabled: true,
   postTtlDays: 30,                       // default: posts fade after 30 days

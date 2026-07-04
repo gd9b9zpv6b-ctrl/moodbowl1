@@ -96,9 +96,19 @@ export default function Community() {
   const displayNameFor = (entry: Entry): { name: string; roleLabel?: string } => {
     const scope = (entry.community_scope || 'student') as Scope;
     if (scope === 'adult') {
-      // Adult community: always show display_name + role label
-      const roleLabel = entry.author_role_label || undefined;
-      return { name: entry.display_name || '朋友', roleLabel };
+      // Adult community anonymity — school controls
+      switch (cfg.adultAnonymity) {
+        case 'full':
+          return { name: '同事' };
+        case 'role_only':
+          return { name: entry.author_role_label || '同事' };
+        case 'role_and_name':
+        default:
+          return {
+            name: entry.display_name || '同事',
+            roleLabel: entry.author_role_label || undefined,
+          };
+      }
     }
     // Student community: honor school anonymity config
     if (cfg.studentAnonymity === 'nickname') {
