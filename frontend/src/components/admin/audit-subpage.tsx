@@ -42,18 +42,32 @@ export function AuditSubpage() {
   const [entries, setEntries] = useState<AuditEntry[]>([]);
   const [filter, setFilter] = useState<'all' | 'high_risk'>('all');
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+
+  const load = async () => {
+    setLoading(true);
+    setError(null);
+    try {
+      const res = await api.get<AuditEntry[]>('/admin/audit?limit=200');
+      setEntries(res);
+    } catch (e: any) {
+      const msg = String(e?.message || '');
+      // 401 → session expired · 403 → wrong role · else network
+      if (msg.includes('401') || msg.includes('Not authenticated')) {
+        setError('登入已過期 · 請登出後重新登入 School Admin。');
+      } else if (msg.includes('403') || msg.includes('Only school admin')) {
+        setError('只有 School Admin 可以查看 audit log。');
+      } else {
+        setError(`載入失敗：${msg || '網絡問題'}`);
+      }
+      setEntries([]);
+    } finally {
+      setLoading(false);
+    }
+  };
 
   useEffect(() => {
-    (async () => {
-      try {
-        const res = await api.get<AuditEntry[]>('/admin/audit?limit=200');
-        setEntries(res);
-      } catch {
-        setEntries([]);
-      } finally {
-        setLoading(false);
-      }
-    })();
+    load();
   }, []);
 
   const visible = filter === 'high_risk'
@@ -71,6 +85,18 @@ export function AuditSubpage() {
           保留 7 年（HK PDPO 建議）· 冇人可以刪除。
         </Text>
       </View>
+
+      {/* Error banner — shown when fetch fails · one-tap retry */}
+      {error && (
+        <View style={styles.errorBox}>
+          <Feather name="alert-circle" size={14} color="#8A3F3F" />
+          <Text style={styles.errorText}>{error}</Text>
+          <Pressable onPress={load} style={styles.retryBtn} testID="audit-retry">
+            <Feather name="rotate-cw" size={12} color="#FFF" />
+            <Text style={styles.retryText}>重試</Text>
+          </Pressable>
+        </View>
+      )}
 
       <View style={styles.tabs}>
         <Pressable
@@ -185,4 +211,26 @@ const styles = StyleSheet.create({
     padding: SPACING.md,
     textAlign: 'center',
   },
+  errorBox: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+    backgroundColor: '#FDECEC',
+    borderRadius: RADIUS.md,
+    padding: SPACING.md,
+    marginBottom: SPACING.md,
+    borderLeftWidth: 3,
+    borderLeftColor: '#8A3F3F',
+  },
+  errorText: { flex: 1, fontSize: 12, color: '#8A3F3F', lineHeight: 17 },
+  retryBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+    paddingHorizontal: 10,
+    paddingVertical: 6,
+    backgroundColor: '#8A3F3F',
+    borderRadius: RADIUS.pill,
+  },
+  retryText: { color: '#FFF', fontSize: 11, fontWeight: '700' },
 });

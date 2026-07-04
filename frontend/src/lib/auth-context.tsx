@@ -2,7 +2,7 @@ import React, { createContext, useCallback, useContext, useEffect, useMemo, useR
 import { AppState, AppStateStatus, Alert, Platform } from 'react-native';
 import * as Notifications from 'expo-notifications';
 
-import { api, loadToken, setToken, onApiActivity, User, AuthResponse } from './api';
+import { api, loadToken, setToken, onApiActivity, onAuthInvalid, User, AuthResponse } from './api';
 import { RoleStorage, UserRole } from './role-storage';
 
 // Auto-logout: if the user has been idle for this long · we clear their session.
@@ -132,9 +132,15 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     if (user) {
       scheduleIdle();
       onApiActivity(ping);
+      // 401 from any API call → clear the session so guards route to login.
+      onAuthInvalid(() => {
+        setToken(null).catch(() => {});
+        setUser(null);
+      });
     } else {
       clearIdle();
       onApiActivity(null);
+      onAuthInvalid(null);
     }
     return clearIdle;
   }, [user, scheduleIdle, clearIdle, ping]);

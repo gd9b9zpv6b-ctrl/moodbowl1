@@ -12,6 +12,13 @@ export function onApiActivity(cb: (() => void) | null) {
   activityListener = cb;
 }
 
+// Auth-context also registers here · called when a request returns 401 so we
+// can force-logout the user (clear their token + navigate to login).
+let authInvalidHandler: (() => void) | null = null;
+export function onAuthInvalid(cb: (() => void) | null) {
+  authInvalidHandler = cb;
+}
+
 export async function loadToken(): Promise<string | null> {
   if (cachedToken) return cachedToken;
   const t = await storage.secureGet<string>(TOKEN_KEY, '');
@@ -47,6 +54,11 @@ async function request<T>(path: string, options: RequestInit = {}): Promise<T> {
     // ignore
   }
   if (!res.ok) {
+    if (res.status === 401) {
+      // Session invalid · immediately clear cached token + notify auth-context
+      cachedToken = null;
+      try { authInvalidHandler?.(); } catch { /* noop */ }
+    }
     const detail = json?.detail || `Request failed (${res.status})`;
     throw new Error(typeof detail === 'string' ? detail : JSON.stringify(detail));
   }
