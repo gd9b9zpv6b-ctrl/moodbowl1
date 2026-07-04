@@ -143,6 +143,16 @@ export default function Login() {
             </Text>
           </Pressable>
 
+          <Pressable
+            testID="login-goto-activate-btn"
+            onPress={() => router.push('/auth/activate' as any)}
+            style={{ marginTop: SPACING.sm, alignSelf: 'center' }}
+          >
+            <Text style={styles.link}>
+              收到學校俾嘅邀請碼?<Text style={{ fontWeight: '700' }}> 用邀請碼啟用</Text>
+            </Text>
+          </Pressable>
+
           {/* Demo account quick picker — 5 pre-seeded roles */}
           <View style={styles.demoDivider}>
             <View style={styles.demoDividerLine} />

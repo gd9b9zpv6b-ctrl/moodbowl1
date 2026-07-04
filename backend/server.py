@@ -880,6 +880,160 @@ async def unlink_family(payload: UnlinkFamily, current=Depends(get_current_user)
 
 
 # ==============================================================================
+# Bulk student onboarding — CSV upload + invite codes for self-activation.
+# Flow:
+#  1. Admin uploads a list of (name · email · class) → we pre-create the accounts
+#     WITHOUT a password · but with a random invite_code stored on the user doc.
+#  2. Admin distributes the code (via school notice / email / paper) to each student.
+#  3. Student opens the app · picks "用邀請碼註冊" · enters code + sets password.
+#  4. Backend validates the code · sets password · clears the invite_code.
+# ==============================================================================
+
+
+import secrets
+
+
+def _generate_invite_code(prefix: str = "S") -> str:
+    """8-char alphanumeric · prefixed so admins can eyeball the type at a glance."""
+    body = ''.join(secrets.choice("ABCDEFGHJKLMNPQRSTUVWXYZ23456789") for _ in range(8))
+    return f"{prefix}-{body}"
+
+
+class BulkStudentEntry(BaseModel):
+    name: str
+    email: str
+    class_name: Optional[str] = None
+
+
+class BulkStudentPayload(BaseModel):
+    students: List[BulkStudentEntry]
+
+
+@api_router.post("/admin/students/bulk")
+async def bulk_create_students(payload: BulkStudentPayload, current=Depends(get_current_user)):
+    """Bulk-create student accounts with unpaid invite codes. Idempotent on existing emails
+    (returns their state but doesn't overwrite). Audit-logged."""
+    if current.get("role") != "school_admin":
+        raise HTTPException(status_code=403, detail="Only school admin")
+
+    if not payload.students:
+        raise HTTPException(status_code=400, detail="Empty student list")
+
+    created: List[dict] = []
+    already: List[dict] = []
+    errors: List[dict] = []
+
+    for entry in payload.students:
+        email = (entry.email or "").strip().lower()
+        name = (entry.name or "").strip()
+        cls = (entry.class_name or "").strip() or None
+        if not email or "@" not in email or not name:
+            errors.append({"email": email, "reason": "Missing name or email"})
+            continue
+
+        existing = await db.users.find_one({"email": email}, {"_id": 0})
+        if existing:
+            already.append({
+                "email": email,
+                "display_name": existing.get("display_name"),
+                "class_name": existing.get("class_name"),
+                "activated": bool(existing.get("hashed_password")),
+                "invite_code": existing.get("invite_code"),
+            })
+            continue
+
+        code = _generate_invite_code("S")
+        doc = {
+            "id": str(uuid.uuid4()),
+            "email": email,
+            "display_name": name,
+            # NO password set · invite code is the only way in until they activate
+            "hashed_password": None,
+            "invite_code": code,
+            "invite_code_created_at": now_iso(),
+            "created_at": now_iso(),
+            "credits": 20,
+            "is_premium": True,
+            "secret_pin_hash": None,
+            "diary_style": {},
+            "active_icon_pack": "classic",
+            "role": "student",
+            "class_name": cls,
+        }
+        await db.users.insert_one(doc)
+        created.append({
+            "email": email,
+            "display_name": name,
+            "class_name": cls,
+            "invite_code": code,
+        })
+
+    await _write_audit(
+        action="students_bulk_created",
+        actor=current,
+        target_kind="school",
+        target_id=SCHOOL_CONFIG_ID,
+        meta={"created": len(created), "already": len(already), "errors": len(errors)},
+    )
+    return {"created": created, "already_existing": already, "errors": errors}
+
+
+@api_router.get("/admin/invite-codes")
+async def list_invite_codes(current=Depends(get_current_user)):
+    """List all pending / used invite codes for admin distribution."""
+    if current.get("role") != "school_admin":
+        raise HTTPException(status_code=403, detail="Only school admin")
+    docs = await db.users.find(
+        {"invite_code": {"$exists": True, "$ne": None}},
+        {"_id": 0, "email": 1, "display_name": 1, "class_name": 1, "role": 1,
+         "invite_code": 1, "hashed_password": 1, "invite_code_created_at": 1},
+    ).to_list(1000)
+    for d in docs:
+        d["activated"] = bool(d.pop("hashed_password", None))
+    docs.sort(key=lambda x: x.get("invite_code_created_at") or "", reverse=True)
+    return docs
+
+
+class InviteActivate(BaseModel):
+    invite_code: str
+    password: str
+
+
+@api_router.post("/auth/activate", response_model=AuthOut)
+async def activate_by_invite(payload: InviteActivate):
+    """Student/parent uses invite code + chooses a password to activate their pre-created account.
+    On success, returns a JWT and clears the invite code (single-use)."""
+    code = payload.invite_code.strip()
+    if not code or len(payload.password) < 6:
+        raise HTTPException(status_code=400, detail="Invalid code or password too short")
+
+    user = await db.users.find_one({"invite_code": code})
+    if not user:
+        raise HTTPException(status_code=404, detail="邀請碼無效 · 請 double check")
+    if user.get("hashed_password"):
+        raise HTTPException(status_code=409, detail="呢個帳戶已經啟用過 · 請直接用 email + password 登入")
+
+    await db.users.update_one(
+        {"id": user["id"]},
+        {"$set": {"hashed_password": hash_password(payload.password),
+                  "activated_at": now_iso()},
+         "$unset": {"invite_code": ""}},
+    )
+
+    await _write_audit(
+        action="account_activated_by_invite",
+        actor={"id": user["id"], "email": user["email"], "role": user.get("role")},
+        target_kind="user",
+        target_id=user["id"],
+        meta={"role": user.get("role"), "class_name": user.get("class_name")},
+    )
+
+    token = create_access_token(user["id"])
+    fresh = await db.users.find_one({"id": user["id"]})
+    return AuthOut(access_token=token, user=_user_to_out(fresh))
+
+
+# ==============================================================================
 # Audit log — read-only for school_admin
 # ==============================================================================
 

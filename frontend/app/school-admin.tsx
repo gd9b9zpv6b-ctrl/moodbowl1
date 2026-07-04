@@ -14,6 +14,7 @@ import { SchoolPolicies, DEFAULT_POLICIES } from '@/src/lib/school-policies';
 import { AdultAnonymity, CommunityConfig, DEFAULT_CONFIG, SchoolCommunityConfig, StudentAnonymity } from '@/src/lib/school-community-config';
 import { FamiliesSubpage } from '@/src/components/admin/families-subpage';
 import { AuditSubpage } from '@/src/components/admin/audit-subpage';
+import { CsvUploadSubpage } from '@/src/components/admin/csv-upload-subpage';
 import { EnergyMap, SchoolEnergyConfig } from '@/src/lib/school-energy-config';
 import { api, Entry } from '@/src/lib/api';
 import { COLORS, RADIUS, SPACING } from '@/src/constants/theme';
@@ -30,7 +31,8 @@ type AdminView =
   | 'community'
   | 'history'
   | 'families'
-  | 'audit';
+  | 'audit'
+  | 'csv-upload';
 
 const ADMIN_CARDS: {
   key: Exclude<AdminView, 'home'>;
@@ -352,13 +354,13 @@ export default function SchoolAdmin() {
           <>
             <Text style={styles.subpageTitle}>👥 學生 · 帳戶管理</Text>
 
-        <Pressable style={styles.actionCard} onPress={() => Alert.alert('CSV 上載', '示範版：將學生名單 CSV 上載 · 系統自動生成 invite code 派發俾家長。')}>
+        <Pressable style={styles.actionCard} onPress={() => setView('csv-upload')}>
           <View style={[styles.actIcon, { backgroundColor: '#EEE0F0' }]}>
             <Feather name="upload" size={22} color="#7B5B9F" />
           </View>
           <View style={{ flex: 1 }}>
             <Text style={styles.actTitle}>上載學生名單 (CSV)</Text>
-            <Text style={styles.actSub}>自動分班 · 一鍵生成 invite code</Text>
+            <Text style={styles.actSub}>系統自動生成 invite code · 派俾學生自助啟用</Text>
           </View>
           <Feather name="chevron-right" size={20} color={COLORS.textDisabled} />
         </Pressable>
@@ -411,6 +413,7 @@ export default function SchoolAdmin() {
 
         {view === 'families' && <FamiliesSubpage />}
         {view === 'audit' && <AuditSubpage />}
+        {view === 'csv-upload' && <CsvUploadSubpage />}
 
         {view === 'policy' && (
           <>
