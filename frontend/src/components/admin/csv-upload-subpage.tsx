@@ -67,6 +67,15 @@ export function CsvUploadSubpage() {
     loadCodes();
   }, []);
 
+  const resendInvite = async (email: string) => {
+    try {
+      await api.post('/admin/resend-invite', { email });
+      Alert.alert('已重新寄出', `邀請碼 email 已寄去 ${email}`);
+    } catch (e: any) {
+      Alert.alert('寄送失敗', e?.message || '請再試');
+    }
+  };
+
   const submit = async () => {
     if (parsed.rows.length === 0) {
       Alert.alert('冇學生資料', '請貼落至少 1 位學生 · 格式：姓名, Email, 班別');
@@ -89,7 +98,7 @@ export function CsvUploadSubpage() {
         (res.already_existing?.length
           ? `${res.already_existing.length} 位已經存在（skip）\n`
           : '') +
-        (codes.length ? '請 copy 下面 invite code 派俾學生自助啟用。' : ''),
+        (codes.length ? '📧 邀請碼 email 已自動寄俾佢哋 · 亦可以喺下面手動 copy 派發。' : ''),
       );
       loadCodes();
     } catch (e: any) {
@@ -200,24 +209,31 @@ export function CsvUploadSubpage() {
           <Text style={styles.emptyText}>暫時冇待啟用嘅邀請碼。上載完新學生就會出現。</Text>
         )}
         {inviteCodes.filter((c) => !c.activated && c.invite_code).map((c) => (
-          <Pressable
-            key={c.email}
-            onPress={async () => {
-              try {
-                await Clipboard.setStringAsync(c.invite_code || '');
-                Alert.alert('已 copy', `邀請碼 ${c.invite_code} 已放喺剪貼板`);
-              } catch {}
-            }}
-            style={styles.codeRow}
-          >
+          <View key={c.email} style={styles.codeRow}>
             <View style={{ flex: 1 }}>
               <Text style={styles.codeName}>{c.display_name || c.email} · {c.class_name || '未分班'}</Text>
               <Text style={styles.codeEmail}>{c.email}</Text>
             </View>
-            <View style={styles.codePill}>
+            <Pressable
+              onPress={() => resendInvite(c.email)}
+              style={styles.emailBtn}
+              testID={`resend-invite-${c.email}`}
+            >
+              <Feather name="mail" size={12} color="#4E7962" />
+              <Text style={styles.emailBtnText}>寄 Email</Text>
+            </Pressable>
+            <Pressable
+              onPress={async () => {
+                try {
+                  await Clipboard.setStringAsync(c.invite_code || '');
+                  Alert.alert('已 copy', `邀請碼 ${c.invite_code} 已放喺剪貼板`);
+                } catch {}
+              }}
+              style={styles.codePill}
+            >
               <Text style={styles.codePillText}>{c.invite_code}</Text>
-            </View>
-          </Pressable>
+            </Pressable>
+          </View>
         ))}
       </ScrollView>
 
@@ -292,6 +308,12 @@ const styles = StyleSheet.create({
     backgroundColor: '#F0EBE0',
   },
   codePillText: { fontSize: 12, fontWeight: '800', color: '#5F4A2E', fontFamily: 'monospace' },
+  emailBtn: {
+    flexDirection: 'row', alignItems: 'center', gap: 4,
+    backgroundColor: '#EAF2EE', paddingHorizontal: 8, paddingVertical: 6, borderRadius: RADIUS.pill,
+    borderWidth: 1, borderColor: '#7BA88C',
+  },
+  emailBtnText: { fontSize: 11, fontWeight: '700', color: '#4E7962' },
   warningBox: {
     backgroundColor: '#FEF9E7', padding: SPACING.md, borderRadius: RADIUS.md, marginBottom: SPACING.md,
     borderLeftWidth: 3, borderLeftColor: '#B57D2A',

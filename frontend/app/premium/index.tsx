@@ -49,7 +49,7 @@ export default function Premium() {
           <Feather name="arrow-left" size={22} color={COLORS.textPrimary} />
         </Pressable>
         <Text style={styles.headerTitle} testID="premium-title">
-          Moodful 溫柔會員
+          MoodBowl 溫柔會員
         </Text>
         <View style={{ width: 40 }} />
       </View>

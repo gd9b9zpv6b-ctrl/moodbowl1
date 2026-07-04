@@ -29,7 +29,7 @@ export default function Welcome() {
             </View>
           </View>
           <Text style={styles.title} testID="welcome-title">
-            Moodful
+            MoodBowl
           </Text>
           <Text style={styles.subtitle} testID="welcome-subtitle">
             一個溫柔嘅小空間{'\n'}一日一日 慢慢感受自己

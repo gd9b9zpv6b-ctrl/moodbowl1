@@ -139,4 +139,4 @@ export const PROVIDERS: Provider[] = [
 ];
 
 export const SAFETY_DISCLAIMER =
-  'Moodful 唔可以取代專業治療。如果你有即時危險,或者想傷害自己,請即刻打上面嘅緊急熱線,或者到最近嘅急症室。你係值得被幫助嘅。';
+  'MoodBowl 唔可以取代專業治療。如果你有即時危險,或者想傷害自己,請即刻打上面嘅緊急熱線,或者到最近嘅急症室。你係值得被幫助嘅。';

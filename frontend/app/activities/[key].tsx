@@ -161,7 +161,7 @@ export default function ActivityDetail() {
           <View style={styles.appDisclaimer}>
             <Feather name="info" size={12} color="#8A7B6B" />
             <Text style={styles.appDisclaimerText}>
-              呢個活動係 Moodful 個人分享 · 唔係專業治療或醫療建議。有需要嘅時候,請諮詢相應嘅專業人士。
+              呢個活動係 MoodBowl 個人分享 · 唔係專業治療或醫療建議。有需要嘅時候,請諮詢相應嘅專業人士。
             </Text>
           </View>
 

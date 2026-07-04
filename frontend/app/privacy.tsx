@@ -7,9 +7,9 @@ import { COLORS, RADIUS, SPACING } from '@/src/constants/theme';
 
 const SECTIONS: { title: string; body: string }[] = [
   {
-    title: '關於 Moodful',
+    title: '關於 MoodBowl',
     body:
-      'Moodful 係一個由用家自己控制嘅心情記錄空間。我哋深信你嘅感受係屬於你嘅,呢啲文字絕對唔係俾人分析、賣廣告 或者訓練 AI 模型。',
+      'MoodBowl 係一個由用家自己控制嘅心情記錄空間。我哋深信你嘅感受係屬於你嘅,呢啲文字絕對唔係俾人分析、賣廣告 或者訓練 AI 模型。',
   },
   {
     title: '我哋會收集啲乜',
@@ -34,7 +34,7 @@ const SECTIONS: { title: string; body: string }[] = [
   {
     title: '緊急情況',
     body:
-      '如果你或者你認識嘅人有即時危險,Moodful 唔可以取代專業幫助。請即刻聯絡 24 小時緊急熱線 (「尋求幫助」corner 有電話),或者到最近嘅急症室。',
+      '如果你或者你認識嘅人有即時危險,MoodBowl 唔可以取代專業幫助。請即刻聯絡 24 小時緊急熱線 (「尋求幫助」corner 有電話),或者到最近嘅急症室。',
   },
   {
     title: '聯絡我哋',

@@ -153,6 +153,14 @@ export default function Login() {
             </Text>
           </Pressable>
 
+          <Pressable
+            testID="login-goto-forgot-btn"
+            onPress={() => router.push('/auth/forgot-password' as any)}
+            style={{ marginTop: SPACING.sm, alignSelf: 'center' }}
+          >
+            <Text style={styles.link}>忘記密碼？</Text>
+          </Pressable>
+
           {/* Demo account quick picker — 5 pre-seeded roles */}
           <View style={styles.demoDivider}>
             <View style={styles.demoDividerLine} />

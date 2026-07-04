@@ -14,6 +14,7 @@ from passlib.context import CryptContext
 from jose import jwt, JWTError
 
 from push_service import send_push, register_device
+from email_service import send_password_reset_otp, send_invite_code as send_invite_email
 
 ROOT_DIR = Path(__file__).parent
 load_dotenv(ROOT_DIR / '.env')
@@ -232,7 +233,7 @@ async def register(data: RegisterIn):
 async def login(data: LoginIn):
     email_lower = data.email.lower()
     user = await db.users.find_one({"email": email_lower})
-    if not user or not verify_password(data.password, user["hashed_password"]):
+    if not user or not user.get("hashed_password") or not verify_password(data.password, user["hashed_password"]):
         raise HTTPException(status_code=401, detail="Incorrect email or password")
     token = create_access_token(user["id"])
     return AuthOut(access_token=token, user=_user_to_out(user))
@@ -961,6 +962,23 @@ async def bulk_create_students(payload: BulkStudentPayload, current=Depends(get_
             "class_name": cls,
         }
         await db.users.insert_one(doc)
+        # Best-effort · fire the invite email in the background · never fail the API
+        try:
+            school_name = None
+            try:
+                cfg = await get_school_config()
+                school_name = cfg.get("school_name")
+            except Exception:
+                pass
+            send_invite_email(
+                to=email,
+                display_name=name,
+                invite_code=code,
+                school_name=school_name,
+                class_name=cls,
+            )
+        except Exception as e:  # noqa: BLE001
+            logger.warning("Invite email failed for %s · %s", email, e)
         created.append({
             "email": email,
             "display_name": name,
@@ -1034,8 +1052,181 @@ async def activate_by_invite(payload: InviteActivate):
 
 
 # ==============================================================================
-# Audit log — read-only for school_admin
+# Password reset — 6-digit OTP delivered via Resend email
 # ==============================================================================
+
+
+class ForgotPasswordIn(BaseModel):
+    email: EmailStr
+
+
+class VerifyOtpIn(BaseModel):
+    email: EmailStr
+    otp: str
+
+
+class ResetPasswordIn(BaseModel):
+    email: EmailStr
+    otp: str
+    new_password: str
+
+
+def _generate_otp() -> str:
+    """6-digit numeric OTP · zero-padded · secrets-backed."""
+    return f"{secrets.randbelow(1_000_000):06d}"
+
+
+@api_router.post("/auth/forgot-password")
+async def forgot_password(payload: ForgotPasswordIn):
+    """Generates 6-digit OTP · emails it via Resend · stores hashed OTP in DB (15 min TTL).
+
+    Returns 200 with { ok: true } regardless of whether the email exists, to prevent
+    enumeration attacks. Only the actual account owner receives the OTP email.
+    """
+    email = payload.email.lower().strip()
+    user = await db.users.find_one({"email": email})
+
+    # Always respond OK · even if user not found (anti-enumeration)
+    if not user:
+        return {"ok": True, "message": "如果呢個 email 有帳戶，我哋已經寄咗驗證碼過去。"}
+
+    # Invite-only account · not yet activated · can't reset
+    if not user.get("hashed_password"):
+        return {"ok": True, "message": "如果呢個 email 有帳戶，我哋已經寄咗驗證碼過去。"}
+
+    otp = _generate_otp()
+    hashed_otp = hash_password(otp)
+    expires_at = (datetime.now(timezone.utc) + timedelta(minutes=15)).isoformat()
+
+    # Invalidate any previous outstanding OTP for this user (single-shot)
+    await db.password_resets.delete_many({"email": email})
+    await db.password_resets.insert_one({
+        "id": str(uuid.uuid4()),
+        "email": email,
+        "user_id": user["id"],
+        "hashed_otp": hashed_otp,
+        "expires_at": expires_at,
+        "attempts": 0,
+        "created_at": now_iso(),
+    })
+
+    send_password_reset_otp(email, user.get("display_name"), otp, minutes_valid=15)
+
+    await _write_audit(
+        action="password_reset_requested",
+        actor={"id": user["id"], "email": email, "role": user.get("role")},
+        target_kind="user",
+        target_id=user["id"],
+        meta={},
+    )
+    return {"ok": True, "message": "如果呢個 email 有帳戶，我哋已經寄咗驗證碼過去。"}
+
+
+@api_router.post("/auth/reset-password", response_model=AuthOut)
+async def reset_password(payload: ResetPasswordIn):
+    """Validates OTP · sets new password · returns a fresh JWT so user is logged in."""
+    email = payload.email.lower().strip()
+    otp = payload.otp.strip()
+    new_pwd = payload.new_password
+
+    if len(new_pwd) < 6:
+        raise HTTPException(status_code=400, detail="密碼至少要 6 個字")
+
+    rec = await db.password_resets.find_one({"email": email})
+    if not rec:
+        raise HTTPException(status_code=400, detail="驗證碼無效或已過期，請重新申請")
+
+    # Expiry check
+    try:
+        expires_dt = datetime.fromisoformat(rec["expires_at"])
+        if expires_dt < datetime.now(timezone.utc):
+            await db.password_resets.delete_one({"id": rec["id"]})
+            raise HTTPException(status_code=400, detail="驗證碼已過期，請重新申請")
+    except (ValueError, TypeError):
+        raise HTTPException(status_code=400, detail="驗證碼無效")
+
+    # Attempt limiting — 5 attempts max before invalidation
+    if rec.get("attempts", 0) >= 5:
+        await db.password_resets.delete_one({"id": rec["id"]})
+        raise HTTPException(status_code=429, detail="嘗試次數過多，請重新申請驗證碼")
+
+    if not verify_password(otp, rec["hashed_otp"]):
+        await db.password_resets.update_one({"id": rec["id"]}, {"$inc": {"attempts": 1}})
+        raise HTTPException(status_code=400, detail="驗證碼錯誤")
+
+    user = await db.users.find_one({"id": rec["user_id"]})
+    if not user:
+        await db.password_resets.delete_one({"id": rec["id"]})
+        raise HTTPException(status_code=404, detail="帳戶唔存在")
+
+    await db.users.update_one(
+        {"id": user["id"]},
+        {"$set": {"hashed_password": hash_password(new_pwd),
+                  "password_reset_at": now_iso()}},
+    )
+    await db.password_resets.delete_one({"id": rec["id"]})
+
+    await _write_audit(
+        action="password_reset_completed",
+        actor={"id": user["id"], "email": email, "role": user.get("role")},
+        target_kind="user",
+        target_id=user["id"],
+        meta={},
+    )
+
+    token = create_access_token(user["id"])
+    fresh = await db.users.find_one({"id": user["id"]})
+    return AuthOut(access_token=token, user=_user_to_out(fresh))
+
+
+# ==============================================================================
+# Resend invite email — admin can re-send an invite code by email
+# ==============================================================================
+
+
+class ResendInviteIn(BaseModel):
+    email: EmailStr
+
+
+@api_router.post("/admin/resend-invite")
+async def resend_invite(payload: ResendInviteIn, current=Depends(get_current_user)):
+    """Re-send the existing invite code for a not-yet-activated student/parent."""
+    if current.get("role") != "school_admin":
+        raise HTTPException(status_code=403, detail="Only school admin")
+
+    email = payload.email.lower().strip()
+    user = await db.users.find_one({"email": email})
+    if not user:
+        raise HTTPException(status_code=404, detail="Email 找唔到")
+    if user.get("hashed_password"):
+        raise HTTPException(status_code=400, detail="呢個帳戶已經啟用咗，唔需要邀請碼")
+    code = user.get("invite_code")
+    if not code:
+        raise HTTPException(status_code=400, detail="呢個帳戶冇 pending invite code")
+
+    school_name = None
+    try:
+        school_cfg = await get_school_config()
+        school_name = school_cfg.get("school_name")
+    except Exception:
+        pass
+
+    ok = send_invite_email(
+        to=email,
+        display_name=user.get("display_name"),
+        invite_code=code,
+        school_name=school_name,
+        class_name=user.get("class_name"),
+    )
+
+    await _write_audit(
+        action="invite_email_resent",
+        actor=current,
+        target_kind="user",
+        target_id=user["id"],
+        meta={"email": email, "delivered": ok},
+    )
+    return {"ok": True, "delivered": ok, "email": email}
 
 
 @api_router.get("/admin/audit")
