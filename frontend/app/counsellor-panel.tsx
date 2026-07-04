@@ -1,11 +1,12 @@
 import { Feather } from '@expo/vector-icons';
 import { useEffect, useState } from 'react';
-import { ScrollView, StyleSheet, Text, View, Pressable, Alert } from 'react-native';
+import { ScrollView, StyleSheet, Text, View, Pressable, Alert, Modal, TextInput } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { RoleHeader } from '@/src/components/role-header';
 import { RoleSelfCareCard } from '@/src/components/role-selfcare-card';
 import { api } from '@/src/lib/api';
+import { SchoolPolicies } from '@/src/lib/school-policies';
 import { COLORS, RADIUS, SPACING } from '@/src/constants/theme';
 
 type ApiAlert = {
@@ -70,11 +71,21 @@ function CaseCard({ item }: { item: typeof URGENT[number] }) {
 
 export default function CounsellorPanel() {
   const [alerts, setAlerts] = useState<ApiAlert[]>([]);
+  // Revealed note content, keyed by alert id (only present once counsellor confirms consent)
+  const [revealed, setRevealed] = useState<Record<string, string>>({});
+  // In-flight consent modal for a specific alert id
+  const [consentFor, setConsentFor] = useState<string | null>(null);
+  const [consentReason, setConsentReason] = useState('');
+  const [consentBusy, setConsentBusy] = useState(false);
+  const [canRevealPolicy, setCanRevealPolicy] = useState(false);
 
   useEffect(() => {
     api.get<ApiAlert[]>('/alerts?status_filter=open')
       .then(setAlerts)
       .catch(() => setAlerts([]));
+    SchoolPolicies.get(true)
+      .then((p) => setCanRevealPolicy(p.counsellor_can_view_note_content))
+      .catch(() => setCanRevealPolicy(false));
   }, []);
 
   const markReviewed = async (id: string) => {
@@ -83,6 +94,63 @@ export default function CounsellorPanel() {
       setAlerts((prev) => prev.filter((a) => a.id !== id));
     } catch (e: any) {
       Alert.alert('更新失敗', e?.message || '請再試');
+    }
+  };
+
+  const deleteAlert = (id: string) => {
+    Alert.alert(
+      '刪除呢條警示？',
+      '刪除後無法還原 · 系統會留 audit log 記錄邊個幾時刪。',
+      [
+        { text: '取消', style: 'cancel' },
+        {
+          text: '確定刪除',
+          style: 'destructive',
+          onPress: async () => {
+            try {
+              await api.del(`/alerts/${id}`);
+              setAlerts((prev) => prev.filter((a) => a.id !== id));
+              setRevealed((prev) => {
+                const n = { ...prev };
+                delete n[id];
+                return n;
+              });
+            } catch (e: any) {
+              Alert.alert('刪除失敗', e?.message || '請再試');
+            }
+          },
+        },
+      ],
+    );
+  };
+
+  const openConsentModal = (id: string) => {
+    if (!canRevealPolicy) {
+      Alert.alert(
+        '校方未開啟',
+        '你嘅學校未允許「輔導查看內容」· 請聯絡 School Admin 開啟權限。',
+      );
+      return;
+    }
+    setConsentReason('');
+    setConsentFor(id);
+  };
+
+  const confirmReveal = async () => {
+    if (!consentFor) return;
+    setConsentBusy(true);
+    try {
+      const res = await api.post<any>(`/alerts/${consentFor}/reveal`, {
+        consent_confirmed: true,
+        reason: consentReason.trim(),
+      });
+      setRevealed((prev) => ({ ...prev, [consentFor]: res.note_snippet || '(內容已冇儲存)' }));
+      setConsentFor(null);
+      setConsentReason('');
+    } catch (e: any) {
+      Alert.alert('查看失敗', e?.message || '請再試');
+    } finally {
+      setConsentBusy(false);
     }
   };
 
@@ -147,33 +215,115 @@ export default function CounsellorPanel() {
                   {/* PRIVACY: we intentionally do NOT show the student's actual note text —
                       only the matched trigger word(s) above. Counsellors act on the signal,
                       not by reading the child's private diary. */}
+                  {/* Revealed content (only after consent) */}
+                  {revealed[a.id] && (
+                    <View style={styles.revealedBox}>
+                      <View style={styles.revealedHead}>
+                        <Feather name="eye" size={12} color="#8A3F3F" />
+                        <Text style={styles.revealedLabel}>已解鎖 · 尊重學生私隱</Text>
+                      </View>
+                      <Text style={styles.revealedText}>{revealed[a.id]}</Text>
+                      <Text style={styles.revealedFoot}>
+                        呢次查看已記入 audit log · 校長可以查邊個幾時睇過。
+                      </Text>
+                    </View>
+                  )}
                   <View style={styles.alertActionRow}>
                     <Text style={styles.alertMeta}>
                       {new Date(a.created_at).toLocaleString('zh-HK')}
                     </Text>
-                    <Pressable
-                      testID={`alert-review-${a.id}`}
-                      onPress={() =>
-                        Alert.alert(
-                          '標記已跟進？',
-                          '確認你已聯絡呢位同學仔或者已 escalate · 之後呢條警示會消失喺列表。',
-                          [
-                            { text: '取消', style: 'cancel' },
-                            { text: '標記', onPress: () => markReviewed(a.id) },
-                          ],
-                        )
-                      }
-                      style={styles.reviewBtn}
-                    >
-                      <Feather name="check" size={12} color="#FFF" />
-                      <Text style={styles.reviewBtnText}>已跟進</Text>
-                    </Pressable>
+                    <View style={styles.actionBtnRow}>
+                      {!revealed[a.id] && canRevealPolicy && (
+                        <Pressable
+                          testID={`alert-reveal-${a.id}`}
+                          onPress={() => openConsentModal(a.id)}
+                          style={styles.revealBtn}
+                        >
+                          <Feather name="eye" size={12} color="#8A3F3F" />
+                          <Text style={styles.revealBtnText}>查看內容</Text>
+                        </Pressable>
+                      )}
+                      <Pressable
+                        testID={`alert-delete-${a.id}`}
+                        onPress={() => deleteAlert(a.id)}
+                        style={styles.deleteBtn}
+                      >
+                        <Feather name="trash-2" size={12} color="#8A5F1F" />
+                      </Pressable>
+                      <Pressable
+                        testID={`alert-review-${a.id}`}
+                        onPress={() =>
+                          Alert.alert(
+                            '標記已跟進？',
+                            '確認你已聯絡呢位同學仔或者已 escalate · 之後呢條警示會消失喺列表。',
+                            [
+                              { text: '取消', style: 'cancel' },
+                              { text: '標記', onPress: () => markReviewed(a.id) },
+                            ],
+                          )
+                        }
+                        style={styles.reviewBtn}
+                      >
+                        <Feather name="check" size={12} color="#FFF" />
+                        <Text style={styles.reviewBtnText}>已跟進</Text>
+                      </Pressable>
+                    </View>
                   </View>
                 </View>
               );
             })}
           </>
         )}
+
+        {/* Consent modal — bright red warnings · designed so counsellor pauses before acting */}
+        <Modal
+          visible={!!consentFor}
+          animationType="fade"
+          transparent
+          onRequestClose={() => setConsentFor(null)}
+        >
+          <View style={styles.modalBackdrop}>
+            <View style={styles.modalCard}>
+              <Text style={styles.modalTitle}>⚠️ 你係咪已經取得學生同意？</Text>
+              <Text style={styles.modalBody}>
+                呢個學生嘅日記係佢嘅私人空間。查看之前 · 我哋希望你已經：{'\n\n'}
+                • 聯絡過學生本人{'\n'}
+                • 佢明白你要睇{'\n'}
+                • 佢同意咗{'\n\n'}
+                <Text style={{ fontWeight: '800' }}>呢次動作會留低紀錄 · 由校長審計。</Text>
+              </Text>
+              <TextInput
+                testID="reveal-reason"
+                placeholder="填寫理由（可選 · 例：學生 mentioned self-harm · 要跟進…）"
+                placeholderTextColor={COLORS.textDisabled}
+                value={consentReason}
+                onChangeText={setConsentReason}
+                style={styles.modalInput}
+                multiline
+              />
+              <View style={styles.modalBtnRow}>
+                <Pressable
+                  testID="reveal-cancel"
+                  onPress={() => setConsentFor(null)}
+                  style={[styles.modalBtn, styles.modalBtnGhost]}
+                >
+                  <Text style={styles.modalBtnGhostText}>取消</Text>
+                </Pressable>
+                <Pressable
+                  testID="reveal-confirm"
+                  onPress={confirmReveal}
+                  disabled={consentBusy}
+                  style={[styles.modalBtn, styles.modalBtnConfirm, consentBusy && { opacity: 0.5 }]}
+                >
+                  <Feather name="unlock" size={12} color="#FFF" />
+                  <Text style={styles.modalBtnConfirmText}>
+                    {consentBusy ? '解鎖中…' : '確認 · 我已取得同意'}
+                  </Text>
+                </Pressable>
+              </View>
+            </View>
+          </View>
+        </Modal>
 
         <View style={styles.statsRow}>
           <View style={[styles.stat, { backgroundColor: '#FDE0E0' }]}>
@@ -300,6 +450,96 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
   },
   alertMeta: { fontSize: 11, color: '#8A5A5A' },
+  actionBtnRow: { flexDirection: 'row', alignItems: 'center', gap: 6 },
+  revealBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+    paddingHorizontal: 10,
+    paddingVertical: 6,
+    borderRadius: RADIUS.pill,
+    backgroundColor: '#F5E1E1',
+    borderWidth: 1,
+    borderColor: '#8A3F3F',
+  },
+  revealBtnText: { fontSize: 12, fontWeight: '700', color: '#8A3F3F' },
+  deleteBtn: {
+    paddingHorizontal: 8,
+    paddingVertical: 6,
+    borderRadius: RADIUS.pill,
+    backgroundColor: '#FEE9CE',
+  },
+  revealedBox: {
+    backgroundColor: '#F9EFEF',
+    borderRadius: RADIUS.sm,
+    padding: SPACING.sm,
+    marginTop: SPACING.sm,
+    marginBottom: 4,
+    borderLeftWidth: 3,
+    borderLeftColor: '#8A3F3F',
+  },
+  revealedHead: { flexDirection: 'row', alignItems: 'center', gap: 4, marginBottom: 4 },
+  revealedLabel: { fontSize: 11, fontWeight: '800', color: '#8A3F3F', letterSpacing: 0.3 },
+  revealedText: { fontSize: 13, color: '#4A3F3F', lineHeight: 19, fontStyle: 'italic' },
+  revealedFoot: { fontSize: 10, color: '#8A6A6A', marginTop: 6 },
+
+  // Consent modal
+  modalBackdrop: {
+    flex: 1,
+    backgroundColor: 'rgba(0,0,0,0.5)',
+    justifyContent: 'center',
+    padding: SPACING.lg,
+  },
+  modalCard: {
+    backgroundColor: '#FFF',
+    borderRadius: RADIUS.lg,
+    padding: SPACING.lg,
+    borderTopWidth: 5,
+    borderTopColor: '#8A3F3F',
+  },
+  modalTitle: {
+    fontSize: 17,
+    fontWeight: '800',
+    color: '#8A3F3F',
+    marginBottom: SPACING.sm,
+  },
+  modalBody: { fontSize: 13, color: '#4A3F3F', lineHeight: 20 },
+  modalInput: {
+    borderWidth: 1,
+    borderColor: COLORS.bgInput,
+    borderRadius: RADIUS.sm,
+    paddingHorizontal: 12,
+    paddingVertical: 10,
+    fontSize: 13,
+    color: COLORS.textPrimary,
+    marginTop: SPACING.md,
+    minHeight: 60,
+    textAlignVertical: 'top',
+    backgroundColor: COLORS.bgApp,
+  },
+  modalBtnRow: {
+    flexDirection: 'row',
+    gap: SPACING.sm,
+    marginTop: SPACING.md,
+  },
+  modalBtn: {
+    flex: 1,
+    paddingVertical: 12,
+    borderRadius: RADIUS.pill,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 6,
+  },
+  modalBtnGhost: {
+    backgroundColor: COLORS.bgApp,
+    borderWidth: 1,
+    borderColor: COLORS.bgInput,
+  },
+  modalBtnGhostText: { fontWeight: '700', color: COLORS.textPrimary },
+  modalBtnConfirm: { backgroundColor: '#8A3F3F' },
+  modalBtnConfirmText: { fontWeight: '800', color: '#FFF', fontSize: 12 },
+
   reviewBtn: {
     flexDirection: 'row',
     alignItems: 'center',

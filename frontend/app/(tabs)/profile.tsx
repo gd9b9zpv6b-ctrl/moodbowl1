@@ -14,6 +14,7 @@ import { RoleStorage, ROLE_META, UserRole } from '@/src/lib/role-storage';
 import { COLORS, RADIUS, SPACING } from '@/src/constants/theme';
 import { GardenStorage } from '@/src/lib/garden-storage';
 import { useAuth } from '@/src/lib/auth-context';
+import { api } from '@/src/lib/api';
 import { storage } from '@/src/utils/storage';
 
 const REMINDER_KEY = 'moodful_reminder_enabled';
@@ -426,6 +427,80 @@ export default function Profile() {
           <Text style={styles.logoutText}>登出</Text>
         </Pressable>
 
+        {/* PDPO / GDPR compliance — right to data + right to be forgotten */}
+        <Text style={styles.sectionTitle}>🔒 私隱權利</Text>
+
+        <Pressable
+          testID="data-export-btn"
+          style={styles.privacyBtn}
+          onPress={async () => {
+            try {
+              const data = await api.get<any>('/me/export');
+              const entriesCount = data?.entries?.length ?? 0;
+              const alertsCount = data?.alerts_about_me?.length ?? 0;
+              Alert.alert(
+                '📥 你嘅資料已匯出',
+                `包含：${entriesCount} 條日記 · ${alertsCount} 條警報 metadata\n\n` +
+                '示範版：真實 app 會將 JSON 檔 email 到你嘅地址 · 或者提供下載連結。\n\n' +
+                '呢個係《個人資料（私隱）條例》第 6 條你嘅法定權利。',
+              );
+            } catch (e: any) {
+              Alert.alert('匯出失敗', e?.message || '請再試');
+            }
+          }}
+        >
+          <View style={[styles.privacyIcon, { backgroundColor: '#E7EEF9' }]}>
+            <Feather name="download" size={18} color="#3E5B7F" />
+          </View>
+          <View style={{ flex: 1 }}>
+            <Text style={styles.privacyTitle}>匯出我嘅資料</Text>
+            <Text style={styles.privacySub}>下載你喺 App 度所有嘅資料副本</Text>
+          </View>
+          <Feather name="chevron-right" size={18} color={COLORS.textDisabled} />
+        </Pressable>
+
+        <Pressable
+          testID="data-delete-btn"
+          style={styles.privacyBtn}
+          onPress={() => {
+            Alert.alert(
+              '⚠️ 刪除全部資料',
+              '你將永久刪除：\n' +
+              '• 全部日記記錄\n' +
+              '• 所有 reaction / 打卡\n' +
+              '• 你嘅帳戶本身\n\n' +
+              '⚠️ 出於安全考慮 · 你嘅警報 metadata 會保留 7 年（PDPO 要求）· 但會匿名化 · 老師唔會知道係邊個。\n\n' +
+              '呢個動作無法還原。真係要刪嗎？',
+              [
+                { text: '取消', style: 'cancel' },
+                {
+                  text: '確定刪除',
+                  style: 'destructive',
+                  onPress: async () => {
+                    try {
+                      await api.del<any>('/me');
+                      Alert.alert('已刪除', '你嘅資料已完全刪除。多謝你曾經信任呢個 App 🙏', [
+                        { text: '好', onPress: () => logout() },
+                      ]);
+                    } catch (e: any) {
+                      Alert.alert('刪除失敗', e?.message || '請再試');
+                    }
+                  },
+                },
+              ],
+            );
+          }}
+        >
+          <View style={[styles.privacyIcon, { backgroundColor: '#FDECEC' }]}>
+            <Feather name="user-x" size={18} color="#8A3F3F" />
+          </View>
+          <View style={{ flex: 1 }}>
+            <Text style={[styles.privacyTitle, { color: '#8A3F3F' }]}>刪除我嘅帳戶</Text>
+            <Text style={styles.privacySub}>永久刪除全部個人資料（Right to be forgotten）</Text>
+          </View>
+          <Feather name="chevron-right" size={18} color={COLORS.textDisabled} />
+        </Pressable>
+
         <Text style={styles.footer}>
           你值得被好好對待{'\n'}深呼吸一下 🌿
         </Text>
@@ -552,6 +627,25 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   logoutText: { color: COLORS.danger, fontSize: 15, fontWeight: '700' },
+
+  privacyBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 10,
+    backgroundColor: COLORS.bgCard,
+    borderRadius: RADIUS.md,
+    padding: SPACING.md,
+    marginBottom: SPACING.sm,
+  },
+  privacyIcon: {
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  privacyTitle: { fontSize: 14, fontWeight: '700', color: COLORS.textPrimary },
+  privacySub: { fontSize: 11, color: COLORS.textSecondary, marginTop: 1 },
   riceCard: {
     backgroundColor: '#FFF9E8',
     borderRadius: RADIUS.lg,

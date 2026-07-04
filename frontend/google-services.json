@@ -1,0 +1,26 @@
+{
+  "_comment": "PLACEHOLDER · Replace this file with the real google-services.json from Firebase Console before generating an Android build. Push notifications will not deliver until this is done.",
+  "project_info": {
+    "project_number": "000000000000",
+    "project_id": "placeholder",
+    "storage_bucket": "placeholder.appspot.com"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:000000000000:android:0000000000000000000000",
+        "android_client_info": {
+          "package_name": "com.emergent.mindfulmood.m6myqz"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        { "current_key": "PLACEHOLDER_REPLACE_ME" }
+      ],
+      "services": {
+        "appinvite_service": { "other_platform_oauth_client": [] }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

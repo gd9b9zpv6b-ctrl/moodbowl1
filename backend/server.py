@@ -13,6 +13,8 @@ from datetime import datetime, timezone, timedelta
 from passlib.context import CryptContext
 from jose import jwt, JWTError
 
+from push_service import send_push, register_device
+
 ROOT_DIR = Path(__file__).parent
 load_dotenv(ROOT_DIR / '.env')
 
@@ -483,6 +485,11 @@ async def list_alerts(status_filter: Optional[str] = None, current=Depends(get_c
         }
         docs = [d for d in docs if d.get("student_id") in child_ids]
 
+    # PRIVACY: strip `note_snippet` from every payload — the content is only revealed via
+    # the explicit /alerts/{id}/reveal endpoint (school-admin toggle + audit-logged).
+    for d in docs:
+        d.pop("note_snippet", None)
+
     return docs
 
 
@@ -505,8 +512,108 @@ async def update_alert(alert_id: str, current=Depends(get_current_user)):
             "reviewed_at": now_iso(),
         }},
     )
+    await _write_audit(
+        action="alert_reviewed",
+        actor=current,
+        target_kind="alert",
+        target_id=alert_id,
+        meta={"student_id": alert.get("student_id"), "matched": alert.get("matched_keywords")},
+    )
     doc = await db.alerts.find_one({"id": alert_id}, {"_id": 0})
+    doc.pop("note_snippet", None)  # never leak content in default responses
     return doc
+
+
+@api_router.delete("/alerts/{alert_id}")
+async def delete_alert(alert_id: str, current=Depends(get_current_user)):
+    """Delete an alert entirely (hard delete). Counsellor + school_admin only.
+    All deletions are audit-logged and cannot be undone."""
+    user_role = current.get("role", "student")
+    if user_role not in {"school_admin", "counsellor"}:
+        raise HTTPException(status_code=403, detail="Only counsellor or school_admin can delete alerts")
+
+    alert = await db.alerts.find_one({"id": alert_id})
+    if not alert:
+        raise HTTPException(status_code=404, detail="Alert not found")
+
+    await db.alerts.delete_one({"id": alert_id})
+    await _write_audit(
+        action="alert_deleted",
+        actor=current,
+        target_kind="alert",
+        target_id=alert_id,
+        meta={
+            "student_id": alert.get("student_id"),
+            "matched": alert.get("matched_keywords"),
+            "source": alert.get("source"),
+            "was_status": alert.get("status"),
+        },
+    )
+    return {"deleted": True, "id": alert_id}
+
+
+class NoteRevealRequest(BaseModel):
+    """Audit-logged request from a counsellor to view an alert's original note.
+    `consent_confirmed=True` is required — the frontend gates this behind a modal."""
+    consent_confirmed: bool = False
+    reason: Optional[str] = None
+
+
+@api_router.post("/alerts/{alert_id}/reveal")
+async def reveal_alert_content(
+    alert_id: str,
+    payload: NoteRevealRequest,
+    current=Depends(get_current_user),
+):
+    """Counsellor requests to view the student's original note.
+    Requires:
+     - school-wide toggle `counsellor_can_view_note_content=True`
+     - counsellor consent-confirmation (`consent_confirmed=True`)
+    Every reveal is audit-logged with reason (if provided)."""
+    if current.get("role") != "counsellor":
+        raise HTTPException(status_code=403, detail="Only counsellors can request reveal")
+
+    cfg = await get_school_config()
+    if not cfg.get("counsellor_can_view_note_content", False):
+        raise HTTPException(
+            status_code=403,
+            detail={"code": "reveal_not_permitted",
+                    "message": "校方未開啟輔導查看內容權限 · 請聯絡 School Admin。"},
+        )
+
+    if not payload.consent_confirmed:
+        raise HTTPException(
+            status_code=400,
+            detail={"code": "consent_required",
+                    "message": "請先確認已取得學生同意。"},
+        )
+
+    alert = await db.alerts.find_one({"id": alert_id}, {"_id": 0})
+    if not alert:
+        raise HTTPException(status_code=404, detail="Alert not found")
+
+    # AUDIT: this is a privacy-sensitive action — the most-scrutinised entry in our log.
+    await _write_audit(
+        action="counsellor_revealed_note",
+        actor=current,
+        target_kind="alert",
+        target_id=alert_id,
+        meta={
+            "student_id": alert.get("student_id"),
+            "student_email": alert.get("student_email"),
+            "reason": (payload.reason or "").strip()[:300],
+            "matched": alert.get("matched_keywords"),
+            "source": alert.get("source"),
+        },
+    )
+    return {
+        "id": alert_id,
+        "note_snippet": alert.get("note_snippet") or "(內容已冇儲存)",
+        "matched_keywords": alert.get("matched_keywords") or [],
+        "source": alert.get("source"),
+        "revealed_at": now_iso(),
+        "revealed_by": current.get("email"),
+    }
 
 
 # ==============================================================================
@@ -533,9 +640,8 @@ class FamilyCreate(BaseModel):
     parent_password: str
 
 
-class NoteRevealRequest(BaseModel):
-    """Audit-logged request from a counsellor to view an alert's original note.
-    `consent_confirmed=True` is required — the frontend gates this behind a modal."""
+class NoteRevealRequest(BaseModel):  # noqa: F811 — declared above · kept here documentation-adjacent  # noqa
+    """See earlier declaration used by /alerts/{id}/reveal."""
     consent_confirmed: bool = False
     reason: Optional[str] = None
 
@@ -568,6 +674,7 @@ async def get_admin_policies(current=Depends(get_current_user)):
         "post_ban_keywords": cfg.get("post_ban_keywords") or [],
         "block_crisis_in_posts": bool(cfg.get("block_crisis_in_posts", True)),
         "notify_parents_on_alert": bool(cfg.get("notify_parents_on_alert", False)),
+        "counsellor_can_view_note_content": bool(cfg.get("counsellor_can_view_note_content", False)),
         "updated_at": cfg.get("updated_at"),
     }
 
@@ -583,13 +690,40 @@ async def update_admin_policies(
 
     updates: dict = {"updated_at": now_iso()}
     if payload.diary_keywords is not None:
-        updates["diary_keywords"] = _clean_kw_list(payload.diary_keywords)
+        cleaned = _clean_kw_list(payload.diary_keywords)
+        updates["diary_keywords"] = cleaned
+        await _write_audit(
+            action="policy_diary_keywords_updated",
+            actor=current, target_kind="school", target_id=SCHOOL_CONFIG_ID,
+            meta={"count": len(cleaned)},
+        )
     if payload.post_ban_keywords is not None:
-        updates["post_ban_keywords"] = _clean_kw_list(payload.post_ban_keywords)
+        cleaned = _clean_kw_list(payload.post_ban_keywords)
+        updates["post_ban_keywords"] = cleaned
+        await _write_audit(
+            action="policy_post_ban_updated",
+            actor=current, target_kind="school", target_id=SCHOOL_CONFIG_ID,
+            meta={"count": len(cleaned)},
+        )
     if payload.block_crisis_in_posts is not None:
         updates["block_crisis_in_posts"] = bool(payload.block_crisis_in_posts)
     if payload.notify_parents_on_alert is not None:
         updates["notify_parents_on_alert"] = bool(payload.notify_parents_on_alert)
+        await _write_audit(
+            action="policy_notify_parents_toggle",
+            actor=current, target_kind="school", target_id=SCHOOL_CONFIG_ID,
+            meta={"enabled": bool(payload.notify_parents_on_alert)},
+        )
+    if payload.counsellor_can_view_note_content is not None:
+        # Log the *policy change itself* — it authorises future privacy invasion.
+        await _write_audit(
+            action="policy_counsellor_view_toggle",
+            actor=current,
+            target_kind="school",
+            target_id=SCHOOL_CONFIG_ID,
+            meta={"enabled": bool(payload.counsellor_can_view_note_content)},
+        )
+        updates["counsellor_can_view_note_content"] = bool(payload.counsellor_can_view_note_content)
 
     # Ensure the doc exists
     await get_school_config()
@@ -603,9 +737,235 @@ async def update_admin_policies(
         "post_ban_keywords": cfg.get("post_ban_keywords") or [],
         "block_crisis_in_posts": bool(cfg.get("block_crisis_in_posts", True)),
         "notify_parents_on_alert": bool(cfg.get("notify_parents_on_alert", False)),
+        "counsellor_can_view_note_content": bool(cfg.get("counsellor_can_view_note_content", False)),
         "updated_at": cfg.get("updated_at"),
     }
 
+
+# ==============================================================================
+# Admin — family (student ↔ parent) management
+# ==============================================================================
+
+
+@api_router.get("/admin/users")
+async def list_users(
+    q: Optional[str] = None,
+    role: Optional[str] = None,
+    current=Depends(get_current_user),
+):
+    """Admin-only user directory · used by the pairing form's autocomplete."""
+    if current.get("role") != "school_admin":
+        raise HTTPException(status_code=403, detail="Only school admin")
+    filters: dict = {}
+    if role:
+        filters["role"] = role
+    docs = await db.users.find(filters, {
+        "_id": 0, "id": 1, "email": 1, "display_name": 1,
+        "role": 1, "class_name": 1, "parent_email": 1,
+        "parent_emails": 1, "child_emails": 1,
+    }).sort("email", 1).to_list(500)
+    if q:
+        qq = q.lower()
+        docs = [
+            d for d in docs
+            if qq in (d.get("email") or "").lower()
+            or qq in (d.get("display_name") or "").lower()
+        ]
+    return docs[:50]
+
+
+@api_router.post("/admin/families")
+async def create_family(payload: FamilyCreate, current=Depends(get_current_user)):
+    """Create a student + parent pair · idempotent on existing emails. Audit-logged."""
+    if current.get("role") != "school_admin":
+        raise HTTPException(status_code=403, detail="Only school admin")
+
+    stu_email = payload.student_email.strip().lower()
+    par_email = payload.parent_email.strip().lower()
+    if not stu_email or not par_email:
+        raise HTTPException(status_code=400, detail="Emails required")
+    if stu_email == par_email:
+        raise HTTPException(status_code=400, detail="Student and parent must have different emails")
+
+    async def _ensure_user(email: str, name: str, password: str, role: str, class_name: Optional[str]) -> dict:
+        existing = await db.users.find_one({"email": email})
+        if existing:
+            return existing
+        doc = {
+            "id": str(uuid.uuid4()),
+            "email": email,
+            "display_name": name,
+            "hashed_password": hash_password(password),
+            "created_at": now_iso(),
+            "credits": 20,
+            "is_premium": True,
+            "secret_pin_hash": None,
+            "diary_style": {},
+            "active_icon_pack": "classic",
+            "role": role,
+            "class_name": class_name,
+        }
+        await db.users.insert_one(doc)
+        return doc
+
+    student = await _ensure_user(
+        stu_email, payload.student_name.strip() or stu_email,
+        payload.student_password, "student", (payload.student_class or "").strip() or None,
+    )
+    parent = await _ensure_user(
+        par_email, payload.parent_name.strip() or par_email,
+        payload.parent_password, "parent", None,
+    )
+
+    await db.users.update_one(
+        {"id": student["id"]},
+        {"$set": {"parent_email": par_email},
+         "$addToSet": {"parent_emails": par_email}},
+    )
+    await db.users.update_one(
+        {"id": parent["id"]},
+        {"$addToSet": {"child_emails": stu_email}},
+    )
+
+    await _write_audit(
+        action="family_created",
+        actor=current,
+        target_kind="family",
+        target_id=f"{stu_email}<->{par_email}",
+        meta={"student_email": stu_email, "parent_email": par_email,
+              "class_name": student.get("class_name")},
+    )
+
+    return {
+        "student": {"id": student["id"], "email": stu_email, "display_name": student.get("display_name")},
+        "parent":  {"id": parent["id"],  "email": par_email, "display_name": parent.get("display_name")},
+        "linked_at": now_iso(),
+    }
+
+
+class UnlinkFamily(BaseModel):
+    student_email: str
+    parent_email: str
+
+
+@api_router.post("/admin/families/unlink")
+async def unlink_family(payload: UnlinkFamily, current=Depends(get_current_user)):
+    """Break the link between a student and one of their parents. Doesn't delete accounts."""
+    if current.get("role") != "school_admin":
+        raise HTTPException(status_code=403, detail="Only school admin")
+
+    stu_email = payload.student_email.strip().lower()
+    par_email = payload.parent_email.strip().lower()
+
+    stu = await db.users.find_one({"email": stu_email, "role": "student"})
+    if stu:
+        updates: dict = {"$pull": {"parent_emails": par_email}}
+        if (stu.get("parent_email") or "").lower() == par_email:
+            updates["$set"] = {"parent_email": None}
+        await db.users.update_one({"id": stu["id"]}, updates)
+
+    await db.users.update_one(
+        {"email": par_email, "role": "parent"},
+        {"$pull": {"child_emails": stu_email}},
+    )
+
+    await _write_audit(
+        action="family_unlinked",
+        actor=current,
+        target_kind="family",
+        target_id=f"{stu_email}<->{par_email}",
+        meta={"student_email": stu_email, "parent_email": par_email},
+    )
+    return {"unlinked": True}
+
+
+# ==============================================================================
+# Audit log — read-only for school_admin
+# ==============================================================================
+
+
+@api_router.get("/admin/audit")
+async def list_audit_log(
+    action: Optional[str] = None,
+    limit: int = 200,
+    current=Depends(get_current_user),
+):
+    if current.get("role") != "school_admin":
+        raise HTTPException(status_code=403, detail="Only school admin")
+    filters: dict = {}
+    if action:
+        filters["action"] = action
+    docs = await db.audit_log.find(filters, {"_id": 0}).sort("created_at", -1).to_list(min(max(limit, 1), 500))
+    return docs
+
+
+# ==============================================================================
+# Data export & deletion — PDPO / GDPR compliance
+# ==============================================================================
+
+
+@api_router.get("/me/export")
+async def export_my_data(current=Depends(get_current_user)):
+    uid = current["id"]
+    email = current.get("email")
+
+    profile = {k: v for k, v in current.items() if k not in {"hashed_password", "_id", "secret_pin_hash"}}
+    entries = await db.entries.find({"user_id": uid}, {"_id": 0}).to_list(2000)
+    reactions = await db.reactions.find({"user_id": uid}, {"_id": 0}).to_list(2000)
+    my_alerts = await db.alerts.find(
+        {"student_id": uid},
+        {"_id": 0, "note_snippet": 0},
+    ).to_list(1000)
+
+    await _write_audit(
+        action="data_exported",
+        actor=current,
+        target_kind="user",
+        target_id=uid,
+        meta={"email": email, "entries_count": len(entries), "alerts_count": len(my_alerts)},
+    )
+
+    return {
+        "exported_at": now_iso(),
+        "user": profile,
+        "entries": entries,
+        "reactions": reactions,
+        "alerts_about_me": my_alerts,
+        "note": "呢個係你喺 Moodful 嘅完整個人資料 · 可以下載保存。如需刪除 · 用 /me/delete。",
+    }
+
+
+@api_router.delete("/me")
+async def delete_my_account(current=Depends(get_current_user)):
+    """Right-to-be-forgotten · wipes user's diary + reactions + account.
+    Alert metadata retained (anonymised) for 7 years for safety compliance. Audit-logged."""
+    uid = current["id"]
+    email = current.get("email")
+
+    e = await db.entries.delete_many({"user_id": uid})
+    r = await db.reactions.delete_many({"user_id": uid})
+    await db.alerts.update_many(
+        {"student_id": uid},
+        {"$set": {
+            "student_email": None,
+            "student_display_name": "(已刪除用戶)",
+            "note_snippet": None,
+            "anonymised_at": now_iso(),
+        }},
+    )
+    await db.users.update_many({"parent_emails": email}, {"$pull": {"parent_emails": email}})
+    await db.users.update_many({"child_emails": email}, {"$pull": {"child_emails": email}})
+    await db.users.update_many({"parent_email": email}, {"$set": {"parent_email": None}})
+    await db.users.delete_one({"id": uid})
+
+    await _write_audit(
+        action="account_self_deleted",
+        actor=current,
+        target_kind="user",
+        target_id=uid,
+        meta={"email": email, "entries_wiped": e.deleted_count, "reactions_wiped": r.deleted_count},
+    )
+    return {"deleted": True, "entries_wiped": e.deleted_count, "reactions_wiped": r.deleted_count}
 
 
 @api_router.post("/entries/{entry_id}/react", response_model=EntryOut)
@@ -682,8 +1042,9 @@ async def _check_and_create_alert(entry_doc: dict, author: dict):
     """Scan a new entry's note against alert keywords · create alert record if any match.
     Fully non-blocking — errors are logged but don't fail the entry creation.
 
-    PRIVACY: we intentionally DO NOT persist the note text — only the matched keyword(s).
-    Teachers/parents should know a signal was triggered, NOT read the student's private words.
+    PRIVACY MODEL: we DO store the note snippet in DB · but the /alerts read endpoint
+    only surfaces it to counsellors when `counsellor_can_view_note_content=True` (school
+    admin toggle) and the counsellor explicitly requests reveal (audit-logged).
     """
     try:
         note = (entry_doc.get("note") or "").strip()
@@ -702,14 +1063,33 @@ async def _check_and_create_alert(entry_doc: dict, author: dict):
             "student_display_name": author.get("display_name"),
             "student_role": author.get("role", "student"),
             "matched_keywords": matched,
+            "note_snippet": note[:400],  # stored · but revealed only via /alerts/{id}/reveal
             "entry_date": entry_doc.get("entry_date"),
             "created_at": now_iso(),
             "status": "open",           # open · reviewed · resolved
             "reviewed_by": None,
             "reviewed_at": None,
-            "source": "diary",          # NEW · which flow generated this alert
+            "source": "diary",
             "alert_type": "crisis_keyword",
         })
+        await _write_audit(
+            action="alert_triggered",
+            actor=author,
+            target_kind="alert",
+            target_id=None,
+            meta={"source": "diary", "matched": matched, "student_id": author["id"]},
+        )
+        # Fire push notifications to the responders (non-blocking)
+        try:
+            recipients = await _push_alert_recipients("diary", "crisis_keyword", author["id"])
+            await send_push(
+                recipients=recipients,
+                title="🚨 學生觸發警報",
+                message=f"{author.get('display_name') or '學生'} · 日記出現：{'、'.join(matched[:3])}",
+                action_url="/counsellor-panel",
+            )
+        except Exception as e:
+            logger.warning(f"Push (diary alert) failed: {e}")
         logger.warning(
             f"ALERT: keywords {matched} detected in entry by {author.get('email')} "
             f"({author.get('role')})"
@@ -726,21 +1106,15 @@ async def _log_blocked_post_alert(
     matched_crisis: List[str],
     entry_date: Optional[str] = None,
 ):
-    """Record an alert when a public post is BLOCKED by content policy.
-    The entry itself is NOT saved (blocked), but counsellors should still know.
-
-    PRIVACY: same as diary alerts — only the matched keywords are persisted.
-    The attempted content itself is not stored. Non-blocking on errors.
-    """
+    """Record an alert when a public post is BLOCKED by content policy."""
     try:
         if not (matched_ban or matched_crisis):
             return
-        # Crisis in an attempted PUBLIC post is more urgent than the same word in a diary.
-        # Give counsellors a distinct alert_type so they can prioritize.
         alert_type = "blocked_crisis_post" if matched_crisis else "blocked_profanity_post"
+        note = (note_text or "").strip()
         await db.alerts.insert_one({
             "id": str(uuid.uuid4()),
-            "entry_id": None,            # nothing persisted · this is a rejected attempt
+            "entry_id": None,
             "student_id": author["id"],
             "student_email": author["email"],
             "student_display_name": author.get("display_name"),
@@ -748,20 +1122,76 @@ async def _log_blocked_post_alert(
             "matched_keywords": matched_crisis + matched_ban,
             "matched_ban": matched_ban,
             "matched_crisis": matched_crisis,
+            "note_snippet": note[:400],
             "entry_date": entry_date,
             "created_at": now_iso(),
             "status": "open",
             "reviewed_by": None,
             "reviewed_at": None,
-            "source": "community_post",  # blocked post attempt
+            "source": "community_post",
             "alert_type": alert_type,
         })
+        await _write_audit(
+            action="alert_triggered",
+            actor=author,
+            target_kind="alert",
+            target_id=None,
+            meta={"source": "community_post", "alert_type": alert_type,
+                  "matched_ban": matched_ban, "matched_crisis": matched_crisis,
+                  "student_id": author["id"]},
+        )
+        # Push responders
+        try:
+            recipients = await _push_alert_recipients("community_post", alert_type, author["id"])
+            all_matched = (matched_crisis + matched_ban)[:3]
+            body_prefix = "🚫 學生想出 post 但被攔截" if alert_type == "blocked_profanity_post" else "🚨 學生想出 post · 含危機字"
+            await send_push(
+                recipients=recipients,
+                title=body_prefix,
+                message=f"{author.get('display_name') or '學生'} · {'、'.join(all_matched)}",
+                action_url="/counsellor-panel",
+            )
+        except Exception as e:
+            logger.warning(f"Push (blocked post alert) failed: {e}")
         logger.warning(
             f"BLOCKED-POST ALERT: {alert_type} ban={matched_ban} crisis={matched_crisis} "
             f"by {author.get('email')} ({author.get('role')})"
         )
     except Exception as e:
         logger.error(f"Blocked-post alert failed: {e}")
+
+
+# ==============================================================================
+# Audit log — records privacy-sensitive & safety-critical events.
+# Retention: 7 years (HK PDPO guidance). Only school_admin can read; nobody can delete.
+# NEVER store note/diary content here — only metadata (who / when / what / target-id / reason).
+# ==============================================================================
+
+
+async def _write_audit(
+    *,
+    action: str,
+    actor: Optional[dict] = None,
+    target_kind: Optional[str] = None,
+    target_id: Optional[str] = None,
+    meta: Optional[dict] = None,
+):
+    """Fire-and-forget audit record. Never throws · missing fields OK."""
+    try:
+        doc = {
+            "id": str(uuid.uuid4()),
+            "action": action,                                  # e.g. "alert_reviewed"
+            "actor_id": (actor or {}).get("id"),
+            "actor_email": (actor or {}).get("email"),
+            "actor_role": (actor or {}).get("role"),
+            "target_kind": target_kind,                        # "alert" | "user" | "school" | "family"…
+            "target_id": target_id,
+            "meta": meta or {},                                # small JSON · no note text
+            "created_at": now_iso(),
+        }
+        await db.audit_log.insert_one(doc)
+    except Exception as e:
+        logger.error(f"Audit write failed for {action}: {e}")
 
 
 @api_router.delete("/entries/{entry_id}")
@@ -1034,6 +1464,73 @@ async def admin_community(current=Depends(get_current_user)):
     _require_admin(current)
     docs = await db.entries.find({"is_public": True}, {"_id": 0}).sort("created_at", -1).to_list(500)
     return await _entries_with_hearts(docs, current["id"])
+
+
+# ==============================================================================
+# Push notifications — Emergent-managed relay
+# ==============================================================================
+
+
+class RegisterPushBody(BaseModel):
+    user_id: str
+    platform: str  # "android" | "ios"
+    device_token: str
+
+
+@api_router.post("/register-push", status_code=201)
+async def register_push_endpoint(body: RegisterPushBody):
+    """Called by the app after login · registers this device with the push relay."""
+    try:
+        await register_device(body.user_id, body.platform, body.device_token)
+    except RuntimeError as e:
+        # Key missing/invalid · but we don't hard-fail so preview app still works.
+        logger.warning(f"Push register failed (non-blocking): {e}")
+        return {"status": "skipped", "reason": str(e)}
+    except Exception as e:
+        logger.warning(f"Push register error (non-blocking): {e}")
+        return {"status": "skipped", "reason": "provider unavailable"}
+    return {"status": "registered"}
+
+
+async def _push_alert_recipients(alert_source: str, alert_type: str, student_id: str) -> list[str]:
+    """Resolve which user IDs should receive the alert push.
+    - Counsellors and school_admin always get all alerts
+    - Class teacher gets alerts for their class students
+    - Parents get alerts if school toggle ON + they're linked to this student
+    """
+    ids: set[str] = set()
+
+    # 1) All counsellors + school admins
+    async for u in db.users.find(
+        {"role": {"$in": ["counsellor", "school_admin"]}},
+        {"_id": 0, "id": 1},
+    ):
+        ids.add(u["id"])
+
+    # 2) Class teacher(s) if the student has a class
+    stu = await db.users.find_one({"id": student_id}, {"_id": 0, "class_name": 1})
+    if stu and stu.get("class_name"):
+        async for t in db.users.find(
+            {"role": "teacher", "class_name": stu["class_name"]},
+            {"_id": 0, "id": 1},
+        ):
+            ids.add(t["id"])
+
+    # 3) Parents · if toggle on
+    cfg = await get_school_config()
+    if cfg.get("notify_parents_on_alert", False) and stu:
+        stu_full = await db.users.find_one({"id": student_id}, {"_id": 0, "email": 1})
+        stu_email = (stu_full or {}).get("email")
+        if stu_email:
+            async for p in db.users.find(
+                {"role": "parent",
+                 "$or": [{"child_emails": stu_email}, {"parent_email": stu_email}]},
+                {"_id": 0, "id": 1},
+            ):
+                ids.add(p["id"])
+
+    ids.discard(student_id)  # student themselves shouldn't get the alert push
+    return list(ids)
 
 
 @api_router.delete("/admin/entries/{entry_id}")

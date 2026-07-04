@@ -12,6 +12,7 @@ export type SchoolPolicies = {
   post_ban_keywords: string[];       // words that BLOCK a public post
   block_crisis_in_posts: boolean;    // also block diary_keywords in public posts
   notify_parents_on_alert: boolean;  // parents can see their child's alerts
+  counsellor_can_view_note_content: boolean;  // counsellors can reveal note text (audit-logged)
   updated_at?: string;
 };
 
@@ -20,6 +21,7 @@ export const DEFAULT_POLICIES: SchoolPolicies = {
   post_ban_keywords: [],
   block_crisis_in_posts: true,
   notify_parents_on_alert: false,
+  counsellor_can_view_note_content: false,
 };
 
 // Simple in-memory cache — refreshed on each admin edit · lightweight enough

@@ -12,6 +12,8 @@ import { AlertPolicy, DEFAULT_POLICY, SchoolAlertPolicy } from '@/src/lib/school
 import { PostPolicy, DEFAULT_POST_POLICY, SchoolPostPolicy } from '@/src/lib/school-post-policy';
 import { SchoolPolicies, DEFAULT_POLICIES } from '@/src/lib/school-policies';
 import { AdultAnonymity, CommunityConfig, DEFAULT_CONFIG, SchoolCommunityConfig, StudentAnonymity } from '@/src/lib/school-community-config';
+import { FamiliesSubpage } from '@/src/components/admin/families-subpage';
+import { AuditSubpage } from '@/src/components/admin/audit-subpage';
 import { EnergyMap, SchoolEnergyConfig } from '@/src/lib/school-energy-config';
 import { api, Entry } from '@/src/lib/api';
 import { COLORS, RADIUS, SPACING } from '@/src/constants/theme';
@@ -26,7 +28,9 @@ type AdminView =
   | 'policy'
   | 'energy'
   | 'community'
-  | 'history';
+  | 'history'
+  | 'families'
+  | 'audit';
 
 const ADMIN_CARDS: {
   key: Exclude<AdminView, 'home'>;
@@ -144,9 +148,13 @@ export default function SchoolAdmin() {
         diary_keywords: [...remotePolicies.diary_keywords, k],
       });
       setRemotePolicies(next);
-      // keep the legacy local copy in sync so nothing else in the UI breaks
       savePolicy({ ...policy, keywords: next.diary_keywords });
       setNewKeyword('');
+      // Item 7: 提示 admin — 新關鍵字唔會 retroactively scan 舊日記
+      Alert.alert(
+        '加咗「' + k + '」',
+        'ℹ️ 呢個字只對之後嘅新日記生效 · 唔會回溯掃描之前已寫嘅日記。\n\n如果需要處理歷史 case · 請直接聯絡輔導老師。',
+      );
     } catch (e: any) {
       Alert.alert('儲存失敗', e?.message || '請再試');
     }
@@ -205,6 +213,10 @@ export default function SchoolAdmin() {
       setRemotePolicies(next);
       savePostPolicy({ ...postPolicy, banKeywords: next.post_ban_keywords });
       setNewBanWord('');
+      Alert.alert(
+        '加咗「' + k + '」',
+        'ℹ️ 只對之後嘅新 post 生效 · 唔會回溯處理之前 post 過嘅內容（因為社群 post 30 日內會自動刪 · 短期內舊 post 都會自動清走）。',
+      );
     } catch (e: any) {
       Alert.alert('儲存失敗', e?.message || '請再試');
     }
@@ -371,7 +383,7 @@ export default function SchoolAdmin() {
           <Feather name="chevron-right" size={20} color={COLORS.textDisabled} />
         </Pressable>
 
-        <Pressable style={styles.actionCard} onPress={() => Alert.alert('家長 · 學生 配對', '快將推出：Admin 可以喺呢度建立新嘅學生 + 家長帳戶並自動 pair 起 · 用嚟俾未 register 嘅家庭快速上機。')}>
+        <Pressable style={styles.actionCard} onPress={() => setView('families')}>
           <View style={[styles.actIcon, { backgroundColor: '#FDECEC' }]}>
             <Feather name="user-plus" size={22} color="#E86A6A" />
           </View>
@@ -381,8 +393,22 @@ export default function SchoolAdmin() {
           </View>
           <Feather name="chevron-right" size={20} color={COLORS.textDisabled} />
         </Pressable>
+
+        <Pressable style={styles.actionCard} onPress={() => setView('audit')}>
+          <View style={[styles.actIcon, { backgroundColor: '#E7EEF9' }]}>
+            <Feather name="clipboard" size={22} color="#3E5B7F" />
+          </View>
+          <View style={{ flex: 1 }}>
+            <Text style={styles.actTitle}>Audit Log · 敏感操作紀錄</Text>
+            <Text style={styles.actSub}>邊個 · 幾時 · 做過乜（保留 7 年）</Text>
+          </View>
+          <Feather name="chevron-right" size={20} color={COLORS.textDisabled} />
+        </Pressable>
           </>
         )}
+
+        {view === 'families' && <FamiliesSubpage />}
+        {view === 'audit' && <AuditSubpage />}
 
         {view === 'policy' && (
           <>
@@ -630,6 +656,48 @@ export default function SchoolAdmin() {
                   trackColor={{ true: '#7D5AA6', false: COLORS.bgInput }}
                   thumbColor={COLORS.bgCard}
                 />
+              </View>
+
+              <View style={styles.policyDivider} />
+
+              {/* 💛 High-sensitivity toggle · counsellor view note content */}
+              <View style={styles.consentBox}>
+                <Text style={styles.consentTitle}>💛 尊重學生私隱</Text>
+                <Text style={styles.consentBody}>
+                  日記係學生嘅私人空間 · 一般情況下老師淨係應該見到觸發嘅字眼。{'\n'}
+                  開咗呢個權限之後 · 輔導老師可以逐條 alert 揀「查看內容」· 但我哋強烈建議：{'\n'}
+                  1. 先聯絡學生 · 攞到佢同意先睇{'\n'}
+                  2. 只有喺高風險／緊急情況先例外{'\n'}
+                  3. 每次「查看內容」都會留 audit log · 校長可以查{'\n\n'}
+                  <Text style={{ fontWeight: '800' }}>
+                    學生嘅信任係好脆弱嘅 · 一次未經同意嘅偷睇 · 可能永遠打散佢對呢個平台嘅信賴。
+                  </Text>
+                </Text>
+                <View style={[styles.policyRow, { marginTop: SPACING.sm }]}>
+                  <View style={[styles.actIcon, { backgroundColor: '#F5E1E1' }]}>
+                    <Feather name="eye" size={20} color="#8A3F3F" />
+                  </View>
+                  <View style={{ flex: 1 }}>
+                    <Text style={styles.actTitle}>允許輔導老師「查看日記內容」</Text>
+                    <Text style={styles.actSub}>
+                      每次撳「查看」都要 confirm 同意 · 全部有 audit
+                    </Text>
+                  </View>
+                  <Switch
+                    testID="counsellor-view-toggle"
+                    value={remotePolicies.counsellor_can_view_note_content}
+                    onValueChange={async (v) => {
+                      try {
+                        const next = await SchoolPolicies.update({ counsellor_can_view_note_content: v });
+                        setRemotePolicies(next);
+                      } catch (e: any) {
+                        Alert.alert('儲存失敗', e?.message || '請再試');
+                      }
+                    }}
+                    trackColor={{ true: '#8A3F3F', false: COLORS.bgInput }}
+                    thumbColor={COLORS.bgCard}
+                  />
+                </View>
               </View>
             </>
           )}
@@ -1125,6 +1193,24 @@ const styles = StyleSheet.create({
     height: 1,
     backgroundColor: 'rgba(0,0,0,0.06)',
     marginVertical: SPACING.md,
+  },
+  consentBox: {
+    backgroundColor: '#F9EFEF',
+    borderRadius: RADIUS.md,
+    padding: SPACING.md,
+    borderLeftWidth: 4,
+    borderLeftColor: '#8A3F3F',
+  },
+  consentTitle: {
+    fontSize: 14,
+    fontWeight: '800',
+    color: '#8A3F3F',
+    marginBottom: SPACING.sm,
+  },
+  consentBody: {
+    fontSize: 12,
+    color: '#5A3F3F',
+    lineHeight: 19,
   },
   policyLabel: {
     fontSize: 12,

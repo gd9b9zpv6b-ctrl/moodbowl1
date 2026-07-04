@@ -5,6 +5,13 @@ const TOKEN_KEY = 'moodful_token';
 
 let cachedToken: string | null = null;
 
+// Optional callback fired on every request · auth-context registers a ping()
+// here so the inactivity timer resets whenever the user does something meaningful.
+let activityListener: (() => void) | null = null;
+export function onApiActivity(cb: (() => void) | null) {
+  activityListener = cb;
+}
+
 export async function loadToken(): Promise<string | null> {
   if (cachedToken) return cachedToken;
   const t = await storage.secureGet<string>(TOKEN_KEY, '');
@@ -30,6 +37,8 @@ async function request<T>(path: string, options: RequestInit = {}): Promise<T> {
   if (token) headers['Authorization'] = `Bearer ${token}`;
 
   const res = await fetch(`${BASE_URL}/api${path}`, { ...options, headers });
+  // Notify auth-context that user is active — refreshes inactivity timer.
+  try { activityListener?.(); } catch { /* noop */ }
   const text = await res.text();
   let json: any = null;
   try {
