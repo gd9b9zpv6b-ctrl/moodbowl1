@@ -9,6 +9,7 @@ import { ENERGY_META, EnergyLevel } from '@/src/constants/energy';
 import { RoleHeader } from '@/src/components/role-header';
 import { RoleSelfCareCard } from '@/src/components/role-selfcare-card';
 import { AlertPolicy, DEFAULT_POLICY, SchoolAlertPolicy } from '@/src/lib/school-alert-policy';
+import { PostPolicy, DEFAULT_POST_POLICY, SchoolPostPolicy } from '@/src/lib/school-post-policy';
 import { AdultAnonymity, CommunityConfig, DEFAULT_CONFIG, SchoolCommunityConfig, StudentAnonymity } from '@/src/lib/school-community-config';
 import { EnergyMap, SchoolEnergyConfig } from '@/src/lib/school-energy-config';
 import { api, Entry } from '@/src/lib/api';
@@ -24,6 +25,8 @@ function nextLevel(level: EnergyLevel): EnergyLevel {
 export default function SchoolAdmin() {
   const [policy, setPolicy] = useState<AlertPolicy>(DEFAULT_POLICY);
   const [newKeyword, setNewKeyword] = useState('');
+  const [postPolicy, setPostPolicy] = useState<PostPolicy>(DEFAULT_POST_POLICY);
+  const [newBanWord, setNewBanWord] = useState('');
   const [energyMap, setEnergyMap] = useState<EnergyMap>(SchoolEnergyConfig.DEFAULT_MAP);
   const [communityConfig, setCommunityConfig] = useState<CommunityConfig>(DEFAULT_CONFIG);
   const [historyScope, setHistoryScope] = useState<'student' | 'adult'>('student');
@@ -32,6 +35,7 @@ export default function SchoolAdmin() {
 
   useEffect(() => {
     SchoolAlertPolicy.get().then(setPolicy);
+    SchoolPostPolicy.get().then(setPostPolicy);
     SchoolEnergyConfig.get().then(setEnergyMap);
     SchoolCommunityConfig.get().then(setCommunityConfig);
   }, []);
@@ -106,6 +110,35 @@ export default function SchoolAdmin() {
 
   const removeKeyword = (k: string) => {
     savePolicy({ ...policy, keywords: policy.keywords.filter((x) => x !== k) });
+  };
+
+  // === Community POST content policy ===
+  const savePostPolicy = async (next: PostPolicy) => {
+    setPostPolicy(next);
+    await SchoolPostPolicy.set(next);
+  };
+
+  const togglePostFilter = (v: boolean) =>
+    savePostPolicy({ ...postPolicy, postFilterEnabled: v });
+  const toggleBlockCrisis = (v: boolean) =>
+    savePostPolicy({ ...postPolicy, blockCrisisInPosts: v });
+
+  const addBanWord = () => {
+    const k = newBanWord.trim();
+    if (!k) return;
+    if (postPolicy.banKeywords.includes(k)) {
+      Alert.alert('已經有呢個字', `「${k}」已經喺 post 禁用清單。`);
+      return;
+    }
+    savePostPolicy({ ...postPolicy, banKeywords: [...postPolicy.banKeywords, k] });
+    setNewBanWord('');
+  };
+
+  const removeBanWord = (k: string) => {
+    savePostPolicy({
+      ...postPolicy,
+      banKeywords: postPolicy.banKeywords.filter((x) => x !== k),
+    });
   };
 
   const cycleEmotionLevel = async (emotionKey: string) => {
@@ -213,6 +246,15 @@ export default function SchoolAdmin() {
 
         <Text style={styles.sectionTitle}>私隱與警示政策</Text>
 
+        <View style={styles.policyIntro}>
+          <Feather name="info" size={12} color="#5A7A6C" />
+          <Text style={styles.policyIntroText}>
+            分開兩套字：{'\n'}
+            🚨 <Text style={{ fontWeight: '700' }}>日記警示字</Text> — 學生喺 private 日記寫呢啲字 · 會通知輔導老師。{'\n'}
+            🛡️ <Text style={{ fontWeight: '700' }}>Post 禁用字</Text> — 出街 post 唔可以有嘅字（粗口等）· 系統會阻止出 post。日記可以講任何說話。
+          </Text>
+        </View>
+
         {/* Master toggle: keyword monitoring */}
         <View style={styles.policyCard}>
           <View style={styles.policyRow}>
@@ -220,9 +262,9 @@ export default function SchoolAdmin() {
               <Feather name="alert-octagon" size={20} color="#E86A6A" />
             </View>
             <View style={{ flex: 1 }}>
-              <Text style={styles.actTitle}>關鍵字監察 · 緊急通報</Text>
+              <Text style={styles.actTitle}>🚨 日記警示字 · 緊急通報</Text>
               <Text style={styles.actSub}>
-                當學生日記出現危險字詞 · 系統會自動通知揀好嘅老師
+                當學生日記出現呢啲字 · 系統自動通知揀好嘅老師（日記係 private · 只作安全警示用）
               </Text>
             </View>
             <Switch
@@ -329,6 +371,108 @@ export default function SchoolAdmin() {
           <Feather name="info" size={12} color="#7A5C3F" />
           <Text style={styles.policyHintText}>
             每間學校可以自己決定監察政策 · 冇強制 default · 亦可以完全關閉。
+          </Text>
+        </View>
+
+        {/* ==== Community POST content filter · separate from diary alerts ==== */}
+        <View style={styles.policyCard}>
+          <View style={styles.policyRow}>
+            <View style={[styles.actIcon, { backgroundColor: '#E7EEF9' }]}>
+              <Feather name="shield" size={20} color="#5A7DA6" />
+            </View>
+            <View style={{ flex: 1 }}>
+              <Text style={styles.actTitle}>🛡️ Post 禁用字 · 內容審查</Text>
+              <Text style={styles.actSub}>
+                學生出社群 post 如含呢啲字 · 會被阻止出街（日記唔會受影響）
+              </Text>
+            </View>
+            <Switch
+              testID="post-filter-toggle"
+              value={postPolicy.postFilterEnabled}
+              onValueChange={togglePostFilter}
+              trackColor={{ true: '#5A7DA6', false: COLORS.bgInput }}
+              thumbColor={COLORS.bgCard}
+            />
+          </View>
+
+          {postPolicy.postFilterEnabled && (
+            <>
+              <View style={styles.policyDivider} />
+
+              <Text style={styles.policyLabel}>
+                禁用字（{postPolicy.banKeywords.length} 個）· 撳一撳可以移除
+              </Text>
+              <View style={styles.chipRow}>
+                {postPolicy.banKeywords.map((k) => (
+                  <Pressable
+                    key={k}
+                    onPress={() => Alert.alert(
+                      `移除「${k}」？`,
+                      '之後學生 post 可以有呢個字。',
+                      [
+                        { text: '取消', style: 'cancel' },
+                        { text: '移除', style: 'destructive', onPress: () => removeBanWord(k) },
+                      ],
+                    )}
+                    style={[styles.chip, { backgroundColor: '#E7EEF9' }]}
+                  >
+                    <Text style={[styles.chipText, { color: '#3E5B7F' }]}>{k}</Text>
+                    <Feather name="x" size={11} color="#3E5B7F" />
+                  </Pressable>
+                ))}
+                {postPolicy.banKeywords.length === 0 && (
+                  <Text style={styles.emptyChipText}>暫時冇禁用字 · 加多個試下</Text>
+                )}
+              </View>
+
+              <View style={styles.addRow}>
+                <TextInput
+                  testID="post-new-banword"
+                  value={newBanWord}
+                  onChangeText={setNewBanWord}
+                  placeholder="加多一個禁用字…（例：粗口）"
+                  placeholderTextColor={COLORS.textDisabled}
+                  style={styles.addInput}
+                  onSubmitEditing={addBanWord}
+                  returnKeyType="done"
+                />
+                <Pressable
+                  testID="post-add-banword"
+                  onPress={addBanWord}
+                  disabled={!newBanWord.trim()}
+                  style={[styles.addBtn, { backgroundColor: '#5A7DA6' }, !newBanWord.trim() && { opacity: 0.4 }]}
+                >
+                  <Feather name="plus" size={16} color="#FFF" />
+                </Pressable>
+              </View>
+
+              <View style={styles.policyDivider} />
+
+              <View style={styles.policyRow}>
+                <View style={[styles.actIcon, { backgroundColor: '#FDE0E0' }]}>
+                  <Feather name="alert-triangle" size={20} color="#E86A6A" />
+                </View>
+                <View style={{ flex: 1 }}>
+                  <Text style={styles.actTitle}>連危機字（跳樓/自殺等）都阻止出 post</Text>
+                  <Text style={styles.actSub}>
+                    保護其他同學避免被觸發 · 系統仍會通知輔導老師（推薦開）
+                  </Text>
+                </View>
+                <Switch
+                  value={postPolicy.blockCrisisInPosts}
+                  onValueChange={toggleBlockCrisis}
+                  trackColor={{ true: '#E86A6A', false: COLORS.bgInput }}
+                  thumbColor={COLORS.bgCard}
+                />
+              </View>
+            </>
+          )}
+        </View>
+
+        <View style={styles.policyHint}>
+          <Feather name="info" size={12} color="#7A5C3F" />
+          <Text style={styles.policyHintText}>
+            日記可以自由發洩（包括粗口）· Post 則要適合公開俾其他同學睇。兩套字獨立設定。
           </Text>
         </View>
 
@@ -810,6 +954,29 @@ const styles = StyleSheet.create({
     color: '#7A5C3F',
     fontStyle: 'italic',
     lineHeight: 15,
+  },
+  policyIntro: {
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    gap: 8,
+    padding: SPACING.md,
+    marginBottom: SPACING.md,
+    backgroundColor: '#EEF5F1',
+    borderRadius: RADIUS.md,
+    borderLeftWidth: 3,
+    borderLeftColor: '#7BA88C',
+  },
+  policyIntroText: {
+    flex: 1,
+    fontSize: 12,
+    color: '#3F5A4D',
+    lineHeight: 18,
+  },
+  emptyChipText: {
+    fontSize: 12,
+    color: COLORS.textSecondary,
+    fontStyle: 'italic',
+    paddingVertical: 4,
   },
 
   // Energy bucket config

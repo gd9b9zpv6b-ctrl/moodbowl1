@@ -305,6 +305,24 @@ async def create_entry(data: EntryIn, current=Depends(get_current_user)):
     # secret entries are always private
     is_public = data.is_public and not data.is_secret
     author_role = current.get("role", "student")
+
+    # Community content policy — reject PUBLIC posts that contain banned keywords.
+    # Diary/private is intentionally unfiltered — users can freely vent about anything.
+    if is_public:
+        note_text = (data.note or "")
+        matched_ban = [kw for kw in DEFAULT_POST_BAN_KEYWORDS if kw in note_text]
+        matched_crisis_in_post = [kw for kw in DEFAULT_ALERT_KEYWORDS if kw in note_text]
+        if matched_ban or matched_crisis_in_post:
+            raise HTTPException(
+                status_code=400,
+                detail={
+                    "code": "post_content_blocked",
+                    "message": "呢個 post 含唔可以公開嘅字眼。你可以改字後再出 · 或者關咗 Share 淨係寫落私人日記。",
+                    "matched_ban": matched_ban,
+                    "matched_crisis": matched_crisis_in_post,
+                },
+            )
+
     doc = {
         "id": entry_id,
         "user_id": current["id"],
@@ -402,7 +420,11 @@ async def community_history(
 # ============ Safety Alerts ============
 @api_router.get("/alerts")
 async def list_alerts(status_filter: Optional[str] = None, current=Depends(get_current_user)):
-    """List keyword-triggered alerts. Restricted to moderator roles (counsellor · school_admin) + teacher."""
+    """List keyword-triggered alerts.
+    - school_admin · counsellor: see ALL alerts across the school
+    - teacher: see only alerts for students in their own class (`class_name` match)
+    - others: 403
+    """
     user_role = current.get("role", "student")
     ALERT_VIEWERS = {"school_admin", "counsellor", "teacher"}
     if user_role not in ALERT_VIEWERS:
@@ -413,6 +435,21 @@ async def list_alerts(status_filter: Optional[str] = None, current=Depends(get_c
         filters["status"] = status_filter
 
     docs = await db.alerts.find(filters, {"_id": 0}).sort("created_at", -1).to_list(200)
+
+    # Teacher class-scope filter
+    if user_role == "teacher":
+        my_class = current.get("class_name")
+        if not my_class:
+            return []  # teacher not assigned to any class · sees nothing
+        # Fetch the class's students
+        class_student_ids = {
+            u["id"] async for u in db.users.find(
+                {"role": "student", "class_name": my_class},
+                {"_id": 0, "id": 1},
+            )
+        }
+        docs = [d for d in docs if d.get("student_id") in class_student_ids]
+
     return docs
 
 
@@ -465,6 +502,15 @@ DEFAULT_ALERT_KEYWORDS = [
     "想死", "自殺", "傷害自己", "唔想再返學", "打我", "救命",
     "跳樓", "跳橋", "跳海", "食藥自殺", "劏頸", "冇人愛", "唔想活",
     "想結束", "咁樣落去", "無意義",
+]
+
+# BAN list — content that cannot appear in PUBLIC community posts (is_public=True).
+# Diary / private entries are NOT filtered by this list · users can freely vent in private.
+# Schools customize their own list on the admin panel · backend keeps this hardcoded floor for safety.
+DEFAULT_POST_BAN_KEYWORDS = [
+    # Cantonese/HK common profanity — kept intentionally minimal on backend.
+    "屌", "你老母", "仆街", "冚家鏟", "死開", "賤人", "八婆", "X你",
+    "傻仔", "傻婆", "廢人", "低B", "白痴", "智障",
 ]
 
 # Roles that can moderate community — delete other users' PUBLIC posts.
@@ -826,9 +872,9 @@ async def seed_demo_role_accounts():
     Idempotent: only creates missing accounts, never overwrites.
     Password for all demo accounts: `demo1234`."""
     DEMO_ACCOUNTS = [
-        {"email": "student@demo.moodful.app",     "role": "student",      "name": "陳小明 (學生 A)"},
-        {"email": "student2@demo.moodful.app",    "role": "student",      "name": "李小美 (學生 B)"},
-        {"email": "teacher@demo.moodful.app",     "role": "teacher",      "name": "陳老師 (班主任)"},
+        {"email": "student@demo.moodful.app",     "role": "student",      "name": "陳小明 (學生 A)", "class_name": "6A"},
+        {"email": "student2@demo.moodful.app",    "role": "student",      "name": "李小美 (學生 B)", "class_name": "6A"},
+        {"email": "teacher@demo.moodful.app",     "role": "teacher",      "name": "陳老師 (班主任)", "class_name": "6A"},
         {"email": "counsellor@demo.moodful.app",  "role": "counsellor",   "name": "李輔導 (輔導老師)"},
         {"email": "parent@demo.moodful.app",      "role": "parent",       "name": "王太 (家長)"},
         {"email": "school@demo.moodful.app",      "role": "school_admin", "name": "校長 (校方管理)"},
@@ -839,8 +885,13 @@ async def seed_demo_role_accounts():
     for acc in DEMO_ACCOUNTS:
         existing = await db.users.find_one({"email": acc["email"]})
         if existing:
+            change = {}
             if existing.get("role") != acc["role"]:
-                await db.users.update_one({"email": acc["email"]}, {"$set": {"role": acc["role"]}})
+                change["role"] = acc["role"]
+            if acc.get("class_name") and existing.get("class_name") != acc["class_name"]:
+                change["class_name"] = acc["class_name"]
+            if change:
+                await db.users.update_one({"email": acc["email"]}, {"$set": change})
                 updated += 1
             continue
         doc = {
@@ -855,6 +906,7 @@ async def seed_demo_role_accounts():
             "diary_style": {},
             "active_icon_pack": "classic",
             "role": acc["role"],
+            "class_name": acc.get("class_name"),
         }
         await db.users.insert_one(doc)
         created += 1

@@ -1,5 +1,5 @@
 import { Feather } from '@expo/vector-icons';
-import { useMemo } from 'react';
+import { useMemo, useEffect, useState } from 'react';
 import { ScrollView, StyleSheet, Text, View, Pressable, Alert } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
@@ -9,7 +9,17 @@ import { EMOTIONS, EMOTION_BY_KEY } from '@/src/constants/emotions';
 import { ENERGY_META, EnergyLevel } from '@/src/constants/energy';
 import { RoleHeader } from '@/src/components/role-header';
 import { useSchoolEnergyMap } from '@/src/hooks/use-school-energy-map';
+import { api } from '@/src/lib/api';
 import { COLORS, RADIUS, SPACING } from '@/src/constants/theme';
+
+type ApiAlert = {
+  id: string;
+  student_display_name?: string | null;
+  matched_keywords: string[];
+  note_snippet: string;
+  created_at: string;
+  status: string;
+};
 
 // 每班的能量分佈 (mock)
 const CLASS_DATA = [
@@ -83,6 +93,13 @@ function ClassCard({ c, bowls }: { c: typeof CLASS_DATA[number]; bowls: typeof F
 
 export default function TeacherDashboard() {
   const { map: energyMap } = useSchoolEnergyMap();
+  const [alerts, setAlerts] = useState<ApiAlert[]>([]);
+
+  useEffect(() => {
+    api.get<ApiAlert[]>('/alerts?status_filter=open')
+      .then(setAlerts)
+      .catch(() => setAlerts([]));
+  }, []);
 
   // Pick the FIRST emotion mapped to each bucket in EMOTIONS order — the "representative bowl".
   // Falls back to hardcoded happy/calm/sad if a bucket is empty in the school's config.
@@ -116,6 +133,35 @@ export default function TeacherDashboard() {
           title="老師都可以用呢個 App"
           subtitle="關心學生之前 · 先關心自己 · 撳我打卡今日心情"
         />
+
+        {/* Real keyword alerts (only students in this teacher's class) */}
+        {alerts.length > 0 && (
+          <View style={styles.kwAlertBox}>
+            <View style={styles.alertHeader}>
+              <Feather name="alert-octagon" size={16} color="#E86A6A" />
+              <Text style={styles.alertTitle}>🚨 你班學生嘅關鍵字警示</Text>
+              <View style={[styles.alertCount, { backgroundColor: '#E86A6A' }]}>
+                <Text style={styles.alertCountText}>{alerts.length}</Text>
+              </View>
+            </View>
+            {alerts.map((a) => (
+              <View key={a.id} style={styles.kwAlertItem}>
+                <Text style={styles.kwStudent}>{a.student_display_name || '學生'}</Text>
+                <View style={styles.kwPillRow}>
+                  {a.matched_keywords.map((k) => (
+                    <View key={k} style={styles.kwPill}>
+                      <Text style={styles.kwPillText}>「{k}」</Text>
+                    </View>
+                  ))}
+                </View>
+                <Text style={styles.kwSnippet} numberOfLines={2}>{a.note_snippet}</Text>
+              </View>
+            ))}
+            <Text style={styles.alertHint}>
+              🔒 呢啲警示係關鍵字自動觸發 · 只顯示你班同學仔嘅內容。建議先聯絡輔導老師一齊跟進。
+            </Text>
+          </View>
+        )}
 
         {/* 需要關注嘅學生 */}
         <View style={styles.alertBox}>
@@ -419,4 +465,33 @@ const styles = StyleSheet.create({
   },
   tipText: { flex: 1, fontSize: 12, color: '#4A6B54', lineHeight: 18 },
   tipBold: { fontWeight: '700' },
+  // Keyword alert box (real backend data)
+  kwAlertBox: {
+    backgroundColor: '#FDECEC',
+    borderRadius: RADIUS.md,
+    padding: SPACING.md,
+    marginBottom: SPACING.md,
+    borderLeftWidth: 4,
+    borderLeftColor: '#E86A6A',
+  },
+  kwAlertItem: {
+    paddingVertical: SPACING.sm,
+    borderTopWidth: 1,
+    borderTopColor: 'rgba(0,0,0,0.06)',
+  },
+  kwStudent: { fontSize: 14, fontWeight: '800', color: '#7A2E2E', marginBottom: 4 },
+  kwPillRow: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 4,
+    marginBottom: 6,
+  },
+  kwPill: {
+    paddingHorizontal: 8,
+    paddingVertical: 2,
+    borderRadius: RADIUS.pill,
+    backgroundColor: '#E86A6A',
+  },
+  kwPillText: { fontSize: 11, fontWeight: '700', color: '#FFF' },
+  kwSnippet: { fontSize: 12, color: '#5A3F3F', lineHeight: 17, fontStyle: 'italic' },
 });
