@@ -18,12 +18,40 @@ import { COLORS, RADIUS, SPACING } from '@/src/constants/theme';
 
 const LEVEL_ORDER: EnergyLevel[] = ['high', 'steady', 'low'];
 
+// 6-card grid navigation — home shows these cards, tap goes into a subpage.
+type AdminView =
+  | 'home'
+  | 'dashboard'
+  | 'accounts'
+  | 'policy'
+  | 'energy'
+  | 'community'
+  | 'history';
+
+const ADMIN_CARDS: {
+  key: Exclude<AdminView, 'home'>;
+  icon: keyof typeof Feather.glyphMap;
+  title: string;
+  subtitle: string;
+  bg: string;
+  iconColor: string;
+}[] = [
+  { key: 'dashboard', icon: 'bar-chart-2',  title: '📊 儀表板',     subtitle: '數據 · 警報 · 趨勢',      bg: '#DDE9F9', iconColor: '#5A7DA6' },
+  { key: 'accounts',  icon: 'users',        title: '👥 學生 · 帳戶', subtitle: 'CSV · Invite · 家長配對', bg: '#EEE0F0', iconColor: '#7B5B9F' },
+  { key: 'policy',    icon: 'shield',       title: '🚨 內容政策',    subtitle: '關鍵字 · 通知 · 閱讀權限', bg: '#FDECEC', iconColor: '#E86A6A' },
+  { key: 'energy',    icon: 'zap',          title: '🎨 情緒能量',    subtitle: 'Icon 分類 · 客製化',       bg: '#FEE9CE', iconColor: '#B57D2A' },
+  { key: 'community', icon: 'message-square', title: '💬 社群設定', subtitle: '匿名 · 可見度 · TTL',       bg: '#E4F0E8', iconColor: '#5A7A6C' },
+  { key: 'history',   icon: 'archive',      title: '📜 社群歷史',    subtitle: '檢閱 · 刪除 · Audit',       bg: '#E7EEF9', iconColor: '#3E5B7F' },
+];
+
+
 function nextLevel(level: EnergyLevel): EnergyLevel {
   const idx = LEVEL_ORDER.indexOf(level);
   return LEVEL_ORDER[(idx + 1) % LEVEL_ORDER.length];
 }
 
 export default function SchoolAdmin() {
+  const [view, setView] = useState<AdminView>('home');
   const [policy, setPolicy] = useState<AlertPolicy>(DEFAULT_POLICY);
   const [newKeyword, setNewKeyword] = useState('');
   const [postPolicy, setPostPolicy] = useState<PostPolicy>(DEFAULT_POST_POLICY);
@@ -231,38 +259,84 @@ export default function SchoolAdmin() {
       <RoleHeader role="school_admin" title="校方管理 · 中心" />
 
       <ScrollView contentContainerStyle={styles.scroll} showsVerticalScrollIndicator={false}>
+        {/* School hero — always visible so admin knows where they are */}
         <View style={styles.hero}>
           <Text style={styles.heroSchool}>飯碗小學（示範）</Text>
           <Text style={styles.heroSub}>訂閱狀態 · Enterprise · 2025-08 至 2026-08</Text>
         </View>
 
-        {/* Self-care CTA — school leaders also carry emotional weight */}
-        <RoleSelfCareCard
-          bg="#F0E6F5"
-          border="#D7BEE8"
-          bowlBg="#FFF"
-          bowlKey="peaceful"
-          title="校長 · 主任都用得到"
-          subtitle="決策壓力大 · 撳我體驗學生嘅版面 · 幫自己 recharge"
-        />
+        {view !== 'home' && (
+          <Pressable
+            testID="admin-back-home"
+            onPress={() => setView('home')}
+            style={styles.backRow}
+          >
+            <Feather name="chevron-left" size={20} color={COLORS.textPrimary} />
+            <Text style={styles.backText}>返回中心</Text>
+          </Pressable>
+        )}
 
-        {/* Big stats */}
-        <View style={styles.statsGrid}>
-          {[
-            { label: '註冊學生', v: '412', hint: '共 615 人', c: '#B9DBBC' },
-            { label: '在職老師', v: '38', hint: '9 個班主任', c: '#F0AE64' },
-            { label: '本週警示', v: '7', hint: '4 個未處理', c: '#F0A0A0' },
-            { label: '打卡率', v: '78%', hint: '呢週', c: '#7DBEE8' },
-          ].map((s) => (
-            <View key={s.label} style={[styles.stat, { backgroundColor: s.c + '30' }]}>
-              <Text style={[styles.statV, { color: '#2D3142' }]}>{s.v}</Text>
-              <Text style={styles.statL}>{s.label}</Text>
-              <Text style={styles.statH}>{s.hint}</Text>
+        {view === 'home' && (
+          <>
+            {/* Self-care CTA — school leaders also carry emotional weight */}
+            <RoleSelfCareCard
+              bg="#F0E6F5"
+              border="#D7BEE8"
+              bowlBg="#FFF"
+              bowlKey="peaceful"
+              title="校長 · 主任都用得到"
+              subtitle="決策壓力大 · 撳我體驗學生嘅版面 · 幫自己 recharge"
+            />
+
+            <View style={styles.gridWrap}>
+              {ADMIN_CARDS.map((card) => (
+                <Pressable
+                  key={card.key}
+                  testID={`admin-nav-${card.key}`}
+                  onPress={() => setView(card.key)}
+                  style={[styles.gridCard, { backgroundColor: card.bg }]}
+                >
+                  <View style={[styles.gridIcon, { backgroundColor: '#FFF' }]}>
+                    <Feather name={card.icon} size={22} color={card.iconColor} />
+                  </View>
+                  <Text style={styles.gridTitle}>{card.title}</Text>
+                  <Text style={styles.gridSub}>{card.subtitle}</Text>
+                </Pressable>
+              ))}
             </View>
-          ))}
-        </View>
 
-        <Text style={styles.sectionTitle}>學生管理</Text>
+            <View style={styles.footerNote}>
+              <Feather name="shield" size={13} color="#7A5C3F" />
+              <Text style={styles.footerText}>
+                所有學生私隱資料加密儲存 · 符合《個人資料（私隱）條例》· 老師/家長 access 均有 audit trail。
+              </Text>
+            </View>
+          </>
+        )}
+
+        {view === 'dashboard' && (
+          <>
+            <Text style={styles.subpageTitle}>📊 儀表板 · 數據概覽</Text>
+            <View style={styles.statsGrid}>
+              {[
+                { label: '註冊學生', v: '412', hint: '共 615 人', c: '#B9DBBC' },
+                { label: '在職老師', v: '38', hint: '9 個班主任', c: '#F0AE64' },
+                { label: '本週警示', v: '7', hint: '4 個未處理', c: '#F0A0A0' },
+                { label: '打卡率', v: '78%', hint: '呢週', c: '#7DBEE8' },
+              ].map((s) => (
+                <View key={s.label} style={[styles.stat, { backgroundColor: s.c + '30' }]}>
+                  <Text style={[styles.statV, { color: '#2D3142' }]}>{s.v}</Text>
+                  <Text style={styles.statL}>{s.label}</Text>
+                  <Text style={styles.statH}>{s.hint}</Text>
+                </View>
+              ))}
+            </View>
+          </>
+        )}
+
+        {view === 'accounts' && (
+          <>
+            <Text style={styles.subpageTitle}>👥 學生 · 帳戶管理</Text>
 
         <Pressable style={styles.actionCard} onPress={() => Alert.alert('CSV 上載', '示範版：將學生名單 CSV 上載 · 系統自動生成 invite code 派發俾家長。')}>
           <View style={[styles.actIcon, { backgroundColor: '#EEE0F0' }]}>
@@ -297,7 +371,22 @@ export default function SchoolAdmin() {
           <Feather name="chevron-right" size={20} color={COLORS.textDisabled} />
         </Pressable>
 
-        <Text style={styles.sectionTitle}>私隱與警示政策</Text>
+        <Pressable style={styles.actionCard} onPress={() => Alert.alert('家長 · 學生 配對', '快將推出：Admin 可以喺呢度建立新嘅學生 + 家長帳戶並自動 pair 起 · 用嚟俾未 register 嘅家庭快速上機。')}>
+          <View style={[styles.actIcon, { backgroundColor: '#FDECEC' }]}>
+            <Feather name="user-plus" size={22} color="#E86A6A" />
+          </View>
+          <View style={{ flex: 1 }}>
+            <Text style={styles.actTitle}>家長 · 學生 配對</Text>
+            <Text style={styles.actSub}>Admin 建立新配對 · 一次搞掂兩個帳戶</Text>
+          </View>
+          <Feather name="chevron-right" size={20} color={COLORS.textDisabled} />
+        </Pressable>
+          </>
+        )}
+
+        {view === 'policy' && (
+          <>
+            <Text style={styles.subpageTitle}>🚨 內容政策</Text>
 
         <View style={styles.policyIntro}>
           <Feather name="info" size={12} color="#5A7A6C" />
@@ -552,9 +641,12 @@ export default function SchoolAdmin() {
             日記可以自由發洩（包括粗口）· Post 則要適合公開俾其他同學睇。兩套字獨立設定。
           </Text>
         </View>
+          </>
+        )}
 
-        {/* Emotion → Energy mapping · school customizable */}
-        <Text style={styles.sectionTitle}>情緒能量分類</Text>
+        {view === 'energy' && (
+          <>
+            <Text style={styles.subpageTitle}>🎨 情緒能量分類</Text>
         <View style={styles.energyIntro}>
           <Feather name="info" size={13} color={COLORS.textSecondary} />
           <Text style={styles.energyIntroText}>
@@ -600,9 +692,12 @@ export default function SchoolAdmin() {
           <Feather name="rotate-ccw" size={14} color={COLORS.textSecondary} />
           <Text style={styles.resetBtnText}>還原預設分類</Text>
         </Pressable>
+          </>
+        )}
 
-        {/* Community settings — school-configurable */}
-        <Text style={styles.sectionTitle}>社群權限設定</Text>
+        {view === 'community' && (
+          <>
+            <Text style={styles.subpageTitle}>💬 社群設定</Text>
 
         <View style={styles.commCard}>
           {/* Toggle 1: student community enabled */}
@@ -761,9 +856,12 @@ export default function SchoolAdmin() {
             硬性規則：學生**永遠**唔會見到大人社群 · 呢個係 backend 級別鎖死 · 家長/校方冇權限可以 override。
           </Text>
         </View>
+          </>
+        )}
 
-        {/* Community history (admin-only · includes expired posts) */}
-        <Text style={styles.sectionTitle}>社群歷史檢閱</Text>
+        {view === 'history' && (
+          <>
+            <Text style={styles.subpageTitle}>📜 社群歷史檢閱</Text>
 
         <View style={styles.commCard}>
           <Text style={styles.historyIntro}>
@@ -834,9 +932,12 @@ export default function SchoolAdmin() {
             );
           })}
         </View>
+          </>
+        )}
 
-
-        <Text style={styles.sectionTitle}>數據 · 報告</Text>
+        {view === 'dashboard' && (
+          <>
+            <Text style={styles.sectionTitle}>報告</Text>
 
         <View style={styles.reportCard}>
           <View style={styles.reportRow}>
@@ -861,13 +962,17 @@ export default function SchoolAdmin() {
             </View>
           </View>
         </View>
+          </>
+        )}
 
-        <View style={styles.footerNote}>
-          <Feather name="shield" size={13} color="#7A5C3F" />
-          <Text style={styles.footerText}>
-            所有學生私隱資料加密儲存 · 符合《個人資料（私隱）條例》· 老師/家長 access 均有 audit trail。
-          </Text>
-        </View>
+        {view !== 'home' && (
+          <View style={styles.footerNote}>
+            <Feather name="shield" size={13} color="#7A5C3F" />
+            <Text style={styles.footerText}>
+              所有學生私隱資料加密儲存 · 符合《個人資料（私隱）條例》· 老師/家長 access 均有 audit trail。
+            </Text>
+          </View>
+        )}
 
         <View style={{ height: SPACING.xxl }} />
       </ScrollView>
@@ -881,6 +986,68 @@ const styles = StyleSheet.create({
   hero: { marginBottom: SPACING.md },
   heroSchool: { fontSize: 22, fontWeight: '800', color: COLORS.textPrimary },
   heroSub: { fontSize: 12, color: COLORS.textSecondary, marginTop: 2 },
+
+  // Home grid — 2-col card layout
+  gridWrap: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: SPACING.md,
+    marginTop: SPACING.md,
+    marginBottom: SPACING.lg,
+  },
+  gridCard: {
+    width: '47%',
+    borderRadius: RADIUS.lg,
+    padding: SPACING.md,
+    minHeight: 130,
+    justifyContent: 'space-between',
+  },
+  gridIcon: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginBottom: SPACING.sm,
+    shadowColor: '#000',
+    shadowOpacity: 0.05,
+    shadowRadius: 3,
+    shadowOffset: { width: 0, height: 1 },
+    elevation: 1,
+  },
+  gridTitle: {
+    fontSize: 15,
+    fontWeight: '800',
+    color: COLORS.textPrimary,
+    marginBottom: 2,
+  },
+  gridSub: {
+    fontSize: 11,
+    color: COLORS.textSecondary,
+    lineHeight: 15,
+  },
+
+  // Back button + subpage title (visible in subpages only)
+  backRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+    paddingVertical: SPACING.sm,
+    marginBottom: SPACING.xs,
+    alignSelf: 'flex-start',
+  },
+  backText: {
+    fontSize: 14,
+    fontWeight: '700',
+    color: COLORS.textPrimary,
+  },
+  subpageTitle: {
+    fontSize: 20,
+    fontWeight: '800',
+    color: COLORS.textPrimary,
+    marginBottom: SPACING.md,
+  },
+
   statsGrid: {
     flexDirection: 'row',
     flexWrap: 'wrap',

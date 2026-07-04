@@ -519,6 +519,25 @@ class SchoolPolicyUpdate(BaseModel):
     post_ban_keywords: Optional[List[str]] = None
     block_crisis_in_posts: Optional[bool] = None
     notify_parents_on_alert: Optional[bool] = None
+    counsellor_can_view_note_content: Optional[bool] = None
+
+
+class FamilyCreate(BaseModel):
+    """Payload for admin-created student + parent pair."""
+    student_email: str
+    student_name: str
+    student_password: str
+    student_class: Optional[str] = None
+    parent_email: str
+    parent_name: str
+    parent_password: str
+
+
+class NoteRevealRequest(BaseModel):
+    """Audit-logged request from a counsellor to view an alert's original note.
+    `consent_confirmed=True` is required — the frontend gates this behind a modal."""
+    consent_confirmed: bool = False
+    reason: Optional[str] = None
 
 
 def _clean_kw_list(items: Optional[List[str]]) -> List[str]:
