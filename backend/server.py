@@ -322,6 +322,8 @@ async def create_entry(data: EntryIn, current=Depends(get_current_user)):
         "community_scope": community_scope_for(author_role),
     }
     await db.entries.insert_one(doc)
+    # Fire-and-forget keyword safety scan (never blocks the response)
+    await _check_and_create_alert(doc, current)
     return EntryOut(
         **{k: v for k, v in doc.items() if k != "_id"},
         hearts=0,
@@ -397,6 +399,47 @@ async def community_history(
     return await _entries_with_hearts(docs, current["id"])
 
 
+# ============ Safety Alerts ============
+@api_router.get("/alerts")
+async def list_alerts(status_filter: Optional[str] = None, current=Depends(get_current_user)):
+    """List keyword-triggered alerts. Restricted to moderator roles (counsellor · school_admin) + teacher."""
+    user_role = current.get("role", "student")
+    ALERT_VIEWERS = {"school_admin", "counsellor", "teacher"}
+    if user_role not in ALERT_VIEWERS:
+        raise HTTPException(status_code=403, detail="Not permitted to view alerts")
+
+    filters: dict = {}
+    if status_filter in ("open", "reviewed", "resolved"):
+        filters["status"] = status_filter
+
+    docs = await db.alerts.find(filters, {"_id": 0}).sort("created_at", -1).to_list(200)
+    return docs
+
+
+@api_router.patch("/alerts/{alert_id}")
+async def update_alert(alert_id: str, current=Depends(get_current_user)):
+    """Mark an alert as reviewed by the current moderator."""
+    user_role = current.get("role", "student")
+    if user_role not in {"school_admin", "counsellor", "teacher"}:
+        raise HTTPException(status_code=403, detail="Not permitted")
+
+    alert = await db.alerts.find_one({"id": alert_id})
+    if not alert:
+        raise HTTPException(status_code=404, detail="Alert not found")
+
+    await db.alerts.update_one(
+        {"id": alert_id},
+        {"$set": {
+            "status": "reviewed",
+            "reviewed_by": current.get("email"),
+            "reviewed_at": now_iso(),
+        }},
+    )
+    doc = await db.alerts.find_one({"id": alert_id}, {"_id": 0})
+    return doc
+
+
+
 @api_router.post("/entries/{entry_id}/react", response_model=EntryOut)
 async def react_entry(entry_id: str, current=Depends(get_current_user)):
     entry = await db.entries.find_one({"id": entry_id}, {"_id": 0})
@@ -416,9 +459,50 @@ async def react_entry(entry_id: str, current=Depends(get_current_user)):
     return result[0]
 
 
+# Default keyword monitoring — used at entry-creation time to flag concerning content.
+# Schools can customize on frontend, but backend uses this authoritative list for safety.
+DEFAULT_ALERT_KEYWORDS = [
+    "想死", "自殺", "傷害自己", "唔想再返學", "打我", "救命",
+    "跳樓", "跳橋", "跳海", "食藥自殺", "劏頸", "冇人愛", "唔想活",
+    "想結束", "咁樣落去", "無意義",
+]
+
 # Roles that can moderate community — delete other users' PUBLIC posts.
 # Keeps private diary entries strictly owner-only.
 MODERATOR_ROLES = {"school_admin", "counsellor"}
+
+
+async def _check_and_create_alert(entry_doc: dict, author: dict):
+    """Scan a new entry's note against alert keywords · create alert record if any match.
+    Fully non-blocking — errors are logged but don't fail the entry creation."""
+    try:
+        note = (entry_doc.get("note") or "").strip()
+        if not note:
+            return
+        matched = [kw for kw in DEFAULT_ALERT_KEYWORDS if kw in note]
+        if not matched:
+            return
+        await db.alerts.insert_one({
+            "id": str(uuid.uuid4()),
+            "entry_id": entry_doc["id"],
+            "student_id": author["id"],
+            "student_email": author["email"],
+            "student_display_name": author.get("display_name"),
+            "student_role": author.get("role", "student"),
+            "matched_keywords": matched,
+            "note_snippet": note[:400],
+            "entry_date": entry_doc.get("entry_date"),
+            "created_at": now_iso(),
+            "status": "open",           # open · reviewed · resolved
+            "reviewed_by": None,
+            "reviewed_at": None,
+        })
+        logger.warning(
+            f"ALERT: keywords {matched} detected in entry by {author.get('email')} "
+            f"({author.get('role')})"
+        )
+    except Exception as e:
+        logger.error(f"Alert scan failed: {e}")
 
 
 @api_router.delete("/entries/{entry_id}")

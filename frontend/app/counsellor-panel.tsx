@@ -1,10 +1,25 @@
 import { Feather } from '@expo/vector-icons';
+import { useEffect, useState } from 'react';
 import { ScrollView, StyleSheet, Text, View, Pressable, Alert } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { RoleHeader } from '@/src/components/role-header';
 import { RoleSelfCareCard } from '@/src/components/role-selfcare-card';
+import { api } from '@/src/lib/api';
 import { COLORS, RADIUS, SPACING } from '@/src/constants/theme';
+
+type ApiAlert = {
+  id: string;
+  entry_id: string;
+  student_id: string;
+  student_email: string;
+  student_display_name?: string | null;
+  matched_keywords: string[];
+  note_snippet: string;
+  entry_date?: string;
+  created_at: string;
+  status: 'open' | 'reviewed' | 'resolved';
+};
 
 const URGENT = [
   { name: '陳 * 文', className: '6A', reason: '日記出現「唔想返學」等字詞', days: 1, sev: 'high' },
@@ -51,6 +66,23 @@ function CaseCard({ item }: { item: typeof URGENT[number] }) {
 }
 
 export default function CounsellorPanel() {
+  const [alerts, setAlerts] = useState<ApiAlert[]>([]);
+
+  useEffect(() => {
+    api.get<ApiAlert[]>('/alerts?status_filter=open')
+      .then(setAlerts)
+      .catch(() => setAlerts([]));
+  }, []);
+
+  const markReviewed = async (id: string) => {
+    try {
+      await api.patch<ApiAlert>(`/alerts/${id}`, {});
+      setAlerts((prev) => prev.filter((a) => a.id !== id));
+    } catch (e: any) {
+      Alert.alert('更新失敗', e?.message || '請再試');
+    }
+  };
+
   return (
     <SafeAreaView style={styles.safe} edges={['top']}>
       <RoleHeader role="counsellor" title="輔導老師 · 專屬版" />
@@ -58,7 +90,11 @@ export default function CounsellorPanel() {
       <ScrollView contentContainerStyle={styles.scroll} showsVerticalScrollIndicator={false}>
         <View style={styles.hero}>
           <Text style={styles.heroGreet}>李輔導 · 早晨</Text>
-          <Text style={styles.heroSub}>今日 {URGENT.length + FOLLOW_UP.length} 個 case 等你 · 2 個緊急</Text>
+          <Text style={styles.heroSub}>
+            {alerts.length > 0
+              ? `⚠️ ${alerts.length} 個新關鍵字警示 · ${URGENT.length + FOLLOW_UP.length} 個追蹤 case`
+              : `今日 ${URGENT.length + FOLLOW_UP.length} 個 case 等你 · 2 個緊急`}
+          </Text>
         </View>
 
         {/* Self-care CTA — counsellor themselves also need to check in */}
@@ -70,6 +106,53 @@ export default function CounsellorPanel() {
           title="幫人之前 · 記得幫自己"
           subtitle="輔導工作情緒負荷大 · 撳我用返呢個 App 為自己打卡"
         />
+
+        {/* Real keyword alerts */}
+        {alerts.length > 0 && (
+          <>
+            <Text style={styles.sectionTitle}>🚨 關鍵字警示 · 即時觸發</Text>
+            {alerts.map((a) => (
+              <View key={a.id} style={styles.alertCard}>
+                <View style={styles.alertHead}>
+                  <Feather name="alert-octagon" size={16} color="#E86A6A" />
+                  <Text style={styles.alertStudent}>
+                    {a.student_display_name || '學生'}
+                  </Text>
+                  <View style={styles.kwPill}>
+                    <Text style={styles.kwPillText}>
+                      {a.matched_keywords.map((k) => `「${k}」`).join(' · ')}
+                    </Text>
+                  </View>
+                </View>
+                <Text style={styles.alertSnippet} numberOfLines={3}>
+                  {a.note_snippet}
+                </Text>
+                <View style={styles.alertActionRow}>
+                  <Text style={styles.alertMeta}>
+                    {new Date(a.created_at).toLocaleString('zh-HK')}
+                  </Text>
+                  <Pressable
+                    testID={`alert-review-${a.id}`}
+                    onPress={() =>
+                      Alert.alert(
+                        '標記已跟進？',
+                        '確認你已聯絡呢位同學仔或者已 escalate · 之後呢條警示會消失喺列表。',
+                        [
+                          { text: '取消', style: 'cancel' },
+                          { text: '標記', onPress: () => markReviewed(a.id) },
+                        ],
+                      )
+                    }
+                    style={styles.reviewBtn}
+                  >
+                    <Feather name="check" size={12} color="#FFF" />
+                    <Text style={styles.reviewBtnText}>已跟進</Text>
+                  </Pressable>
+                </View>
+              </View>
+            ))}
+          </>
+        )}
 
         <View style={styles.statsRow}>
           <View style={[styles.stat, { backgroundColor: '#FDE0E0' }]}>
@@ -154,6 +237,53 @@ const styles = StyleSheet.create({
     borderRadius: RADIUS.pill,
   },
   sevText: { fontSize: 10, fontWeight: '800' },
+  alertCard: {
+    backgroundColor: '#FDECEC',
+    borderLeftWidth: 4,
+    borderLeftColor: '#E86A6A',
+    borderRadius: RADIUS.md,
+    padding: SPACING.md,
+    marginBottom: SPACING.sm,
+  },
+  alertHead: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    flexWrap: 'wrap',
+    marginBottom: SPACING.sm,
+  },
+  alertStudent: { fontSize: 14, fontWeight: '800', color: '#7A2E2E' },
+  kwPill: {
+    paddingHorizontal: 8,
+    paddingVertical: 3,
+    borderRadius: RADIUS.pill,
+    backgroundColor: '#E86A6A',
+  },
+  kwPillText: { fontSize: 11, fontWeight: '700', color: '#FFF' },
+  alertSnippet: {
+    fontSize: 13,
+    color: '#5A3F3F',
+    lineHeight: 18,
+    marginBottom: SPACING.sm,
+    fontStyle: 'italic',
+  },
+  alertActionRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+  },
+  alertMeta: { fontSize: 11, color: '#8A5A5A' },
+  reviewBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: RADIUS.pill,
+    backgroundColor: '#7BA88C',
+  },
+  reviewBtnText: { fontSize: 12, fontWeight: '700', color: '#FFF' },
+
   privacyCard: {
     flexDirection: 'row',
     alignItems: 'flex-start',
