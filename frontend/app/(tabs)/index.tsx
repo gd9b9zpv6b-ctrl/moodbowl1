@@ -21,7 +21,6 @@ import { EMOTIONS, Emotion, EMOTION_BY_KEY, EMOTION_CATEGORIES, EmotionCategory 
 import { ENERGY_BY_KEY, EnergyLevel } from '@/src/constants/energy';
 import { COLORS, RADIUS, SPACING } from '@/src/constants/theme';
 import { SchoolCommunityConfig } from '@/src/lib/school-community-config';
-import { SchoolPolicies, scanNoteForPost } from '@/src/lib/school-policies';
 import { api, Entry } from '@/src/lib/api';
 import { useAuth } from '@/src/lib/auth-context';
 import { isDiaryUnlocked } from '@/src/lib/diary-lock';
@@ -187,59 +186,6 @@ export default function Home() {
 
   const save = async () => {
     if (selectedKeys.length === 0) return;
-
-    // Public posts go through school content policy · diary/private is unrestricted.
-    // Diary can contain profanity for private venting · community posts cannot.
-    if (share && !secret && note.trim()) {
-      const policies = await SchoolPolicies.get();
-      const { matchedBan, matchedCrisis } = scanNoteForPost(note, policies);
-
-      if (matchedCrisis.length > 0) {
-        // Crisis word in a PUBLIC post — steer them to private diary + support.
-        // We DO NOT block their diary entry · just refuse the public share.
-        return new Promise<void>((resolve) => {
-          RNAlert.alert(
-            '你嘅感受好重要 💛',
-            `我哋留意到你講到「${matchedCrisis[0]}」。呢類字唔啱出街俾其他同學睇 · 但你可以寫落私人日記或者揀「樹洞」匿名放低。\n\n如果而家好難頂 · 撳「即刻搵人傾」搵輔導老師。`,
-            [
-              {
-                text: '我改為只私人記錄',
-                onPress: () => {
-                  setShare(false);
-                  resolve();
-                },
-              },
-              {
-                text: '即刻搵人傾',
-                style: 'default',
-                onPress: () => {
-                  setShare(false);
-                  router.push('/help');
-                  resolve();
-                },
-              },
-              { text: '取消', style: 'cancel', onPress: () => resolve() },
-            ],
-          );
-        });
-      }
-
-      if (matchedBan.length > 0) {
-        RNAlert.alert(
-          '呢啲字唔可以出街 😅',
-          `你嘅 post 含有唔啱公開社群嘅字眼：「${matchedBan.join('、')}」\n\n可以：\n· 改咗啲字再出\n· 或者關咗「Share」淨係寫落私人日記（日記可以講任何說話）`,
-          [
-            { text: '我改字', style: 'cancel' },
-            {
-              text: '關咗 Share 淨係私人記錄',
-              onPress: () => setShare(false),
-            },
-          ],
-        );
-        return;
-      }
-    }
-
     setSaving(true);
     try {
       await api.post<Entry>('/entries', {
@@ -261,14 +207,66 @@ export default function Home() {
       setTimeout(() => setSaved(false), 2500);
       await load();
     } catch (e: any) {
-      // Surface content-policy blocks so the user knows why · silent on other errors.
+      // Backend has already logged an alert for counsellors before returning 400.
+      // We just need to surface a friendly message here — never a silent failure.
       const msg = String(e?.message || '');
-      if (msg.includes('post_content_blocked') || msg.includes('唔可以公開')) {
-        RNAlert.alert(
-          '呢個 post 出唔到',
-          '你嘅內容含有唔啱公開社群嘅字眼。改咗啲字 · 或者關咗「Share」淨係寫落私人日記。',
-          [{ text: '好' }],
-        );
+      let matchedBan: string[] = [];
+      let matchedCrisis: string[] = [];
+      try {
+        // api.ts serialises non-string detail with JSON.stringify · try to parse it back
+        const parsed = JSON.parse(msg);
+        if (parsed && typeof parsed === 'object') {
+          matchedBan = parsed.matched_ban || [];
+          matchedCrisis = parsed.matched_crisis || [];
+        }
+      } catch {
+        // fall through — use plain string checks
+      }
+
+      const isBlocked =
+        msg.includes('post_content_blocked') ||
+        msg.includes('唔可以公開') ||
+        matchedBan.length > 0 ||
+        matchedCrisis.length > 0;
+
+      if (isBlocked) {
+        if (matchedCrisis.length > 0) {
+          // Crisis word · steer toward private diary + counsellor. Backend has notified school.
+          RNAlert.alert(
+            '你嘅感受好重要 💛',
+            `我哋留意到你講到「${matchedCrisis[0]}」。呢類字冇貼出去 · 但輔導老師已收到通知。\n\n你可以：\n· 關咗「Share」寫落私人日記\n· 或者即刻搵輔導老師傾傾`,
+            [
+              {
+                text: '關咗 Share 寫日記',
+                onPress: () => setShare(false),
+              },
+              {
+                text: '搵輔導老師',
+                onPress: () => {
+                  setShare(false);
+                  router.push('/help');
+                },
+              },
+              { text: '知道咗', style: 'cancel' },
+            ],
+          );
+        } else if (matchedBan.length > 0) {
+          RNAlert.alert(
+            '呢啲字唔可以出街 😅',
+            `你嘅 post 含有：「${matchedBan.join('、')}」\n\n呢啲字冇貼出去 · 但校方已收到記錄。可以：\n· 改咗啲字再出\n· 或者關咗「Share」寫落私人日記（日記可以講任何說話）`,
+            [
+              { text: '我改字', style: 'cancel' },
+              { text: '關 Share 寫日記', onPress: () => setShare(false) },
+            ],
+          );
+        } else {
+          // Generic block · no matched words parsed (older backend response)
+          RNAlert.alert(
+            '呢個 post 出唔到',
+            '你嘅內容含有唔啱公開社群嘅字眼。校方已收到記錄。可以改字再出 · 或者關咗「Share」淨係寫落私人日記。',
+            [{ text: '好' }],
+          );
+        }
       }
     } finally {
       setSaving(false);

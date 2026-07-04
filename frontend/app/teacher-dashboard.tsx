@@ -16,7 +16,6 @@ type ApiAlert = {
   id: string;
   student_display_name?: string | null;
   matched_keywords: string[];
-  note_snippet: string;
   created_at: string;
   status: string;
   source?: 'diary' | 'community_post';
@@ -147,7 +146,6 @@ export default function TeacherDashboard() {
               </View>
             </View>
             {alerts.map((a) => {
-              const isBlockedPost = a.source === 'community_post';
               const sourceLabel = a.alert_type === 'blocked_crisis_post'
                 ? '🚫 出 post 被攔截 · 危機字'
                 : a.alert_type === 'blocked_profanity_post'
@@ -164,9 +162,7 @@ export default function TeacherDashboard() {
                       </View>
                     ))}
                   </View>
-                  <Text style={styles.kwSnippet} numberOfLines={2}>
-                    {isBlockedPost ? `嘗試 post：${a.note_snippet}` : a.note_snippet}
-                  </Text>
+                  {/* PRIVACY: 唔顯示學生原文 · 老師只需要知道有邊個字被觸發 */}
                 </View>
               );
             })}

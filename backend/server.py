@@ -661,7 +661,11 @@ MODERATOR_ROLES = {"school_admin", "counsellor"}
 
 async def _check_and_create_alert(entry_doc: dict, author: dict):
     """Scan a new entry's note against alert keywords · create alert record if any match.
-    Fully non-blocking — errors are logged but don't fail the entry creation."""
+    Fully non-blocking — errors are logged but don't fail the entry creation.
+
+    PRIVACY: we intentionally DO NOT persist the note text — only the matched keyword(s).
+    Teachers/parents should know a signal was triggered, NOT read the student's private words.
+    """
     try:
         note = (entry_doc.get("note") or "").strip()
         if not note:
@@ -679,7 +683,6 @@ async def _check_and_create_alert(entry_doc: dict, author: dict):
             "student_display_name": author.get("display_name"),
             "student_role": author.get("role", "student"),
             "matched_keywords": matched,
-            "note_snippet": note[:400],
             "entry_date": entry_doc.get("entry_date"),
             "created_at": now_iso(),
             "status": "open",           # open · reviewed · resolved
@@ -706,9 +709,11 @@ async def _log_blocked_post_alert(
 ):
     """Record an alert when a public post is BLOCKED by content policy.
     The entry itself is NOT saved (blocked), but counsellors should still know.
-    Non-blocking — errors are logged but never surface to the student."""
+
+    PRIVACY: same as diary alerts — only the matched keywords are persisted.
+    The attempted content itself is not stored. Non-blocking on errors.
+    """
     try:
-        note = (note_text or "").strip()
         if not (matched_ban or matched_crisis):
             return
         # Crisis in an attempted PUBLIC post is more urgent than the same word in a diary.
@@ -724,7 +729,6 @@ async def _log_blocked_post_alert(
             "matched_keywords": matched_crisis + matched_ban,
             "matched_ban": matched_ban,
             "matched_crisis": matched_crisis,
-            "note_snippet": note[:400],
             "entry_date": entry_date,
             "created_at": now_iso(),
             "status": "open",

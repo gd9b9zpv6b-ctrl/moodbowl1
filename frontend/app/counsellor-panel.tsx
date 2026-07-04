@@ -17,7 +17,6 @@ type ApiAlert = {
   matched_keywords: string[];
   matched_ban?: string[];
   matched_crisis?: string[];
-  note_snippet: string;
   entry_date?: string;
   created_at: string;
   status: 'open' | 'reviewed' | 'resolved';
@@ -116,7 +115,6 @@ export default function CounsellorPanel() {
           <>
             <Text style={styles.sectionTitle}>🚨 關鍵字警示 · 即時觸發</Text>
             {alerts.map((a) => {
-              const isBlockedPost = a.source === 'community_post';
               const isBlockedCrisis = a.alert_type === 'blocked_crisis_post';
               const isBlockedProfanity = a.alert_type === 'blocked_profanity_post';
               // Distinct visual cue so counsellor immediately knows what happened.
@@ -146,9 +144,9 @@ export default function CounsellorPanel() {
                       </Text>
                     </View>
                   </View>
-                  <Text style={styles.alertSnippet} numberOfLines={3}>
-                    {isBlockedPost ? `嘗試 post：${a.note_snippet}` : a.note_snippet}
-                  </Text>
+                  {/* PRIVACY: we intentionally do NOT show the student's actual note text —
+                      only the matched trigger word(s) above. Counsellors act on the signal,
+                      not by reading the child's private diary. */}
                   <View style={styles.alertActionRow}>
                     <Text style={styles.alertMeta}>
                       {new Date(a.created_at).toLocaleString('zh-HK')}

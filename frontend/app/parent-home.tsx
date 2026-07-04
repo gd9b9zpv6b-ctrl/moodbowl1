@@ -17,7 +17,6 @@ type ParentAlert = {
   id: string;
   student_display_name?: string | null;
   matched_keywords: string[];
-  note_snippet: string;
   created_at: string;
   status: string;
   source?: 'diary' | 'community_post';
@@ -98,7 +97,6 @@ export default function ParentHome() {
               </View>
             </View>
             {alerts.slice(0, 5).map((a) => {
-              const isBlockedPost = a.source === 'community_post';
               const sourceLabel = a.alert_type === 'blocked_crisis_post'
                 ? '🚫 想 post 危機字眼'
                 : a.alert_type === 'blocked_profanity_post'
@@ -114,9 +112,7 @@ export default function ParentHome() {
                       </View>
                     ))}
                   </View>
-                  <Text style={styles.parentAlertSnippet} numberOfLines={2}>
-                    {isBlockedPost ? `嘗試 post：${a.note_snippet}` : a.note_snippet}
-                  </Text>
+                  {/* PRIVACY: 唔顯示小朋友原文 · 家長只需要知道有邊個字被觸發 */}
                   <Text style={styles.parentAlertMeta}>
                     {new Date(a.created_at).toLocaleString('zh-HK')}
                   </Text>
@@ -138,7 +134,7 @@ export default function ParentHome() {
               <Text style={styles.parentAlertCtaText}>下一步：點同小朋友傾</Text>
             </Pressable>
             <Text style={styles.parentAlertHint}>
-              🔒 呢啲警示由校方輔導系統自動通知 · 唔會顯示小朋友完整日記內容 · 你嘅角色係陪伴 · 唔係監視。
+              🔒 呢啲警示由校方輔導系統自動通知 · 只顯示被觸發嘅字眼 · 唔會顯示小朋友日記內容。你嘅角色係陪伴 · 唔係監視。
             </Text>
           </View>
         )}
