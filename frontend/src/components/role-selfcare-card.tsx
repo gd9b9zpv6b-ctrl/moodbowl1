@@ -1,6 +1,6 @@
 // Shared self-care CTA card for role dashboards (teacher/counsellor/parent/school-admin).
 // Reminds adults using the app for others that they also deserve to check in with themselves.
-// Tapping switches the current role back to 'student' and navigates home.
+// Tapping opens the adult's OWN personal diary space (their own account · not a student's).
 
 import { Feather } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
@@ -29,8 +29,8 @@ export function RoleSelfCareCard({
   bg,
   border,
   bowlBg = '#FFFFFF',
-  title = '你都可以用呢個 App',
-  subtitle = '照顧其他人之前 · 先關心自己 · 撳我打卡今日心情',
+  title = '你都值得記錄自己嘅心情',
+  subtitle = '你都可以喺 MoodBowl 開自己嘅日記 · 撳我開始寫',
   bowlKey = DEFAULT_BOWL,
   testID = 'role-selfcare',
 }: Props) {

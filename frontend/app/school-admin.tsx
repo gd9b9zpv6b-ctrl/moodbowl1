@@ -301,7 +301,7 @@ export default function SchoolAdmin() {
               bowlBg="#FFF"
               bowlKey="peaceful"
               title="校長 · 主任都用得到"
-              subtitle="決策壓力大 · 撳我體驗學生嘅版面 · 幫自己 recharge"
+              subtitle="你都可以喺 MoodBowl 開自己嘅日記 · 撳我 recharge"
             />
 
             <View style={styles.gridWrap}>
