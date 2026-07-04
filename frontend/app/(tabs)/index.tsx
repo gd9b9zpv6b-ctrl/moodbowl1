@@ -21,8 +21,7 @@ import { EMOTIONS, Emotion, EMOTION_BY_KEY, EMOTION_CATEGORIES, EmotionCategory 
 import { ENERGY_BY_KEY, EnergyLevel } from '@/src/constants/energy';
 import { COLORS, RADIUS, SPACING } from '@/src/constants/theme';
 import { SchoolCommunityConfig } from '@/src/lib/school-community-config';
-import { SchoolPostPolicy, scanPostForBanned } from '@/src/lib/school-post-policy';
-import { SchoolAlertPolicy } from '@/src/lib/school-alert-policy';
+import { SchoolPolicies, scanNoteForPost } from '@/src/lib/school-policies';
 import { api, Entry } from '@/src/lib/api';
 import { useAuth } from '@/src/lib/auth-context';
 import { isDiaryUnlocked } from '@/src/lib/diary-lock';
@@ -192,15 +191,8 @@ export default function Home() {
     // Public posts go through school content policy · diary/private is unrestricted.
     // Diary can contain profanity for private venting · community posts cannot.
     if (share && !secret && note.trim()) {
-      const [postPolicy, alertPolicy] = await Promise.all([
-        SchoolPostPolicy.get(),
-        SchoolAlertPolicy.get(),
-      ]);
-      const { matchedBan, matchedCrisis } = scanPostForBanned(
-        note,
-        postPolicy,
-        alertPolicy.keywords || [],
-      );
+      const policies = await SchoolPolicies.get();
+      const { matchedBan, matchedCrisis } = scanNoteForPost(note, policies);
 
       if (matchedCrisis.length > 0) {
         // Crisis word in a PUBLIC post — steer them to private diary + support.

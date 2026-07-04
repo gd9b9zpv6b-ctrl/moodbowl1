@@ -310,8 +310,13 @@ async def create_entry(data: EntryIn, current=Depends(get_current_user)):
     # Diary/private is intentionally unfiltered — users can freely vent about anything.
     if is_public:
         note_text = (data.note or "")
-        matched_ban = [kw for kw in DEFAULT_POST_BAN_KEYWORDS if kw in note_text]
-        matched_crisis_in_post = [kw for kw in DEFAULT_ALERT_KEYWORDS if kw in note_text]
+        cfg = await get_school_config()
+        ban_list = cfg.get("post_ban_keywords") or []
+        matched_ban = [kw for kw in ban_list if kw and kw in note_text]
+        matched_crisis_in_post: List[str] = []
+        if cfg.get("block_crisis_in_posts", True):
+            diary_list = cfg.get("diary_keywords") or []
+            matched_crisis_in_post = [kw for kw in diary_list if kw and kw in note_text]
         if matched_ban or matched_crisis_in_post:
             # Even though the post is blocked · we STILL log an alert for the counsellor.
             # Attempts to post aggressive / crisis content are safety signals worth reviewing.
@@ -432,10 +437,12 @@ async def list_alerts(status_filter: Optional[str] = None, current=Depends(get_c
     """List keyword-triggered alerts.
     - school_admin · counsellor: see ALL alerts across the school
     - teacher: see only alerts for students in their own class (`class_name` match)
+    - parent: see only alerts for their linked children · gated by the school-wide
+      `notify_parents_on_alert` toggle (default OFF)
     - others: 403
     """
     user_role = current.get("role", "student")
-    ALERT_VIEWERS = {"school_admin", "counsellor", "teacher"}
+    ALERT_VIEWERS = {"school_admin", "counsellor", "teacher", "parent"}
     if user_role not in ALERT_VIEWERS:
         raise HTTPException(status_code=403, detail="Not permitted to view alerts")
 
@@ -458,6 +465,23 @@ async def list_alerts(status_filter: Optional[str] = None, current=Depends(get_c
             )
         }
         docs = [d for d in docs if d.get("student_id") in class_student_ids]
+
+    # Parent scope: gated by school-wide toggle + limited to linked children
+    if user_role == "parent":
+        cfg = await get_school_config()
+        if not cfg.get("notify_parents_on_alert", False):
+            return []  # school hasn't opted parents in — nothing to show
+        # Linked children — students whose parent_email matches this parent
+        my_email = (current.get("email") or "").lower()
+        if not my_email:
+            return []
+        child_ids = {
+            u["id"] async for u in db.users.find(
+                {"role": "student", "parent_email": my_email},
+                {"_id": 0, "id": 1},
+            )
+        }
+        docs = [d for d in docs if d.get("student_id") in child_ids]
 
     return docs
 
@@ -485,6 +509,85 @@ async def update_alert(alert_id: str, current=Depends(get_current_user)):
     return doc
 
 
+# ==============================================================================
+# School-wide content policy (admin-owned keyword lists + parent-notify toggle)
+# ==============================================================================
+
+
+class SchoolPolicyUpdate(BaseModel):
+    diary_keywords: Optional[List[str]] = None
+    post_ban_keywords: Optional[List[str]] = None
+    block_crisis_in_posts: Optional[bool] = None
+    notify_parents_on_alert: Optional[bool] = None
+
+
+def _clean_kw_list(items: Optional[List[str]]) -> List[str]:
+    if not items:
+        return []
+    seen = set()
+    out: List[str] = []
+    for it in items:
+        s = (it or "").strip()
+        if not s:
+            continue
+        if s in seen:
+            continue
+        seen.add(s)
+        out.append(s)
+    return out
+
+
+@api_router.get("/admin/policies")
+async def get_admin_policies(current=Depends(get_current_user)):
+    """Read the school-wide content policy.
+    Any adult role can READ (so students' local frontend can pre-flight validation) ·
+    only school_admin can WRITE (see PUT below)."""
+    # Everyone (including students) may read the policy — they need it to know why their post is blocked.
+    cfg = await get_school_config()
+    return {
+        "diary_keywords": cfg.get("diary_keywords") or [],
+        "post_ban_keywords": cfg.get("post_ban_keywords") or [],
+        "block_crisis_in_posts": bool(cfg.get("block_crisis_in_posts", True)),
+        "notify_parents_on_alert": bool(cfg.get("notify_parents_on_alert", False)),
+        "updated_at": cfg.get("updated_at"),
+    }
+
+
+@api_router.put("/admin/policies")
+async def update_admin_policies(
+    payload: SchoolPolicyUpdate,
+    current=Depends(get_current_user),
+):
+    """Update school-wide content policy. Only school_admin can write."""
+    if current.get("role") != "school_admin":
+        raise HTTPException(status_code=403, detail="Only school admin can edit policies")
+
+    updates: dict = {"updated_at": now_iso()}
+    if payload.diary_keywords is not None:
+        updates["diary_keywords"] = _clean_kw_list(payload.diary_keywords)
+    if payload.post_ban_keywords is not None:
+        updates["post_ban_keywords"] = _clean_kw_list(payload.post_ban_keywords)
+    if payload.block_crisis_in_posts is not None:
+        updates["block_crisis_in_posts"] = bool(payload.block_crisis_in_posts)
+    if payload.notify_parents_on_alert is not None:
+        updates["notify_parents_on_alert"] = bool(payload.notify_parents_on_alert)
+
+    # Ensure the doc exists
+    await get_school_config()
+    await db.school_config.update_one(
+        {"id": SCHOOL_CONFIG_ID},
+        {"$set": updates},
+    )
+    cfg = await get_school_config()
+    return {
+        "diary_keywords": cfg.get("diary_keywords") or [],
+        "post_ban_keywords": cfg.get("post_ban_keywords") or [],
+        "block_crisis_in_posts": bool(cfg.get("block_crisis_in_posts", True)),
+        "notify_parents_on_alert": bool(cfg.get("notify_parents_on_alert", False)),
+        "updated_at": cfg.get("updated_at"),
+    }
+
+
 
 @api_router.post("/entries/{entry_id}/react", response_model=EntryOut)
 async def react_entry(entry_id: str, current=Depends(get_current_user)):
@@ -505,8 +608,8 @@ async def react_entry(entry_id: str, current=Depends(get_current_user)):
     return result[0]
 
 
-# Default keyword monitoring — used at entry-creation time to flag concerning content.
-# Schools can customize on frontend, but backend uses this authoritative list for safety.
+# Default keyword suggestions — Admin can freely add/remove.
+# Persisted to `school_config` collection on first startup · admins own their list afterwards.
 DEFAULT_ALERT_KEYWORDS = [
     "想死", "自殺", "傷害自己", "唔想再返學", "打我", "救命",
     "跳樓", "跳橋", "跳海", "食藥自殺", "劏頸", "冇人愛", "唔想活",
@@ -515,12 +618,41 @@ DEFAULT_ALERT_KEYWORDS = [
 
 # BAN list — content that cannot appear in PUBLIC community posts (is_public=True).
 # Diary / private entries are NOT filtered by this list · users can freely vent in private.
-# Schools customize their own list on the admin panel · backend keeps this hardcoded floor for safety.
+# Schools customize on the admin panel · backend seeds this initial suggestion once then defers to DB.
 DEFAULT_POST_BAN_KEYWORDS = [
     # Cantonese/HK common profanity — kept intentionally minimal on backend.
     "屌", "你老母", "仆街", "冚家鏟", "死開", "賤人", "八婆", "X你",
     "傻仔", "傻婆", "廢人", "低B", "白痴", "智障",
 ]
+
+SCHOOL_CONFIG_ID = "default"  # single-school MVP · one config doc for the whole app
+
+
+async def get_school_config() -> dict:
+    """Fetch the school-wide config doc · lazy-create with defaults on first read.
+    Contains admin-owned keyword lists + notify-parent toggle."""
+    doc = await db.school_config.find_one({"id": SCHOOL_CONFIG_ID}, {"_id": 0})
+    if doc:
+        return doc
+    doc = {
+        "id": SCHOOL_CONFIG_ID,
+        "diary_keywords": list(DEFAULT_ALERT_KEYWORDS),
+        "post_ban_keywords": list(DEFAULT_POST_BAN_KEYWORDS),
+        "block_crisis_in_posts": True,   # crisis words also blocked from public posts
+        "notify_parents_on_alert": False, # parents opt-in per school · default OFF (sensitive)
+        "created_at": now_iso(),
+        "updated_at": now_iso(),
+    }
+    try:
+        await db.school_config.insert_one(doc)
+    except Exception:
+        # concurrent insert — re-read
+        existing = await db.school_config.find_one({"id": SCHOOL_CONFIG_ID}, {"_id": 0})
+        if existing:
+            return existing
+    return doc
+
+
 
 # Roles that can moderate community — delete other users' PUBLIC posts.
 # Keeps private diary entries strictly owner-only.
@@ -534,7 +666,9 @@ async def _check_and_create_alert(entry_doc: dict, author: dict):
         note = (entry_doc.get("note") or "").strip()
         if not note:
             return
-        matched = [kw for kw in DEFAULT_ALERT_KEYWORDS if kw in note]
+        cfg = await get_school_config()
+        diary_keywords = cfg.get("diary_keywords") or []
+        matched = [kw for kw in diary_keywords if kw and kw in note]
         if not matched:
             return
         await db.alerts.insert_one({
@@ -928,7 +1062,7 @@ async def seed_demo_role_accounts():
     Idempotent: only creates missing accounts, never overwrites.
     Password for all demo accounts: `demo1234`."""
     DEMO_ACCOUNTS = [
-        {"email": "student@demo.moodful.app",     "role": "student",      "name": "陳小明 (學生 A)", "class_name": "6A"},
+        {"email": "student@demo.moodful.app",     "role": "student",      "name": "陳小明 (學生 A)", "class_name": "6A", "parent_email": "parent@demo.moodful.app"},
         {"email": "student2@demo.moodful.app",    "role": "student",      "name": "李小美 (學生 B)", "class_name": "6A"},
         {"email": "teacher@demo.moodful.app",     "role": "teacher",      "name": "陳老師 (班主任)", "class_name": "6A"},
         {"email": "counsellor@demo.moodful.app",  "role": "counsellor",   "name": "李輔導 (輔導老師)"},
@@ -946,6 +1080,8 @@ async def seed_demo_role_accounts():
                 change["role"] = acc["role"]
             if acc.get("class_name") and existing.get("class_name") != acc["class_name"]:
                 change["class_name"] = acc["class_name"]
+            if acc.get("parent_email") and existing.get("parent_email") != acc["parent_email"]:
+                change["parent_email"] = acc["parent_email"]
             if change:
                 await db.users.update_one({"email": acc["email"]}, {"$set": change})
                 updated += 1
@@ -963,6 +1099,7 @@ async def seed_demo_role_accounts():
             "active_icon_pack": "classic",
             "role": acc["role"],
             "class_name": acc.get("class_name"),
+            "parent_email": acc.get("parent_email"),
         }
         await db.users.insert_one(doc)
         created += 1

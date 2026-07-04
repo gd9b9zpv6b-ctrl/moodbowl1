@@ -1,5 +1,5 @@
 import { Feather } from '@expo/vector-icons';
-import { useMemo } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { ScrollView, StyleSheet, Text, View, Pressable, Alert } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
@@ -9,7 +9,20 @@ import { ENERGY_META, EnergyLevel } from '@/src/constants/energy';
 import { RoleHeader } from '@/src/components/role-header';
 import { RoleSelfCareCard } from '@/src/components/role-selfcare-card';
 import { useSchoolEnergyMap } from '@/src/hooks/use-school-energy-map';
+import { api } from '@/src/lib/api';
 import { COLORS, RADIUS, SPACING } from '@/src/constants/theme';
+
+// Alerts surfaced to parents when school toggle is ON.
+type ParentAlert = {
+  id: string;
+  student_display_name?: string | null;
+  matched_keywords: string[];
+  note_snippet: string;
+  created_at: string;
+  status: string;
+  source?: 'diary' | 'community_post';
+  alert_type?: 'crisis_keyword' | 'blocked_crisis_post' | 'blocked_profanity_post';
+};
 
 // Mocked week data — each day maps to an energy level (high/steady/low).
 // Family only sees the energy category · not the specific emotion inside.
@@ -32,6 +45,14 @@ const FALLBACK = {
 
 export default function ParentHome() {
   const { map: energyMap } = useSchoolEnergyMap();
+  const [alerts, setAlerts] = useState<ParentAlert[]>([]);
+
+  // Poll alerts on mount · school toggle may or may not be ON · backend returns [] when OFF
+  useEffect(() => {
+    api.get<ParentAlert[]>('/alerts?status_filter=open')
+      .then(setAlerts)
+      .catch(() => setAlerts([]));
+  }, []);
 
   // Representative bowl per energy level — respects school's configuration
   const ENERGY_BOWLS = useMemo(() => {
@@ -65,6 +86,62 @@ export default function ParentHome() {
             <Text style={styles.streakText}>🔥 12 日</Text>
           </View>
         </View>
+
+        {/* School-gated crisis alerts — only shown when admin has enabled parent notifications */}
+        {alerts.length > 0 && (
+          <View style={styles.parentAlertBox}>
+            <View style={styles.parentAlertHead}>
+              <Feather name="alert-octagon" size={16} color="#E86A6A" />
+              <Text style={styles.parentAlertTitle}>⚠️ 小朋友最近觸發嘅警示</Text>
+              <View style={styles.parentAlertBadge}>
+                <Text style={styles.parentAlertBadgeText}>{alerts.length}</Text>
+              </View>
+            </View>
+            {alerts.slice(0, 5).map((a) => {
+              const isBlockedPost = a.source === 'community_post';
+              const sourceLabel = a.alert_type === 'blocked_crisis_post'
+                ? '🚫 想 post 危機字眼'
+                : a.alert_type === 'blocked_profanity_post'
+                  ? '🚫 想 post 攻擊/粗口'
+                  : '📔 日記出現危機字';
+              return (
+                <View key={a.id} style={styles.parentAlertItem}>
+                  <Text style={styles.parentAlertSource}>{sourceLabel}</Text>
+                  <View style={styles.parentKwRow}>
+                    {a.matched_keywords.map((k) => (
+                      <View key={k} style={styles.parentKwPill}>
+                        <Text style={styles.parentKwPillText}>「{k}」</Text>
+                      </View>
+                    ))}
+                  </View>
+                  <Text style={styles.parentAlertSnippet} numberOfLines={2}>
+                    {isBlockedPost ? `嘗試 post：${a.note_snippet}` : a.note_snippet}
+                  </Text>
+                  <Text style={styles.parentAlertMeta}>
+                    {new Date(a.created_at).toLocaleString('zh-HK')}
+                  </Text>
+                </View>
+              );
+            })}
+            <Pressable
+              onPress={() => Alert.alert(
+                '想同小朋友傾？',
+                '呢啲字眼可能係小朋友想搵人分擔嘅信號。柔和咁問下佢感受 · 亦可以聯絡輔導老師一齊跟進。',
+                [
+                  { text: '知道了' },
+                  { text: '聯絡輔導老師', onPress: () => Alert.alert('示範版', '真實版本會直接彈 in-app message 到輔導老師。') },
+                ],
+              )}
+              style={styles.parentAlertCta}
+            >
+              <Feather name="message-circle" size={13} color="#FFF" />
+              <Text style={styles.parentAlertCtaText}>下一步：點同小朋友傾</Text>
+            </Pressable>
+            <Text style={styles.parentAlertHint}>
+              🔒 呢啲警示由校方輔導系統自動通知 · 唔會顯示小朋友完整日記內容 · 你嘅角色係陪伴 · 唔係監視。
+            </Text>
+          </View>
+        )}
 
         {/* Self-care CTA — parents care for kids · but also for themselves */}
         <RoleSelfCareCard
@@ -205,6 +282,82 @@ const styles = StyleSheet.create({
     backgroundColor: '#FFEAC2',
   },
   streakText: { fontSize: 12, fontWeight: '800', color: '#B57D2A' },
+
+  // Parent-facing crisis alerts (school-gated · default OFF)
+  parentAlertBox: {
+    backgroundColor: '#FDECEC',
+    borderRadius: RADIUS.md,
+    borderLeftWidth: 4,
+    borderLeftColor: '#E86A6A',
+    padding: SPACING.md,
+    marginBottom: SPACING.md,
+  },
+  parentAlertHead: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    marginBottom: SPACING.sm,
+  },
+  parentAlertTitle: {
+    flex: 1,
+    fontSize: 14,
+    fontWeight: '800',
+    color: '#7A2E2E',
+  },
+  parentAlertBadge: {
+    paddingHorizontal: 8,
+    paddingVertical: 2,
+    borderRadius: RADIUS.pill,
+    backgroundColor: '#E86A6A',
+  },
+  parentAlertBadgeText: { fontSize: 11, fontWeight: '800', color: '#FFF' },
+  parentAlertItem: {
+    backgroundColor: '#FFF6F6',
+    borderRadius: RADIUS.sm,
+    padding: SPACING.sm,
+    marginBottom: SPACING.sm,
+  },
+  parentAlertSource: {
+    fontSize: 11,
+    fontWeight: '800',
+    color: '#5F4A2E',
+    marginBottom: 4,
+    letterSpacing: 0.3,
+  },
+  parentKwRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 4, marginBottom: 6 },
+  parentKwPill: {
+    paddingHorizontal: 8,
+    paddingVertical: 2,
+    borderRadius: RADIUS.pill,
+    backgroundColor: '#E86A6A',
+  },
+  parentKwPillText: { fontSize: 11, fontWeight: '700', color: '#FFF' },
+  parentAlertSnippet: {
+    fontSize: 13,
+    color: '#5A3F3F',
+    lineHeight: 18,
+    fontStyle: 'italic',
+    marginBottom: 4,
+  },
+  parentAlertMeta: { fontSize: 10, color: '#8A6A6A' },
+  parentAlertCta: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 6,
+    backgroundColor: '#E86A6A',
+    borderRadius: RADIUS.pill,
+    paddingVertical: 10,
+    marginTop: 4,
+  },
+  parentAlertCtaText: { color: '#FFF', fontWeight: '800', fontSize: 13 },
+  parentAlertHint: {
+    fontSize: 11,
+    color: '#7A5C3F',
+    fontStyle: 'italic',
+    lineHeight: 16,
+    marginTop: SPACING.sm,
+  },
   privacyBanner: {
     fontSize: 11,
     color: '#7A5C3F',

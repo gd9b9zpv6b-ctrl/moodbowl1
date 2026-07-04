@@ -10,6 +10,7 @@ import { RoleHeader } from '@/src/components/role-header';
 import { RoleSelfCareCard } from '@/src/components/role-selfcare-card';
 import { AlertPolicy, DEFAULT_POLICY, SchoolAlertPolicy } from '@/src/lib/school-alert-policy';
 import { PostPolicy, DEFAULT_POST_POLICY, SchoolPostPolicy } from '@/src/lib/school-post-policy';
+import { SchoolPolicies, DEFAULT_POLICIES } from '@/src/lib/school-policies';
 import { AdultAnonymity, CommunityConfig, DEFAULT_CONFIG, SchoolCommunityConfig, StudentAnonymity } from '@/src/lib/school-community-config';
 import { EnergyMap, SchoolEnergyConfig } from '@/src/lib/school-energy-config';
 import { api, Entry } from '@/src/lib/api';
@@ -27,6 +28,9 @@ export default function SchoolAdmin() {
   const [newKeyword, setNewKeyword] = useState('');
   const [postPolicy, setPostPolicy] = useState<PostPolicy>(DEFAULT_POST_POLICY);
   const [newBanWord, setNewBanWord] = useState('');
+  // Backend-backed source of truth for keyword arrays + parent-notify toggle.
+  // Local `policy` / `postPolicy` above still owns UI-only flags (enable/notifyRoles/etc.).
+  const [remotePolicies, setRemotePolicies] = useState<SchoolPolicies>(DEFAULT_POLICIES);
   const [energyMap, setEnergyMap] = useState<EnergyMap>(SchoolEnergyConfig.DEFAULT_MAP);
   const [communityConfig, setCommunityConfig] = useState<CommunityConfig>(DEFAULT_CONFIG);
   const [historyScope, setHistoryScope] = useState<'student' | 'adult'>('student');
@@ -38,6 +42,9 @@ export default function SchoolAdmin() {
     SchoolPostPolicy.get().then(setPostPolicy);
     SchoolEnergyConfig.get().then(setEnergyMap);
     SchoolCommunityConfig.get().then(setCommunityConfig);
+    SchoolPolicies.get(true).then(setRemotePolicies).catch(() => {
+      // network glitch — keep defaults · admin can retry when they save
+    });
   }, []);
 
   const loadHistory = async (scope: 'student' | 'adult') => {
@@ -97,19 +104,36 @@ export default function SchoolAdmin() {
     savePolicy({ ...policy, notifyRoles: next });
   };
 
-  const addKeyword = () => {
+  const addKeyword = async () => {
     const k = newKeyword.trim();
     if (!k) return;
-    if (policy.keywords.includes(k)) {
+    if (remotePolicies.diary_keywords.includes(k)) {
       Alert.alert('已經有呢個字', `「${k}」已經喺監察名單。`);
       return;
     }
-    savePolicy({ ...policy, keywords: [...policy.keywords, k] });
-    setNewKeyword('');
+    try {
+      const next = await SchoolPolicies.update({
+        diary_keywords: [...remotePolicies.diary_keywords, k],
+      });
+      setRemotePolicies(next);
+      // keep the legacy local copy in sync so nothing else in the UI breaks
+      savePolicy({ ...policy, keywords: next.diary_keywords });
+      setNewKeyword('');
+    } catch (e: any) {
+      Alert.alert('儲存失敗', e?.message || '請再試');
+    }
   };
 
-  const removeKeyword = (k: string) => {
-    savePolicy({ ...policy, keywords: policy.keywords.filter((x) => x !== k) });
+  const removeKeyword = async (k: string) => {
+    try {
+      const next = await SchoolPolicies.update({
+        diary_keywords: remotePolicies.diary_keywords.filter((x) => x !== k),
+      });
+      setRemotePolicies(next);
+      savePolicy({ ...policy, keywords: next.diary_keywords });
+    } catch (e: any) {
+      Alert.alert('儲存失敗', e?.message || '請再試');
+    }
   };
 
   // === Community POST content policy ===
@@ -120,25 +144,54 @@ export default function SchoolAdmin() {
 
   const togglePostFilter = (v: boolean) =>
     savePostPolicy({ ...postPolicy, postFilterEnabled: v });
-  const toggleBlockCrisis = (v: boolean) =>
-    savePostPolicy({ ...postPolicy, blockCrisisInPosts: v });
+  const toggleBlockCrisis = async (v: boolean) => {
+    try {
+      const next = await SchoolPolicies.update({ block_crisis_in_posts: v });
+      setRemotePolicies(next);
+      savePostPolicy({ ...postPolicy, blockCrisisInPosts: v });
+    } catch (e: any) {
+      Alert.alert('儲存失敗', e?.message || '請再試');
+    }
+  };
 
-  const addBanWord = () => {
+  const toggleNotifyParents = async (v: boolean) => {
+    try {
+      const next = await SchoolPolicies.update({ notify_parents_on_alert: v });
+      setRemotePolicies(next);
+    } catch (e: any) {
+      Alert.alert('儲存失敗', e?.message || '請再試');
+    }
+  };
+
+  const addBanWord = async () => {
     const k = newBanWord.trim();
     if (!k) return;
-    if (postPolicy.banKeywords.includes(k)) {
+    if (remotePolicies.post_ban_keywords.includes(k)) {
       Alert.alert('已經有呢個字', `「${k}」已經喺 post 禁用清單。`);
       return;
     }
-    savePostPolicy({ ...postPolicy, banKeywords: [...postPolicy.banKeywords, k] });
-    setNewBanWord('');
+    try {
+      const next = await SchoolPolicies.update({
+        post_ban_keywords: [...remotePolicies.post_ban_keywords, k],
+      });
+      setRemotePolicies(next);
+      savePostPolicy({ ...postPolicy, banKeywords: next.post_ban_keywords });
+      setNewBanWord('');
+    } catch (e: any) {
+      Alert.alert('儲存失敗', e?.message || '請再試');
+    }
   };
 
-  const removeBanWord = (k: string) => {
-    savePostPolicy({
-      ...postPolicy,
-      banKeywords: postPolicy.banKeywords.filter((x) => x !== k),
-    });
+  const removeBanWord = async (k: string) => {
+    try {
+      const next = await SchoolPolicies.update({
+        post_ban_keywords: remotePolicies.post_ban_keywords.filter((x) => x !== k),
+      });
+      setRemotePolicies(next);
+      savePostPolicy({ ...postPolicy, banKeywords: next.post_ban_keywords });
+    } catch (e: any) {
+      Alert.alert('儲存失敗', e?.message || '請再試');
+    }
   };
 
   const cycleEmotionLevel = async (emotionKey: string) => {
@@ -280,9 +333,9 @@ export default function SchoolAdmin() {
             <>
               <View style={styles.policyDivider} />
 
-              <Text style={styles.policyLabel}>監察嘅字詞（{policy.keywords.length} 個）</Text>
+              <Text style={styles.policyLabel}>監察嘅字詞（{remotePolicies.diary_keywords.length} 個）</Text>
               <View style={styles.chipRow}>
-                {policy.keywords.map((k) => (
+                {remotePolicies.diary_keywords.map((k) => (
                   <Pressable
                     key={k}
                     onPress={() => Alert.alert(
@@ -299,6 +352,9 @@ export default function SchoolAdmin() {
                     <Feather name="x" size={11} color="#8B4A4A" />
                   </Pressable>
                 ))}
+                {remotePolicies.diary_keywords.length === 0 && (
+                  <Text style={styles.emptyChipText}>暫時冇監察字 · 加多個試下</Text>
+                )}
               </View>
 
               <View style={styles.addRow}>
@@ -400,10 +456,10 @@ export default function SchoolAdmin() {
               <View style={styles.policyDivider} />
 
               <Text style={styles.policyLabel}>
-                禁用字（{postPolicy.banKeywords.length} 個）· 撳一撳可以移除
+                禁用字（{remotePolicies.post_ban_keywords.length} 個）· 撳一撳可以移除
               </Text>
               <View style={styles.chipRow}>
-                {postPolicy.banKeywords.map((k) => (
+                {remotePolicies.post_ban_keywords.map((k) => (
                   <Pressable
                     key={k}
                     onPress={() => Alert.alert(
@@ -420,7 +476,7 @@ export default function SchoolAdmin() {
                     <Feather name="x" size={11} color="#3E5B7F" />
                   </Pressable>
                 ))}
-                {postPolicy.banKeywords.length === 0 && (
+                {remotePolicies.post_ban_keywords.length === 0 && (
                   <Text style={styles.emptyChipText}>暫時冇禁用字 · 加多個試下</Text>
                 )}
               </View>
@@ -459,9 +515,30 @@ export default function SchoolAdmin() {
                   </Text>
                 </View>
                 <Switch
-                  value={postPolicy.blockCrisisInPosts}
+                  value={remotePolicies.block_crisis_in_posts}
                   onValueChange={toggleBlockCrisis}
                   trackColor={{ true: '#E86A6A', false: COLORS.bgInput }}
+                  thumbColor={COLORS.bgCard}
+                />
+              </View>
+
+              <View style={styles.policyDivider} />
+
+              <View style={styles.policyRow}>
+                <View style={[styles.actIcon, { backgroundColor: '#F3E7F9' }]}>
+                  <Feather name="users" size={20} color="#7D5AA6" />
+                </View>
+                <View style={{ flex: 1 }}>
+                  <Text style={styles.actTitle}>危機字警示通知家長</Text>
+                  <Text style={styles.actSub}>
+                    開咗之後 · 家長會喺 app 見到自己小朋友嘅危機警報（敏感 · 建議先同輔導老師夾好流程）
+                  </Text>
+                </View>
+                <Switch
+                  testID="notify-parents-toggle"
+                  value={remotePolicies.notify_parents_on_alert}
+                  onValueChange={toggleNotifyParents}
+                  trackColor={{ true: '#7D5AA6', false: COLORS.bgInput }}
                   thumbColor={COLORS.bgCard}
                 />
               </View>
