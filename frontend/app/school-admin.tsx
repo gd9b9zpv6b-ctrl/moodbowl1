@@ -45,7 +45,9 @@ const ADMIN_CARDS: {
   { key: 'policy',    icon: 'shield',       title: '🚨 內容政策',    subtitle: '關鍵字 · 通知 · 閱讀權限', bg: '#FDECEC', iconColor: '#E86A6A' },
   { key: 'energy',    icon: 'zap',          title: '🎨 情緒能量',    subtitle: 'Icon 分類 · 客製化',       bg: '#FEE9CE', iconColor: '#B57D2A' },
   { key: 'community', icon: 'message-square', title: '💬 社群設定', subtitle: '匿名 · 可見度 · TTL',       bg: '#E4F0E8', iconColor: '#5A7A6C' },
-  { key: 'history',   icon: 'archive',      title: '📜 社群歷史',    subtitle: '檢閱 · 刪除 · Audit',       bg: '#E7EEF9', iconColor: '#3E5B7F' },
+  { key: 'history',   icon: 'archive',      title: '📜 社群歷史',    subtitle: '檢閱 · 刪除',              bg: '#E7EEF9', iconColor: '#3E5B7F' },
+  { key: 'families',  icon: 'user-plus',    title: '👨‍👩‍👦 家長配對', subtitle: '建立 家長 ↔ 學生 pair',  bg: '#F5E5F0', iconColor: '#A64F8A' },
+  { key: 'audit',     icon: 'clipboard',    title: '📋 Audit Log',   subtitle: '敏感操作紀錄 · 保留 7 年',   bg: '#F0EBE0', iconColor: '#7A5C3F' },
 ];
 
 
