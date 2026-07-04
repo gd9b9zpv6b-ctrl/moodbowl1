@@ -1,24 +1,46 @@
 {
-  "_comment": "PLACEHOLDER · Replace this file with the real google-services.json from Firebase Console before generating an Android build. Push notifications will not deliver until this is done.",
   "project_info": {
-    "project_number": "000000000000",
-    "project_id": "placeholder",
-    "storage_bucket": "placeholder.appspot.com"
+    "project_number": "506561147349",
+    "project_id": "moodbowl",
+    "storage_bucket": "moodbowl.firebasestorage.app"
   },
   "client": [
     {
       "client_info": {
-        "mobilesdk_app_id": "1:000000000000:android:0000000000000000000000",
+        "mobilesdk_app_id": "1:506561147349:android:a16f086c5d0a8c31eb0d5c",
+        "android_client_info": {
+          "package_name": "Moodbowl.tmy2026"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyBTlXEF6ZJ78G9aX9QOIeRdEyoWyKVce8M"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    },
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:506561147349:android:cecb8c9ef24e0221eb0d5c",
         "android_client_info": {
           "package_name": "com.emergent.mindfulmood.m6myqz"
         }
       },
       "oauth_client": [],
       "api_key": [
-        { "current_key": "PLACEHOLDER_REPLACE_ME" }
+        {
+          "current_key": "AIzaSyBTlXEF6ZJ78G9aX9QOIeRdEyoWyKVce8M"
+        }
       ],
       "services": {
-        "appinvite_service": { "other_platform_oauth_client": [] }
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
       }
     }
   ],
