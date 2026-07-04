@@ -230,6 +230,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     paddingHorizontal: SPACING.xl,
+    paddingBottom: SPACING.xxl,
   },
   heroBox: {
     alignItems: 'center',
@@ -276,6 +277,7 @@ const styles = StyleSheet.create({
   },
   footer: {
     paddingHorizontal: SPACING.xl,
+    paddingTop: SPACING.lg,
     paddingBottom: SPACING.xl,
     gap: SPACING.lg,
   },
@@ -284,6 +286,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     gap: 6,
+    marginTop: SPACING.md,
   },
   dot: {
     width: 8,
