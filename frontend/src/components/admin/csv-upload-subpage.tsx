@@ -19,12 +19,9 @@ type CreatedResult = { email: string; display_name: string; class_name: string |
 type ExistingRow = { email: string; display_name?: string; class_name?: string; activated: boolean; invite_code?: string | null };
 type CodeRow = { email: string; display_name?: string; class_name?: string; role?: string; invite_code?: string; activated: boolean };
 
-const SAMPLE_TEXT = `# 一行一位學生 · 格式：姓名, Email, 班別
-# 「#」開頭嘅行會被 ignore
-陳大文, tmchan01@school.hk, 6A
+const SAMPLE_TEXT = `陳大文, tmchan01@school.hk, 6A
 李小美, xmli02@school.hk, 6A
-王大衛, dwwong03@school.hk, 6B
-`;
+王大衛, dwwong03@school.hk, 6B`;
 
 function parseCsv(raw: string): { rows: ParsedRow[]; errors: string[] } {
   const rows: ParsedRow[] = [];
@@ -122,8 +119,7 @@ export function CsvUploadSubpage() {
         <Feather name="info" size={12} color="#5A7A6C" />
         <Text style={styles.hintText}>
           每行一位學生 · 格式：<Text style={{ fontWeight: '800' }}>姓名, Email, 班別</Text>{'\n'}
-          系統會自動生成 <Text style={{ fontWeight: '800' }}>invite code</Text> · 派俾學生自己啟用帳戶（設密碼）。{'\n'}
-          舊 code 冇 activated 就冇 expiry · 學生可以慢慢 activate。
+          系統會自動生成邀請碼 · 派俾學生自己設密碼啟用帳戶。
         </Text>
       </View>
 
