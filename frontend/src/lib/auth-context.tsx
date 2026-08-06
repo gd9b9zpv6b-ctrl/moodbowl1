@@ -170,7 +170,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       mountedRef.current = false;
       listener.subscription.unsubscribe();
     };
-  }, [hydrateSession]);
+  }, [hydrateSession, setUser]);
 
   useEffect(() => {
     const exchangeCode = async (url: string | null) => {
