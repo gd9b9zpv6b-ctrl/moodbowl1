@@ -254,7 +254,7 @@ function InfoLine({ text }: { text: string }) {
 }
 
 const styles = StyleSheet.create({
-  safe: { flex: 1, backgroundColor: COLORS.bgApp },
+  safe: { flex: 1, backgroundColor: COLORS.bgMain },
   scroll: { padding: SPACING.lg, paddingBottom: SPACING.xxl },
   backBtn: { flexDirection: 'row', alignItems: 'center', marginBottom: SPACING.lg, alignSelf: 'flex-start' },
   backText: { color: COLORS.textPrimary, fontSize: 14, fontWeight: '700' },

@@ -4,7 +4,7 @@ import * as Notifications from 'expo-notifications';
 import React, { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState } from 'react';
 import { Alert, AppState, AppStateStatus, Platform } from 'react-native';
 
-import { api, onApiActivity, onAuthInvalid, setToken, User } from './api';
+import { api, loadToken, onApiActivity, onAuthInvalid, setToken, User } from './api';
 import { RoleStorage, UserRole } from './role-storage';
 import { supabase } from './supabase-client';
 
@@ -140,12 +140,28 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   useEffect(() => {
     mountedRef.current = true;
     supabase.auth.getSession()
-      .then(({ data }) => hydrateSession(data.session))
+      .then(async ({ data }) => {
+        if (data.session) return hydrateSession(data.session);
+        // Temporary compatibility for invite-code accounts activated before
+        // that privileged workflow moves to an Edge Function in Phase 4.
+        if (await loadToken()) {
+          try {
+            const legacyUser = await api.get<User>('/auth/me');
+            if (mountedRef.current) setUser(legacyUser);
+            registerForPush(legacyUser.id);
+            return legacyUser;
+          } catch {
+            await setToken(null);
+          }
+        }
+        return null;
+      })
       .finally(() => {
         if (mountedRef.current) setLoading(false);
       });
 
-    const { data: listener } = supabase.auth.onAuthStateChange((_event, session) => {
+    const { data: listener } = supabase.auth.onAuthStateChange((event, session) => {
+      if (event === 'INITIAL_SESSION' && !session) return;
       // Avoid issuing another Supabase request from inside the auth callback lock.
       setTimeout(() => hydrateSession(session), 0);
     });
