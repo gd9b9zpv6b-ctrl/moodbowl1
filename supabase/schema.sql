@@ -141,7 +141,8 @@ begin
   values (
     new.id,
     coalesce(new.raw_user_meta_data ->> 'display_name', split_part(new.email, '@', 1)),
-    coalesce(new.raw_user_meta_data ->> 'role', 'student')
+    -- Authorization data is never accepted from client-controlled metadata.
+    'student'
   )
   on conflict (id) do nothing;
   return new;
@@ -176,11 +177,8 @@ create policy "profiles_update_own"
   using  (auth.uid() = id)
   with check (auth.uid() = id);
 
--- Trigger already creates the row · this policy is for safety on manual insert.
-create policy "profiles_insert_own"
-  on public.profiles
-  for insert
-  with check (auth.uid() = id);
+-- Profiles are inserted by the auth trigger only. Role, school_id and premium
+-- status are authorization fields and cannot be supplied by an app client.
 
 -- ---------- diaries policies ------------------------------------------------
 drop policy if exists "diaries_select_own"        on public.diaries;
@@ -248,7 +246,9 @@ create policy "relax_delete_own"
 -- ============================================================================
 grant usage on schema public to anon, authenticated;
 
-grant select, insert, update, delete on public.profiles            to authenticated;
+revoke all on public.profiles from anon, authenticated;
+grant select on public.profiles to authenticated;
+grant update (display_name, avatar_url) on public.profiles to authenticated;
 grant select, insert, update, delete on public.diaries             to authenticated;
 grant select, insert, update, delete on public.relax_games_history to authenticated;
 

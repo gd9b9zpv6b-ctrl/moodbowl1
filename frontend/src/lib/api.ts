@@ -1,4 +1,5 @@
 import { storage } from '@/src/utils/storage';
+import { supabase } from './supabase-client';
 
 const BASE_URL = process.env.EXPO_PUBLIC_BACKEND_URL || '';
 const TOKEN_KEY = 'moodful_token';
@@ -36,7 +37,12 @@ export async function setToken(token: string | null) {
 }
 
 async function request<T>(path: string, options: RequestInit = {}): Promise<T> {
-  const token = await loadToken();
+  // Supabase owns normal sessions from Phase 1 onward. The stored legacy token
+  // remains only for invite-code activation until that flow moves in Phase 4.
+  const {
+    data: { session },
+  } = await supabase.auth.getSession();
+  const token = session?.access_token || (await loadToken());
   const headers: Record<string, string> = {
     'Content-Type': 'application/json',
     ...((options.headers as Record<string, string>) || {}),
@@ -57,6 +63,7 @@ async function request<T>(path: string, options: RequestInit = {}): Promise<T> {
     if (res.status === 401) {
       // Session invalid · immediately clear cached token + notify auth-context
       cachedToken = null;
+      await storage.secureRemove(TOKEN_KEY);
       try { authInvalidHandler?.(); } catch { /* noop */ }
     }
     const detail = json?.detail || `Request failed (${res.status})`;

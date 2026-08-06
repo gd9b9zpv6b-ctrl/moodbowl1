@@ -12,6 +12,8 @@ import uuid
 from datetime import datetime, timezone, timedelta
 from passlib.context import CryptContext
 from jose import jwt, JWTError
+import jwt as pyjwt
+from jwt import PyJWKClient
 
 from push_service import send_push, register_device
 from email_service import send_password_reset_otp, send_invite_code as send_invite_email
@@ -29,6 +31,14 @@ JWT_SECRET = os.environ.get('JWT_SECRET', 'moodful-healing-secret-key-change-me'
 JWT_ALGORITHM = 'HS256'
 JWT_EXPIRE_DAYS = 30
 ADMIN_EMAILS = {e.strip().lower() for e in os.environ.get('ADMIN_EMAILS', 'testuser1@example.com').split(',') if e.strip()}
+SUPABASE_URL = os.environ.get("SUPABASE_URL", "").rstrip("/")
+SUPABASE_JWT_SECRET = os.environ.get("SUPABASE_JWT_SECRET", "")
+SUPABASE_ISSUER = f"{SUPABASE_URL}/auth/v1" if SUPABASE_URL else ""
+SUPABASE_JWKS = (
+    PyJWKClient(f"{SUPABASE_ISSUER}/.well-known/jwks.json", cache_keys=True)
+    if SUPABASE_ISSUER and not SUPABASE_JWT_SECRET
+    else None
+)
 
 pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 security = HTTPBearer()
@@ -59,15 +69,85 @@ def create_access_token(user_id: str) -> str:
     return jwt.encode(payload, JWT_SECRET, algorithm=JWT_ALGORITHM)
 
 
+def decode_supabase_token(token: str) -> dict:
+    if not SUPABASE_ISSUER:
+        raise ValueError("SUPABASE_URL is not configured")
+
+    try:
+        if SUPABASE_JWT_SECRET:
+            key = SUPABASE_JWT_SECRET
+            algorithms = ["HS256"]
+        else:
+            if not SUPABASE_JWKS:
+                raise ValueError("Supabase JWKS is not configured")
+            key = SUPABASE_JWKS.get_signing_key_from_jwt(token).key
+            algorithms = ["ES256", "RS256"]
+        return pyjwt.decode(
+            token,
+            key,
+            algorithms=algorithms,
+            audience="authenticated",
+            issuer=SUPABASE_ISSUER,
+        )
+    except Exception as exc:
+        raise ValueError("Invalid Supabase token") from exc
+
+
 async def get_current_user(creds: HTTPAuthorizationCredentials = Depends(security)) -> dict:
     token = creds.credentials
+    user_id: Optional[str] = None
+    supabase_claims: Optional[dict] = None
+
+    # Keep old invite-code sessions alive until that workflow moves in Phase 4.
     try:
-        payload = jwt.decode(token, JWT_SECRET, algorithms=[JWT_ALGORITHM])
-        user_id = payload.get("sub")
-        if not user_id:
-            raise HTTPException(status_code=401, detail="Invalid token")
+        legacy_payload = jwt.decode(token, JWT_SECRET, algorithms=[JWT_ALGORITHM])
+        user_id = legacy_payload.get("sub")
     except JWTError:
-        raise HTTPException(status_code=401, detail="Invalid or expired token")
+        try:
+            supabase_claims = decode_supabase_token(token)
+            user_id = supabase_claims.get("sub")
+        except ValueError:
+            raise HTTPException(status_code=401, detail="Invalid or expired token")
+
+    if not user_id:
+        raise HTTPException(status_code=401, detail="Invalid token")
+
+    if supabase_claims:
+        email = (supabase_claims.get("email") or "").lower()
+        user = await db.users.find_one(
+            {"$or": [{"supabase_user_id": user_id}, {"id": user_id}]},
+            {"_id": 0, "hashed_password": 0},
+        )
+        if not user and email:
+            user = await db.users.find_one(
+                {"email": email},
+                {"_id": 0, "hashed_password": 0},
+            )
+            if user:
+                await db.users.update_one(
+                    {"id": user["id"]},
+                    {"$set": {"supabase_user_id": user_id}},
+                )
+                user["supabase_user_id"] = user_id
+
+        if not user:
+            metadata = supabase_claims.get("user_metadata") or {}
+            user = {
+                "id": user_id,
+                "supabase_user_id": user_id,
+                "email": email,
+                "display_name": metadata.get("display_name") or email.split("@")[0],
+                "created_at": now_iso(),
+                "credits": 0,
+                "is_premium": False,
+                "secret_pin_hash": None,
+                "diary_style": {},
+                "active_icon_pack": "classic",
+                "role": "student",
+            }
+            await db.users.insert_one(user.copy())
+            user.pop("_id", None)
+        return user
 
     user = await db.users.find_one({"id": user_id}, {"_id": 0, "hashed_password": 0})
     if not user:
