@@ -1,10 +1,11 @@
 /**
  * Auth · Forgot password screen.
  * Two-step flow · both in the same screen:
- *   Step 1 · Enter email → POST /auth/forgot-password → email an OTP.
- *   Step 2 · Enter OTP + new password → POST /auth/reset-password → auto-login.
+ *   Step 1 · Enter email → Supabase Auth emails a recovery OTP.
+ *   Step 2 · Verify OTP → update the authenticated user's password.
  */
 import { Feather } from '@expo/vector-icons';
+import * as Linking from 'expo-linking';
 import { useRouter } from 'expo-router';
 import { useState } from 'react';
 import {
@@ -14,14 +15,14 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { COLORS, RADIUS, SPACING } from '@/src/constants/theme';
-import { api, setToken, User, AuthResponse } from '@/src/lib/api';
 import { useAuth } from '@/src/lib/auth-context';
+import { supabase } from '@/src/lib/supabase-client';
 
 type Step = 'request' | 'verify';
 
 export default function ForgotPassword() {
   const router = useRouter();
-  const { setUser } = useAuth();
+  const { refreshUser } = useAuth();
 
   const [step, setStep] = useState<Step>('request');
   const [email, setEmail] = useState('');
@@ -42,13 +43,14 @@ export default function ForgotPassword() {
     }
     setBusy(true);
     try {
-      const res = await api.post<{ ok: boolean; message?: string }>('/auth/forgot-password', {
-        email: e,
+      const { error: authError } = await supabase.auth.resetPasswordForEmail(e, {
+        redirectTo: Linking.createURL('/auth/forgot-password'),
       });
-      setInfo(res?.message || '如果呢個 email 有帳戶，我哋已經寄咗驗證碼過去。請查閱郵件（包括 spam 文件夾）。');
+      if (authError) throw authError;
+      setInfo('如果呢個 email 有帳戶 · 我哋已經寄咗驗證碼過去 · 記得望埋垃圾郵件');
       setStep('verify');
-    } catch (err: any) {
-      setError(err?.message || '寄送驗證碼失敗，請稍後再試');
+    } catch {
+      setError('出咗少少問題 · 過陣再試');
     } finally {
       setBusy(false);
     }
@@ -59,10 +61,16 @@ export default function ForgotPassword() {
     setError(null);
     setBusy(true);
     try {
-      await api.post('/auth/forgot-password', { email: email.trim().toLowerCase() });
-      setInfo('已重新寄出驗證碼 · 請留意你嘅 inbox。');
-    } catch (err: any) {
-      setError(err?.message || '重寄失敗');
+      const { error: authError } = await supabase.auth.resetPasswordForEmail(
+        email.trim().toLowerCase(),
+        {
+          redirectTo: Linking.createURL('/auth/forgot-password'),
+        },
+      );
+      if (authError) throw authError;
+      setInfo('已經再寄一次 · 慢慢睇下 inbox');
+    } catch {
+      setError('暫時寄唔到 · 過陣再試');
     } finally {
       setBusy(false);
     }
@@ -71,19 +79,22 @@ export default function ForgotPassword() {
   const resetPassword = async () => {
     setError(null);
     setInfo(null);
+    const e = email.trim().toLowerCase();
     const cleanOtp = otp.trim();
     if (cleanOtp.length !== 6) { setError('驗證碼係 6 位數字'); return; }
     if (newPw.length < 6) { setError('新密碼至少要 6 個字'); return; }
     if (newPw !== confirmPw) { setError('兩次密碼唔一樣'); return; }
     setBusy(true);
     try {
-      const res = await api.post<AuthResponse>('/auth/reset-password', {
-        email: email.trim().toLowerCase(),
-        otp: cleanOtp,
-        new_password: newPw,
+      const { error: verifyError } = await supabase.auth.verifyOtp({
+        email: e,
+        token: cleanOtp,
+        type: 'recovery',
       });
-      await setToken(res.access_token);
-      setUser(res.user as User);
+      if (verifyError) throw verifyError;
+      const { error: updateError } = await supabase.auth.updateUser({ password: newPw });
+      if (updateError) throw updateError;
+      const currentUser = await refreshUser();
       // Route to correct home based on role
       const routes: Record<string, string> = {
         student: '/(tabs)',
@@ -92,10 +103,10 @@ export default function ForgotPassword() {
         parent: '/parent-home',
         school_admin: '/school-admin',
       };
-      const target = routes[(res.user as any)?.role] || '/(tabs)';
+      const target = routes[currentUser?.role || 'student'] || '/(tabs)';
       router.replace(target as never);
-    } catch (err: any) {
-      setError(err?.message || '重設失敗，請重新確認驗證碼');
+    } catch {
+      setError('驗證碼唔啱或者已經過期 · 可以再寄一次');
     } finally {
       setBusy(false);
     }
@@ -243,7 +254,7 @@ function InfoLine({ text }: { text: string }) {
 }
 
 const styles = StyleSheet.create({
-  safe: { flex: 1, backgroundColor: COLORS.bgApp },
+  safe: { flex: 1, backgroundColor: COLORS.bgMain },
   scroll: { padding: SPACING.lg, paddingBottom: SPACING.xxl },
   backBtn: { flexDirection: 'row', alignItems: 'center', marginBottom: SPACING.lg, alignSelf: 'flex-start' },
   backText: { color: COLORS.textPrimary, fontSize: 14, fontWeight: '700' },

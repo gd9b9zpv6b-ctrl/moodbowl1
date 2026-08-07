@@ -1,189 +1,288 @@
-import React, { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState } from 'react';
-import { AppState, AppStateStatus, Alert, Platform } from 'react-native';
+import type { Session, User as SupabaseUser } from '@supabase/supabase-js';
+import * as Linking from 'expo-linking';
 import * as Notifications from 'expo-notifications';
+import React, { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState } from 'react';
+import { Alert, AppState, AppStateStatus, Platform } from 'react-native';
 
-import { api, loadToken, setToken, onApiActivity, onAuthInvalid, User, AuthResponse } from './api';
+import { api, loadToken, onApiActivity, onAuthInvalid, setToken, User } from './api';
 import { RoleStorage, UserRole } from './role-storage';
+import { supabase } from './supabase-client';
 
-// Auto-logout: if the user has been idle for this long · we clear their session.
-// 10 minutes matches typical school/enterprise security policy expectations.
 const INACTIVITY_TIMEOUT_MS = 10 * 60 * 1000;
 
-/** Register the current device with the push relay. Non-blocking: silent on any failure. */
-async function registerForPush(userId: string) {
-  if (Platform.OS === 'web') return;
-  try {
-    const perms = await Notifications.getPermissionsAsync();
-    let granted = perms.status === 'granted';
-    if (!granted && perms.canAskAgain) {
-      const req = await Notifications.requestPermissionsAsync();
-      granted = req.status === 'granted';
-    }
-    if (!granted) return;
-    const tokenResp = await Notifications.getDevicePushTokenAsync();
-    if (!tokenResp?.data) return;
-    await api.post('/register-push', {
-      user_id: userId,
-      platform: Platform.OS,
-      device_token: tokenResp.data,
-    });
-  } catch {
-    // Silent — push isn't critical to primary flows.
-  }
-}
+type ProfileRow = {
+  id: string;
+  display_name: string | null;
+  role: UserRole;
+  is_premium: boolean;
+  created_at: string;
+};
+
+type RegisterResult = {
+  requiresEmailConfirmation: boolean;
+};
 
 type AuthCtx = {
   user: User | null;
   loading: boolean;
   login: (email: string, password: string) => Promise<void>;
-  register: (email: string, password: string, displayName?: string) => Promise<void>;
+  register: (email: string, password: string, displayName?: string) => Promise<RegisterResult>;
   logout: (reason?: 'manual' | 'inactivity') => Promise<void>;
-  refreshUser: () => Promise<void>;
+  refreshUser: () => Promise<User | null>;
   setUser: (u: User | null) => void;
-  /** Call this from any interaction (touch · nav · api) to reset the idle timer */
   ping: () => void;
 };
 
 const Ctx = createContext<AuthCtx | undefined>(undefined);
 
-// Whenever we set/refresh a user, sync their server-side role into RoleStorage
-// so all the dashboards route to the correct home path automatically.
-async function syncRole(u: User | null) {
-  if (!u) return;
-  const role = (u.role || 'student') as UserRole;
-  await RoleStorage.set(role);
+async function syncRole(user: User | null) {
+  await RoleStorage.set((user?.role || 'student') as UserRole);
+}
+
+function friendlyAuthError(message: string): Error {
+  const lower = message.toLowerCase();
+  if (lower.includes('invalid login credentials')) {
+    return new Error('電郵或者密碼唔啱 · 慢慢再試一次');
+  }
+  if (lower.includes('email not confirmed')) {
+    return new Error('電郵仲未確認 · 睇下 inbox 入面嘅確認信');
+  }
+  if (lower.includes('user already registered')) {
+    return new Error('呢個電郵已經有帳戶 · 可以直接登入');
+  }
+  if (lower.includes('password')) {
+    return new Error('密碼未符合要求 · 至少輸入 6 個字元');
+  }
+  return new Error('出咗少少問題 · 過陣再試');
+}
+
+async function registerForPush(userId: string) {
+  if (Platform.OS === 'web') return;
+  try {
+    const permissions = await Notifications.getPermissionsAsync();
+    let granted = permissions.status === 'granted';
+    if (!granted && permissions.canAskAgain) {
+      granted = (await Notifications.requestPermissionsAsync()).status === 'granted';
+    }
+    if (!granted) return;
+    const token = await Notifications.getDevicePushTokenAsync();
+    if (!token?.data) return;
+    await api.post('/register-push', {
+      user_id: userId,
+      platform: Platform.OS,
+      device_token: token.data,
+    });
+  } catch {
+    // Push is optional and must not block authentication.
+  }
+}
+
+async function loadAppUser(authUser: SupabaseUser): Promise<User> {
+  const { data: profile, error } = await supabase
+    .from('profiles')
+    .select('id, display_name, role, is_premium, created_at')
+    .eq('id', authUser.id)
+    .single<ProfileRow>();
+
+  if (error) throw error;
+
+  let compatibility: Partial<User> = {};
+  try {
+    // Temporary · keeps settings and unmigrated screens working through Phase 4.
+    compatibility = await api.get<User>('/auth/me');
+  } catch {
+    // Supabase Auth remains usable while the compatibility backend is offline.
+  }
+
+  return {
+    id: authUser.id,
+    email: authUser.email || '',
+    display_name: profile.display_name,
+    created_at: profile.created_at,
+    credits: compatibility.credits ?? 0,
+    is_premium: compatibility.is_premium ?? profile.is_premium,
+    is_admin: compatibility.is_admin ?? profile.role === 'school_admin',
+    has_secret_pin: compatibility.has_secret_pin ?? false,
+    diary_style: compatibility.diary_style ?? {},
+    active_icon_pack: compatibility.active_icon_pack ?? 'classic',
+    featured_by_date: compatibility.featured_by_date ?? {},
+    role: compatibility.role || profile.role || 'student',
+  };
 }
 
 export function AuthProvider({ children }: { children: React.ReactNode }) {
-  const [user, setUser] = useState<User | null>(null);
+  const [user, setUserState] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
+  const idleTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const mountedRef = useRef(true);
+
+  const setUser = useCallback((next: User | null) => {
+    setUserState(next);
+    syncRole(next).catch(() => {});
+  }, []);
+
+  const hydrateSession = useCallback(async (session: Session | null) => {
+    if (!session) {
+      if (mountedRef.current) setUser(null);
+      return null;
+    }
+    try {
+      const next = await loadAppUser(session.user);
+      if (mountedRef.current) setUser(next);
+      registerForPush(next.id);
+      return next;
+    } catch {
+      if (mountedRef.current) setUser(null);
+      return null;
+    }
+  }, [setUser]);
 
   useEffect(() => {
-    (async () => {
-      const t = await loadToken();
-      if (t) {
-        try {
-          const me = await api.get<User>('/auth/me');
-          setUser(me);
-          await syncRole(me);
-          registerForPush(me.id);
-        } catch {
-          await setToken(null);
+    mountedRef.current = true;
+    supabase.auth.getSession()
+      .then(async ({ data }) => {
+        if (data.session) return hydrateSession(data.session);
+        // Temporary compatibility for invite-code accounts activated before
+        // that privileged workflow moves to an Edge Function in Phase 4.
+        if (await loadToken()) {
+          try {
+            const legacyUser = await api.get<User>('/auth/me');
+            if (mountedRef.current) setUser(legacyUser);
+            registerForPush(legacyUser.id);
+            return legacyUser;
+          } catch {
+            await setToken(null);
+          }
         }
+        return null;
+      })
+      .finally(() => {
+        if (mountedRef.current) setLoading(false);
+      });
+
+    const { data: listener } = supabase.auth.onAuthStateChange((event, session) => {
+      if (event === 'INITIAL_SESSION' && !session) return;
+      // Avoid issuing another Supabase request from inside the auth callback lock.
+      setTimeout(() => hydrateSession(session), 0);
+    });
+
+    return () => {
+      mountedRef.current = false;
+      listener.subscription.unsubscribe();
+    };
+  }, [hydrateSession, setUser]);
+
+  useEffect(() => {
+    const exchangeCode = async (url: string | null) => {
+      if (!url) return;
+      const code = Linking.parse(url).queryParams?.code;
+      if (typeof code === 'string') {
+        await supabase.auth.exchangeCodeForSession(code);
       }
-      setLoading(false);
-    })();
+    };
+    Linking.getInitialURL().then(exchangeCode).catch(() => {});
+    const subscription = Linking.addEventListener('url', ({ url }) => {
+      exchangeCode(url).catch(() => {});
+    });
+    return () => subscription.remove();
   }, []);
 
   const login = useCallback(async (email: string, password: string) => {
-    const res = await api.post<AuthResponse>('/auth/login', { email, password });
-    await setToken(res.access_token);
-    setUser(res.user);
-    await syncRole(res.user);
-    registerForPush(res.user.id);
-  }, []);
+    await setToken(null);
+    const { data, error } = await supabase.auth.signInWithPassword({
+      email: email.trim().toLowerCase(),
+      password,
+    });
+    if (error) throw friendlyAuthError(error.message);
+    await hydrateSession(data.session);
+  }, [hydrateSession]);
 
-  const register = useCallback(
-    async (email: string, password: string, displayName?: string) => {
-      const res = await api.post<AuthResponse>('/auth/register', {
-        email,
-        password,
-        display_name: displayName,
-      });
-      await setToken(res.access_token);
-      setUser(res.user);
-      await syncRole(res.user);
-      registerForPush(res.user.id);
-    },
-    [],
-  );
+  const register = useCallback(async (
+    email: string,
+    password: string,
+    displayName?: string,
+  ): Promise<RegisterResult> => {
+    await setToken(null);
+    const { data, error } = await supabase.auth.signUp({
+      email: email.trim().toLowerCase(),
+      password,
+      options: {
+        data: {
+          display_name: displayName || null,
+        },
+      },
+    });
+    if (error) throw friendlyAuthError(error.message);
+    if (data.session) await hydrateSession(data.session);
+    return { requiresEmailConfirmation: !data.session };
+  }, [hydrateSession]);
 
   const logout = useCallback(async (reason: 'manual' | 'inactivity' = 'manual') => {
-    await setToken(null);
+    await Promise.allSettled([supabase.auth.signOut(), setToken(null)]);
     setUser(null);
-    await RoleStorage.set('student');
     if (reason === 'inactivity') {
-      // Small notice · user comes back to a fresh login screen with context
-      Alert.alert('自動登出', '因為 10 分鐘冇任何操作 · 為咗保護你嘅私隱 · 系統已經自動登出。請重新登入。');
+      Alert.alert('自動登出', '因為 10 分鐘冇任何操作 · 為咗保護你嘅私隱 · 系統已經自動登出');
     }
+  }, [setUser]);
+
+  const clearIdle = useCallback(() => {
+    if (idleTimerRef.current) clearTimeout(idleTimerRef.current);
+    idleTimerRef.current = null;
   }, []);
 
-  // === Inactivity auto-logout timer ===
-  const idleTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-  const clearIdle = useCallback(() => {
-    if (idleTimerRef.current) {
-      clearTimeout(idleTimerRef.current);
-      idleTimerRef.current = null;
-    }
-  }, []);
   const scheduleIdle = useCallback(() => {
     clearIdle();
-    idleTimerRef.current = setTimeout(() => {
-      logout('inactivity');
-    }, INACTIVITY_TIMEOUT_MS);
+    idleTimerRef.current = setTimeout(() => logout('inactivity'), INACTIVITY_TIMEOUT_MS);
   }, [clearIdle, logout]);
-  const ping = useCallback(() => {
-    // Only re-arm the timer when someone is actually logged in
-    if (user) scheduleIdle();
-  }, [user, scheduleIdle]);
 
-  // Start / stop the idle timer alongside user login state
+  const ping = useCallback(() => {
+    if (user) scheduleIdle();
+  }, [scheduleIdle, user]);
+
   useEffect(() => {
-    if (user) {
-      scheduleIdle();
-      onApiActivity(ping);
-      // 401 from any API call → clear the session so guards route to login.
-      onAuthInvalid(() => {
-        setToken(null).catch(() => {});
-        setUser(null);
-      });
-    } else {
+    if (!user) {
       clearIdle();
       onApiActivity(null);
       onAuthInvalid(null);
+      return;
     }
-    return clearIdle;
-  }, [user, scheduleIdle, clearIdle, ping]);
+    scheduleIdle();
+    onApiActivity(ping);
+    onAuthInvalid(() => logout().catch(() => {}));
+    return () => {
+      clearIdle();
+      onApiActivity(null);
+      onAuthInvalid(null);
+    };
+  }, [clearIdle, logout, ping, scheduleIdle, user]);
 
-  // When app goes to background then returns · assume user was away; force logout if too long
   useEffect(() => {
-    let leftAt: number | null = null;
-    const sub = AppState.addEventListener('change', (s: AppStateStatus) => {
-      if (s === 'background' || s === 'inactive') {
-        leftAt = Date.now();
-      } else if (s === 'active' && leftAt) {
-        const gone = Date.now() - leftAt;
-        leftAt = null;
-        if (user && gone >= INACTIVITY_TIMEOUT_MS) {
-          logout('inactivity');
-        } else if (user) {
-          scheduleIdle();
-        }
+    const subscription = AppState.addEventListener('change', (state: AppStateStatus) => {
+      if (state === 'active') {
+        supabase.auth.startAutoRefresh();
+        if (user) scheduleIdle();
+      } else {
+        supabase.auth.stopAutoRefresh();
       }
     });
-    return () => sub.remove();
-  }, [user, scheduleIdle, logout]);
+    return () => subscription.remove();
+  }, [scheduleIdle, user]);
 
   const refreshUser = useCallback(async () => {
-    try {
-      const me = await api.get<User>('/auth/me');
-      setUser(me);
-      await syncRole(me);
-    } catch {
-      // ignore
-    }
-  }, []);
+    const { data } = await supabase.auth.getSession();
+    return hydrateSession(data.session);
+  }, [hydrateSession]);
 
   const value = useMemo(
     () => ({ user, loading, login, register, logout, refreshUser, setUser, ping }),
-    [user, loading, login, register, logout, refreshUser, ping],
+    [user, loading, login, register, logout, refreshUser, setUser, ping],
   );
 
   return <Ctx.Provider value={value}>{children}</Ctx.Provider>;
 }
 
 export function useAuth() {
-  const c = useContext(Ctx);
-  if (!c) throw new Error('useAuth must be used within AuthProvider');
-  return c;
+  const context = useContext(Ctx);
+  if (!context) throw new Error('useAuth must be used within AuthProvider');
+  return context;
 }

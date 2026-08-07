@@ -24,18 +24,24 @@ export default function Register() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState<string | null>(null);
+  const [info, setInfo] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
 
   const submit = async () => {
     setError(null);
+    setInfo(null);
     if (password.length < 6) {
       setError('密碼至少要 6 個字元');
       return;
     }
     setLoading(true);
     try {
-      await register(email.trim(), password, displayName.trim() || undefined);
-      router.replace('/(tabs)');
+      const result = await register(email.trim(), password, displayName.trim() || undefined);
+      if (result.requiresEmailConfirmation) {
+        setInfo('確認信已經寄出 · 撳入面條 link 就可以返嚟登入');
+      } else {
+        router.replace('/(tabs)');
+      }
     } catch (e: any) {
       setError(e?.message || '註冊失敗');
     } finally {
@@ -107,6 +113,12 @@ export default function Register() {
               {error}
             </Text>
           )}
+          {info && (
+            <View style={styles.infoBox}>
+              <Feather name="mail" size={14} color="#4E7962" />
+              <Text testID="register-info" style={styles.infoText}>{info}</Text>
+            </View>
+          )}
 
           <Pressable
             testID="register-submit-btn"
@@ -167,6 +179,18 @@ const styles = StyleSheet.create({
     color: COLORS.textPrimary,
   },
   error: { color: COLORS.danger, marginTop: SPACING.sm, marginBottom: SPACING.sm },
+  infoBox: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: SPACING.sm,
+    backgroundColor: '#EAF2EE',
+    borderRadius: RADIUS.sm,
+    borderLeftColor: '#4E7962',
+    borderLeftWidth: 3,
+    padding: SPACING.sm,
+    marginTop: SPACING.sm,
+  },
+  infoText: { color: '#3F5A4D', flex: 1, fontSize: 12 },
   primaryBtn: {
     backgroundColor: COLORS.primary,
     height: 56,
