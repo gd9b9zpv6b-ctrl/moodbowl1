@@ -63,8 +63,8 @@ export default function Login() {
         school_admin: '/school-admin',
       };
       router.replace((routes[acc.role] || '/(tabs)') as never);
-    } catch (e: any) {
-      setError(e?.message || '示範帳戶登入失敗 · 請試下再啟動 backend');
+    } catch {
+      setError('示範帳戶暫時未接入 Supabase · 請用「開個帳戶」註冊一個新電郵再登入');
     } finally {
       setDemoLoading(null);
     }
@@ -169,7 +169,7 @@ export default function Login() {
           </View>
 
           <Text style={styles.demoHint}>
-            密碼統一為 <Text style={{ fontWeight: '800' }}>demo1234</Text> · 撳角色直接進入相關版面
+            而家請先用真正電郵註冊 · 示範帳戶稍後先會接入 Supabase
           </Text>
 
           <View style={styles.demoGrid}>
