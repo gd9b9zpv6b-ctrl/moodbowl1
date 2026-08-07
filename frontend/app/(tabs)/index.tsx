@@ -30,6 +30,7 @@ import { PinUnlockModal } from '@/src/components/pin-unlock-modal';
 import { EntryEditModal } from '@/src/components/entry-edit-modal';
 import { SupportCtaRow } from '@/src/components/support-cta-row';
 import { useRecentEmotions } from '@/src/hooks/use-recent-emotions';
+import { useResponsiveLayout } from '@/src/hooks/use-responsive-layout';
 
 function todayISO() {
   const d = new Date();
@@ -49,6 +50,7 @@ export const resetOnboardingSession = () => {
 export default function Home() {
   const { user } = useAuth();
   const router = useRouter();
+  const layout = useResponsiveLayout();
   const [selectedKeys, setSelectedKeys] = useState<string[]>([]);
   const [note, setNote] = useState('');
   const [share, setShare] = useState(false);
@@ -137,6 +139,8 @@ export default function Home() {
     });
   };
 
+  const emotionVisualSize = layout.isDesktop ? 96 : layout.isTablet ? 88 : 90;
+
   const renderEmotionBtn = (e: Emotion) => {
     const active = selectedKeys.includes(e.key);
     const orderIdx = selectedKeys.indexOf(e.key);
@@ -147,12 +151,12 @@ export default function Home() {
         onPress={() => toggleSelect(e)}
         style={[
           styles.emotionBtn,
-          { backgroundColor: e.color + '80' },
+          { width: layout.emotionTileWidth, backgroundColor: e.color + '80' },
           active && styles.emotionBtnActive,
         ]}
       >
         <View style={styles.emotionImgWrap}>
-          <EmotionVisual emotion={e} size={90} radius={RADIUS.md} />
+          <EmotionVisual emotion={e} size={emotionVisualSize} radius={RADIUS.md} />
         </View>
         <Text style={styles.emotionLabel}>{e.label}</Text>
         {active && (
@@ -290,16 +294,36 @@ export default function Home() {
           behavior={Platform.OS === 'ios' ? 'padding' : undefined}
         >
           <ScrollView
-            contentContainerStyle={styles.scroll}
+            contentContainerStyle={[
+              styles.scroll,
+              {
+                paddingHorizontal: layout.pagePadding,
+                alignItems: layout.isDesktop ? 'center' : 'stretch',
+              },
+            ]}
             showsVerticalScrollIndicator={false}
             keyboardShouldPersistTaps="handled"
           >
-            <Text style={styles.greeting} testID="home-greeting">
-              你好,
-              <Text style={styles.greetingAdj}>{adjective}</Text>
-              {user?.display_name || '朋友'}
-            </Text>
-            <Text style={styles.prompt}>而家你有咩感受?</Text>
+            <View
+              style={[
+                styles.contentShell,
+                {
+                  maxWidth: layout.contentMaxWidth,
+                  width: '100%',
+                },
+              ]}
+            >
+            <View style={styles.heroBlock}>
+              <Text style={styles.greeting} testID="home-greeting">
+                你好 ·
+                <Text style={styles.greetingAdj}>{adjective}</Text>
+                {user?.display_name || '朋友'}
+              </Text>
+              <Text style={styles.prompt}>而家你有咩感受</Text>
+              <Text style={styles.heroHint}>
+                慢慢揀 · 寫低 · 呢度係你嘅小天地
+              </Text>
+            </View>
 
             <Pressable
               testID="affirmation-card"
@@ -317,25 +341,45 @@ export default function Home() {
               </View>
             </Pressable>
 
-            <Pressable
-              testID="sos-calm-card"
-              onPress={() => router.push('/calm')}
-              style={styles.sosCard}
-            >
-              <View style={styles.sosIcon}>
-                <Feather name="wind" size={22} color={COLORS.bgCard} />
-              </View>
-              <View style={{ flex: 1 }}>
-                <Text style={styles.sosTitle}>情緒好激動？</Text>
-                <Text style={styles.sosSub}>試吓平復情緒嘅小錦囊 · 5 個溫柔方法</Text>
-              </View>
-              <Feather name="chevron-right" size={20} color={COLORS.textPrimary} />
-            </Pressable>
+            <View style={[styles.linkCardsRow, layout.isDesktop && styles.linkCardsRowDesktop]}>
+              <Pressable
+                testID="sos-calm-card"
+                onPress={() => router.push('/calm')}
+                style={[styles.sosCard, layout.isDesktop && styles.linkCardDesktop]}
+              >
+                <View style={styles.sosIcon}>
+                  <Feather name="wind" size={22} color={COLORS.bgCard} />
+                </View>
+                <View style={{ flex: 1 }}>
+                  <Text style={styles.sosTitle}>情緒好激動</Text>
+                  <Text style={styles.sosSub}>試吓平復情緒嘅小錦囊 · 5 個溫柔方法</Text>
+                </View>
+                <Feather name="chevron-right" size={20} color={COLORS.textPrimary} />
+              </Pressable>
+
+              <Pressable
+                testID="garden-card"
+                onPress={() => router.push('/garden')}
+                style={[styles.gardenCard, layout.isDesktop && styles.linkCardDesktop]}
+              >
+                <View style={styles.gardenEmojiWrap}>
+                  <Text style={styles.gardenEmoji}>🌾</Text>
+                </View>
+                <View style={{ flex: 1 }}>
+                  <Text style={styles.gardenTitle}>我嘅稻田</Text>
+                  <Text style={styles.gardenSub}>用心種一粒米 · 收成一碗新心情</Text>
+                </View>
+                <View style={styles.gardenBadge}>
+                  <Text style={styles.gardenBadgeText}>新</Text>
+                </View>
+                <Feather name="chevron-right" size={20} color={COLORS.textPrimary} />
+              </Pressable>
+            </View>
 
             <View style={styles.emotionPromptRow}>
-              <Text style={styles.emotionPromptTitle}>你今日嘅感受點啊?</Text>
+              <Text style={styles.emotionPromptTitle}>你今日嘅感受點啊</Text>
               <Text style={styles.emotionPromptHint}>
-                撳一個或多個飯碗 · 記低呢一刻 (可以揀幾個一齊)
+                撳一個或多個飯碗 · 記低呢一刻 · 可以揀幾個一齊
               </Text>
             </View>
 
@@ -614,24 +658,6 @@ export default function Home() {
               </View>
             )}
 
-            <Pressable
-              testID="garden-card"
-              onPress={() => router.push('/garden')}
-              style={styles.gardenCard}
-            >
-              <View style={styles.gardenEmojiWrap}>
-                <Text style={styles.gardenEmoji}>🌾</Text>
-              </View>
-              <View style={{ flex: 1 }}>
-                <Text style={styles.gardenTitle}>我嘅稻田</Text>
-                <Text style={styles.gardenSub}>用 ❤️ 種一粒米 · 收成一碗新心情</Text>
-              </View>
-              <View style={styles.gardenBadge}>
-                <Text style={styles.gardenBadgeText}>新</Text>
-              </View>
-              <Feather name="chevron-right" size={20} color={COLORS.textPrimary} />
-            </Pressable>
-
             <View style={{ marginTop: SPACING.xl }}>
               <SupportCtaRow title="需要陪伴嘅時候" />
               <Pressable
@@ -666,7 +692,7 @@ export default function Home() {
                 <ActivityIndicator color={COLORS.primary} style={{ marginTop: SPACING.md }} />
               ) : todayEntries.length === 0 ? (
                 <Text style={styles.emptyText} testID="today-empty">
-                  今日仲未有故事。撳上面揀下你嘅感受,開始寫。
+                  今日仲未有故事 · 撳上面揀下你嘅感受 · 開始寫
                 </Text>
               ) : (
                 todayEntries.map((entry) => {
@@ -738,7 +764,7 @@ export default function Home() {
                       {locked ? (
                         <View style={styles.lockedBox}>
                           <Feather name="lock" size={16} color="#E86A6A" />
-                          <Text style={styles.lockedText}>撳一下 輸入密碼解鎖</Text>
+                          <Text style={styles.lockedText}>撳一下 · 輸入密碼解鎖</Text>
                         </View>
                       ) : entry.note ? (
                         <>
@@ -764,6 +790,7 @@ export default function Home() {
             </View>
 
             <View style={{ height: SPACING.xxl }} />
+            </View>
           </ScrollView>
         </KeyboardAvoidingView>
       </SafeAreaView>
@@ -789,14 +816,34 @@ export default function Home() {
 
 const styles = StyleSheet.create({
   root: { flex: 1 },
-  scroll: { padding: SPACING.lg, paddingBottom: SPACING.xl },
-  greeting: { fontSize: 26, fontWeight: '700', color: COLORS.textPrimary, lineHeight: 34 },
+  scroll: {
+    paddingTop: SPACING.md,
+    paddingBottom: SPACING.xl,
+    flexGrow: 1,
+  },
+  contentShell: {
+    flexGrow: 1,
+  },
+  heroBlock: {
+    marginBottom: SPACING.lg,
+  },
+  greeting: {
+    fontSize: 26,
+    fontWeight: '800',
+    color: COLORS.textPrimary,
+    lineHeight: 34,
+  },
   greetingAdj: { color: COLORS.primary },
   prompt: {
     fontSize: 17,
     color: COLORS.textSecondary,
+    marginTop: SPACING.sm,
+  },
+  heroHint: {
+    fontSize: 13,
+    color: COLORS.textSecondary,
     marginTop: SPACING.xs,
-    marginBottom: SPACING.md,
+    lineHeight: 20,
   },
   affirmationCard: {
     backgroundColor: COLORS.bgCard,
@@ -817,7 +864,7 @@ const styles = StyleSheet.create({
     fontSize: 12,
     fontWeight: '700',
     color: COLORS.textSecondary,
-    letterSpacing: 1,
+    letterSpacing: 0.6,
   },
   affirmationText: {
     fontSize: 18,
@@ -839,6 +886,20 @@ const styles = StyleSheet.create({
     fontWeight: '600',
     color: COLORS.primary,
   },
+  linkCardsRow: {
+    flexDirection: 'column',
+    gap: SPACING.md,
+    marginBottom: SPACING.lg,
+  },
+  linkCardsRowDesktop: {
+    flexDirection: 'row',
+    alignItems: 'stretch',
+  },
+  linkCardDesktop: {
+    flex: 1,
+    marginBottom: 0,
+    marginTop: 0,
+  },
   sosCard: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -846,7 +907,6 @@ const styles = StyleSheet.create({
     backgroundColor: '#EEE0F0',
     borderRadius: RADIUS.lg,
     padding: SPACING.md,
-    marginBottom: SPACING.lg,
   },
   sosIcon: {
     width: 48,
@@ -865,8 +925,6 @@ const styles = StyleSheet.create({
     backgroundColor: '#DFF3E4',
     borderRadius: RADIUS.lg,
     padding: SPACING.md,
-    marginTop: SPACING.lg,
-    marginBottom: 0,
   },
   gardenEmojiWrap: {
     width: 48,
@@ -895,16 +953,18 @@ const styles = StyleSheet.create({
     paddingHorizontal: SPACING.sm,
     paddingVertical: 8,
     borderRadius: RADIUS.sm,
-    backgroundColor: '#E4F0E8',
+    backgroundColor: '#EAF2EE',
+    borderLeftWidth: 3,
+    borderLeftColor: '#4E7962',
   },
   privacyBannerText: {
     flex: 1,
     fontSize: 11,
-    color: '#4A6B54',
+    color: '#3F5A4D',
     lineHeight: 15,
   },
   privacyBannerBold: {
-    fontWeight: '800',
+    fontWeight: '700',
     color: '#3A5545',
   },
   peerTip: {
@@ -913,20 +973,20 @@ const styles = StyleSheet.create({
     gap: 8,
     padding: SPACING.sm + 2,
     borderRadius: RADIUS.sm,
-    backgroundColor: '#FFF6E5',
-    borderWidth: 1,
-    borderColor: '#F0D8A8',
+    backgroundColor: '#FEF9E7',
+    borderLeftWidth: 3,
+    borderLeftColor: '#B57D2A',
     marginTop: SPACING.sm,
   },
   peerTipEmoji: { fontSize: 18 },
   peerTipText: {
     flex: 1,
     fontSize: 12,
-    color: '#7A5C3F',
+    color: '#8A5F1F',
     lineHeight: 17,
   },
   peerTipBold: {
-    fontWeight: '800',
+    fontWeight: '700',
     color: '#5A3F1F',
   },
   ctaRow: { flexDirection: 'row', gap: SPACING.sm, marginBottom: SPACING.lg },
@@ -966,7 +1026,6 @@ const styles = StyleSheet.create({
   exploreSub: { fontSize: 12, color: COLORS.textSecondary, marginTop: 2 },
   grid: { flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'space-between' },
   emotionBtn: {
-    width: '31%',
     borderRadius: RADIUS.lg,
     padding: SPACING.xs,
     alignItems: 'center',
@@ -1056,12 +1115,12 @@ const styles = StyleSheet.create({
   saveBtn: {
     marginTop: SPACING.md,
     backgroundColor: COLORS.primary,
-    height: 52,
+    height: 56,
     borderRadius: RADIUS.pill,
     alignItems: 'center',
     justifyContent: 'center',
   },
-  saveBtnText: { color: COLORS.textPrimary, fontSize: 16, fontWeight: '700' },
+  saveBtnText: { color: COLORS.textPrimary, fontSize: 17, fontWeight: '700' },
   savedBanner: {
     marginTop: SPACING.md,
     flexDirection: 'row',
@@ -1072,7 +1131,12 @@ const styles = StyleSheet.create({
     borderRadius: RADIUS.md,
   },
   savedText: { color: COLORS.textPrimary, fontWeight: '600' },
-  sectionTitle: { fontSize: 18, fontWeight: '700', color: COLORS.textPrimary, marginBottom: SPACING.md },
+  sectionTitle: {
+    fontSize: 18,
+    fontWeight: '700',
+    color: COLORS.textPrimary,
+    marginBottom: 0,
+  },
   todayHeaderRow: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -1095,13 +1159,14 @@ const styles = StyleSheet.create({
   },
   emotionPromptTitle: {
     fontSize: 20,
-    fontWeight: '700',
+    fontWeight: '800',
     color: COLORS.textPrimary,
   },
   emotionPromptHint: {
     fontSize: 13,
     color: COLORS.textSecondary,
-    marginTop: 2,
+    marginTop: SPACING.xs,
+    lineHeight: 20,
   },
   searchWrap: {
     flexDirection: 'row',
@@ -1204,8 +1269,13 @@ const styles = StyleSheet.create({
     fontWeight: '700',
     color: COLORS.primary,
   },
-  emptyText: { color: COLORS.textSecondary, fontSize: 14 },
-  entryCard: { borderRadius: RADIUS.md, padding: SPACING.md, marginBottom: SPACING.sm },
+  emptyText: { color: COLORS.textSecondary, fontSize: 14, lineHeight: 22 },
+  entryCard: {
+    borderRadius: RADIUS.md,
+    padding: SPACING.md,
+    marginBottom: SPACING.sm,
+    backgroundColor: COLORS.bgCard,
+  },
   entryHeader: { flexDirection: 'row', alignItems: 'center', gap: SPACING.sm },
   entryEmotionStack: { flexDirection: 'row', alignItems: 'center' },
   entryEmotionStackItem: {
@@ -1244,7 +1314,9 @@ const styles = StyleSheet.create({
     gap: SPACING.sm,
     padding: SPACING.md,
     borderRadius: RADIUS.md,
-    backgroundColor: '#FFE4E4',
+    backgroundColor: '#FDECEC',
+    borderLeftWidth: 3,
+    borderLeftColor: '#8A3F3F',
   },
-  lockedText: { color: '#E86A6A', fontWeight: '700', fontSize: 13 },
+  lockedText: { color: '#8A3F3F', fontWeight: '700', fontSize: 13 },
 });
