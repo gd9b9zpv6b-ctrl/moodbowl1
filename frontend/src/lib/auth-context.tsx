@@ -82,9 +82,13 @@ async function loadAppUser(authUser: SupabaseUser): Promise<User> {
     .from('profiles')
     .select('id, display_name, role, is_premium, created_at')
     .eq('id', authUser.id)
-    .single<ProfileRow>();
+    .maybeSingle<ProfileRow>();
 
-  if (error) throw error;
+  // Missing profile should not kick the user out after a successful Supabase login.
+  // This happens when the auth trigger was applied late or the row is still settling.
+  if (error) {
+    console.warn('[auth] profile read failed', error.message);
+  }
 
   let compatibility: Partial<User> = {};
   try {
@@ -94,19 +98,24 @@ async function loadAppUser(authUser: SupabaseUser): Promise<User> {
     // Supabase Auth remains usable while the compatibility backend is offline.
   }
 
+  const metaName =
+    (typeof authUser.user_metadata?.display_name === 'string' && authUser.user_metadata.display_name) ||
+    authUser.email?.split('@')[0] ||
+    '朋友';
+
   return {
     id: authUser.id,
     email: authUser.email || '',
-    display_name: profile.display_name,
-    created_at: profile.created_at,
+    display_name: profile?.display_name || metaName,
+    created_at: profile?.created_at || authUser.created_at || new Date().toISOString(),
     credits: compatibility.credits ?? 0,
-    is_premium: compatibility.is_premium ?? profile.is_premium,
-    is_admin: compatibility.is_admin ?? profile.role === 'school_admin',
+    is_premium: compatibility.is_premium ?? profile?.is_premium ?? false,
+    is_admin: compatibility.is_admin ?? profile?.role === 'school_admin',
     has_secret_pin: compatibility.has_secret_pin ?? false,
     diary_style: compatibility.diary_style ?? {},
     active_icon_pack: compatibility.active_icon_pack ?? 'classic',
     featured_by_date: compatibility.featured_by_date ?? {},
-    role: compatibility.role || profile.role || 'student',
+    role: compatibility.role || profile?.role || 'student',
   };
 }
 
@@ -194,7 +203,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       password,
     });
     if (error) throw friendlyAuthError(error.message);
-    await hydrateSession(data.session);
+    const next = await hydrateSession(data.session);
+    if (!next) throw new Error('登入成功但載入帳戶資料失敗 · 過陣再試');
   }, [hydrateSession]);
 
   const register = useCallback(async (
@@ -213,7 +223,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       },
     });
     if (error) throw friendlyAuthError(error.message);
-    if (data.session) await hydrateSession(data.session);
+    if (data.session) {
+      const next = await hydrateSession(data.session);
+      if (!next) throw new Error('帳戶已建立但載入資料失敗 · 試吓直接登入');
+    }
     return { requiresEmailConfirmation: !data.session };
   }, [hydrateSession]);
 

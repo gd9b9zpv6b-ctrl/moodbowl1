@@ -81,13 +81,13 @@ export default function Home() {
   const [activeCategory, setActiveCategory] = useState<EmotionCategory | 'all'>('all');
   const { recent, track } = useRecentEmotions();
 
-  // Show onboarding on EVERY app launch (once per session — not on every navigation)
-  // - Non-student REAL roles (user.role !== 'student'): skip onboarding entirely
-  //   AND if their local RoleStorage still points to their role, redirect to dashboard.
-  //   If RoleStorage was set to 'student' (via self-care card), just stay on student home.
+  // Show onboarding once per launch for students · but only if they have not
+  // completed it before. This avoids a bounce that feels like login failed.
   useEffect(() => {
     (async () => {
       const { RoleStorage, ROLE_META } = await import('@/src/lib/role-storage');
+      const { ONBOARDING_KEY } = await import('@/app/onboarding');
+      const AsyncStorage = (await import('@react-native-async-storage/async-storage')).default;
       const localRole = await RoleStorage.get();
       const realRole = (user?.role || 'student') as typeof localRole;
 
@@ -101,7 +101,10 @@ export default function Home() {
       // Skip onboarding entirely for non-students (even if they're temporarily in student mode)
       if (realRole !== 'student') return;
 
-      // Student: show onboarding once per session
+      const done = await AsyncStorage.getItem(ONBOARDING_KEY);
+      if (done) return;
+
+      // Student: show onboarding once per session until completed
       if (!onboardingShownThisSession) {
         onboardingShownThisSession = true;
         router.replace('/onboarding');

@@ -146,7 +146,7 @@ export default function Onboarding() {
 
   const finish = async () => {
     await AsyncStorage.setItem(ONBOARDING_KEY, '1');
-    router.replace('/');
+    router.replace('/(tabs)');
   };
 
   return (
