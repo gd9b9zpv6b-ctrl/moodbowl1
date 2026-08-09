@@ -13,6 +13,7 @@ import { EMOTION_BY_KEY } from '@/src/constants/emotions';
 import { COLORS, RADIUS, SPACING } from '@/src/constants/theme';
 import { api, Entry, User } from '@/src/lib/api';
 import { useAuth } from '@/src/lib/auth-context';
+import { listMyDiaryEntriesForMonth } from '@/src/lib/diary';
 
 function currentMonthKey(d = new Date()) {
   return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`;
@@ -41,9 +42,8 @@ export default function CalendarScreen() {
   const load = useCallback(async (m: string) => {
     setLoading(true);
     try {
-      const res = await api.get<Entry[] | null>(`/entries/calendar?month=${m}`);
-      // Backend may be offline during Supabase migration · keep an empty list.
-      setEntries(Array.isArray(res) ? res : []);
+      const res = await listMyDiaryEntriesForMonth(m);
+      setEntries(res);
     } catch {
       setEntries([]);
     } finally {
