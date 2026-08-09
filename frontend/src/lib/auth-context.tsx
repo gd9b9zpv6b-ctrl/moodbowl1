@@ -88,6 +88,8 @@ function userFromAuth(
     authUser.email?.split('@')[0] ||
     '朋友';
 
+  const role = profile?.role || 'student';
+
   return {
     id: authUser.id,
     email: authUser.email || '',
@@ -95,12 +97,13 @@ function userFromAuth(
     created_at: profile?.created_at || authUser.created_at || new Date().toISOString(),
     credits: extra.credits ?? 0,
     is_premium: extra.is_premium ?? profile?.is_premium ?? false,
-    is_admin: extra.is_admin ?? profile?.role === 'school_admin',
+    // Role trust boundary · never take role / is_admin from FastAPI compatibility.
+    is_admin: role === 'school_admin',
     has_secret_pin: extra.has_secret_pin ?? false,
     diary_style: extra.diary_style ?? {},
     active_icon_pack: extra.active_icon_pack ?? 'classic',
     featured_by_date: extra.featured_by_date ?? {},
-    role: extra.role || profile?.role || 'student',
+    role,
   };
 }
 

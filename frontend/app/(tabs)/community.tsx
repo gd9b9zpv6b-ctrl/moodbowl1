@@ -18,6 +18,7 @@ import { EMOTION_BY_KEY } from '@/src/constants/emotions';
 import { COLORS, RADIUS, SPACING } from '@/src/constants/theme';
 import { api, Entry } from '@/src/lib/api';
 import { useAuth } from '@/src/lib/auth-context';
+import { listCommunityDiaries, toggleDiaryReaction } from '@/src/lib/diary';
 import { CommunityConfig, DEFAULT_CONFIG, SchoolCommunityConfig } from '@/src/lib/school-community-config';
 
 type Scope = 'student' | 'adult';
@@ -38,9 +39,19 @@ export default function Community() {
     try {
       const c = await SchoolCommunityConfig.get();
       setCfg(c);
-      const q = c.postTtlDays > 0 ? `?ttl_days=${c.postTtlDays}` : '?ttl_days=0';
-      const res = await api.get<Entry[] | null>(`/entries/community${q}`);
-      setEntries(Array.isArray(res) ? res : []);
+      // Prefer Supabase community feed; fall back to FastAPI while migrating.
+      const fromSupabase = await listCommunityDiaries();
+      if (fromSupabase.length > 0) {
+        setEntries(fromSupabase);
+      } else {
+        try {
+          const q = c.postTtlDays > 0 ? `?ttl_days=${c.postTtlDays}` : '?ttl_days=0';
+          const res = await api.get<Entry[] | null>(`/entries/community${q}`);
+          setEntries(Array.isArray(res) ? res : []);
+        } catch {
+          setEntries(fromSupabase);
+        }
+      }
     } catch {
       setEntries([]);
     } finally {
@@ -130,10 +141,21 @@ export default function Community() {
       ),
     );
     try {
-      const updated = await api.post<Entry>(`/entries/${id}/react`);
-      setEntries((prev) => prev.map((e) => (e.id === id ? updated : e)));
+      const reacted = await toggleDiaryReaction(id);
+      setEntries((prev) =>
+        prev.map((e) =>
+          e.id === id
+            ? { ...e, hearts: reacted.hearts, hearted_by_me: reacted.hearted_by_me }
+            : e,
+        ),
+      );
     } catch {
-      load();
+      try {
+        const updated = await api.post<Entry>(`/entries/${id}/react`);
+        setEntries((prev) => prev.map((e) => (e.id === id ? updated : e)));
+      } catch {
+        load();
+      }
     }
   };
 

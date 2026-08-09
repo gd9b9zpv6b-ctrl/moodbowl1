@@ -16,7 +16,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { EmotionVisual } from '@/src/components/emotion-visual';
 import { EMOTION_BY_KEY } from '@/src/constants/emotions';
 import { COLORS, RADIUS, SPACING } from '@/src/constants/theme';
-import { createRitualDiaryEntry } from '@/src/lib/diary';
+import { saveRitualWithActivities } from '@/src/lib/diary';
 import { detectState, type NSState } from '@/src/lib/ritual/state-detector';
 import { useRitualStore } from '@/src/lib/ritual/ritual-store';
 
@@ -42,6 +42,7 @@ export default function RitualBridgeScreen() {
   const shareFamily = useRitualStore((s) => s.shareFamily);
   const shareTimeline = useRitualStore((s) => s.shareTimeline);
   const startedAt = useRitualStore((s) => s.startedAt);
+  const regulationUsed = useRitualStore((s) => s.regulationUsed);
   const setShares = useRitualStore((s) => s.setShares);
 
   const [saving, setSaving] = useState(false);
@@ -54,20 +55,23 @@ export default function RitualBridgeScreen() {
     try {
       const timeSpent =
         startedAt != null ? Math.max(0, Math.round((Date.now() - startedAt) / 1000)) : null;
-      const entry = await createRitualDiaryEntry({
-        soup,
-        body_chips: bodyChips,
-        bowl_emotion_key: selectedBowlKey,
-        bowl_color_tint: colorTint,
-        bowl_size: bowlSize,
-        diary_text: checkInType === 'hug_only' ? null : diaryText || null,
-        check_in_type: checkInType === 'hug_only' ? 'hug_only' : 'full',
-        is_public: shareClass,
-        shared_with_class: shareClass,
-        shared_with_family: shareFamily,
-        smile_completed: false,
-        time_spent_sec: timeSpent,
-      });
+      const entry = await saveRitualWithActivities(
+        {
+          soup,
+          body_chips: bodyChips,
+          bowl_emotion_key: selectedBowlKey,
+          bowl_color_tint: colorTint,
+          bowl_size: bowlSize,
+          diary_text: checkInType === 'hug_only' ? null : diaryText || null,
+          check_in_type: checkInType === 'hug_only' ? 'hug_only' : 'full',
+          is_public: shareClass,
+          shared_with_class: shareClass,
+          shared_with_family: shareFamily,
+          smile_completed: false,
+          time_spent_sec: timeSpent,
+        },
+        regulationUsed,
+      );
       router.push({
         pathname: '/ritual/complete',
         params: {

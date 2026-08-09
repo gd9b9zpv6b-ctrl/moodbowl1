@@ -1,6 +1,6 @@
 import { Feather } from '@expo/vector-icons';
-import { useFocusEffect, useRouter } from 'expo-router';
-import { useCallback, useMemo, useState } from 'react';
+import { useFocusEffect, useLocalSearchParams, useRouter } from 'expo-router';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import { ActivityIndicator, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { Calendar, DateData } from 'react-native-calendars';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -26,9 +26,25 @@ function todayISO() {
 
 const NOTE_PREVIEW_LINES = 3;
 
+function albumSizeScale(size?: string | null) {
+  switch (size) {
+    case 'S':
+      return 0.85;
+    case 'L':
+      return 1.1;
+    case 'XL':
+      return 1.2;
+    default:
+      return 1;
+  }
+}
+
 export default function CalendarScreen() {
   const { user, setUser } = useAuth();
   const router = useRouter();
+  const params = useLocalSearchParams<{ mode?: string | string[] }>();
+  const modeParam = Array.isArray(params.mode) ? params.mode[0] : params.mode;
+  const [albumMode, setAlbumMode] = useState(modeParam === 'album');
   const [month, setMonth] = useState(currentMonthKey());
   const [entries, setEntries] = useState<Entry[]>([]);
   const [selectedDate, setSelectedDate] = useState<string>(todayISO());
@@ -36,6 +52,10 @@ export default function CalendarScreen() {
   const [featuring, setFeaturing] = useState<string | null>(null);
   const [detailEntry, setDetailEntry] = useState<Entry | null>(null);
   const [editingEntry, setEditingEntry] = useState<Entry | null>(null);
+
+  useEffect(() => {
+    if (modeParam === 'album') setAlbumMode(true);
+  }, [modeParam]);
 
   const featuredByDate = useMemo(() => user?.featured_by_date || {}, [user?.featured_by_date]);
 
@@ -97,10 +117,25 @@ export default function CalendarScreen() {
   return (
     <SafeAreaView style={styles.safe} edges={['top']}>
       <ScrollView contentContainerStyle={styles.scroll} showsVerticalScrollIndicator={false}>
-        <Text style={styles.title} testID="calendar-title">
-          你嘅心路
-        </Text>
-        <Text style={styles.subtitle}>每一個小小嘅感受,都值得記低。</Text>
+        <View style={styles.titleRow}>
+          <View style={{ flex: 1 }}>
+            <Text style={styles.title} testID="calendar-title">
+              {albumMode ? '心情圖鑑' : '你嘅心路'}
+            </Text>
+            <Text style={styles.subtitle}>
+              {albumMode ? '一格一碗 · 睇返呢個月嘅顏色。' : '每一個小小嘅感受,都值得記低。'}
+            </Text>
+          </View>
+          <Pressable
+            testID="calendar-album-toggle"
+            onPress={() => setAlbumMode((v) => !v)}
+            style={[styles.albumToggle, albumMode && styles.albumToggleActive]}
+            accessibilityLabel={albumMode ? '切換返日曆' : '切換圖鑑模式'}
+          >
+            <Feather name={albumMode ? 'calendar' : 'grid'} size={16} color={COLORS.textPrimary} />
+            <Text style={styles.albumToggleText}>{albumMode ? '日曆' : '圖鑑'}</Text>
+          </Pressable>
+        </View>
 
         <View style={styles.calendarWrap}>
           <Calendar
@@ -118,6 +153,8 @@ export default function CalendarScreen() {
               const isSelected = selectedDate === date.dateString;
               const isToday = todayISO() === date.dateString;
               const isDisabled = state === 'disabled';
+              const tint = featured?.bowl_color_tint;
+              const visualSize = Math.round(38 * (albumMode ? albumSizeScale(featured?.bowl_size) : 1));
 
               return (
                 <Pressable
@@ -132,7 +169,13 @@ export default function CalendarScreen() {
                         isSelected && styles.dayIconWrapSelected,
                       ]}
                     >
-                      <EmotionVisual emotion={em} size={38} radius={RADIUS.sm} />
+                      <EmotionVisual emotion={em} size={visualSize} radius={RADIUS.sm} />
+                      {albumMode && tint && tint !== '#FFFFFF' ? (
+                        <View
+                          pointerEvents="none"
+                          style={[styles.albumTint, { backgroundColor: tint }]}
+                        />
+                      ) : null}
                     </View>
                   ) : (
                     <View
@@ -348,8 +391,28 @@ export default function CalendarScreen() {
 const styles = StyleSheet.create({
   safe: { flex: 1, backgroundColor: COLORS.bgMain },
   scroll: { padding: SPACING.lg },
+  titleRow: {
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    gap: SPACING.sm,
+    marginBottom: SPACING.lg,
+  },
   title: { fontSize: 28, fontWeight: '700', color: COLORS.textPrimary },
-  subtitle: { fontSize: 15, color: COLORS.textSecondary, marginTop: 4, marginBottom: SPACING.lg },
+  subtitle: { fontSize: 15, color: COLORS.textSecondary, marginTop: 4 },
+  albumToggle: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    paddingHorizontal: SPACING.sm + 2,
+    paddingVertical: 8,
+    borderRadius: RADIUS.pill,
+    backgroundColor: COLORS.bgCard,
+    marginTop: 4,
+  },
+  albumToggleActive: {
+    backgroundColor: COLORS.primaryLight,
+  },
+  albumToggleText: { fontSize: 13, fontWeight: '700', color: COLORS.textPrimary },
   calendarWrap: {
     borderRadius: RADIUS.lg,
     overflow: 'hidden',
@@ -369,6 +432,12 @@ const styles = StyleSheet.create({
     borderRadius: RADIUS.pill,
     alignItems: 'center',
     justifyContent: 'center',
+    overflow: 'hidden',
+  },
+  albumTint: {
+    ...StyleSheet.absoluteFillObject,
+    borderRadius: RADIUS.pill,
+    opacity: 0.35,
   },
   dayIconWrapSelected: {
     borderWidth: 2,

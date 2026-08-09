@@ -133,6 +133,10 @@ export type Entry = {
   created_at: string;
   hearts: number;
   hearted_by_me: boolean;
+  bowl_color_tint?: string | null;
+  bowl_size?: string | null;
+  community_scope?: string | null;
+  author_role_label?: string | null;
 };
 
 export type Task = {

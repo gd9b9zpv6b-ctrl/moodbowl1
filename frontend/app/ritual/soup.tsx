@@ -8,6 +8,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { ProgressDots } from '@/src/components/progress-dots';
 import { SOUPS, type SoupKey } from '@/src/constants/soups';
 import { COLORS, RADIUS, SPACING } from '@/src/constants/theme';
+import { soupTitleForAge } from '@/src/lib/ritual/age-strings';
 import { useRitualStore } from '@/src/lib/ritual/ritual-store';
 
 export default function RitualSoupScreen() {
@@ -15,6 +16,7 @@ export default function RitualSoupScreen() {
   const ageGroup = useRitualStore((s) => s.ageGroup);
   const setSoup = useRitualStore((s) => s.setSoup);
   const [selected, setSelected] = useState<SoupKey | null>(null);
+  const title = soupTitleForAge(ageGroup);
 
   const onPick = (key: SoupKey) => {
     if (selected) return;
@@ -45,7 +47,7 @@ export default function RitualSoupScreen() {
         contentContainerStyle={styles.scroll}
         showsVerticalScrollIndicator={false}
       >
-        <Text style={styles.title}>你今日想食邊碗湯？</Text>
+        <Text style={styles.title}>{title}</Text>
         <Text style={styles.sub}>慢慢揀 · 冇錯答案</Text>
 
         <View style={styles.grid}>

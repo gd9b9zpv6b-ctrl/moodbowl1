@@ -318,7 +318,9 @@ export default function Home() {
                 </Pressable>
                 <Pressable
                   testID="home-album-btn"
-                  onPress={() => router.push('/(tabs)/calendar')}
+                  onPress={() =>
+                    router.push({ pathname: '/(tabs)/calendar', params: { mode: 'album' } })
+                  }
                   style={styles.ritualLinkBtn}
                 >
                   <Text style={styles.ritualLinkText}>睇心情圖鑑</Text>
