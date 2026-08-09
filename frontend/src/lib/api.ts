@@ -83,6 +83,11 @@ export const api = {
   del: <T>(p: string) => request<T>(p, { method: 'DELETE' }),
 };
 
+/** FastAPI may be offline during Supabase migration · never iterate a null list. */
+export function asArray<T>(value: T[] | null | undefined): T[] {
+  return Array.isArray(value) ? value : [];
+}
+
 // Types
 export type DiaryStyle = {
   bg?: string;

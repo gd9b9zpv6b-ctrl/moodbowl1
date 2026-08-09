@@ -47,10 +47,10 @@ export default function Tasks() {
 
   const load = useCallback(async () => {
     try {
-      const list = await api.get<Task[]>(`/tasks?task_date=${today}`);
-      setTasks(list);
+      const list = await api.get<Task[] | null>(`/tasks?task_date=${today}`);
+      setTasks(Array.isArray(list) ? list : []);
     } catch {
-      // ignore
+      setTasks([]);
     } finally {
       setLoading(false);
     }
