@@ -30,10 +30,11 @@ export default function ExploreWrite() {
 
   const load = useCallback(async () => {
     try {
-      const all = await api.get<Memory[]>('/memories');
-      setExisting(all.filter((m) => m.prompt_key === promptKey));
+      const all = await api.get<Memory[] | null>('/memories');
+      const rows = Array.isArray(all) ? all : [];
+      setExisting(rows.filter((m) => m.prompt_key === promptKey));
     } catch {
-      // ignore
+      setExisting([]);
     } finally {
       setLoading(false);
     }

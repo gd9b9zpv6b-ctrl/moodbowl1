@@ -19,7 +19,7 @@ import {
   STAGE_TITLE,
 } from '@/src/constants/explore-prompts';
 import { COLORS, RADIUS, SPACING } from '@/src/constants/theme';
-import { api, Memory } from '@/src/lib/api';
+import { api, asArray, Memory } from '@/src/lib/api';
 
 const STAGES: ExploreStage[] = ['childhood', 'teen', 'young-adult', 'adult', 'reflection'];
 
@@ -31,10 +31,10 @@ export default function Explore() {
 
   const load = useCallback(async () => {
     try {
-      const list = await api.get<Memory[]>('/memories');
-      setMemories(list);
+      const list = await api.get<Memory[] | null>('/memories');
+      setMemories(asArray(list));
     } catch {
-      // ignore
+      setMemories([]);
     } finally {
       setLoading(false);
     }
@@ -54,7 +54,8 @@ export default function Explore() {
 
   const memoriesByPrompt = useMemo(() => {
     const map: Record<string, Memory[]> = {};
-    for (const m of memories) {
+    for (const m of memories || []) {
+      if (!m?.prompt_key) continue;
       if (!map[m.prompt_key]) map[m.prompt_key] = [];
       map[m.prompt_key].push(m);
     }

@@ -18,6 +18,15 @@ export const COLORS = {
 export const RADIUS = { sm: 8, md: 16, lg: 24, pill: 9999 };
 export const SPACING = { xs: 4, sm: 8, md: 16, lg: 24, xl: 32, xxl: 48 };
 
+/** Shared layout tokens for responsive screens (mobile-first). */
+export const LAYOUT = {
+  contentMaxWidth: 1100,
+  /** ≥ this width · treat as desktop / wide browser */
+  desktopMinWidth: 900,
+  /** ≥ this width · roomier tablet layout */
+  tabletMinWidth: 600,
+};
+
 export const FONTS = {
   regular: 'System',
 };

@@ -13,6 +13,7 @@ import { EMOTION_BY_KEY } from '@/src/constants/emotions';
 import { COLORS, RADIUS, SPACING } from '@/src/constants/theme';
 import { api, Entry, User } from '@/src/lib/api';
 import { useAuth } from '@/src/lib/auth-context';
+import { listMyDiaryEntriesForMonth } from '@/src/lib/diary';
 
 function currentMonthKey(d = new Date()) {
   return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`;
@@ -41,10 +42,10 @@ export default function CalendarScreen() {
   const load = useCallback(async (m: string) => {
     setLoading(true);
     try {
-      const res = await api.get<Entry[]>(`/entries/calendar?month=${m}`);
+      const res = await listMyDiaryEntriesForMonth(m);
       setEntries(res);
     } catch {
-      // ignore
+      setEntries([]);
     } finally {
       setLoading(false);
     }
@@ -59,7 +60,8 @@ export default function CalendarScreen() {
   // Group entries by date. Featured takes priority, else latest.
   const entriesGroupedByDate = useMemo(() => {
     const map: Record<string, Entry[]> = {};
-    for (const e of entries) {
+    for (const e of entries || []) {
+      if (!e?.entry_date) continue;
       if (!map[e.entry_date]) map[e.entry_date] = [];
       map[e.entry_date].push(e);
     }
