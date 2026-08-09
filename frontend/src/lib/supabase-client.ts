@@ -1,5 +1,5 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { createClient, processLock } from '@supabase/supabase-js';
+import { createClient } from '@supabase/supabase-js';
 import { Platform } from 'react-native';
 
 const supabaseUrl = process.env.EXPO_PUBLIC_SUPABASE_URL;
@@ -11,6 +11,10 @@ if (!supabaseUrl || !supabaseAnonKey) {
   );
 }
 
+/**
+ * Expo / React Native client.
+ * Avoid processLock here · nested auth + profile reads can stall login on device.
+ */
 export const supabase = createClient(supabaseUrl, supabaseAnonKey, {
   auth: {
     storage: AsyncStorage,
@@ -18,7 +22,6 @@ export const supabase = createClient(supabaseUrl, supabaseAnonKey, {
     autoRefreshToken: true,
     detectSessionInUrl: Platform.OS === 'web',
     flowType: 'pkce',
-    lock: processLock,
   },
   global: {
     headers: {

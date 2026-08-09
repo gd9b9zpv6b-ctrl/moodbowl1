@@ -16,7 +16,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { HABITS, HABIT_CATEGORIES, HabitCategory, Habit } from '@/src/constants/habits';
 import { COLORS, RADIUS, SPACING } from '@/src/constants/theme';
-import { api, Task } from '@/src/lib/api';
+import { api, asArray, Task } from '@/src/lib/api';
 import { useAuth } from '@/src/lib/auth-context';
 
 function todayISO() {
@@ -47,10 +47,10 @@ export default function Tasks() {
 
   const load = useCallback(async () => {
     try {
-      const list = await api.get<Task[]>(`/tasks?task_date=${today}`);
-      setTasks(list);
+      const list = await api.get<Task[] | null>(`/tasks?task_date=${today}`);
+      setTasks(asArray(list));
     } catch {
-      // ignore
+      setTasks([]);
     } finally {
       setLoading(false);
     }
@@ -73,7 +73,9 @@ export default function Tasks() {
         title: t,
         task_date: today,
       });
-      setTasks((prev) => [...prev, created]);
+      if (created?.id) {
+        setTasks((prev) => [...prev, created]);
+      }
       if (title === newTitle) setNewTitle('');
     } catch {
       // ignore
@@ -106,7 +108,8 @@ export default function Tasks() {
     }
   };
 
-  const done = tasks.filter((t) => t.completed).length;
+  const safeTasks = asArray(tasks);
+  const done = safeTasks.filter((t) => t.completed).length;
 
   const filteredHabits = useMemo(
     () => (activeCategory === 'all' ? HABITS : HABITS.filter((h) => h.category === activeCategory)),
@@ -130,7 +133,7 @@ export default function Tasks() {
                 小小溫柔事
               </Text>
               <Text style={styles.subtitle}>
-                一次做一件小事{'\n'}今日已完成 {done} / {tasks.length}
+                一次做一件小事{'\n'}今日已完成 {done} / {safeTasks.length}
               </Text>
             </View>
             <View style={styles.creditBadge} testID="credits-badge">
@@ -272,7 +275,7 @@ export default function Tasks() {
           <Text style={[styles.sectionTitle, { marginTop: SPACING.lg }]}>今日清單</Text>
           {loading ? (
             <ActivityIndicator style={{ marginTop: SPACING.xl }} color={COLORS.primary} />
-          ) : tasks.length === 0 ? (
+          ) : safeTasks.length === 0 ? (
             <View style={styles.emptyCard} testID="tasks-empty">
               <Feather name="check-square" size={30} color={COLORS.textDisabled} />
               <Text style={styles.emptyText}>
@@ -281,7 +284,7 @@ export default function Tasks() {
             </View>
           ) : (
             <View style={{ marginTop: SPACING.md }}>
-              {tasks.map((t) => (
+              {safeTasks.map((t) => (
                 <View key={t.id} style={styles.taskRow} testID={`task-row-${t.id}`}>
                   <Pressable
                     testID={`task-toggle-${t.id}`}
