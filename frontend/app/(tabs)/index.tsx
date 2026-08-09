@@ -25,6 +25,8 @@ import { Entry } from '@/src/lib/api';
 import { useAuth } from '@/src/lib/auth-context';
 import { createDiaryEntry, listMyDiaryEntries } from '@/src/lib/diary';
 import { isDiaryUnlocked } from '@/src/lib/diary-lock';
+import { FEATURE_FLAGS } from '@/src/lib/feature-flags';
+import { useRitualStore } from '@/src/lib/ritual/ritual-store';
 import { EmotionVisual } from '@/src/components/emotion-visual';
 import { EnergySlider } from '@/src/components/energy-slider';
 import { PinUnlockModal } from '@/src/components/pin-unlock-modal';
@@ -80,7 +82,10 @@ export default function Home() {
     })();
   }, [user?.role]);
   const [activeCategory, setActiveCategory] = useState<EmotionCategory | 'all'>('all');
+  const [showQuickDiary, setShowQuickDiary] = useState(false);
+  const ritualReset = useRitualStore((s) => s.reset);
   const { recent, track } = useRecentEmotions();
+  const ritualEnabled = FEATURE_FLAGS.RITUAL_V1;
 
   // Show onboarding once per launch for students · but only if they have not
   // completed it before. This avoids a bounce that feels like login failed.
@@ -264,9 +269,13 @@ export default function Home() {
                 <Text style={styles.greetingAdj}>{adjective}</Text>
                 {user?.display_name || '朋友'}
               </Text>
-              <Text style={styles.prompt}>而家你有咩感受</Text>
+              <Text style={styles.prompt}>
+                {ritualEnabled ? '今日想同碗打招呼嗎' : '而家你有咩感受'}
+              </Text>
               <Text style={styles.heroHint}>
-                慢慢揀 · 寫低 · 呢度係你嘅小天地
+                {ritualEnabled
+                  ? '慢慢嚟 · 三個步驟 · 呢度係你嘅小天地'
+                  : '慢慢揀 · 寫低 · 呢度係你嘅小天地'}
               </Text>
             </View>
 
@@ -285,6 +294,37 @@ export default function Home() {
                 <Text style={styles.affirmationFooterText}>撳一下 · 換一句俾自己聽</Text>
               </View>
             </Pressable>
+
+            {ritualEnabled && (
+              <View style={styles.ritualEntryBlock}>
+                <Pressable
+                  testID="home-ritual-start-btn"
+                  onPress={() => {
+                    ritualReset();
+                    router.push('/ritual/soup');
+                  }}
+                  style={styles.ritualStartBtn}
+                >
+                  <Text style={styles.ritualStartBtnText}>同碗打招呼 · 3 分鐘</Text>
+                </Pressable>
+                <Pressable
+                  testID="home-diary-quick-btn"
+                  onPress={() => setShowQuickDiary((v) => !v)}
+                  style={styles.ritualLinkBtn}
+                >
+                  <Text style={styles.ritualLinkText}>
+                    {showQuickDiary ? '收埋直接寫日記' : '直接寫日記'}
+                  </Text>
+                </Pressable>
+                <Pressable
+                  testID="home-album-btn"
+                  onPress={() => router.push('/(tabs)/calendar')}
+                  style={styles.ritualLinkBtn}
+                >
+                  <Text style={styles.ritualLinkText}>睇心情圖鑑</Text>
+                </Pressable>
+              </View>
+            )}
 
             <View style={[styles.linkCardsRow, layout.isDesktop && styles.linkCardsRowDesktop]}>
               <Pressable
@@ -321,6 +361,8 @@ export default function Home() {
               </Pressable>
             </View>
 
+            {(!ritualEnabled || showQuickDiary) && (
+            <>
             <View style={styles.emotionPromptRow}>
               <Text style={styles.emotionPromptTitle}>你今日嘅感受點啊</Text>
               <Text style={styles.emotionPromptHint}>
@@ -602,6 +644,8 @@ export default function Home() {
                 <Text style={styles.savedText}>記低咗喇。對自己溫柔啲。</Text>
               </View>
             )}
+            </>
+            )}
 
             <View style={{ marginTop: SPACING.xl }}>
               <SupportCtaRow title="需要陪伴嘅時候" />
@@ -789,6 +833,33 @@ const styles = StyleSheet.create({
     color: COLORS.textSecondary,
     marginTop: SPACING.xs,
     lineHeight: 20,
+  },
+  ritualEntryBlock: {
+    marginBottom: SPACING.lg,
+    alignItems: 'center',
+    gap: SPACING.sm,
+  },
+  ritualStartBtn: {
+    width: '100%',
+    height: 56,
+    borderRadius: RADIUS.pill,
+    backgroundColor: COLORS.primary,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  ritualStartBtnText: {
+    fontSize: 17,
+    fontWeight: '700',
+    color: COLORS.textPrimary,
+  },
+  ritualLinkBtn: {
+    paddingVertical: SPACING.sm,
+    paddingHorizontal: SPACING.md,
+  },
+  ritualLinkText: {
+    fontSize: 13,
+    color: COLORS.textSecondary,
+    fontWeight: '600',
   },
   affirmationCard: {
     backgroundColor: COLORS.bgCard,

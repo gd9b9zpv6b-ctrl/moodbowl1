@@ -21,11 +21,17 @@ type DiaryRow = {
   soup: string | null;
   body_chips: string[] | null;
   bowl_emotion_key: string | null;
+  bowl_color_tint?: string | null;
+  bowl_size?: string | null;
   bowl_steam: string | null;
   diary_text: string | null;
   check_in_type: string;
   is_public: boolean;
+  shared_with_class?: boolean;
+  shared_with_family?: boolean;
+  smile_completed?: boolean;
   time_spent_sec: number | null;
+  ritual_version?: string | null;
   created_at: string;
   updated_at: string;
 };
@@ -59,9 +65,18 @@ function friendlyDiaryError(error: { message?: string } | null): Error {
 }
 
 export function diaryRowToEntry(row: DiaryRow): Entry {
-  const emotions =
-    Array.isArray(row.body_chips) && row.body_chips.length > 0
-      ? row.body_chips.filter(Boolean)
+  const chips = Array.isArray(row.body_chips) ? row.body_chips.filter(Boolean) : [];
+  // Quick diary stores emotion keys in body_chips; ritual stores body sensations there.
+  const isRitual =
+    row.check_in_type === 'full' ||
+    row.check_in_type === 'hug_only' ||
+    row.check_in_type === 'skipped';
+  const emotions = isRitual
+    ? row.bowl_emotion_key
+      ? [row.bowl_emotion_key]
+      : []
+    : chips.length > 0
+      ? chips
       : row.bowl_emotion_key
         ? [row.bowl_emotion_key]
         : [];
@@ -75,7 +90,8 @@ export function diaryRowToEntry(row: DiaryRow): Entry {
     note: row.diary_text || '',
     is_public: !!row.is_public,
     is_secret: row.bowl_steam === 'secret',
-    energy_level: typeof row.time_spent_sec === 'number' ? row.time_spent_sec : null,
+    energy_level:
+      !isRitual && typeof row.time_spent_sec === 'number' ? row.time_spent_sec : null,
     entry_date: dateKeyFromTimestamp(row.created_at),
     created_at: row.created_at,
     hearts: 0,
@@ -128,6 +144,67 @@ export async function createDiaryEntry(draft: DiaryDraft): Promise<Entry> {
 
   if (error || !data) throw friendlyDiaryError(error);
   return diaryRowToEntry(data as DiaryRow);
+}
+
+export type RitualDiaryDraft = {
+  soup: string | null;
+  body_chips: string[];
+  bowl_emotion_key: string | null;
+  bowl_color_tint: string | null;
+  bowl_size: 'S' | 'M' | 'L' | 'XL';
+  diary_text: string | null;
+  check_in_type: 'full' | 'hug_only';
+  is_public: boolean;
+  shared_with_class: boolean;
+  shared_with_family: boolean;
+  smile_completed?: boolean;
+  time_spent_sec: number | null;
+};
+
+/** Full ritual check-in · writes ritual columns only (no legacy emotions/entry_date). */
+export async function createRitualDiaryEntry(draft: RitualDiaryDraft): Promise<Entry> {
+  const userId = await requireUserId();
+  if (!draft.bowl_emotion_key && draft.check_in_type !== 'hug_only') {
+    throw new Error('未揀好碗 · 返去再試');
+  }
+
+  const payload = {
+    user_id: userId,
+    soup: draft.soup,
+    body_chips: draft.body_chips || [],
+    bowl_emotion_key: draft.bowl_emotion_key,
+    bowl_color_tint: draft.bowl_color_tint,
+    bowl_size: draft.bowl_size || 'M',
+    diary_text: draft.diary_text?.trim() || null,
+    check_in_type: draft.check_in_type,
+    is_public: !!draft.is_public,
+    shared_with_class: !!draft.shared_with_class,
+    shared_with_family: !!draft.shared_with_family,
+    smile_completed: !!draft.smile_completed,
+    time_spent_sec:
+      typeof draft.time_spent_sec === 'number' && Number.isFinite(draft.time_spent_sec)
+        ? Math.max(0, Math.round(draft.time_spent_sec))
+        : null,
+    ritual_version: 'v1' as const,
+  };
+
+  const { data, error } = await supabase
+    .from('diaries')
+    .insert(payload)
+    .select('*')
+    .single();
+
+  if (error || !data) throw friendlyDiaryError(error);
+  return diaryRowToEntry(data as DiaryRow);
+}
+
+export async function markRitualSmileCompleted(id: string): Promise<void> {
+  await requireUserId();
+  const { error } = await supabase
+    .from('diaries')
+    .update({ smile_completed: true })
+    .eq('id', id);
+  if (error) throw friendlyDiaryError(error);
 }
 
 export async function listMyDiaryEntries(): Promise<Entry[]> {
