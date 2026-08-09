@@ -174,10 +174,11 @@ export default function Home() {
   const load = useCallback(async () => {
     setLoading(true);
     try {
-      const list = await api.get<Entry[]>('/entries');
-      setTodayEntries(list.filter((e) => e.entry_date === today));
+      const list = await api.get<Entry[] | null>('/entries');
+      const rows = Array.isArray(list) ? list : [];
+      setTodayEntries(rows.filter((e) => e.entry_date === today));
     } catch {
-      // ignore
+      setTodayEntries([]);
     } finally {
       setLoading(false);
     }
