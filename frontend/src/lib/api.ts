@@ -54,10 +54,11 @@ async function request<T>(path: string, options: RequestInit = {}): Promise<T> {
   try { activityListener?.(); } catch { /* noop */ }
   const text = await res.text();
   let json: any = null;
+  let parseFailed = false;
   try {
     json = text ? JSON.parse(text) : null;
   } catch {
-    // ignore
+    parseFailed = true;
   }
   if (!res.ok) {
     if (res.status === 401) {
@@ -68,6 +69,11 @@ async function request<T>(path: string, options: RequestInit = {}): Promise<T> {
     }
     const detail = json?.detail || `Request failed (${res.status})`;
     throw new Error(typeof detail === 'string' ? detail : JSON.stringify(detail));
+  }
+  // HTML/empty success bodies (common when FastAPI is offline behind a SPA host)
+  // used to return null and poison list state with `[null]`.
+  if (parseFailed) {
+    throw new Error('Invalid JSON response from server');
   }
   return json as T;
 }
@@ -82,6 +88,17 @@ export const api = {
     request<T>(p, { method: 'PATCH', body: body ? JSON.stringify(body) : undefined }),
   del: <T>(p: string) => request<T>(p, { method: 'DELETE' }),
 };
+
+/**
+ * Normalize list API payloads.
+ * FastAPI may be offline / return a null or empty body during migration, and
+ * callers historically did `setState(list)` then `.filter(t => t.completed)`,
+ * which crashes when `list` is null or contains null entries.
+ */
+export function asArray<T>(value: Array<T | null | undefined> | T | null | undefined): T[] {
+  if (!Array.isArray(value)) return [];
+  return value.filter((item): item is T => item != null);
+}
 
 // Types
 export type DiaryStyle = {
