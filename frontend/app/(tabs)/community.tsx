@@ -39,10 +39,10 @@ export default function Community() {
       const c = await SchoolCommunityConfig.get();
       setCfg(c);
       const q = c.postTtlDays > 0 ? `?ttl_days=${c.postTtlDays}` : '?ttl_days=0';
-      const res = await api.get<Entry[]>(`/entries/community${q}`);
-      setEntries(res);
+      const res = await api.get<Entry[] | null>(`/entries/community${q}`);
+      setEntries(Array.isArray(res) ? res : []);
     } catch {
-      // ignore
+      setEntries([]);
     } finally {
       setLoading(false);
       setRefreshing(false);
