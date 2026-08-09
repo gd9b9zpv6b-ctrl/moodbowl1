@@ -17,7 +17,8 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { EMOTIONS, EMOTION_BY_KEY } from '@/src/constants/emotions';
 import { COLORS, RADIUS, SPACING } from '@/src/constants/theme';
-import { api, Entry } from '@/src/lib/api';
+import { Entry } from '@/src/lib/api';
+import { deleteDiaryEntry, updateDiaryEntry } from '@/src/lib/diary';
 import { EmotionVisual } from './emotion-visual';
 
 type Props = {
@@ -65,14 +66,14 @@ export function EntryEditModal({ visible, entry, onClose, onSaved, onDeleted }: 
     if (!entry || emotionKeys.length === 0) return;
     setSaving(true);
     try {
-      const updated = await api.patch<Entry>(`/entries/${entry.id}`, {
+      const updated = await updateDiaryEntry(entry.id, {
         note,
         emotions: emotionKeys,
       });
       onSaved(updated);
       onClose();
-    } catch {
-      Alert.alert('儲存唔到', '請稍後再試');
+    } catch (e: any) {
+      Alert.alert('儲存唔到', String(e?.message || '請稍後再試'));
     } finally {
       setSaving(false);
     }
@@ -82,11 +83,11 @@ export function EntryEditModal({ visible, entry, onClose, onSaved, onDeleted }: 
     if (!entry) return;
     setDeleting(true);
     try {
-      await api.del(`/entries/${entry.id}`);
+      await deleteDiaryEntry(entry.id);
       onDeleted(entry.id);
       onClose();
-    } catch {
-      Alert.alert('刪除唔到', '請稍後再試');
+    } catch (e: any) {
+      Alert.alert('刪除唔到', String(e?.message || '請稍後再試'));
     } finally {
       setDeleting(false);
     }
