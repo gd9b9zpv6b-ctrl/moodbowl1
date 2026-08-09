@@ -80,8 +80,9 @@ async function registerForPush(userId: string) {
 function userFromAuth(
   authUser: SupabaseUser,
   profile?: ProfileRow | null,
-  compatibility: Partial<User> = {},
+  compatibility?: Partial<User> | null,
 ): User {
+  const extra = compatibility && typeof compatibility === 'object' ? compatibility : {};
   const metaName =
     (typeof authUser.user_metadata?.display_name === 'string' && authUser.user_metadata.display_name) ||
     authUser.email?.split('@')[0] ||
@@ -92,20 +93,20 @@ function userFromAuth(
     email: authUser.email || '',
     display_name: profile?.display_name || metaName,
     created_at: profile?.created_at || authUser.created_at || new Date().toISOString(),
-    credits: compatibility.credits ?? 0,
-    is_premium: compatibility.is_premium ?? profile?.is_premium ?? false,
-    is_admin: compatibility.is_admin ?? profile?.role === 'school_admin',
-    has_secret_pin: compatibility.has_secret_pin ?? false,
-    diary_style: compatibility.diary_style ?? {},
-    active_icon_pack: compatibility.active_icon_pack ?? 'classic',
-    featured_by_date: compatibility.featured_by_date ?? {},
-    role: compatibility.role || profile?.role || 'student',
+    credits: extra.credits ?? 0,
+    is_premium: extra.is_premium ?? profile?.is_premium ?? false,
+    is_admin: extra.is_admin ?? profile?.role === 'school_admin',
+    has_secret_pin: extra.has_secret_pin ?? false,
+    diary_style: extra.diary_style ?? {},
+    active_icon_pack: extra.active_icon_pack ?? 'classic',
+    featured_by_date: extra.featured_by_date ?? {},
+    role: extra.role || profile?.role || 'student',
   };
 }
 
 async function loadAppUser(authUser: SupabaseUser): Promise<User> {
   let profile: ProfileRow | null = null;
-  let compatibility: Partial<User> = {};
+  let compatibility: Partial<User> | null = null;
 
   try {
     const result = await supabase
@@ -125,7 +126,9 @@ async function loadAppUser(authUser: SupabaseUser): Promise<User> {
 
   try {
     // Temporary · keeps settings and unmigrated screens working through Phase 4.
-    compatibility = await api.get<User>('/auth/me');
+    // Empty/missing backend can return null · never treat that as a real user payload.
+    const me = await api.get<User | null>('/auth/me');
+    if (me && typeof me === 'object') compatibility = me;
   } catch {
     // Supabase Auth remains usable while the compatibility backend is offline.
   }

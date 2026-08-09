@@ -41,10 +41,11 @@ export default function CalendarScreen() {
   const load = useCallback(async (m: string) => {
     setLoading(true);
     try {
-      const res = await api.get<Entry[]>(`/entries/calendar?month=${m}`);
-      setEntries(res);
+      const res = await api.get<Entry[] | null>(`/entries/calendar?month=${m}`);
+      // Backend may be offline during Supabase migration · keep an empty list.
+      setEntries(Array.isArray(res) ? res : []);
     } catch {
-      // ignore
+      setEntries([]);
     } finally {
       setLoading(false);
     }
@@ -59,7 +60,8 @@ export default function CalendarScreen() {
   // Group entries by date. Featured takes priority, else latest.
   const entriesGroupedByDate = useMemo(() => {
     const map: Record<string, Entry[]> = {};
-    for (const e of entries) {
+    for (const e of entries || []) {
+      if (!e?.entry_date) continue;
       if (!map[e.entry_date]) map[e.entry_date] = [];
       map[e.entry_date].push(e);
     }
