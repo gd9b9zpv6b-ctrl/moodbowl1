@@ -85,7 +85,7 @@ export const api = {
 
 /** FastAPI may be offline during Supabase migration · never iterate a null list. */
 export function asArray<T>(value: T[] | null | undefined): T[] {
-  return Array.isArray(value) ? value : [];
+  return Array.isArray(value) ? value.filter((item): item is T => item != null) : [];
 }
 
 // Types
