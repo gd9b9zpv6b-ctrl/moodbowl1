@@ -16,7 +16,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { HABITS, HABIT_CATEGORIES, HabitCategory, Habit } from '@/src/constants/habits';
 import { COLORS, RADIUS, SPACING } from '@/src/constants/theme';
-import { api, Task } from '@/src/lib/api';
+import { api, asArray, Task } from '@/src/lib/api';
 import { useAuth } from '@/src/lib/auth-context';
 
 function todayISO() {
@@ -33,6 +33,20 @@ function shuffleThree(list: Habit[]): Habit[] {
   return copy.slice(0, 3);
 }
 
+function isTask(value: unknown): value is Task {
+  return (
+    !!value &&
+    typeof value === 'object' &&
+    typeof (value as Task).id === 'string' &&
+    typeof (value as Task).title === 'string' &&
+    typeof (value as Task).completed === 'boolean'
+  );
+}
+
+function normalizeTasks(value: unknown): Task[] {
+  return asArray(value as Array<Task | null | undefined>).filter(isTask);
+}
+
 export default function Tasks() {
   const today = useMemo(() => todayISO(), []);
   const { user, refreshUser } = useAuth();
@@ -47,10 +61,10 @@ export default function Tasks() {
 
   const load = useCallback(async () => {
     try {
-      const list = await api.get<Task[]>(`/tasks?task_date=${today}`);
-      setTasks(list);
+      const list = await api.get<Task[] | null>(`/tasks?task_date=${today}`);
+      setTasks(normalizeTasks(list));
     } catch {
-      // ignore
+      setTasks([]);
     } finally {
       setLoading(false);
     }
@@ -69,11 +83,17 @@ export default function Tasks() {
     if (!t) return;
     setAdding(true);
     try {
-      const created = await api.post<Task>('/tasks', {
+      const created = await api.post<Task | null>('/tasks', {
         title: t,
         task_date: today,
       });
-      setTasks((prev) => [...prev, created]);
+      // Offline / empty API bodies previously pushed `null` into state and
+      // crashed on `tasks.filter((t) => t.completed)`.
+      if (!isTask(created)) {
+        await load();
+        return;
+      }
+      setTasks((prev) => normalizeTasks([...prev, created]));
       if (title === newTitle) setNewTitle('');
     } catch {
       // ignore
@@ -83,8 +103,11 @@ export default function Tasks() {
   };
 
   const toggle = async (t: Task) => {
+    if (!isTask(t)) return;
     const next = !t.completed;
-    setTasks((prev) => prev.map((x) => (x.id === t.id ? { ...x, completed: next } : x)));
+    setTasks((prev) =>
+      normalizeTasks(prev).map((x) => (x.id === t.id ? { ...x, completed: next } : x)),
+    );
     try {
       await api.patch<Task>(`/tasks/${t.id}`, { completed: next });
       await refreshUser();
@@ -98,7 +121,7 @@ export default function Tasks() {
   };
 
   const remove = async (id: string) => {
-    setTasks((prev) => prev.filter((x) => x.id !== id));
+    setTasks((prev) => normalizeTasks(prev).filter((x) => x.id !== id));
     try {
       await api.del(`/tasks/${id}`);
     } catch {
@@ -106,7 +129,8 @@ export default function Tasks() {
     }
   };
 
-  const done = tasks.filter((t) => t.completed).length;
+  const safeTasks = useMemo(() => normalizeTasks(tasks), [tasks]);
+  const done = safeTasks.filter((t) => t.completed).length;
 
   const filteredHabits = useMemo(
     () => (activeCategory === 'all' ? HABITS : HABITS.filter((h) => h.category === activeCategory)),
@@ -130,7 +154,7 @@ export default function Tasks() {
                 小小溫柔事
               </Text>
               <Text style={styles.subtitle}>
-                一次做一件小事{'\n'}今日已完成 {done} / {tasks.length}
+                一次做一件小事{'\n'}今日已完成 {done} / {safeTasks.length}
               </Text>
             </View>
             <View style={styles.creditBadge} testID="credits-badge">
@@ -272,7 +296,7 @@ export default function Tasks() {
           <Text style={[styles.sectionTitle, { marginTop: SPACING.lg }]}>今日清單</Text>
           {loading ? (
             <ActivityIndicator style={{ marginTop: SPACING.xl }} color={COLORS.primary} />
-          ) : tasks.length === 0 ? (
+          ) : safeTasks.length === 0 ? (
             <View style={styles.emptyCard} testID="tasks-empty">
               <Feather name="check-square" size={30} color={COLORS.textDisabled} />
               <Text style={styles.emptyText}>
@@ -281,7 +305,7 @@ export default function Tasks() {
             </View>
           ) : (
             <View style={{ marginTop: SPACING.md }}>
-              {tasks.map((t) => (
+              {safeTasks.map((t) => (
                 <View key={t.id} style={styles.taskRow} testID={`task-row-${t.id}`}>
                   <Pressable
                     testID={`task-toggle-${t.id}`}
