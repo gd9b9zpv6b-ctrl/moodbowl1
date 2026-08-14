@@ -12,6 +12,8 @@ import { EMOTION_BY_KEY } from '@/src/constants/emotions';
 // RoleStorage no longer used here — role is synced via auth-context after login
 import { RoleStorage, ROLE_META, UserRole } from '@/src/lib/role-storage';
 import { COLORS, RADIUS, SPACING } from '@/src/constants/theme';
+import { experienceModeForRole, type MinorAgeBand } from '@/src/lib/experience-mode';
+import { MinorAgeBandStorage } from '@/src/lib/minor-age-band';
 import { GardenStorage } from '@/src/lib/garden-storage';
 import { useAuth } from '@/src/lib/auth-context';
 import { api } from '@/src/lib/api';
@@ -48,6 +50,8 @@ export default function Profile() {
   const router = useRouter();
   const [reminder, setReminder] = useState(false);
   const [hour, setHour] = useState(20);
+  const [ageBand, setAgeBand] = useState<MinorAgeBand>('upper');
+  const experienceMode = experienceModeForRole(user?.role);
   const [rice, setRice] = useState(0);
   const [harvests, setHarvests] = useState<Record<string, number>>({});
   const [avatarKey, setAvatarKey] = useState<string | null>(null);
@@ -59,9 +63,15 @@ export default function Profile() {
       const h = await storage.getItem<number>(REMINDER_HOUR_KEY, 20);
       setReminder(!!enabled);
       setHour(typeof h === 'number' ? h : 20);
+      setAgeBand(await MinorAgeBandStorage.get());
       refreshUser();
     })();
   }, [refreshUser]);
+
+  const onPickAgeBand = async (band: MinorAgeBand) => {
+    setAgeBand(band);
+    await MinorAgeBandStorage.set(band);
+  };
 
   const loadGarden = useCallback(async () => {
     const [r, hs, ak] = await Promise.all([
@@ -164,7 +174,35 @@ export default function Profile() {
             <Feather name="heart" size={14} color="#E86A6A" />
             <Text style={styles.creditsText}>已累積 {user?.credits ?? 0} 個小心心</Text>
           </View>
+          <View style={styles.modeChip} testID="profile-experience-mode">
+            <Text style={styles.modeChipText}>
+              {experienceMode === 'minor' ? 'Minor mode · 學生體驗' : 'Adult mode · 大人工作台'}
+            </Text>
+          </View>
         </View>
+
+        {experienceMode === 'minor' && (
+          <View style={styles.ageBandCard} testID="profile-minor-age-band">
+            <Text style={styles.ageBandTitle}>Minor 用詞模式</Text>
+            <Text style={styles.ageBandHint}>影響儀式入面嘅湯／身體感覺說明</Text>
+            <View style={styles.ageBandRow}>
+              <Pressable
+                testID="age-band-lower"
+                onPress={() => onPickAgeBand('lower')}
+                style={[styles.ageBandBtn, ageBand === 'lower' && styles.ageBandBtnActive]}
+              >
+                <Text style={styles.ageBandBtnText}>低年級 · P1–P3</Text>
+              </Pressable>
+              <Pressable
+                testID="age-band-upper"
+                onPress={() => onPickAgeBand('upper')}
+                style={[styles.ageBandBtn, ageBand === 'upper' && styles.ageBandBtnActive]}
+              >
+                <Text style={styles.ageBandBtnText}>高年級 · P4–P6</Text>
+              </Pressable>
+            </View>
+          </View>
+        )}
 
         {/* ---- 米倉 · 收藏 ---- */}
         <Pressable
@@ -572,6 +610,37 @@ const styles = StyleSheet.create({
     backgroundColor: '#FFE4E4',
   },
   creditsText: { color: '#8B4513', fontWeight: '700', fontSize: 13 },
+  modeChip: {
+    marginTop: SPACING.sm,
+    backgroundColor: COLORS.primaryLight,
+    paddingHorizontal: SPACING.md,
+    paddingVertical: 6,
+    borderRadius: RADIUS.pill,
+  },
+  modeChipText: { fontSize: 12, fontWeight: '700', color: COLORS.textPrimary },
+  ageBandCard: {
+    backgroundColor: COLORS.bgCard,
+    borderRadius: RADIUS.lg,
+    padding: SPACING.md,
+    marginBottom: SPACING.md,
+  },
+  ageBandTitle: { fontSize: 15, fontWeight: '700', color: COLORS.textPrimary },
+  ageBandHint: { fontSize: 12, color: COLORS.textSecondary, marginTop: 4, marginBottom: SPACING.sm },
+  ageBandRow: { flexDirection: 'row', gap: SPACING.sm },
+  ageBandBtn: {
+    flex: 1,
+    borderRadius: RADIUS.md,
+    borderWidth: 1.5,
+    borderColor: COLORS.borderLight,
+    backgroundColor: COLORS.bgInput,
+    paddingVertical: SPACING.sm,
+    alignItems: 'center',
+  },
+  ageBandBtnActive: {
+    borderColor: COLORS.primary,
+    backgroundColor: COLORS.primaryLight,
+  },
+  ageBandBtnText: { fontSize: 13, fontWeight: '700', color: COLORS.textPrimary },
   sectionTitle: {
     fontSize: 13,
     fontWeight: '700',
