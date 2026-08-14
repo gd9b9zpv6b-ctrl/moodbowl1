@@ -13,7 +13,8 @@ if (!supabaseUrl || !supabaseAnonKey) {
 
 /**
  * Expo / React Native client.
- * Avoid processLock here · nested auth + profile reads can stall login on device.
+ * - No processLock: nested auth + profile reads can stall login on device.
+ * - detectSessionInUrl only on web (Expo Go has no OAuth redirect callback by default).
  */
 export const supabase = createClient(supabaseUrl, supabaseAnonKey, {
   auth: {
@@ -21,7 +22,9 @@ export const supabase = createClient(supabaseUrl, supabaseAnonKey, {
     persistSession: true,
     autoRefreshToken: true,
     detectSessionInUrl: Platform.OS === 'web',
-    flowType: 'pkce',
+    flowType: Platform.OS === 'web' ? 'pkce' : 'implicit',
+    // Bypass navigator locks · prevents signIn + onAuthStateChange deadlocks on RN.
+    lock: async (_name, _acquireTimeout, fn) => fn(),
   },
   global: {
     headers: {

@@ -16,25 +16,10 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { COLORS, RADIUS, SPACING } from '@/src/constants/theme';
 import { useAuth } from '@/src/lib/auth-context';
+import { DEMO_ACCOUNTS, DEMO_PASSWORD } from '@/src/lib/demo-accounts';
 import { routerHomeForRole } from '@/src/lib/experience-mode';
 import { FEATURE_FLAGS } from '@/src/lib/feature-flags';
 import { RoleStorage, type UserRole } from '@/src/lib/role-storage';
-
-const DEMO_ACCOUNTS: {
-  role: UserRole;
-  email: string;
-  label: string;
-  emoji: string;
-  color: string;
-}[] = [
-  { role: 'student', email: 'student@demo.moodful.app', label: '學生 A', emoji: '🎒', color: '#B9DBBC' },
-  { role: 'student', email: 'student2@demo.moodful.app', label: '學生 B', emoji: '🎒', color: '#A2D2FF' },
-  { role: 'teacher', email: 'teacher@demo.moodful.app', label: '班主任', emoji: '👩‍🏫', color: '#F0AE64' },
-  { role: 'counsellor', email: 'counsellor@demo.moodful.app', label: '輔導老師', emoji: '💚', color: '#7DBEE8' },
-  { role: 'parent', email: 'parent@demo.moodful.app', label: '家長', emoji: '👨‍👩‍👧', color: '#E499B4' },
-  { role: 'school_admin', email: 'school@demo.moodful.app', label: '校方管理', emoji: '🏫', color: '#C7A6D1' },
-];
-const DEMO_PASSWORD = 'demo1234';
 
 export default function Login() {
   const router = useRouter();
@@ -45,13 +30,17 @@ export default function Login() {
   const [loading, setLoading] = useState(false);
   const [demoLoading, setDemoLoading] = useState<string | null>(null);
 
+  const goHome = async (role: UserRole) => {
+    await RoleStorage.set(role);
+    router.replace(routerHomeForRole(role) as never);
+  };
+
   const submit = async () => {
     setError(null);
     setLoading(true);
     try {
       const next = await login(email.trim(), password);
-      await RoleStorage.set((next.role || 'student') as UserRole);
-      router.replace(routerHomeForRole(next.role) as never);
+      await goHome((next.role || 'student') as UserRole);
     } catch (e: any) {
       setError(e?.message || '登入失敗');
     } finally {
@@ -63,10 +52,15 @@ export default function Login() {
     setError(null);
     setDemoLoading(acc.email);
     try {
-      const next = await login(acc.email, DEMO_PASSWORD);
-      const role = (next.role || acc.role) as UserRole;
-      await RoleStorage.set(role);
-      router.replace(routerHomeForRole(role) as never);
+      const next = await Promise.race([
+        login(acc.email, DEMO_PASSWORD),
+        new Promise<never>((_, reject) =>
+          setTimeout(() => reject(new Error('登入逾時 · 請再試一次')), 20000),
+        ),
+      ]);
+      // Prefer the chip's known role so a transient profile miss still routes correctly.
+      const role = (acc.role || next.role || 'student') as UserRole;
+      await goHome(role);
     } catch (e: any) {
       setError(e?.message || '登入失敗 · 再試一次');
     } finally {

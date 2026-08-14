@@ -5,6 +5,7 @@ import React, { createContext, useCallback, useContext, useEffect, useMemo, useR
 import { Alert, AppState, AppStateStatus, Platform } from 'react-native';
 
 import { api, loadToken, onApiActivity, onAuthInvalid, setToken, User } from './api';
+import { demoRoleForEmail } from './demo-accounts';
 import { RoleStorage, UserRole } from './role-storage';
 import { supabase } from './supabase-client';
 
@@ -45,13 +46,22 @@ function friendlyAuthError(message: string): Error {
     return new Error('電郵或者密碼唔啱 · 慢慢再試一次');
   }
   if (lower.includes('email not confirmed')) {
-    return new Error('電郵仲未確認 · 去 Supabase Users 手動 Confirm · 或者關閉 Confirm email');
+    return new Error('電郵仲未確認 · 去電郵信箱撳確認連結');
   }
   if (lower.includes('user already registered')) {
     return new Error('呢個電郵已經有帳戶 · 可以直接登入');
   }
   if (lower.includes('password')) {
     return new Error('密碼未符合要求 · 至少輸入 6 個字元');
+  }
+  if (
+    lower.includes('network') ||
+    lower.includes('fetch') ||
+    lower.includes('failed to fetch') ||
+    lower.includes('timeout') ||
+    lower.includes('abort')
+  ) {
+    return new Error('連線唔到 · 檢查網絡後再試');
   }
   return new Error('出咗少少問題 · 過陣再試');
 }
@@ -88,7 +98,8 @@ function userFromAuth(
     authUser.email?.split('@')[0] ||
     '朋友';
 
-  const role = profile?.role || 'student';
+  const demoRole = demoRoleForEmail(authUser.email);
+  const role = (profile?.role || demoRole || 'student') as UserRole;
 
   return {
     id: authUser.id,
@@ -107,24 +118,54 @@ function userFromAuth(
   };
 }
 
+async function readProfile(userId: string): Promise<ProfileRow | null> {
+  const attempt = async () =>
+    supabase
+      .from('profiles')
+      .select('id, display_name, role, is_premium, created_at')
+      .eq('id', userId)
+      .maybeSingle();
+
+  let result = await attempt();
+  const msg = result.error?.message?.toLowerCase() || '';
+  // Brief retry · JWT clock skew ("issued at future") is often transient.
+  if (result.error && (msg.includes('jwt') || msg.includes('future') || msg.includes('expired'))) {
+    await new Promise((r) => setTimeout(r, 700));
+    result = await attempt();
+  }
+
+  if (result.error) {
+    console.warn('[auth] profile read failed', result.error.message);
+    return null;
+  }
+  return (result.data as ProfileRow | null) ?? null;
+}
+
 async function loadAppUser(authUser: SupabaseUser): Promise<User> {
   let profile: ProfileRow | null = null;
   let compatibility: Partial<User> | null = null;
 
   try {
-    const result = await supabase
-      .from('profiles')
-      .select('id, display_name, role, is_premium, created_at')
-      .eq('id', authUser.id)
-      .maybeSingle();
-
-    if (result.error) {
-      console.warn('[auth] profile read failed', result.error.message);
-    } else {
-      profile = result.data as ProfileRow | null;
-    }
+    profile = await readProfile(authUser.id);
   } catch (e) {
     console.warn('[auth] profile read threw', e);
+  }
+
+  // Demo preview fallback when profile RLS/clock skew hides the role row.
+  if (!profile?.role) {
+    const demoRole = demoRoleForEmail(authUser.email);
+    if (demoRole) {
+      profile = {
+        id: authUser.id,
+        display_name:
+          (typeof authUser.user_metadata?.display_name === 'string' &&
+            authUser.user_metadata.display_name) ||
+          null,
+        role: demoRole,
+        is_premium: false,
+        created_at: authUser.created_at || new Date().toISOString(),
+      };
+    }
   }
 
   try {
