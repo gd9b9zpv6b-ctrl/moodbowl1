@@ -3,6 +3,7 @@ import { useFocusEffect, useRouter } from 'expo-router';
 import { useCallback, useMemo, useState } from 'react';
 import {
   ActivityIndicator,
+  Alert,
   KeyboardAvoidingView,
   Platform,
   Pressable,
@@ -16,8 +17,10 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { HABITS, HABIT_CATEGORIES, HabitCategory, Habit } from '@/src/constants/habits';
 import { COLORS, RADIUS, SPACING } from '@/src/constants/theme';
-import { api, asArray, Task } from '@/src/lib/api';
+import { asArray, Task } from '@/src/lib/api';
 import { useAuth } from '@/src/lib/auth-context';
+import { GardenStorage } from '@/src/lib/garden-storage';
+import { createTask, deleteTask, listTasksForDate, setTaskCompleted } from '@/src/lib/tasks';
 
 function todayISO() {
   const d = new Date();
@@ -35,22 +38,25 @@ function shuffleThree(list: Habit[]): Habit[] {
 
 export default function Tasks() {
   const today = useMemo(() => todayISO(), []);
-  const { user, refreshUser } = useAuth();
+  const { user } = useAuth();
   const router = useRouter();
   const [tasks, setTasks] = useState<Task[]>([]);
   const [loading, setLoading] = useState(true);
   const [newTitle, setNewTitle] = useState('');
   const [adding, setAdding] = useState(false);
   const [rewardFlash, setRewardFlash] = useState(false);
+  const [hearts, setHearts] = useState(0);
   const [activeCategory, setActiveCategory] = useState<HabitCategory | 'all'>('all');
   const [suggestions, setSuggestions] = useState<Habit[]>(() => shuffleThree(HABITS));
 
   const load = useCallback(async () => {
     try {
-      const list = await api.get<Task[] | null>(`/tasks?task_date=${today}`);
+      const [list, h] = await Promise.all([listTasksForDate(today), GardenStorage.getHearts()]);
       setTasks(asArray(list));
-    } catch {
+      setHearts(h);
+    } catch (e: any) {
       setTasks([]);
+      Alert.alert('載入唔到', String(e?.message || '過陣再試'));
     } finally {
       setLoading(false);
     }
@@ -60,8 +66,7 @@ export default function Tasks() {
     useCallback(() => {
       setLoading(true);
       load();
-      refreshUser();
-    }, [load, refreshUser]),
+    }, [load]),
   );
 
   const addTask = async (title: string) => {
@@ -69,16 +74,11 @@ export default function Tasks() {
     if (!t) return;
     setAdding(true);
     try {
-      const created = await api.post<Task>('/tasks', {
-        title: t,
-        task_date: today,
-      });
-      if (created?.id) {
-        setTasks((prev) => [...prev, created]);
-      }
+      const created = await createTask(t, today);
+      setTasks((prev) => [...prev, created]);
       if (title === newTitle) setNewTitle('');
-    } catch {
-      // ignore
+    } catch (e: any) {
+      Alert.alert('加唔到', String(e?.message || '過陣再試'));
     } finally {
       setAdding(false);
     }
@@ -88,13 +88,17 @@ export default function Tasks() {
     const next = !t.completed;
     setTasks((prev) => prev.map((x) => (x.id === t.id ? { ...x, completed: next } : x)));
     try {
-      await api.patch<Task>(`/tasks/${t.id}`, { completed: next });
-      await refreshUser();
+      await setTaskCompleted(t.id, next);
       if (next) {
+        const h = await GardenStorage.getHearts();
+        const awarded = h + 1;
+        await GardenStorage.setHearts(awarded);
+        setHearts(awarded);
         setRewardFlash(true);
         setTimeout(() => setRewardFlash(false), 1600);
       }
-    } catch {
+    } catch (e: any) {
+      Alert.alert('更新唔到', String(e?.message || '過陣再試'));
       load();
     }
   };
@@ -102,8 +106,9 @@ export default function Tasks() {
   const remove = async (id: string) => {
     setTasks((prev) => prev.filter((x) => x.id !== id));
     try {
-      await api.del(`/tasks/${id}`);
-    } catch {
+      await deleteTask(id);
+    } catch (e: any) {
+      Alert.alert('刪除唔到', String(e?.message || '過陣再試'));
       load();
     }
   };
@@ -138,7 +143,7 @@ export default function Tasks() {
             </View>
             <View style={styles.creditBadge} testID="credits-badge">
               <Feather name="heart" size={16} color="#E86A6A" />
-              <Text style={styles.creditText}>{user?.credits ?? 0}</Text>
+              <Text style={styles.creditText}>{hearts || user?.credits || 0}</Text>
             </View>
           </View>
 
