@@ -84,6 +84,7 @@ export default function Home() {
   const [activeCategory, setActiveCategory] = useState<EmotionCategory | 'all'>('all');
   const [showQuickDiary, setShowQuickDiary] = useState(false);
   const ritualReset = useRitualStore((s) => s.reset);
+  const setAgeGroup = useRitualStore((s) => s.setAgeGroup);
   const { recent, track } = useRecentEmotions();
   const ritualEnabled = FEATURE_FLAGS.RITUAL_V1;
 
@@ -299,8 +300,12 @@ export default function Home() {
               <View style={styles.ritualEntryBlock}>
                 <Pressable
                   testID="home-ritual-start-btn"
-                  onPress={() => {
+                  onPress={async () => {
+                    const { MinorAgeBandStorage } = await import('@/src/lib/minor-age-band');
+                    const band = await MinorAgeBandStorage.get();
+                    setAgeGroup(band);
                     ritualReset();
+                    setAgeGroup(band);
                     router.push('/ritual/soup');
                   }}
                   style={styles.ritualStartBtn}

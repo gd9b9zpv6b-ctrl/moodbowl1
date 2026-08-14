@@ -38,6 +38,7 @@ type RitualState = {
   }) => void;
   addRegulation: (key: string) => void;
   skipChips: () => void;
+  setAgeGroup: (ageGroup: AgeGroup) => void;
   reset: () => void;
 };
 
@@ -100,5 +101,11 @@ export const useRitualStore = create<RitualState>((set, get) => ({
 
   skipChips: () => set({ bodyChips: [] }),
 
-  reset: () => set({ ...initialState }),
+  setAgeGroup: (ageGroup) => set({ ageGroup }),
+
+  reset: () =>
+    set((state) => ({
+      ...initialState,
+      ageGroup: state.ageGroup,
+    })),
 }));

@@ -25,7 +25,7 @@ type RegisterResult = {
 type AuthCtx = {
   user: User | null;
   loading: boolean;
-  login: (email: string, password: string) => Promise<void>;
+  login: (email: string, password: string) => Promise<User>;
   register: (email: string, password: string, displayName?: string) => Promise<RegisterResult>;
   logout: (reason?: 'manual' | 'inactivity') => Promise<void>;
   refreshUser: () => Promise<User | null>;
@@ -239,7 +239,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       throw new Error('登入未完成 · 如果電郵要確認 · 去 Supabase Users 撳 Confirm');
     }
 
-    await hydrateSession(session);
+    const next = await hydrateSession(session);
+    if (!next) throw new Error('登入未完成 · 請再試一次');
+    return next;
   }, [hydrateSession]);
 
   const register = useCallback(async (

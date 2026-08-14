@@ -16,14 +16,22 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { COLORS, RADIUS, SPACING } from '@/src/constants/theme';
 import { useAuth } from '@/src/lib/auth-context';
+import { experienceModeForRole, routerHomeForRole } from '@/src/lib/experience-mode';
 
-const DEMO_ACCOUNTS: { role: string; email: string; label: string; emoji: string; color: string }[] = [
-  { role: 'student',      email: 'student@demo.moodful.app',    label: '學生 A',   emoji: '🎒', color: '#B9DBBC' },
-  { role: 'student',      email: 'student2@demo.moodful.app',   label: '學生 B',   emoji: '🎒', color: '#A2D2FF' },
-  { role: 'teacher',      email: 'teacher@demo.moodful.app',    label: '班主任',   emoji: '👩‍🏫', color: '#F0AE64' },
-  { role: 'counsellor',   email: 'counsellor@demo.moodful.app', label: '輔導老師', emoji: '💚', color: '#7DBEE8' },
-  { role: 'parent',       email: 'parent@demo.moodful.app',     label: '家長',     emoji: '👨‍👩‍👧', color: '#E499B4' },
-  { role: 'school_admin', email: 'school@demo.moodful.app',     label: '校方管理', emoji: '🏫', color: '#C7A6D1' },
+const DEMO_ACCOUNTS: {
+  role: string;
+  email: string;
+  label: string;
+  emoji: string;
+  color: string;
+  mode: 'minor' | 'adult';
+}[] = [
+  { role: 'student', email: 'student@demo.moodful.app', label: '學生 A', emoji: '🎒', color: '#B9DBBC', mode: 'minor' },
+  { role: 'student', email: 'student2@demo.moodful.app', label: '學生 B', emoji: '🎒', color: '#A2D2FF', mode: 'minor' },
+  { role: 'teacher', email: 'teacher@demo.moodful.app', label: '班主任', emoji: '👩‍🏫', color: '#F0AE64', mode: 'adult' },
+  { role: 'counsellor', email: 'counsellor@demo.moodful.app', label: '輔導老師', emoji: '💚', color: '#7DBEE8', mode: 'adult' },
+  { role: 'parent', email: 'parent@demo.moodful.app', label: '家長', emoji: '👨‍👩‍👧', color: '#E499B4', mode: 'adult' },
+  { role: 'school_admin', email: 'school@demo.moodful.app', label: '校方管理', emoji: '🏫', color: '#C7A6D1', mode: 'adult' },
 ];
 const DEMO_PASSWORD = 'demo1234';
 
@@ -40,8 +48,8 @@ export default function Login() {
     setError(null);
     setLoading(true);
     try {
-      await login(email.trim(), password);
-      router.replace('/(tabs)');
+      const next = await login(email.trim(), password);
+      router.replace(routerHomeForRole(next.role) as never);
     } catch (e: any) {
       setError(e?.message || '登入失敗');
     } finally {
@@ -53,18 +61,12 @@ export default function Login() {
     setError(null);
     setDemoLoading(acc.email);
     try {
-      await login(acc.email, DEMO_PASSWORD);
-      // Route to the correct home path per role
-      const routes: Record<string, string> = {
-        student:      '/(tabs)',
-        teacher:      '/teacher-dashboard',
-        counsellor:   '/counsellor-panel',
-        parent:       '/parent-home',
-        school_admin: '/school-admin',
-      };
-      router.replace((routes[acc.role] || '/(tabs)') as never);
+      const next = await login(acc.email, DEMO_PASSWORD);
+      router.replace(routerHomeForRole(next.role || acc.role) as never);
     } catch {
-      setError('示範帳戶暫時未接入 Supabase · 請用「開個帳戶」註冊一個新電郵再登入');
+      setError(
+        '示範帳戶未建立 · 去 Supabase Authentication 新增 6 個 demo 電郵（密碼 demo1234）· 再跑 supabase/seed_demo_roles.sql',
+      );
     } finally {
       setDemoLoading(null);
     }
@@ -161,15 +163,16 @@ export default function Login() {
             <Text style={styles.link}>忘記密碼？</Text>
           </Pressable>
 
-          {/* Demo account quick picker — 5 pre-seeded roles */}
           <View style={styles.demoDivider}>
             <View style={styles.demoDividerLine} />
-            <Text style={styles.demoDividerText}>示範帳戶 · 一撳體驗</Text>
+            <Text style={styles.demoDividerText}>試玩 5 種角色</Text>
             <View style={styles.demoDividerLine} />
           </View>
 
           <Text style={styles.demoHint}>
-            而家請先用真正電郵註冊 · 示範帳戶稍後先會接入 Supabase
+            Minor mode · 學生日記／儀式{'\n'}
+            Adult mode · 班主任／輔導／家長／校方 Dashboard{'\n'}
+            密碼一律 demo1234 · 帳戶要先喺 Supabase 建立
           </Text>
 
           <View style={styles.demoGrid}>
@@ -189,7 +192,10 @@ export default function Login() {
                 >
                   <Text style={styles.demoEmoji}>{acc.emoji}</Text>
                   <Text style={styles.demoLabel}>{acc.label}</Text>
-                  {isLoading && <ActivityIndicator size="small" color={COLORS.textPrimary} style={{ marginTop: 4 }} />}
+                  <Text style={styles.demoMode}>{acc.mode === 'minor' ? 'Minor' : 'Adult'}</Text>
+                  {isLoading && (
+                    <ActivityIndicator size="small" color={COLORS.textPrimary} style={{ marginTop: 4 }} />
+                  )}
                 </Pressable>
               );
             })}
@@ -284,5 +290,11 @@ const styles = StyleSheet.create({
     fontWeight: '700',
     color: COLORS.textPrimary,
     textAlign: 'center',
+  },
+  demoMode: {
+    fontSize: 10,
+    fontWeight: '600',
+    color: COLORS.textSecondary,
+    marginTop: 2,
   },
 });
