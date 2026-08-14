@@ -14,6 +14,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { ProgressDots } from '@/src/components/progress-dots';
 import { BODY_CHIPS, type BodyChipKey } from '@/src/constants/body-chips';
+import { SOUP_BY_KEY } from '@/src/constants/soups';
 import { COLORS, RADIUS, SPACING } from '@/src/constants/theme';
 import { wordingFor } from '@/src/lib/i18n/wording-mode';
 import { useRitualStore } from '@/src/lib/ritual/ritual-store';
@@ -21,12 +22,14 @@ import { useRitualStore } from '@/src/lib/ritual/ritual-store';
 export default function RitualBodyScreen() {
   const router = useRouter();
   const ageGroup = useRitualStore((s) => s.ageGroup);
+  const soup = useRitualStore((s) => s.soup);
   const bodyChips = useRitualStore((s) => s.bodyChips);
   const toggleChip = useRitualStore((s) => s.toggleChip);
   const skipChips = useRitualStore((s) => s.skipChips);
   const [toast, setToast] = useState<string | null>(null);
   const pulse = useRef(new Animated.Value(1)).current;
   const w = wordingFor(ageGroup);
+  const drink = soup ? SOUP_BY_KEY[soup] : null;
 
   const onToggle = (key: BodyChipKey) => {
     const wasSelected = bodyChips.includes(key);
@@ -70,11 +73,22 @@ export default function RitualBodyScreen() {
 
       <ScrollView contentContainerStyle={styles.scroll} showsVerticalScrollIndicator={false}>
         <Text style={styles.title}>{w.body_title}</Text>
+        <Text style={styles.clarify}>{w.body_clarify}</Text>
+
+        {drink && (
+          <View style={styles.drinkChip} testID="body-drink-context">
+            <Text style={styles.drinkEmoji}>{drink.emoji}</Text>
+            <View style={{ flex: 1 }}>
+              <Text style={styles.drinkLabel}>你啱啱揀咗 · {drink.label}</Text>
+              <Text style={styles.drinkHint}>而家用身體感覺對齊多一點</Text>
+            </View>
+          </View>
+        )}
 
         <Animated.View style={[styles.placeholder, { transform: [{ scale: pulse }] }]}>
           <View style={styles.placeholderInner}>
-            <Text style={styles.placeholderEmoji}>🍚</Text>
-            <Text style={styles.placeholderHint}>你之後會揀嘅碗 · 預留位</Text>
+            <Text style={styles.placeholderEmoji}>{drink?.emoji || '🍚'}</Text>
+            <Text style={styles.placeholderHint}>身體感覺會幫你睇清楚呢碗</Text>
           </View>
         </Animated.View>
 
@@ -143,8 +157,28 @@ const styles = StyleSheet.create({
     fontWeight: '800',
     color: COLORS.textPrimary,
     lineHeight: 30,
-    marginBottom: SPACING.lg,
+    marginBottom: SPACING.sm,
   },
+  clarify: {
+    fontSize: 13,
+    color: COLORS.textSecondary,
+    lineHeight: 19,
+    marginBottom: SPACING.md,
+  },
+  drinkChip: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: SPACING.sm,
+    backgroundColor: COLORS.bgCard,
+    borderRadius: RADIUS.md,
+    padding: SPACING.md,
+    marginBottom: SPACING.md,
+    borderWidth: 1,
+    borderColor: COLORS.borderLight,
+  },
+  drinkEmoji: { fontSize: 28 },
+  drinkLabel: { fontSize: 14, fontWeight: '700', color: COLORS.textPrimary },
+  drinkHint: { fontSize: 12, color: COLORS.textSecondary, marginTop: 2 },
   placeholder: {
     alignSelf: 'center',
     width: 240,
@@ -156,8 +190,8 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   placeholderInner: { alignItems: 'center', gap: SPACING.sm },
-  placeholderEmoji: { fontSize: 64, opacity: 0.35 },
-  placeholderHint: { fontSize: 12, color: COLORS.textSecondary },
+  placeholderEmoji: { fontSize: 64, opacity: 0.45 },
+  placeholderHint: { fontSize: 12, color: COLORS.textSecondary, textAlign: 'center' },
   chipWrap: {
     flexDirection: 'row',
     flexWrap: 'wrap',

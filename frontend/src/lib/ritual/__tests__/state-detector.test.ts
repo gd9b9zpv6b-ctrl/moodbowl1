@@ -3,6 +3,11 @@ import { describe, expect, it } from 'vitest';
 import { detectState } from '../state-detector';
 
 describe('detectState', () => {
+  it('lets body chips clarify a sweet-drink craving as sadness', () => {
+    expect(detectState('strawberry_milk', ['teary'])).toBe('dorsal_sad');
+    expect(detectState('strawberry_milk', ['curled_up'])).toBe('dorsal_sad');
+  });
+
   it('detects sympathetic_fire from spicy_ginger', () => {
     expect(detectState('spicy_ginger', [])).toBe('sympathetic_fire');
   });
@@ -19,10 +24,6 @@ describe('detectState', () => {
 
   it('detects dorsal_sad from bitter_tea', () => {
     expect(detectState('bitter_tea', [])).toBe('dorsal_sad');
-  });
-
-  it('detects dorsal_sad from curled_up', () => {
-    expect(detectState('lemon_juice', ['curled_up'])).toBe('dorsal_sad');
   });
 
   it('detects dorsal_freeze from plain_water', () => {
@@ -45,12 +46,14 @@ describe('detectState', () => {
     );
   });
 
-  it('detects ventral_regulated from strawberry_milk', () => {
+  it('detects ventral_regulated from strawberry_milk alone', () => {
     expect(detectState('strawberry_milk', [])).toBe('ventral_regulated');
   });
 
-  it('detects ventral_regulated from warm_milk', () => {
-    expect(detectState('warm_milk', [])).toBe('ventral_regulated');
+  it('detects ventral_regulated from warm body signals', () => {
+    expect(detectState('bitter_tea', ['chest_warm', 'floaty'])).toBe(
+      'ventral_regulated',
+    );
   });
 
   it('detects unspoken as fallback', () => {

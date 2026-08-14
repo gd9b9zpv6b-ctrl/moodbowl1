@@ -6,6 +6,10 @@ import {
 } from '@/src/constants/emotions';
 import type { SoupKey } from '@/src/constants/soups';
 
+/**
+ * Drink (L1) is a soft projective prior — ambiguous between state vs craving.
+ * Body chips (L2) are the clarifying signal and intentionally outweigh L1.
+ */
 const SOUP_CATEGORY_SCORES: Record<SoupKey, Partial<Record<EmotionCategory, number>>> = {
   strawberry_milk: { warm: 8, nervous: 1 },
   marble_soda: { warm: 6, nervous: 4 },
@@ -17,10 +21,24 @@ const SOUP_CATEGORY_SCORES: Record<SoupKey, Partial<Record<EmotionCategory, numb
   no_drink: { sad: 6, wound: 5, unspoken: 3, nervous: 1, anger: 1 },
 };
 
+/** Interoceptive category pulls — used to clarify ambiguous drink choices. */
+const CHIP_CATEGORY_SCORES: Record<BodyChipKey, Partial<Record<EmotionCategory, number>>> = {
+  chest_warm: { warm: 7 },
+  chest_tight: { sad: 4, wound: 4, unspoken: 2, nervous: 2 },
+  heart_fast: { nervous: 6, anger: 3 },
+  belly_full: { nervous: 5, warm: 1 },
+  head_heavy: { sad: 4, unspoken: 4 },
+  want_jump: { warm: 5, nervous: 3 },
+  curled_up: { sad: 6, wound: 3, unspoken: 2 },
+  teary: { sad: 8, wound: 3 },
+  soft_hands: { sad: 3, unspoken: 4, nervous: 2 },
+  floaty: { warm: 3, unspoken: 4 },
+};
+
 const CHIP_BOWL_SCORES: Record<BodyChipKey, string[]> = {
   chest_warm: ['happy', 'content', 'loved', 'calm', 'peaceful', 'supported', 'grateful'],
   chest_tight: ['suppressed', 'overwhelmed', 'trapped', 'in-pain', 'hollow', 'sad'],
-  heart_fast: ['anxious', 'angry', 'furious', 'scared', 'restless', 'overwhelmed', 'empowered'],
+  heart_fast: ['anxious', 'panic', 'furious', 'scared', 'restless', 'overwhelmed', 'empowered'],
   belly_full: ['anxious', 'uneasy', 'worried', 'content'],
   head_heavy: ['exhausted', 'foggy', 'unmotivated', 'numb', 'overwhelmed'],
   want_jump: ['happy', 'empowered', 'free', 'proud', 'restless', 'content'],
@@ -29,6 +47,11 @@ const CHIP_BOWL_SCORES: Record<BodyChipKey, string[]> = {
   soft_hands: ['exhausted', 'numb', 'overwhelmed', 'uneasy', 'anxious'],
   floaty: ['peaceful', 'free', 'calm', 'empty', 'foggy'],
 };
+
+/** When body chips are present, dampen drink prior so craving ≠ state. */
+const SOUP_WEIGHT_WITH_CHIPS = 0.35;
+const SOUP_WEIGHT_SOLO = 1;
+const CHIP_BOWL_BONUS = 8;
 
 type Scored = Emotion & { score: number };
 
@@ -64,12 +87,16 @@ export function scoreBowls(
   recentBowlKeys: string[] = [],
 ): { default: Emotion[]; expanded: Emotion[] } {
   const recent = new Set(recentBowlKeys);
+  const soupWeight = chips.length > 0 ? SOUP_WEIGHT_WITH_CHIPS : SOUP_WEIGHT_SOLO;
 
   const scored: Scored[] = EMOTIONS.map((bowl) => {
-    let s = SOUP_CATEGORY_SCORES[soup][bowl.category] ?? 0;
+    let s = (SOUP_CATEGORY_SCORES[soup][bowl.category] ?? 0) * soupWeight;
+
     for (const chip of chips) {
-      if (CHIP_BOWL_SCORES[chip]?.includes(bowl.key)) s += 5;
+      s += CHIP_CATEGORY_SCORES[chip][bowl.category] ?? 0;
+      if (CHIP_BOWL_SCORES[chip]?.includes(bowl.key)) s += CHIP_BOWL_BONUS;
     }
+
     if (recent.has(bowl.key)) s -= 3;
     return { ...bowl, score: s };
   }).sort((a, b) => b.score - a.score);

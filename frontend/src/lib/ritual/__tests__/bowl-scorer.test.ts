@@ -18,4 +18,20 @@ describe('scoreBowls', () => {
     expect(candidates.map((b) => b.key)).toContain('hollow');
     expect(expanded.length).toBeLessThanOrEqual(12);
   });
+
+  it('lets teary clarify strawberry_milk toward sad bowls over warm', () => {
+    const { default: withBody } = scoreBowls('strawberry_milk', ['teary']);
+    const { default: drinkOnly } = scoreBowls('strawberry_milk', []);
+
+    const sadKeys = new Set(['sad', 'lonely', 'in-pain', 'hollow', 'abandoned', 'unloved']);
+    const warmKeys = new Set(['happy', 'content', 'loved', 'grateful', 'peaceful']);
+
+    const bodySad = withBody.filter((b) => sadKeys.has(b.key)).length;
+    const bodyWarm = withBody.filter((b) => warmKeys.has(b.key)).length;
+    const onlyWarm = drinkOnly.filter((b) => warmKeys.has(b.key)).length;
+
+    expect(bodySad).toBeGreaterThanOrEqual(2);
+    expect(bodySad).toBeGreaterThan(bodyWarm);
+    expect(onlyWarm).toBeGreaterThanOrEqual(2);
+  });
 });

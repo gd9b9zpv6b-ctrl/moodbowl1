@@ -9,23 +9,36 @@ export type NSState =
   | 'ventral_regulated'
   | 'unspoken';
 
+/**
+ * Body chips clarify ambiguous drink choices (e.g. sweet drink while sad).
+ * Interoceptive signals are checked before drink priors.
+ */
 export function detectState(soup: SoupKey | null, chips: BodyChipKey[]): NSState {
   const has = (key: BodyChipKey) => chips.includes(key);
 
-  if (soup === 'spicy_ginger' || (has('heart_fast') && has('chest_tight'))) {
-    return 'sympathetic_fire';
-  }
-  if (soup === 'no_drink' || soup === 'bitter_tea' || has('curled_up') || has('teary')) {
+  // Body-first · clarification over craving metaphor
+  if (has('teary') || has('curled_up')) {
     return 'dorsal_sad';
   }
-  if (soup === 'plain_water' || (has('head_heavy') && has('soft_hands'))) {
-    return 'dorsal_freeze';
+  if (has('heart_fast') && has('chest_tight')) {
+    return 'sympathetic_fire';
   }
-  if (soup === 'marble_soda' || (has('heart_fast') && has('belly_full'))) {
+  if (has('heart_fast') && has('belly_full')) {
     return 'sympathetic_anxious';
   }
-  if (soup === 'strawberry_milk' || soup === 'warm_milk') {
+  if (has('head_heavy') && has('soft_hands')) {
+    return 'dorsal_freeze';
+  }
+  if (has('chest_warm') && (has('floaty') || has('want_jump'))) {
     return 'ventral_regulated';
   }
+
+  // Drink priors · used when body is sparse / skipped
+  if (soup === 'spicy_ginger') return 'sympathetic_fire';
+  if (soup === 'no_drink' || soup === 'bitter_tea') return 'dorsal_sad';
+  if (soup === 'plain_water') return 'dorsal_freeze';
+  if (soup === 'marble_soda') return 'sympathetic_anxious';
+  if (soup === 'strawberry_milk' || soup === 'warm_milk') return 'ventral_regulated';
+
   return 'unspoken';
 }

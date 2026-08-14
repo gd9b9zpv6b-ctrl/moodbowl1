@@ -11,6 +11,8 @@ export type WordingPack = {
   soup_title: string;
   soup_sub: string;
   body_title: string;
+  /** Clarifies L1 ambiguity · drink can be craving OR state. */
+  body_clarify: string;
   body_hint: string;
   body_cta: string;
   body_skip: string;
@@ -118,11 +120,12 @@ const CHIP_ADULT: Record<BodyChipKey, string> = {
 export const WORDING: Record<WordingMode, WordingPack> = {
   lower: {
     soup_title: '今日想飲咩?',
-    soup_sub: '慢慢揀 · 冇錯答案',
-    body_title: '碗身體邊度有 feel?',
+    soup_sub: '揀一種最似而家感覺嘅 · 唔係問你想慰勞自己',
+    body_title: '停一停 · 身體而家點?',
+    body_clarify: '飲品得個感覺 · 身體會幫你講清楚',
     body_hint: '最多揀 3 樣',
     body_cta: '準備見碗 →',
-    body_skip: 'Skip →',
+    body_skip: '略過 →',
     pick_title: '你今日似邊個? 揀一個',
     pick_expand: '唔啱心水? 睇多啲',
     pick_collapse: '收埋',
@@ -167,11 +170,12 @@ export const WORDING: Record<WordingMode, WordingPack> = {
   },
   upper: {
     soup_title: '今日嘅狀態岩飲邊樣飲品?',
-    soup_sub: '慢慢揀 · 冇錯答案',
-    body_title: '望下你嘅身體 · 邊度有 feel? 揀最多 3 樣',
+    soup_sub: '揀最似而家感覺嘅 · 可以係想安慰自己嘅味道 · 下一步會對齊身體',
+    body_title: '對齊一下 · 身體邊度有感覺?',
+    body_clarify: '有時想飲甜嘢 · 唔等於開心 · 身體會講多啲真相',
     body_hint: '揀 3 樣就夠啦',
     body_cta: '準備見碗 →',
-    body_skip: 'Skip →',
+    body_skip: '暫時略過 →',
     pick_title: '你今日似邊個? 揀一個',
     pick_expand: '唔啱心水? 睇多啲 (12)',
     pick_collapse: '收埋',
@@ -216,8 +220,9 @@ export const WORDING: Record<WordingMode, WordingPack> = {
   },
   adult: {
     soup_title: '而家呢刻 · 你比較似邊種飲品?',
-    soup_sub: '用飲品做隱喻 · 幫自己對齊感覺',
+    soup_sub: '用飲品做隱喻 · 可以係狀態 · 亦可以係想慰藉自己嘅味道',
     body_title: '身體邊度有訊號? 最多揀 3 樣',
+    body_clarify: '想飲甜可以係開心 · 亦可以係想被安慰 · 身體感覺幫你分清楚',
     body_hint: '唔使完美 · 揀而家最明顯嘅',
     body_cta: '下一步 · 睇碗 →',
     body_skip: '略過身體感覺 →',
