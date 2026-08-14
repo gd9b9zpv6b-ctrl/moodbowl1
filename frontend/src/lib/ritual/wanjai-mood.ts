@@ -41,8 +41,8 @@ function countHits(selected: BodyChipKey[], keys: BodyChipKey[]) {
 }
 
 /**
- * Pick 碗仔 face from somatic chips · mirrors emotion-bowl expression language
- * (anxious sweat/tremble, fiery flush/fists, heavy tears, warm sparkle).
+ * Soft stage mood from somatic chips · base 碗仔 art stays blank (no face).
+ * Decorations (💧 ⭐ …) carry the feeling on top.
  */
 export function resolveWanjaiMood(selected: BodyChipKey[]): WanjaiMood {
   if (selected.length === 0) return 'neutral';

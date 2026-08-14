@@ -20,14 +20,8 @@ import {
   type WanjaiMood,
 } from '@/src/lib/ritual/wanjai-mood';
 
-/** MoodBowl 碗仔 · expression pack matching official emotion-bowl art. */
-const WANJAI = {
-  neutral: require('../../assets/mascots/wanjai-neutral.png'),
-  anxious: require('../../assets/mascots/wanjai-anxious.png'),
-  warm: require('../../assets/mascots/wanjai-warm.png'),
-  heavy: require('../../assets/mascots/wanjai-heavy.png'),
-  fiery: require('../../assets/mascots/wanjai-fiery.png'),
-} as const;
+/** Blank tall 碗仔 · no face; decorations layer on top. */
+const WANJAI_BASE = require('../../assets/mascots/wanjai-base.png');
 
 type Props = {
   selected: BodyChipKey[];
@@ -36,53 +30,58 @@ type Props = {
   idlePrompt: string;
 };
 
-/** Silly floating gags · extra somatic cues on top of expression art. */
-const CHIP_GAGS: Partial<
-  Record<
-    BodyChipKey,
-    {
-      emoji: string;
-      spot: 'head' | 'face' | 'chest' | 'belly' | 'leftHand' | 'rightHand' | 'feet' | 'aura';
-    }
-  >
-> = {
+type Spot =
+  | 'head'
+  | 'face'
+  | 'chest'
+  | 'belly'
+  | 'leftHand'
+  | 'rightHand'
+  | 'feet'
+  | 'auraL'
+  | 'auraR';
+
+/** Decorations only · water / stars / steam / hearts — never facial features. */
+const CHIP_DECOR: Partial<Record<BodyChipKey, { emoji: string; spot: Spot }>> = {
   face_flush: { emoji: '♨️', spot: 'face' },
-  jaw_clench: { emoji: '😬', spot: 'face' },
+  jaw_clench: { emoji: '💢', spot: 'face' },
   teary: { emoji: '💧', spot: 'face' },
   eyelids_heavy: { emoji: '💤', spot: 'head' },
-  eyes_bright: { emoji: '✨', spot: 'face' },
+  eyes_bright: { emoji: '✨', spot: 'head' },
   head_heavy: { emoji: '🪨', spot: 'head' },
-  brain_blank: { emoji: '🌫️', spot: 'head' },
+  brain_blank: { emoji: '💭', spot: 'head' },
   chest_warm: { emoji: '🌟', spot: 'chest' },
-  chest_tight: { emoji: '🧱', spot: 'chest' },
-  heart_fast: { emoji: '🐇', spot: 'chest' },
+  chest_tight: { emoji: '💢', spot: 'chest' },
+  heart_fast: { emoji: '💓', spot: 'chest' },
   breath_fast: { emoji: '💨', spot: 'chest' },
-  heat_rising: { emoji: '🔥', spot: 'chest' },
-  throat_tight: { emoji: '🪨', spot: 'belly' },
+  heat_rising: { emoji: '🔥', spot: 'auraL' },
+  throat_tight: { emoji: '🫧', spot: 'belly' },
   belly_full: { emoji: '🦋', spot: 'belly' },
-  no_appetite: { emoji: '🚫', spot: 'belly' },
-  need_toilet: { emoji: '💨', spot: 'belly' },
+  no_appetite: { emoji: '🍂', spot: 'belly' },
+  need_toilet: { emoji: '💦', spot: 'belly' },
   fists_clench: { emoji: '✊', spot: 'leftHand' },
-  sweaty_palms: { emoji: '💦', spot: 'rightHand' },
-  shaky: { emoji: '🫨', spot: 'leftHand' },
-  soft_hands: { emoji: '🍜', spot: 'rightHand' },
-  shoulders_heavy: { emoji: '📚', spot: 'aura' },
-  body_tense: { emoji: '🏹', spot: 'aura' },
-  want_jump: { emoji: '🦶', spot: 'feet' },
-  smile_wide: { emoji: '😄', spot: 'face' },
-  curled_up: { emoji: '🐚', spot: 'aura' },
-  floaty: { emoji: '🪶', spot: 'aura' },
+  sweaty_palms: { emoji: '💧', spot: 'rightHand' },
+  shaky: { emoji: '〰', spot: 'auraR' },
+  soft_hands: { emoji: '🍃', spot: 'rightHand' },
+  shoulders_heavy: { emoji: '📚', spot: 'auraL' },
+  body_tense: { emoji: '〰', spot: 'auraL' },
+  want_jump: { emoji: '⭐', spot: 'feet' },
+  smile_wide: { emoji: '⭐', spot: 'face' },
+  curled_up: { emoji: '🌑', spot: 'auraR' },
+  floaty: { emoji: '✨', spot: 'auraR' },
 };
 
-const SPOT_STYLE: Record<string, object> = {
-  head: { top: '8%', alignSelf: 'center' },
-  face: { top: '40%', alignSelf: 'center' },
-  chest: { top: '44%', alignSelf: 'center' },
-  belly: { top: '58%', alignSelf: 'center' },
-  leftHand: { top: '46%', left: '2%' },
-  rightHand: { top: '46%', right: '2%' },
-  feet: { bottom: '6%', alignSelf: 'center' },
-  aura: { top: '26%', right: '2%' },
+/** Tuned for tall slender goblet proportions. */
+const SPOT_STYLE: Record<Spot, object> = {
+  head: { top: '4%', alignSelf: 'center' },
+  face: { top: '28%', alignSelf: 'center' },
+  chest: { top: '36%', alignSelf: 'center' },
+  belly: { top: '52%', alignSelf: 'center' },
+  leftHand: { top: '40%', left: '0%' },
+  rightHand: { top: '40%', right: '0%' },
+  feet: { bottom: '2%', alignSelf: 'center' },
+  auraL: { top: '34%', left: '2%' },
+  auraR: { top: '34%', right: '2%' },
 };
 
 const REGION_COLORS: Record<BodyRegionKey, string> = {
@@ -109,6 +108,7 @@ const STAGE_BG: Record<WanjaiMood, string> = {
   fiery: '#FCE8E2',
 };
 
+/** Tall bowl · vertical stack of poke zones. */
 const HOTSPOTS: {
   region: BodyRegionKey;
   top: `${number}%`;
@@ -116,15 +116,15 @@ const HOTSPOTS: {
   width: `${number}%`;
   height: `${number}%`;
 }[] = [
-  { region: 'head', top: '10%', left: '28%', width: '44%', height: '20%' },
-  { region: 'chest', top: '30%', left: '28%', width: '44%', height: '22%' },
-  { region: 'belly', top: '52%', left: '28%', width: '44%', height: '16%' },
-  { region: 'hands', top: '34%', left: '4%', width: '22%', height: '30%' },
-  { region: 'hands', top: '34%', left: '74%', width: '22%', height: '30%' },
-  { region: 'whole', top: '70%', left: '30%', width: '40%', height: '22%' },
+  { region: 'head', top: '6%', left: '30%', width: '40%', height: '16%' },
+  { region: 'chest', top: '24%', left: '30%', width: '40%', height: '20%' },
+  { region: 'belly', top: '44%', left: '30%', width: '40%', height: '18%' },
+  { region: 'hands', top: '32%', left: '6%', width: '20%', height: '22%' },
+  { region: 'hands', top: '32%', left: '74%', width: '20%', height: '22%' },
+  { region: 'whole', top: '68%', left: '32%', width: '36%', height: '24%' },
 ];
 
-function FloatingGag({ emoji, delay }: { emoji: string; delay: number }) {
+function FloatingDecor({ emoji, delay }: { emoji: string; delay: number }) {
   const bob = useRef(new Animated.Value(0)).current;
   useEffect(() => {
     const loop = Animated.loop(
@@ -148,16 +148,15 @@ function FloatingGag({ emoji, delay }: { emoji: string; delay: number }) {
   }, [bob, delay]);
 
   const translateY = bob.interpolate({ inputRange: [0, 1], outputRange: [0, -10] });
-  const rotate = bob.interpolate({ inputRange: [0, 1], outputRange: ['-10deg', '10deg'] });
+  const rotate = bob.interpolate({ inputRange: [0, 1], outputRange: ['-8deg', '8deg'] });
 
   return (
-    <Animated.Text style={[styles.gag, { transform: [{ translateY }, { rotate }] }]}>
+    <Animated.Text style={[styles.decor, { transform: [{ translateY }, { rotate }] }]}>
       {emoji}
     </Animated.Text>
   );
 }
 
-/** Extra somatic FX inspired by MoodBowl anxious bowl cards. */
 function TrembleMarks({ visible }: { visible: boolean }) {
   const shake = useRef(new Animated.Value(0)).current;
   useEffect(() => {
@@ -179,7 +178,10 @@ function TrembleMarks({ visible }: { visible: boolean }) {
   if (!visible) return null;
   const tx = shake.interpolate({ inputRange: [-1, 1], outputRange: [-2, 2] });
   return (
-    <Animated.View pointerEvents="none" style={[styles.trembleWrap, { transform: [{ translateX: tx }] }]}>
+    <Animated.View
+      pointerEvents="none"
+      style={[styles.trembleWrap, { transform: [{ translateX: tx }] }]}
+    >
       <Text style={[styles.tremble, styles.trembleL]}>〰〰</Text>
       <Text style={[styles.tremble, styles.trembleR]}>〰〰</Text>
     </Animated.View>
@@ -203,16 +205,43 @@ function SweatDrops({ visible }: { visible: boolean }) {
   const ty = fall.interpolate({ inputRange: [0, 1], outputRange: [0, 14] });
   const op = fall.interpolate({ inputRange: [0, 0.7, 1], outputRange: [1, 1, 0] });
   return (
-    <Animated.View pointerEvents="none" style={[styles.sweatWrap, { opacity: op, transform: [{ translateY: ty }] }]}>
+    <Animated.View
+      pointerEvents="none"
+      style={[styles.sweatWrap, { opacity: op, transform: [{ translateY: ty }] }]}
+    >
       <Text style={[styles.sweat, styles.sweatL]}>💧</Text>
       <Text style={[styles.sweat, styles.sweatR]}>💧</Text>
     </Animated.View>
   );
 }
 
+function StarBurst({ visible }: { visible: boolean }) {
+  const twinkle = useRef(new Animated.Value(0)).current;
+  useEffect(() => {
+    if (!visible) return;
+    const loop = Animated.loop(
+      Animated.sequence([
+        Animated.timing(twinkle, { toValue: 1, duration: 500, useNativeDriver: true }),
+        Animated.timing(twinkle, { toValue: 0, duration: 500, useNativeDriver: true }),
+      ]),
+    );
+    loop.start();
+    return () => loop.stop();
+  }, [visible, twinkle]);
+  if (!visible) return null;
+  const op = twinkle.interpolate({ inputRange: [0, 1], outputRange: [0.45, 1] });
+  return (
+    <Animated.View pointerEvents="none" style={[styles.starWrap, { opacity: op }]}>
+      <Text style={[styles.star, { top: '10%', left: '18%' }]}>✨</Text>
+      <Text style={[styles.star, { top: '16%', right: '16%' }]}>⭐</Text>
+      <Text style={[styles.star, { top: '28%', left: '12%' }]}>✨</Text>
+    </Animated.View>
+  );
+}
+
 /**
- * MoodBowl 碗仔 · pokeable rice-bowl buddy with expression states
- * (neutral / anxious / warm / heavy / fiery) matching official mascot language.
+ * MoodBowl 碗仔 · tall blank bowl (no face).
+ * Body feelings appear only as decorations (💧 ⭐ ♨️ …).
  */
 export function BodyScanFigure({
   selected,
@@ -233,7 +262,13 @@ export function BodyScanFigure({
   const showSweat =
     mood === 'anxious' ||
     selected.includes('sweaty_palms') ||
+    selected.includes('teary') ||
     selected.includes('face_flush');
+  const showStars =
+    mood === 'warm' ||
+    selected.includes('eyes_bright') ||
+    selected.includes('smile_wide') ||
+    selected.includes('chest_warm');
 
   useEffect(() => {
     if (wantsJump || mood === 'warm') {
@@ -260,18 +295,18 @@ export function BodyScanFigure({
     return () => loop.stop();
   }, [glow]);
 
-  const gags = selected
-    .map((key) => ({ key, gag: CHIP_GAGS[key] }))
+  const decors = selected
+    .map((key) => ({ key, decor: CHIP_DECOR[key] }))
     .filter(
-      (x): x is { key: BodyChipKey; gag: NonNullable<(typeof CHIP_GAGS)[BodyChipKey]> } =>
-        !!x.gag,
+      (x): x is { key: BodyChipKey; decor: NonNullable<(typeof CHIP_DECOR)[BodyChipKey]> } =>
+        !!x.decor,
     );
 
   const regionLit = (region: BodyRegionKey) =>
     focusRegion === region ||
     selected.some((k) => BODY_CHIPS.find((c) => c.key === k)?.region === region);
 
-  const figureScale = mood === 'heavy' || selected.includes('curled_up') ? 0.9 : 1;
+  const figureScale = mood === 'heavy' || selected.includes('curled_up') ? 0.92 : 1;
   const translateY = bounce.interpolate({
     inputRange: [0, 1],
     outputRange: [0, mood === 'warm' || wantsJump ? -14 : -6],
@@ -292,15 +327,16 @@ export function BodyScanFigure({
         ]}
       >
         <Image
-          source={WANJAI[mood]}
+          source={WANJAI_BASE}
           style={styles.buddy}
           contentFit="contain"
-          accessibilityLabel={`MoodBowl 碗仔 · ${mood}`}
-          testID={`wanjai-${mood}`}
+          accessibilityLabel="MoodBowl 碗仔"
+          testID="wanjai-base"
         />
 
         <TrembleMarks visible={showTremble} />
         <SweatDrops visible={showSweat} />
+        <StarBurst visible={showStars} />
 
         {HOTSPOTS.map((hs, i) => {
           const active = focusRegion === hs.region;
@@ -344,14 +380,14 @@ export function BodyScanFigure({
           />
         ))}
 
-        {gags.map(({ key, gag }, i) => (
-          <View key={key} pointerEvents="none" style={[styles.gagSlot, SPOT_STYLE[gag.spot]]}>
-            <FloatingGag emoji={gag.emoji} delay={i * 120} />
+        {decors.map(({ key, decor }, i) => (
+          <View key={key} pointerEvents="none" style={[styles.decorSlot, SPOT_STYLE[decor.spot]]}>
+            <FloatingDecor emoji={decor.emoji} delay={i * 120} />
           </View>
         ))}
       </Animated.View>
 
-      <Text style={styles.pokeHint}>戳戳碗仔 · 睇吓佢點反應</Text>
+      <Text style={styles.pokeHint}>戳戳碗仔 · 裝飾會話你知佢點</Text>
 
       <View style={styles.regionRow}>
         {(['head', 'chest', 'belly', 'hands', 'whole'] as BodyRegionKey[]).map((r) => (
@@ -373,7 +409,7 @@ export function BodyScanFigure({
   );
 }
 
-const FIGURE = 268;
+const FIGURE = 280;
 
 const styles = StyleSheet.create({
   wrap: {
@@ -427,11 +463,11 @@ const styles = StyleSheet.create({
     borderWidth: 2,
     zIndex: 2,
   },
-  gagSlot: {
+  decorSlot: {
     position: 'absolute',
     zIndex: 5,
   },
-  gag: {
+  decor: {
     fontSize: 26,
   },
   trembleWrap: {
@@ -440,25 +476,33 @@ const styles = StyleSheet.create({
   },
   tremble: {
     position: 'absolute',
-    top: '48%',
+    top: '42%',
     fontSize: 18,
     color: COLORS.textPrimary,
     opacity: 0.55,
     fontWeight: '800',
   },
-  trembleL: { left: 10 },
-  trembleR: { right: 10 },
+  trembleL: { left: 8 },
+  trembleR: { right: 8 },
   sweatWrap: {
     ...StyleSheet.absoluteFillObject,
     zIndex: 3,
   },
   sweat: {
     position: 'absolute',
-    top: '18%',
+    top: '14%',
     fontSize: 20,
   },
-  sweatL: { left: 28 },
-  sweatR: { right: 28 },
+  sweatL: { left: 36 },
+  sweatR: { right: 36 },
+  starWrap: {
+    ...StyleSheet.absoluteFillObject,
+    zIndex: 3,
+  },
+  star: {
+    position: 'absolute',
+    fontSize: 18,
+  },
   pokeHint: {
     fontSize: 13,
     fontWeight: '700',
