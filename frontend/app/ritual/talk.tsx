@@ -16,6 +16,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { EmotionVisual } from '@/src/components/emotion-visual';
 import { EMOTION_BY_KEY } from '@/src/constants/emotions';
 import { COLORS, RADIUS, SPACING } from '@/src/constants/theme';
+import { wordingFor } from '@/src/lib/i18n/wording-mode';
 import { useRitualStore } from '@/src/lib/ritual/ritual-store';
 
 function tierHint(n: number): string {
@@ -29,10 +30,12 @@ function tierHint(n: number): string {
 
 export default function RitualTalkScreen() {
   const router = useRouter();
+  const ageGroup = useRitualStore((s) => s.ageGroup);
   const selectedBowlKey = useRitualStore((s) => s.selectedBowlKey);
   const diaryText = useRitualStore((s) => s.diaryText);
   const setDiaryText = useRitualStore((s) => s.setDiaryText);
   const setCheckInType = useRitualStore((s) => s.setCheckInType);
+  const w = wordingFor(ageGroup);
 
   const emotion = selectedBowlKey ? EMOTION_BY_KEY[selectedBowlKey] : null;
   const count = diaryText.trim().length;
@@ -66,19 +69,17 @@ export default function RitualTalkScreen() {
           <View style={styles.bowlBlock}>
             <EmotionVisual emotion={emotion} size={140} radius={RADIUS.lg} />
             <View style={styles.speech}>
-              <Text style={styles.speechText}>我聽緊 · 慢慢講</Text>
+              <Text style={styles.speechText}>{w.talk_speech}</Text>
             </View>
           </View>
 
-          <Text style={styles.title}>
-            {emotion?.label || '碗'} 想知你今日發生咩事 · 講俾佢聽 🌱
-          </Text>
+          <Text style={styles.title}>{w.talk_title(emotion?.label || '碗')}</Text>
 
           <TextInput
             testID="talk-textarea"
             value={diaryText}
             onChangeText={setDiaryText}
-            placeholder="一個字都得 · 或者好長都 ok"
+            placeholder={w.talk_placeholder}
             placeholderTextColor={COLORS.textDisabled}
             multiline
             textAlignVertical="top"
@@ -97,7 +98,7 @@ export default function RitualTalkScreen() {
             }}
             style={styles.cta}
           >
-            <Text style={styles.ctaText}>寫完啦 · 餵佢食</Text>
+            <Text style={styles.ctaText}>{w.talk_submit}</Text>
           </Pressable>
 
           <Pressable
@@ -109,7 +110,7 @@ export default function RitualTalkScreen() {
             }}
             style={styles.secondary}
           >
-            <Text style={styles.secondaryText}>今日靜靜哋 · 得個抱</Text>
+            <Text style={styles.secondaryText}>{w.talk_hug}</Text>
           </Pressable>
         </ScrollView>
       </KeyboardAvoidingView>

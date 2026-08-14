@@ -9,15 +9,18 @@ import { EmotionVisual } from '@/src/components/emotion-visual';
 import { ProgressDots } from '@/src/components/progress-dots';
 import type { Emotion } from '@/src/constants/emotions';
 import { COLORS, RADIUS, SPACING } from '@/src/constants/theme';
+import { wordingFor } from '@/src/lib/i18n/wording-mode';
 import { scoreBowls } from '@/src/lib/ritual/bowl-scorer';
 import { useRitualStore } from '@/src/lib/ritual/ritual-store';
 
 export default function RitualPickScreen() {
   const router = useRouter();
+  const ageGroup = useRitualStore((s) => s.ageGroup);
   const soup = useRitualStore((s) => s.soup);
   const bodyChips = useRitualStore((s) => s.bodyChips);
   const setBowl = useRitualStore((s) => s.setBowl);
   const [expanded, setExpanded] = useState(false);
+  const w = wordingFor(ageGroup);
 
   const scored = useMemo(() => {
     if (!soup) return { default: [] as Emotion[], expanded: [] as Emotion[] };
@@ -67,7 +70,7 @@ export default function RitualPickScreen() {
       </View>
 
       <ScrollView contentContainerStyle={styles.scroll} showsVerticalScrollIndicator={false}>
-        <Text style={styles.title}>你今日似邊個? 揀一個</Text>
+        <Text style={styles.title}>{w.pick_title}</Text>
 
         {!soup ? (
           <Text style={styles.empty}>未揀湯 · 返去再嚟一次</Text>
@@ -86,7 +89,11 @@ export default function RitualPickScreen() {
                 color={COLORS.textSecondary}
               />
               <Text style={styles.expandText}>
-                {expanded ? '收埋' : `唔啱心水? 睇多啲 (${scored.expanded.length})`}
+                {expanded
+                  ? w.pick_collapse
+                  : ageGroup === 'adult'
+                    ? w.pick_expand
+                    : `${w.pick_expand.replace(/\s*\(\d+\)\s*$/, '')} (${scored.expanded.length})`}
               </Text>
             </Pressable>
 
@@ -98,14 +105,14 @@ export default function RitualPickScreen() {
                   onPress={() => router.push('/ritual/all')}
                   style={styles.seeAll}
                 >
-                  <Text style={styles.seeAllText}>冇一個 fit? 睇全部 ⋯</Text>
+                  <Text style={styles.seeAllText}>{w.pick_see_all}</Text>
                 </Pressable>
                 <Pressable
                   testID="bowl-quick-diary"
                   onPress={() => router.replace('/(tabs)')}
                   style={styles.quickLink}
                 >
-                  <Text style={styles.quickLinkText}>或者直接寫日記</Text>
+                  <Text style={styles.quickLinkText}>{w.home_quick_diary}</Text>
                 </Pressable>
               </>
             )}

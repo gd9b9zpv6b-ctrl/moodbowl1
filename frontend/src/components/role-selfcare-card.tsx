@@ -9,6 +9,8 @@ import { Pressable, StyleSheet, Text, View } from 'react-native';
 import { EmotionVisual } from '@/src/components/emotion-visual';
 import { EMOTION_BY_KEY } from '@/src/constants/emotions';
 import { RoleStorage } from '@/src/lib/role-storage';
+import { wordingFor } from '@/src/lib/i18n/wording-mode';
+import { useRitualStore } from '@/src/lib/ritual/ritual-store';
 import { COLORS, RADIUS, SPACING } from '@/src/constants/theme';
 
 type Props = {
@@ -24,23 +26,28 @@ type Props = {
 };
 
 const DEFAULT_BOWL = 'happy';
+const ADULT_COPY = wordingFor('adult');
 
 export function RoleSelfCareCard({
   bg,
   border,
   bowlBg = '#FFFFFF',
-  title = '你都值得記錄自己嘅心情',
-  subtitle = '你都可以喺 MoodBowl 開自己嘅日記 · 撳我開始寫',
+  title = ADULT_COPY.selfcare_title,
+  subtitle = ADULT_COPY.selfcare_subtitle,
   bowlKey = DEFAULT_BOWL,
   testID = 'role-selfcare',
 }: Props) {
   const router = useRouter();
+  const setAgeGroup = useRitualStore((s) => s.setAgeGroup);
+  const ritualReset = useRitualStore((s) => s.reset);
   const bowl = EMOTION_BY_KEY[bowlKey] || EMOTION_BY_KEY[DEFAULT_BOWL];
   return (
     <Pressable
       testID={testID}
       onPress={async () => {
         await RoleStorage.set('student');
+        ritualReset();
+        setAgeGroup('adult');
         router.replace('/');
       }}
       style={[styles.card, { backgroundColor: bg, borderColor: border }]}

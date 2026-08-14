@@ -26,6 +26,7 @@ import { useAuth } from '@/src/lib/auth-context';
 import { createDiaryEntry, listMyDiaryEntries } from '@/src/lib/diary';
 import { isDiaryUnlocked } from '@/src/lib/diary-lock';
 import { FEATURE_FLAGS } from '@/src/lib/feature-flags';
+import { resolveWordingMode, wordingFor, type WordingMode } from '@/src/lib/i18n/wording-mode';
 import { useRitualStore } from '@/src/lib/ritual/ritual-store';
 import { EmotionVisual } from '@/src/components/emotion-visual';
 import { EnergySlider } from '@/src/components/energy-slider';
@@ -83,10 +84,27 @@ export default function Home() {
   }, [user?.role]);
   const [activeCategory, setActiveCategory] = useState<EmotionCategory | 'all'>('all');
   const [showQuickDiary, setShowQuickDiary] = useState(false);
+  const [homeWordingMode, setHomeWordingMode] = useState<WordingMode>('upper');
   const ritualReset = useRitualStore((s) => s.reset);
   const setAgeGroup = useRitualStore((s) => s.setAgeGroup);
   const { recent, track } = useRecentEmotions();
   const ritualEnabled = FEATURE_FLAGS.RITUAL_V1;
+  const homeWording = wordingFor(homeWordingMode);
+
+  useFocusEffect(
+    useCallback(() => {
+      let cancelled = false;
+      (async () => {
+        const { MinorAgeBandStorage } = await import('@/src/lib/minor-age-band');
+        const band = await MinorAgeBandStorage.get();
+        if (cancelled) return;
+        setHomeWordingMode(resolveWordingMode({ role: user?.role, minorBand: band }));
+      })();
+      return () => {
+        cancelled = true;
+      };
+    }, [user?.role]),
+  );
 
   // Show onboarding once per launch for students · but only if they have not
   // completed it before. This avoids a bounce that feels like login failed.
@@ -271,11 +289,11 @@ export default function Home() {
                 {user?.display_name || '朋友'}
               </Text>
               <Text style={styles.prompt}>
-                {ritualEnabled ? '今日想同碗打招呼嗎' : '而家你有咩感受'}
+                {ritualEnabled ? homeWording.home_ritual_prompt : '而家你有咩感受'}
               </Text>
               <Text style={styles.heroHint}>
                 {ritualEnabled
-                  ? '慢慢嚟 · 三個步驟 · 呢度係你嘅小天地'
+                  ? homeWording.home_ritual_hint
                   : '慢慢揀 · 寫低 · 呢度係你嘅小天地'}
               </Text>
             </View>
@@ -303,14 +321,15 @@ export default function Home() {
                   onPress={async () => {
                     const { MinorAgeBandStorage } = await import('@/src/lib/minor-age-band');
                     const band = await MinorAgeBandStorage.get();
-                    setAgeGroup(band);
+                    const mode = resolveWordingMode({ role: user?.role, minorBand: band });
                     ritualReset();
-                    setAgeGroup(band);
+                    setAgeGroup(mode);
+                    setHomeWordingMode(mode);
                     router.push('/ritual/soup');
                   }}
                   style={styles.ritualStartBtn}
                 >
-                  <Text style={styles.ritualStartBtnText}>同碗打招呼 · 3 分鐘</Text>
+                  <Text style={styles.ritualStartBtnText}>{homeWording.home_ritual_cta}</Text>
                 </Pressable>
                 <Pressable
                   testID="home-diary-quick-btn"
@@ -318,7 +337,7 @@ export default function Home() {
                   style={styles.ritualLinkBtn}
                 >
                   <Text style={styles.ritualLinkText}>
-                    {showQuickDiary ? '收埋直接寫日記' : '直接寫日記'}
+                    {showQuickDiary ? `收埋${homeWording.home_quick_diary}` : homeWording.home_quick_diary}
                   </Text>
                 </Pressable>
                 <Pressable
@@ -328,7 +347,7 @@ export default function Home() {
                   }
                   style={styles.ritualLinkBtn}
                 >
-                  <Text style={styles.ritualLinkText}>睇心情圖鑑</Text>
+                  <Text style={styles.ritualLinkText}>{homeWording.home_album}</Text>
                 </Pressable>
               </View>
             )}

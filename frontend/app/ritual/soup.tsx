@@ -8,7 +8,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { ProgressDots } from '@/src/components/progress-dots';
 import { SOUPS, type SoupKey } from '@/src/constants/soups';
 import { COLORS, RADIUS, SPACING } from '@/src/constants/theme';
-import { soupTitleForAge } from '@/src/lib/ritual/age-strings';
+import { wordingFor } from '@/src/lib/i18n/wording-mode';
 import { useRitualStore } from '@/src/lib/ritual/ritual-store';
 
 export default function RitualSoupScreen() {
@@ -16,7 +16,7 @@ export default function RitualSoupScreen() {
   const ageGroup = useRitualStore((s) => s.ageGroup);
   const setSoup = useRitualStore((s) => s.setSoup);
   const [selected, setSelected] = useState<SoupKey | null>(null);
-  const title = soupTitleForAge(ageGroup);
+  const w = wordingFor(ageGroup);
 
   const onPick = (key: SoupKey) => {
     if (selected) return;
@@ -47,8 +47,8 @@ export default function RitualSoupScreen() {
         contentContainerStyle={styles.scroll}
         showsVerticalScrollIndicator={false}
       >
-        <Text style={styles.title}>{title}</Text>
-        <Text style={styles.sub}>慢慢揀 · 冇錯答案</Text>
+        <Text style={styles.title}>{w.soup_title}</Text>
+        <Text style={styles.sub}>{w.soup_sub}</Text>
 
         <View style={styles.grid}>
           {SOUPS.map((soup) => {
@@ -66,9 +66,7 @@ export default function RitualSoupScreen() {
               >
                 <Text style={styles.emoji}>{soup.emoji}</Text>
                 <Text style={styles.label}>{soup.label}</Text>
-                <Text style={styles.cardSub}>
-                  {ageGroup === 'lower' ? soup.subLower : soup.subUpper}
-                </Text>
+                <Text style={styles.cardSub}>{w.soup_subs[soup.key]}</Text>
               </Pressable>
             );
           })}

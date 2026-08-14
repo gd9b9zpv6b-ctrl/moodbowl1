@@ -7,6 +7,7 @@ import { EmotionVisual } from '@/src/components/emotion-visual';
 import { BOWL_COLOR_TINTS } from '@/src/constants/bowl-color-tints';
 import { EMOTION_BY_KEY } from '@/src/constants/emotions';
 import { COLORS, RADIUS, SPACING } from '@/src/constants/theme';
+import { wordingFor } from '@/src/lib/i18n/wording-mode';
 import { useRitualStore, type BowlSize } from '@/src/lib/ritual/ritual-store';
 
 const SIZES: { key: BowlSize; label: string; hint: string; scale: number }[] = [
@@ -18,11 +19,13 @@ const SIZES: { key: BowlSize; label: string; hint: string; scale: number }[] = [
 
 export default function RitualCustomizeScreen() {
   const router = useRouter();
+  const ageGroup = useRitualStore((s) => s.ageGroup);
   const selectedBowlKey = useRitualStore((s) => s.selectedBowlKey);
   const colorTint = useRitualStore((s) => s.colorTint);
   const bowlSize = useRitualStore((s) => s.bowlSize);
   const setTint = useRitualStore((s) => s.setTint);
   const setSize = useRitualStore((s) => s.setSize);
+  const w = wordingFor(ageGroup);
 
   const emotion = selectedBowlKey ? EMOTION_BY_KEY[selectedBowlKey] : null;
   const scale = SIZES.find((s) => s.key === bowlSize)?.scale ?? 1;
@@ -42,7 +45,7 @@ export default function RitualCustomizeScreen() {
       </View>
 
       <ScrollView contentContainerStyle={styles.scroll} showsVerticalScrollIndicator={false}>
-        <Text style={styles.title}>幫 {emotion?.label || '碗'} 打扮一下</Text>
+        <Text style={styles.title}>{w.customize_title(emotion?.label || '碗')}</Text>
 
         <View style={styles.previewWrap}>
           <View style={[styles.previewInner, { transform: [{ scale }] }]}>
@@ -101,7 +104,7 @@ export default function RitualCustomizeScreen() {
           onPress={() => router.push('/ritual/talk')}
           style={styles.cta}
         >
-          <Text style={styles.ctaText}>下一步 · 同碗傾偈 →</Text>
+          <Text style={styles.ctaText}>{w.customize_next}</Text>
         </Pressable>
       </ScrollView>
     </SafeAreaView>

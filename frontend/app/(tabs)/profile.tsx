@@ -14,6 +14,7 @@ import { RoleStorage, ROLE_META, UserRole } from '@/src/lib/role-storage';
 import { COLORS, RADIUS, SPACING } from '@/src/constants/theme';
 import { experienceModeForRole, type MinorAgeBand } from '@/src/lib/experience-mode';
 import { MinorAgeBandStorage } from '@/src/lib/minor-age-band';
+import { wordingModeLabel } from '@/src/lib/i18n/wording-mode';
 import { GardenStorage } from '@/src/lib/garden-storage';
 import { useAuth } from '@/src/lib/auth-context';
 import { api } from '@/src/lib/api';
@@ -184,7 +185,7 @@ export default function Profile() {
         {experienceMode === 'minor' && (
           <View style={styles.ageBandCard} testID="profile-minor-age-band">
             <Text style={styles.ageBandTitle}>Minor 用詞模式</Text>
-            <Text style={styles.ageBandHint}>影響儀式入面嘅湯／身體感覺說明</Text>
+            <Text style={styles.ageBandHint}>影響儀式入面嘅湯／身體感覺／橋接用詞</Text>
             <View style={styles.ageBandRow}>
               <Pressable
                 testID="age-band-lower"
@@ -201,6 +202,15 @@ export default function Profile() {
                 <Text style={styles.ageBandBtnText}>高年級 · P4–P6</Text>
               </Pressable>
             </View>
+          </View>
+        )}
+
+        {experienceMode === 'adult' && (
+          <View style={styles.ageBandCard} testID="profile-adult-wording-mode">
+            <Text style={styles.ageBandTitle}>用詞模式</Text>
+            <Text style={styles.ageBandHint}>
+              大人工作台同自我照顧 check-in 會用 Adult 用詞 · {wordingModeLabel('adult')}
+            </Text>
           </View>
         )}
 

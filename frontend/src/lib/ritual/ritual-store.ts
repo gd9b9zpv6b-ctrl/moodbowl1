@@ -5,7 +5,7 @@ import type { SoupKey } from '@/src/constants/soups';
 
 export type BowlSize = 'S' | 'M' | 'L' | 'XL';
 export type CheckInType = 'full' | 'hug_only' | 'skipped' | 'quick_diary';
-export type AgeGroup = 'lower' | 'upper';
+export type AgeGroup = 'lower' | 'upper' | 'adult';
 
 const MAX_CHIPS = 3;
 

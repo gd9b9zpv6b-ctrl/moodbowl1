@@ -15,20 +15,23 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { ProgressDots } from '@/src/components/progress-dots';
 import { BODY_CHIPS, type BodyChipKey } from '@/src/constants/body-chips';
 import { COLORS, RADIUS, SPACING } from '@/src/constants/theme';
+import { wordingFor } from '@/src/lib/i18n/wording-mode';
 import { useRitualStore } from '@/src/lib/ritual/ritual-store';
 
 export default function RitualBodyScreen() {
   const router = useRouter();
+  const ageGroup = useRitualStore((s) => s.ageGroup);
   const bodyChips = useRitualStore((s) => s.bodyChips);
   const toggleChip = useRitualStore((s) => s.toggleChip);
   const skipChips = useRitualStore((s) => s.skipChips);
   const [toast, setToast] = useState<string | null>(null);
   const pulse = useRef(new Animated.Value(1)).current;
+  const w = wordingFor(ageGroup);
 
   const onToggle = (key: BodyChipKey) => {
     const wasSelected = bodyChips.includes(key);
     if (!wasSelected && bodyChips.length >= 3) {
-      setToast('揀 3 樣就夠啦');
+      setToast(w.body_hint);
       setTimeout(() => setToast(null), 1600);
     }
     toggleChip(key);
@@ -61,12 +64,12 @@ export default function RitualBodyScreen() {
           }}
           hitSlop={8}
         >
-          <Text style={styles.skip}>Skip →</Text>
+          <Text style={styles.skip}>{w.body_skip}</Text>
         </Pressable>
       </View>
 
       <ScrollView contentContainerStyle={styles.scroll} showsVerticalScrollIndicator={false}>
-        <Text style={styles.title}>望下你嘅身體 · 邊度有 feel? 揀最多 3 樣</Text>
+        <Text style={styles.title}>{w.body_title}</Text>
 
         <Animated.View style={[styles.placeholder, { transform: [{ scale: pulse }] }]}>
           <View style={styles.placeholderInner}>
@@ -90,7 +93,7 @@ export default function RitualBodyScreen() {
                 )}
                 <Text style={styles.chipEmoji}>{chip.emoji}</Text>
                 <Text style={[styles.chipLabel, active && styles.chipLabelActive]}>
-                  {chip.label}
+                  {w.chip_labels[chip.key]}
                 </Text>
               </Pressable>
             );
@@ -109,7 +112,7 @@ export default function RitualBodyScreen() {
           onPress={goPick}
           style={[styles.cta, bodyChips.length < 1 && { opacity: 0.6 }]}
         >
-          <Text style={styles.ctaText}>準備見碗 →</Text>
+          <Text style={styles.ctaText}>{w.body_cta}</Text>
         </Pressable>
       </ScrollView>
     </SafeAreaView>

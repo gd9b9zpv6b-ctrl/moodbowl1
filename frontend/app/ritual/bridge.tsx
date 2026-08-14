@@ -17,20 +17,13 @@ import { EmotionVisual } from '@/src/components/emotion-visual';
 import { EMOTION_BY_KEY } from '@/src/constants/emotions';
 import { COLORS, RADIUS, SPACING } from '@/src/constants/theme';
 import { saveRitualWithActivities } from '@/src/lib/diary';
-import { detectState, type NSState } from '@/src/lib/ritual/state-detector';
+import { wordingFor } from '@/src/lib/i18n/wording-mode';
+import { detectState } from '@/src/lib/ritual/state-detector';
 import { useRitualStore } from '@/src/lib/ritual/ritual-store';
-
-const BRIDGE_COPY: Record<NSState, string> = {
-  sympathetic_fire: '而家平靜返啲啦嘛? 想同人講咩發生咗咩事嗎?',
-  dorsal_sad: '而家 feel 冇咁重嗎? 想搵個朋友唞唞氣嗎?',
-  sympathetic_anxious: '而家心跳慢返嗎? 如果想有人陪住 · 想搵邊個?',
-  dorsal_freeze: '而家有啲返到自己嗎? 如果想同人講一句話 · 都得',
-  ventral_regulated: '今日呢種靚感覺 · 想派俾人一齊分享嗎?',
-  unspoken: '今日呢件事 · 留返俾自己都完全 OK',
-};
 
 export default function RitualBridgeScreen() {
   const router = useRouter();
+  const ageGroup = useRitualStore((s) => s.ageGroup);
   const soup = useRitualStore((s) => s.soup);
   const bodyChips = useRitualStore((s) => s.bodyChips);
   const selectedBowlKey = useRitualStore((s) => s.selectedBowlKey);
@@ -44,6 +37,7 @@ export default function RitualBridgeScreen() {
   const startedAt = useRitualStore((s) => s.startedAt);
   const regulationUsed = useRitualStore((s) => s.regulationUsed);
   const setShares = useRitualStore((s) => s.setShares);
+  const w = wordingFor(ageGroup);
 
   const [saving, setSaving] = useState(false);
   const state = useMemo(() => detectState(soup, bodyChips), [soup, bodyChips]);
@@ -114,11 +108,11 @@ export default function RitualBridgeScreen() {
           </View>
         </View>
 
-        <Text style={styles.title}>{BRIDGE_COPY[state]}</Text>
+        <Text style={styles.title}>{w.bridge_by_state[state]}</Text>
 
         <View style={styles.row}>
           <View style={{ flex: 1 }}>
-            <Text style={styles.rowLabel}>想同人講嘢 · 派俾我班同學</Text>
+            <Text style={styles.rowLabel}>{w.bridge_share_class}</Text>
           </View>
           <Switch
             testID="bridge-share-class"
@@ -131,7 +125,7 @@ export default function RitualBridgeScreen() {
 
         <View style={styles.row}>
           <View style={{ flex: 1 }}>
-            <Text style={styles.rowLabel}>派俾家人（如果連咗）</Text>
+            <Text style={styles.rowLabel}>{w.bridge_share_family}</Text>
           </View>
           <Switch
             testID="bridge-share-family"
@@ -144,7 +138,7 @@ export default function RitualBridgeScreen() {
 
         <View style={styles.row}>
           <View style={{ flex: 1 }}>
-            <Text style={styles.rowLabel}>留返俾我自己 timeline</Text>
+            <Text style={styles.rowLabel}>{w.bridge_share_timeline}</Text>
           </View>
           <Switch
             testID="bridge-share-timeline"
@@ -164,7 +158,7 @@ export default function RitualBridgeScreen() {
           {saving ? (
             <ActivityIndicator color={COLORS.textPrimary} />
           ) : (
-            <Text style={styles.ctaText}>完成啦 · 搞掂</Text>
+            <Text style={styles.ctaText}>{w.bridge_complete}</Text>
           )}
         </Pressable>
       </ScrollView>
