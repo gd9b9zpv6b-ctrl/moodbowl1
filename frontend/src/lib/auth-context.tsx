@@ -264,7 +264,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   }, []);
 
   const login = useCallback(async (email: string, password: string) => {
-    await setToken(null);
+    // Don't block on legacy token clear — SecureStore can stall on some devices.
+    void setToken(null);
     const { data, error } = await supabase.auth.signInWithPassword({
       email: email.trim().toLowerCase(),
       password,
@@ -277,7 +278,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       session = refreshed.data.session;
     }
     if (!session?.user) {
-      throw new Error('登入未完成 · 如果電郵要確認 · 去 Supabase Users 撳 Confirm');
+      throw new Error('登入未完成 · 請再試一次');
     }
 
     const next = await hydrateSession(session);

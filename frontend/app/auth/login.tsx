@@ -16,14 +16,14 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { COLORS, RADIUS, SPACING } from '@/src/constants/theme';
 import { useAuth } from '@/src/lib/auth-context';
-import { DEMO_ACCOUNTS, DEMO_PASSWORD } from '@/src/lib/demo-accounts';
+import { DEMO_ACCOUNTS } from '@/src/lib/demo-accounts';
 import { routerHomeForRole } from '@/src/lib/experience-mode';
 import { FEATURE_FLAGS } from '@/src/lib/feature-flags';
 import { RoleStorage, type UserRole } from '@/src/lib/role-storage';
 
 export default function Login() {
   const router = useRouter();
-  const { login } = useAuth();
+  const { login, setUser } = useAuth();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState<string | null>(null);
@@ -52,17 +52,20 @@ export default function Login() {
     setError(null);
     setDemoLoading(acc.email);
     try {
-      const next = await Promise.race([
-        login(acc.email, DEMO_PASSWORD),
-        new Promise<never>((_, reject) =>
-          setTimeout(() => reject(new Error('登入逾時 · 請再試一次')), 20000),
-        ),
-      ]);
-      // Prefer the chip's known role so a transient profile miss still routes correctly.
-      const role = (acc.role || next.role || 'student') as UserRole;
-      await goHome(role);
+      const { signInDemoAccount } = await import('@/src/lib/demo-login');
+      const next = await signInDemoAccount(acc.email, acc.role);
+      setUser(next);
+      await goHome(acc.role);
     } catch (e: any) {
-      setError(e?.message || '登入失敗 · 再試一次');
+      const raw = e?.message || '登入失敗 · 再試一次';
+      // Keep message user-friendly · strip GoTrue jargon when possible.
+      if (/invalid login/i.test(raw)) {
+        setError('登入唔到 · 請再試一次');
+      } else if (/network|fetch|abort|逾時/i.test(raw)) {
+        setError('連線唔到 · 檢查網絡後再試');
+      } else {
+        setError(raw);
+      }
     } finally {
       setDemoLoading(null);
     }
