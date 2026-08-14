@@ -172,27 +172,27 @@ const CHIP_ADULT: Record<BodyChipKey, string> = {
 };
 
 const REGION_LOWER: Record<BodyRegionKey, string> = {
-  head: '個頭同張面',
-  chest: '個胸口',
-  belly: '肚仔同喉嚨',
-  hands: '雙手同膊頭',
-  whole: '成個身體',
+  head: '碗頭',
+  chest: '胸口',
+  belly: '肚仔',
+  hands: '小手',
+  whole: '雙腳',
 };
 
 const REGION_UPPER: Record<BodyRegionKey, string> = {
-  head: '頭同面',
+  head: '碗頭',
   chest: '胸口',
-  belly: '肚同喉',
-  hands: '手同膊',
-  whole: '成個身體',
+  belly: '肚',
+  hands: '手',
+  whole: '雙腳',
 };
 
 const REGION_ADULT: Record<BodyRegionKey, string> = {
-  head: '頭／面',
+  head: '頭',
   chest: '胸口',
-  belly: '腹／喉',
-  hands: '手／膊',
-  whole: '全身',
+  belly: '腹',
+  hands: '手',
+  whole: '腳',
 };
 
 export const WORDING: Record<WordingMode, WordingPack> = {
