@@ -7,6 +7,7 @@ import { EmotionVisual } from '@/src/components/emotion-visual';
 import { EMOTIONS, EMOTION_BY_KEY } from '@/src/constants/emotions';
 import { ENERGY_META, EnergyLevel } from '@/src/constants/energy';
 import { RoleHeader } from '@/src/components/role-header';
+import { RequireAuth } from '@/src/components/require-auth';
 import { RoleSelfCareCard } from '@/src/components/role-selfcare-card';
 import { useSchoolEnergyMap } from '@/src/hooks/use-school-energy-map';
 import { api } from '@/src/lib/api';
@@ -69,6 +70,7 @@ export default function ParentHome() {
   const lowCount = WEEK.filter((w) => w.energy === 'low').length;
 
   return (
+    <RequireAuth>
     <SafeAreaView style={styles.safe} edges={['top']}>
       <RoleHeader role="parent" title="家長版 · 陪伴小朋友" />
 
@@ -248,6 +250,7 @@ export default function ParentHome() {
         <View style={{ height: SPACING.xxl }} />
       </ScrollView>
     </SafeAreaView>
+    </RequireAuth>
   );
 }
 

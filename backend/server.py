@@ -2027,6 +2027,9 @@ async def seed_demo_role_accounts():
                 change["class_name"] = acc["class_name"]
             if acc.get("parent_email") and existing.get("parent_email") != acc["parent_email"]:
                 change["parent_email"] = acc["parent_email"]
+            hashed = existing.get("hashed_password")
+            if not hashed or not verify_password("demo1234", hashed):
+                change["hashed_password"] = demo_password_hash
             if change:
                 await db.users.update_one({"email": acc["email"]}, {"$set": change})
                 updated += 1

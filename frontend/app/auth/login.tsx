@@ -16,6 +16,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { COLORS, RADIUS, SPACING } from '@/src/constants/theme';
 import { useAuth } from '@/src/lib/auth-context';
+import { homePathForRole } from '@/src/lib/role-storage';
 
 const DEMO_ACCOUNTS: { role: string; email: string; label: string; emoji: string; color: string }[] = [
   { role: 'student',      email: 'student@demo.moodful.app',    label: '學生 A',   emoji: '🎒', color: '#B9DBBC' },
@@ -40,8 +41,8 @@ export default function Login() {
     setError(null);
     setLoading(true);
     try {
-      await login(email.trim(), password);
-      router.replace('/(tabs)');
+      const next = await login(email.trim(), password);
+      router.replace(homePathForRole(next.role) as never);
     } catch (e: any) {
       setError(e?.message || '登入失敗');
     } finally {
@@ -53,16 +54,8 @@ export default function Login() {
     setError(null);
     setDemoLoading(acc.email);
     try {
-      await login(acc.email, DEMO_PASSWORD);
-      // Route to the correct home path per role
-      const routes: Record<string, string> = {
-        student:      '/(tabs)',
-        teacher:      '/teacher-dashboard',
-        counsellor:   '/counsellor-panel',
-        parent:       '/parent-home',
-        school_admin: '/school-admin',
-      };
-      router.replace((routes[acc.role] || '/(tabs)') as never);
+      const next = await login(acc.email, DEMO_PASSWORD);
+      router.replace(homePathForRole(next.role || acc.role) as never);
     } catch (e: any) {
       setError(e?.message || '示範帳戶登入失敗 · 請試下再啟動 backend');
     } finally {
@@ -77,7 +70,7 @@ export default function Login() {
         behavior={Platform.OS === 'ios' ? 'padding' : undefined}
       >
         <ScrollView contentContainerStyle={styles.container} keyboardShouldPersistTaps="handled">
-          <Pressable testID="login-back-btn" onPress={() => router.back()} style={styles.backBtn}>
+          <Pressable testID="login-back-btn" onPress={() => router.replace('/auth/welcome')} style={styles.backBtn}>
             <Feather name="arrow-left" size={24} color={COLORS.textPrimary} />
           </Pressable>
 

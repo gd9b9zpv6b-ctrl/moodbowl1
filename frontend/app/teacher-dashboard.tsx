@@ -8,6 +8,7 @@ import { RoleSelfCareCard } from '@/src/components/role-selfcare-card';
 import { EMOTIONS, EMOTION_BY_KEY } from '@/src/constants/emotions';
 import { ENERGY_META, EnergyLevel } from '@/src/constants/energy';
 import { RoleHeader } from '@/src/components/role-header';
+import { RequireAuth } from '@/src/components/require-auth';
 import { useSchoolEnergyMap } from '@/src/hooks/use-school-energy-map';
 import { api } from '@/src/lib/api';
 import { COLORS, RADIUS, SPACING } from '@/src/constants/theme';
@@ -115,6 +116,7 @@ export default function TeacherDashboard() {
   }, [energyMap]);
 
   return (
+    <RequireAuth>
     <SafeAreaView style={styles.safe} edges={['top']}>
       <RoleHeader role="teacher" title="老師 · Dashboard" />
 
@@ -283,6 +285,7 @@ export default function TeacherDashboard() {
         <View style={{ height: SPACING.xxl }} />
       </ScrollView>
     </SafeAreaView>
+    </RequireAuth>
   );
 }
 

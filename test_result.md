@@ -101,3 +101,68 @@
 #====================================================================================================
 # Testing Data - Main Agent and testing sub agent both should log testing data below this section
 #====================================================================================================
+
+user_problem_statement: Some demo accounts cannot login and some cannot log out. Fix demo account login and logout.
+
+backend:
+  - task: "Demo account seed restores password and roles"
+    implemented: true
+    working: "NA"
+    file: "backend/server.py"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: true
+    status_history:
+      - working: "NA"
+        agent: "main"
+        comment: "Startup seed now restores demo1234 if a demo hash drifted, and still creates student2 plus adult roles. Added pytest coverage for all 6 demo emails."
+
+frontend:
+  - task: "Demo account login"
+    implemented: true
+    working: "NA"
+    file: "frontend/src/lib/auth-context.tsx"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: true
+    status_history:
+      - working: false
+        agent: "user"
+        comment: "Some demo accounts cannot login after Phase 1 moved auth to Supabase while seed still lived in Mongo."
+      - working: "NA"
+        agent: "main"
+        comment: "Login tries Supabase then falls back to POST /auth/login. Routes by the authenticated role, not the picker label. Profile load uses maybeSingle + /auth/me so a missing profiles row does not fail the session."
+
+  - task: "Demo account logout"
+    implemented: true
+    working: "NA"
+    file: "frontend/src/lib/auth-context.tsx"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: true
+    status_history:
+      - working: false
+        agent: "user"
+        comment: "Some demo accounts cannot log out, especially adult role dashboards."
+      - working: "NA"
+        agent: "main"
+        comment: "Logout clears user/token immediately, signs out locally with a timeout, ignores stale session events, and role dashboards now RequireAuth so they cannot stay on screen after logout."
+
+metadata:
+  created_by: "main_agent"
+  version: "1.0"
+  test_sequence: 1
+  run_ui: false
+
+test_plan:
+  current_focus:
+    - "Demo account login"
+    - "Demo account logout"
+    - "Demo account seed restores password and roles"
+  stuck_tasks: []
+  test_all: false
+  test_priority: "high_first"
+
+agent_communication:
+  - agent: "main"
+    message: "Please verify all 6 demo accounts (student, student2, teacher, counsellor, parent, school) can login with demo1234 and can log out from their landing screen without bouncing back."

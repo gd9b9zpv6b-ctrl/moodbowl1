@@ -108,8 +108,8 @@ export default function Profile() {
     }
   };
 
-  const doLogout = async () => {
-    await logout();
+  const doLogout = () => {
+    logout().catch(() => {});
     router.replace('/auth/welcome');
   };
 

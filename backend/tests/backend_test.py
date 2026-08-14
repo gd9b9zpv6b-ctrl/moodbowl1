@@ -156,6 +156,33 @@ class TestAuth:
         assert r.status_code == 401
 
 
+DEMO_ACCOUNTS = [
+    ("student@demo.moodful.app", "student"),
+    ("student2@demo.moodful.app", "student"),
+    ("teacher@demo.moodful.app", "teacher"),
+    ("counsellor@demo.moodful.app", "counsellor"),
+    ("parent@demo.moodful.app", "parent"),
+    ("school@demo.moodful.app", "school_admin"),
+]
+
+
+class TestDemoAccounts:
+    @pytest.mark.parametrize("email,role", DEMO_ACCOUNTS)
+    def test_demo_login_and_role(self, http, email, role):
+        r = http.post(f"{API}/auth/login", json={"email": email, "password": "demo1234"})
+        assert r.status_code == 200, r.text
+        d = r.json()
+        assert d["access_token"]
+        assert d["user"]["email"] == email
+        assert d["user"]["role"] == role
+        _no_mongo_id(d)
+
+    @pytest.mark.parametrize("email,_role", DEMO_ACCOUNTS)
+    def test_demo_wrong_password_401(self, http, email, _role):
+        r = http.post(f"{API}/auth/login", json={"email": email, "password": "wrongpass"})
+        assert r.status_code == 401
+
+
 # ---------- Entries ----------
 class TestEntries:
     def _today(self):

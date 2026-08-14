@@ -4,6 +4,7 @@ import { ScrollView, StyleSheet, Text, View, Pressable, Alert, Modal, TextInput 
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { RoleHeader } from '@/src/components/role-header';
+import { RequireAuth } from '@/src/components/require-auth';
 import { RoleSelfCareCard } from '@/src/components/role-selfcare-card';
 import { api } from '@/src/lib/api';
 import { SchoolPolicies } from '@/src/lib/school-policies';
@@ -155,6 +156,7 @@ export default function CounsellorPanel() {
   };
 
   return (
+    <RequireAuth>
     <SafeAreaView style={styles.safe} edges={['top']}>
       <RoleHeader role="counsellor" title="輔導老師 · 專屬版" />
 
@@ -357,6 +359,7 @@ export default function CounsellorPanel() {
         <View style={{ height: SPACING.xxl }} />
       </ScrollView>
     </SafeAreaView>
+    </RequireAuth>
   );
 }
 

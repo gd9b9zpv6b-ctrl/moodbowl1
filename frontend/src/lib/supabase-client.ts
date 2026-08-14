@@ -11,9 +11,14 @@ if (!supabaseUrl || !supabaseAnonKey) {
   );
 }
 
+const authStorage =
+  Platform.OS === 'web' && typeof window !== 'undefined' && window.localStorage
+    ? window.localStorage
+    : AsyncStorage;
+
 export const supabase = createClient(supabaseUrl, supabaseAnonKey, {
   auth: {
-    storage: AsyncStorage,
+    storage: authStorage,
     persistSession: true,
     autoRefreshToken: true,
     detectSessionInUrl: Platform.OS === 'web',
