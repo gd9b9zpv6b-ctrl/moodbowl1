@@ -16,10 +16,12 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { COLORS, RADIUS, SPACING } from '@/src/constants/theme';
 import { useAuth } from '@/src/lib/auth-context';
-import { experienceModeForRole, routerHomeForRole } from '@/src/lib/experience-mode';
+import { routerHomeForRole } from '@/src/lib/experience-mode';
+import { FEATURE_FLAGS } from '@/src/lib/feature-flags';
+import { RoleStorage, type UserRole } from '@/src/lib/role-storage';
 
 const DEMO_ACCOUNTS: {
-  role: string;
+  role: UserRole;
   email: string;
   label: string;
   emoji: string;
@@ -49,6 +51,7 @@ export default function Login() {
     setLoading(true);
     try {
       const next = await login(email.trim(), password);
+      await RoleStorage.set((next.role || 'student') as UserRole);
       router.replace(routerHomeForRole(next.role) as never);
     } catch (e: any) {
       setError(e?.message || '登入失敗');
@@ -59,14 +62,16 @@ export default function Login() {
 
   const quickDemoLogin = async (acc: (typeof DEMO_ACCOUNTS)[number]) => {
     setError(null);
+    setEmail(acc.email);
+    setPassword(DEMO_PASSWORD);
     setDemoLoading(acc.email);
     try {
       const next = await login(acc.email, DEMO_PASSWORD);
-      router.replace(routerHomeForRole(next.role || acc.role) as never);
-    } catch {
-      setError(
-        '示範帳戶未建立 · 去 Supabase Authentication 新增 6 個 demo 電郵（密碼 demo1234）· 再跑 supabase/seed_demo_roles.sql',
-      );
+      const role = (next.role || acc.role) as UserRole;
+      await RoleStorage.set(role);
+      router.replace(routerHomeForRole(role) as never);
+    } catch (e: any) {
+      setError(e?.message || `登入 ${acc.label} 失敗 · 再試一次`);
     } finally {
       setDemoLoading(null);
     }
@@ -87,6 +92,49 @@ export default function Login() {
             歡迎返嚟
           </Text>
           <Text style={styles.subtitle}>深呼吸一下,好開心你返嚟。</Text>
+
+          {FEATURE_FLAGS.ROLE_DEMO_PREVIEW && (
+            <View style={styles.demoBlock} testID="demo-login-block">
+              <Text style={styles.demoTitle}>示範帳戶 · 撳掣即登入</Text>
+              <Text style={styles.demoHint}>
+                Minor · 學生 A／B　·　Adult · 班主任／輔導／家長／校方{'\n'}
+                密碼一律 demo1234 · 已就緒
+              </Text>
+              <View style={styles.demoGrid}>
+                {DEMO_ACCOUNTS.map((acc) => {
+                  const isLoading = demoLoading === acc.email;
+                  return (
+                    <Pressable
+                      key={acc.email}
+                      testID={`demo-login-${acc.role === 'student' ? acc.email.split('@')[0] : acc.role}`}
+                      onPress={() => quickDemoLogin(acc)}
+                      disabled={!!demoLoading || loading}
+                      style={[
+                        styles.demoCard,
+                        { backgroundColor: acc.color + '35', borderColor: acc.color },
+                        demoLoading && demoLoading !== acc.email && { opacity: 0.4 },
+                      ]}
+                    >
+                      <Text style={styles.demoEmoji}>{acc.emoji}</Text>
+                      <Text style={styles.demoLabel}>{acc.label}</Text>
+                      <Text style={styles.demoMode}>{acc.mode === 'minor' ? 'Minor' : 'Adult'}</Text>
+                      {isLoading ? (
+                        <ActivityIndicator size="small" color={COLORS.textPrimary} style={{ marginTop: 4 }} />
+                      ) : (
+                        <Text style={styles.demoTap}>撳我</Text>
+                      )}
+                    </Pressable>
+                  );
+                })}
+              </View>
+            </View>
+          )}
+
+          <View style={styles.orRow}>
+            <View style={styles.orLine} />
+            <Text style={styles.orText}>或者用電郵登入</Text>
+            <View style={styles.orLine} />
+          </View>
 
           <View style={styles.field}>
             <Text style={styles.label}>電郵</Text>
@@ -124,8 +172,11 @@ export default function Login() {
 
           <Pressable
             testID="login-submit-btn"
-            disabled={loading || !email || !password}
-            style={[styles.primaryBtn, (loading || !email || !password) && { opacity: 0.6 }]}
+            disabled={loading || !!demoLoading || !email || !password}
+            style={[
+              styles.primaryBtn,
+              (loading || !!demoLoading || !email || !password) && { opacity: 0.6 },
+            ]}
             onPress={submit}
           >
             {loading ? (
@@ -158,48 +209,10 @@ export default function Login() {
           <Pressable
             testID="login-goto-forgot-btn"
             onPress={() => router.push('/auth/forgot-password' as any)}
-            style={{ marginTop: SPACING.sm, alignSelf: 'center' }}
+            style={{ marginTop: SPACING.sm, alignSelf: 'center', marginBottom: SPACING.lg }}
           >
             <Text style={styles.link}>忘記密碼？</Text>
           </Pressable>
-
-          <View style={styles.demoDivider}>
-            <View style={styles.demoDividerLine} />
-            <Text style={styles.demoDividerText}>試玩 5 種角色</Text>
-            <View style={styles.demoDividerLine} />
-          </View>
-
-          <Text style={styles.demoHint}>
-            Minor mode · 學生日記／儀式{'\n'}
-            Adult mode · 班主任／輔導／家長／校方 Dashboard{'\n'}
-            密碼一律 demo1234 · 帳戶要先喺 Supabase 建立
-          </Text>
-
-          <View style={styles.demoGrid}>
-            {DEMO_ACCOUNTS.map((acc) => {
-              const isLoading = demoLoading === acc.email;
-              return (
-                <Pressable
-                  key={acc.email}
-                  testID={`demo-login-${acc.email}`}
-                  onPress={() => quickDemoLogin(acc)}
-                  disabled={!!demoLoading}
-                  style={[
-                    styles.demoCard,
-                    { backgroundColor: acc.color + '25', borderColor: acc.color },
-                    demoLoading && demoLoading !== acc.email && { opacity: 0.4 },
-                  ]}
-                >
-                  <Text style={styles.demoEmoji}>{acc.emoji}</Text>
-                  <Text style={styles.demoLabel}>{acc.label}</Text>
-                  <Text style={styles.demoMode}>{acc.mode === 'minor' ? 'Minor' : 'Adult'}</Text>
-                  {isLoading && (
-                    <ActivityIndicator size="small" color={COLORS.textPrimary} style={{ marginTop: 4 }} />
-                  )}
-                </Pressable>
-              );
-            })}
-          </View>
         </ScrollView>
       </KeyboardAvoidingView>
     </SafeAreaView>
@@ -219,7 +232,7 @@ const styles = StyleSheet.create({
     marginBottom: SPACING.lg,
   },
   title: { fontSize: 32, fontWeight: '700', color: COLORS.textPrimary },
-  subtitle: { fontSize: 16, color: COLORS.textSecondary, marginTop: SPACING.sm, marginBottom: SPACING.xl },
+  subtitle: { fontSize: 16, color: COLORS.textSecondary, marginTop: SPACING.sm, marginBottom: SPACING.lg },
   field: { marginBottom: SPACING.md },
   label: { fontSize: 13, fontWeight: '600', color: COLORS.textSecondary, marginBottom: SPACING.sm, letterSpacing: 0.4 },
   input: {
@@ -242,23 +255,20 @@ const styles = StyleSheet.create({
   primaryBtnText: { color: COLORS.textPrimary, fontSize: 17, fontWeight: '700' },
   link: { color: COLORS.textSecondary, fontSize: 15 },
 
-  demoDivider: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: SPACING.sm,
-    marginTop: SPACING.xl,
-    marginBottom: SPACING.md,
+  demoBlock: {
+    backgroundColor: COLORS.bgCard,
+    borderRadius: RADIUS.md,
+    padding: SPACING.md,
+    marginBottom: SPACING.lg,
+    borderWidth: 1,
+    borderColor: COLORS.borderLight,
   },
-  demoDividerLine: {
-    flex: 1,
-    height: 1,
-    backgroundColor: COLORS.borderLight,
-  },
-  demoDividerText: {
-    fontSize: 12,
-    fontWeight: '700',
-    color: COLORS.textSecondary,
-    letterSpacing: 0.4,
+  demoTitle: {
+    fontSize: 15,
+    fontWeight: '800',
+    color: COLORS.textPrimary,
+    textAlign: 'center',
+    marginBottom: 4,
   },
   demoHint: {
     fontSize: 11,
@@ -271,18 +281,17 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     flexWrap: 'wrap',
     gap: SPACING.sm,
-    marginBottom: SPACING.lg,
   },
   demoCard: {
     width: '31%',
-    minHeight: 84,
+    minHeight: 96,
     borderRadius: RADIUS.md,
     borderWidth: 1.5,
     alignItems: 'center',
     justifyContent: 'center',
     paddingVertical: SPACING.sm + 2,
     paddingHorizontal: 6,
-    gap: 4,
+    gap: 2,
   },
   demoEmoji: { fontSize: 22 },
   demoLabel: {
@@ -295,6 +304,28 @@ const styles = StyleSheet.create({
     fontSize: 10,
     fontWeight: '600',
     color: COLORS.textSecondary,
+  },
+  demoTap: {
+    fontSize: 10,
+    fontWeight: '700',
+    color: COLORS.textPrimary,
     marginTop: 2,
+    opacity: 0.7,
+  },
+  orRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: SPACING.sm,
+    marginBottom: SPACING.lg,
+  },
+  orLine: {
+    flex: 1,
+    height: 1,
+    backgroundColor: COLORS.borderLight,
+  },
+  orText: {
+    fontSize: 12,
+    fontWeight: '700',
+    color: COLORS.textSecondary,
   },
 });
