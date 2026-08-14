@@ -56,6 +56,22 @@ describe('detectState', () => {
     );
   });
 
+  it('detects dorsal_sad from shoulders_heavy', () => {
+    expect(detectState('strawberry_milk', ['shoulders_heavy'])).toBe('dorsal_sad');
+  });
+
+  it('detects sympathetic_anxious from sweaty_palms', () => {
+    expect(detectState('lemon_juice', ['sweaty_palms'])).toBe(
+      'sympathetic_anxious',
+    );
+  });
+
+  it('detects sympathetic_fire from heart_fast + face_flush', () => {
+    expect(detectState('warm_milk', ['heart_fast', 'face_flush'])).toBe(
+      'sympathetic_fire',
+    );
+  });
+
   it('detects unspoken as fallback', () => {
     expect(detectState('lemon_juice', [])).toBe('unspoken');
     expect(detectState(null, [])).toBe('unspoken');

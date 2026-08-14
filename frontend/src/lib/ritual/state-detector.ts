@@ -20,13 +20,16 @@ export function detectState(soup: SoupKey | null, chips: BodyChipKey[]): NSState
   if (has('teary') || has('curled_up')) {
     return 'dorsal_sad';
   }
-  if (has('heart_fast') && has('chest_tight')) {
+  if (has('shoulders_heavy') || (has('head_heavy') && has('throat_tight'))) {
+    return 'dorsal_sad';
+  }
+  if (has('heart_fast') && (has('chest_tight') || has('face_flush'))) {
     return 'sympathetic_fire';
   }
-  if (has('heart_fast') && has('belly_full')) {
+  if (has('heart_fast') || has('sweaty_palms') || (has('face_flush') && has('belly_full'))) {
     return 'sympathetic_anxious';
   }
-  if (has('head_heavy') && has('soft_hands')) {
+  if ((has('head_heavy') && has('soft_hands')) || (has('throat_tight') && has('soft_hands'))) {
     return 'dorsal_freeze';
   }
   if (has('chest_warm') && (has('floaty') || has('want_jump'))) {
