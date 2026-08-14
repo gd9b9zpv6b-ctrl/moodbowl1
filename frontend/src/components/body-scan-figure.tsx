@@ -485,14 +485,14 @@ const styles = StyleSheet.create({
   },
   tremble: {
     position: 'absolute',
-    top: '48%',
+    top: '56%',
     fontSize: 18,
     color: COLORS.textPrimary,
     opacity: 0.55,
     fontWeight: '800',
   },
-  trembleL: { left: 10 },
-  trembleR: { right: 10 },
+  trembleL: { left: '12%' },
+  trembleR: { right: '12%' },
   sweatWrap: {
     ...StyleSheet.absoluteFillObject,
     zIndex: 3,
