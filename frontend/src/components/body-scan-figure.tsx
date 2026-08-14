@@ -71,17 +71,17 @@ const CHIP_DECOR: Partial<Record<BodyChipKey, { emoji: string; spot: Spot }>> = 
   floaty: { emoji: '✨', spot: 'auraR' },
 };
 
-/** Decor anchors match poke anatomy. */
+/** Decor anchors · measured against wanjai-base.png silhouette. */
 const SPOT_STYLE: Record<Spot, object> = {
-  head: { top: '8%', alignSelf: 'center' }, // hair-tip floaters only
-  face: { top: '22%', alignSelf: 'center' }, // bowl head above neck
-  chest: { top: '40%', alignSelf: 'center' }, // below neck
-  belly: { top: '52%', alignSelf: 'center' },
-  leftHand: { top: '52%', left: '0%' },
-  rightHand: { top: '52%', right: '0%' },
-  feet: { top: '78%', alignSelf: 'center' },
-  auraL: { top: '40%', left: '2%' },
-  auraR: { top: '40%', right: '2%' },
+  head: { top: '10%', alignSelf: 'center' }, // rice-hair tip floaters
+  face: { top: '32%', alignSelf: 'center' }, // bowl head above neck (~46%)
+  chest: { top: '51%', alignSelf: 'center' }, // just below neck
+  belly: { top: '62%', alignSelf: 'center' },
+  leftHand: { top: '58%', left: '18%' },
+  rightHand: { top: '58%', right: '18%' },
+  feet: { top: '84%', alignSelf: 'center' },
+  auraL: { top: '50%', left: '8%' },
+  auraR: { top: '50%', right: '8%' },
 };
 
 const REGION_COLORS: Record<BodyRegionKey, string> = {
@@ -109,8 +109,9 @@ const STAGE_BG: Record<WanjaiMood, string> = {
 };
 
 /**
- * Poke zones · vertical order on silhouette:
- * 頭髮(visual) → 頭(bowl, above neck) → 頸 → 心 → 肚 → 手 → 腳
+ * Hotspots measured from wanjai-base.png (1024²):
+ * neck ≈ 46% · hands ≈ 55–68% sides · legs ≈ 74–95%
+ * 頭 = bowl above neck (not rice) · 心 below neck · 肚 below 心 · 手 on mittens
  */
 const HOTSPOTS: {
   region: BodyRegionKey;
@@ -119,17 +120,17 @@ const HOTSPOTS: {
   width: `${number}%`;
   height: `${number}%`;
 }[] = [
-  // 頭 · yellow bowl face under hair, ABOVE neck (skip rice tip ~0–14%)
-  { region: 'head', top: '18%', left: '30%', width: '40%', height: '14%' },
-  // 心 · upper torso BELOW neck
-  { region: 'chest', top: '38%', left: '30%', width: '40%', height: '10%' },
-  // 肚 · below heart
-  { region: 'belly', top: '50%', left: '34%', width: '32%', height: '9%' },
-  // 手 · bigger hit targets on the obvious mitten hands
-  { region: 'hands', top: '50%', left: '0%', width: '28%', height: '16%' },
-  { region: 'hands', top: '50%', left: '72%', width: '28%', height: '16%' },
-  // 腳 · legs
-  { region: 'whole', top: '68%', left: '28%', width: '44%', height: '24%' },
+  // 頭 · bowl cup above neck (neck ~46%); keep clear of rice tip (~0–16%)
+  { region: 'head', top: '26%', left: '30%', width: '40%', height: '16%' },
+  // 心 · upper torso just below neck
+  { region: 'chest', top: '49%', left: '36%', width: '28%', height: '7%' },
+  // 肚 · lower torso center, under heart
+  { region: 'belly', top: '58%', left: '36%', width: '28%', height: '10%' },
+  // 手 · left/right mitten lobes (~25–36% / 63–74% at mid-hand)
+  { region: 'hands', top: '54%', left: '18%', width: '18%', height: '16%' },
+  { region: 'hands', top: '54%', left: '64%', width: '18%', height: '16%' },
+  // 腳 · stubby legs + feet
+  { region: 'whole', top: '74%', left: '32%', width: '36%', height: '20%' },
 ];
 
 function FloatingDecor({ emoji, delay }: { emoji: string; delay: number }) {
@@ -498,11 +499,11 @@ const styles = StyleSheet.create({
   },
   sweat: {
     position: 'absolute',
-    top: '16%',
+    top: '24%',
     fontSize: 20,
   },
-  sweatL: { left: 38 },
-  sweatR: { right: 38 },
+  sweatL: { left: '28%' },
+  sweatR: { right: '28%' },
   starWrap: {
     ...StyleSheet.absoluteFillObject,
     zIndex: 3,
