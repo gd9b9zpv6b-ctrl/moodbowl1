@@ -172,6 +172,67 @@ export default function Tasks() {
             <Feather name="chevron-right" size={20} color={COLORS.textPrimary} />
           </Pressable>
 
+          <Text style={[styles.sectionTitle, { marginTop: SPACING.lg }]}>今日清單</Text>
+          {loading ? (
+            <ActivityIndicator style={{ marginTop: SPACING.xl }} color={COLORS.primary} />
+          ) : safeTasks.length === 0 ? (
+            <View style={styles.emptyCard} testID="tasks-empty">
+              <Feather name="check-square" size={30} color={COLORS.textDisabled} />
+              <Text style={styles.emptyText}>
+                今日仲未有事。細如「飲一杯水」都算數。
+              </Text>
+            </View>
+          ) : (
+            <View style={{ marginTop: SPACING.md }}>
+              {safeTasks.map((t) => (
+                <View key={t.id} style={styles.taskRow} testID={`task-row-${t.id}`}>
+                  <Pressable
+                    testID={`task-toggle-${t.id}`}
+                    onPress={() => toggle(t)}
+                    style={[styles.checkbox, t.completed && styles.checkboxDone]}
+                  >
+                    {t.completed && <Feather name="check" size={16} color={COLORS.textInverse} />}
+                  </Pressable>
+                  <Text
+                    style={[styles.taskTitle, t.completed && styles.taskTitleDone]}
+                    numberOfLines={2}
+                  >
+                    {t.title}
+                  </Text>
+                  <Pressable
+                    testID={`task-delete-${t.id}`}
+                    onPress={() => remove(t.id)}
+                    style={styles.deleteBtn}
+                    hitSlop={10}
+                  >
+                    <Feather name="x" size={18} color={COLORS.textSecondary} />
+                  </Pressable>
+                </View>
+              ))}
+            </View>
+          )}
+
+          <View style={styles.addRow}>
+            <TextInput
+              testID="new-task-input"
+              value={newTitle}
+              onChangeText={setNewTitle}
+              placeholder="或者自己加一件今日想做嘅小事…"
+              placeholderTextColor={COLORS.textDisabled}
+              style={styles.input}
+              onSubmitEditing={() => addTask(newTitle)}
+              returnKeyType="done"
+            />
+            <Pressable
+              testID="add-task-btn"
+              onPress={() => addTask(newTitle)}
+              disabled={adding || !newTitle.trim()}
+              style={[styles.addBtn, (adding || !newTitle.trim()) && { opacity: 0.5 }]}
+            >
+              <Feather name="plus" size={22} color={COLORS.textPrimary} />
+            </Pressable>
+          </View>
+
           <Text style={styles.sectionTitle}>習慣庫</Text>
           <Text style={styles.sectionHint}>撳一下 加入今日</Text>
 
@@ -256,66 +317,6 @@ export default function Tasks() {
             ))}
           </View>
 
-          <View style={styles.addRow}>
-            <TextInput
-              testID="new-task-input"
-              value={newTitle}
-              onChangeText={setNewTitle}
-              placeholder="或者自己加一件今日想做嘅小事…"
-              placeholderTextColor={COLORS.textDisabled}
-              style={styles.input}
-              onSubmitEditing={() => addTask(newTitle)}
-              returnKeyType="done"
-            />
-            <Pressable
-              testID="add-task-btn"
-              onPress={() => addTask(newTitle)}
-              disabled={adding || !newTitle.trim()}
-              style={[styles.addBtn, (adding || !newTitle.trim()) && { opacity: 0.5 }]}
-            >
-              <Feather name="plus" size={22} color={COLORS.textPrimary} />
-            </Pressable>
-          </View>
-
-          <Text style={[styles.sectionTitle, { marginTop: SPACING.lg }]}>今日清單</Text>
-          {loading ? (
-            <ActivityIndicator style={{ marginTop: SPACING.xl }} color={COLORS.primary} />
-          ) : safeTasks.length === 0 ? (
-            <View style={styles.emptyCard} testID="tasks-empty">
-              <Feather name="check-square" size={30} color={COLORS.textDisabled} />
-              <Text style={styles.emptyText}>
-                今日仲未有事。細如「飲一杯水」都算數。
-              </Text>
-            </View>
-          ) : (
-            <View style={{ marginTop: SPACING.md }}>
-              {safeTasks.map((t) => (
-                <View key={t.id} style={styles.taskRow} testID={`task-row-${t.id}`}>
-                  <Pressable
-                    testID={`task-toggle-${t.id}`}
-                    onPress={() => toggle(t)}
-                    style={[styles.checkbox, t.completed && styles.checkboxDone]}
-                  >
-                    {t.completed && <Feather name="check" size={16} color={COLORS.textInverse} />}
-                  </Pressable>
-                  <Text
-                    style={[styles.taskTitle, t.completed && styles.taskTitleDone]}
-                    numberOfLines={2}
-                  >
-                    {t.title}
-                  </Text>
-                  <Pressable
-                    testID={`task-delete-${t.id}`}
-                    onPress={() => remove(t.id)}
-                    style={styles.deleteBtn}
-                    hitSlop={10}
-                  >
-                    <Feather name="x" size={18} color={COLORS.textSecondary} />
-                  </Pressable>
-                </View>
-              ))}
-            </View>
-          )}
           <View style={{ height: SPACING.xxl }} />
         </ScrollView>
       </KeyboardAvoidingView>
