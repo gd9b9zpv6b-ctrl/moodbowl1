@@ -54,10 +54,10 @@ const GAG_LINES: Partial<Record<BodyChipKey, string>> = {
 };
 
 const REGION_PROMPTS: Record<BodyRegionKey, string> = {
-  head: '戳米堆 · 頭而家點?',
-  chest: '戳碗身 · 胸口有感覺?',
-  belly: '戳下半 · 肚仔點?',
-  hands: '戳頸邊小手 · 出汗定捏緊?',
+  head: '戳頭髮（飯） · 頭而家點?',
+  chest: '戳頭下面碗身 · 胸口點?',
+  belly: '戳身體 · 肚仔點?',
+  hands: '戳小手 · 出汗定捏緊?',
   whole: '戳底座腳 · 想跳定想縮?',
 };
 
