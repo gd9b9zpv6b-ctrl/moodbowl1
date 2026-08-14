@@ -71,17 +71,17 @@ const CHIP_DECOR: Partial<Record<BodyChipKey, { emoji: string; spot: Spot }>> = 
   floaty: { emoji: '✨', spot: 'auraR' },
 };
 
-/** Decor on anatomy: hair tip / bowl-head / chest / belly / hands / legs. */
+/** Decor anchors match poke anatomy. */
 const SPOT_STYLE: Record<Spot, object> = {
-  head: { top: '5%', alignSelf: 'center' }, // hair tip decorations
-  face: { top: '20%', alignSelf: 'center' }, // bowl head (not hair)
-  chest: { top: '40%', alignSelf: 'center' },
+  head: { top: '8%', alignSelf: 'center' }, // hair-tip floaters only
+  face: { top: '22%', alignSelf: 'center' }, // bowl head above neck
+  chest: { top: '40%', alignSelf: 'center' }, // below neck
   belly: { top: '52%', alignSelf: 'center' },
-  leftHand: { top: '54%', left: '4%' },
-  rightHand: { top: '54%', right: '4%' },
+  leftHand: { top: '55%', left: '2%' },
+  rightHand: { top: '55%', right: '2%' },
   feet: { top: '78%', alignSelf: 'center' },
-  auraL: { top: '36%', left: '2%' },
-  auraR: { top: '36%', right: '2%' },
+  auraL: { top: '40%', left: '2%' },
+  auraR: { top: '40%', right: '2%' },
 };
 
 const REGION_COLORS: Record<BodyRegionKey, string> = {
@@ -109,8 +109,8 @@ const STAGE_BG: Record<WanjaiMood, string> = {
 };
 
 /**
- * Poke zones aligned to silhouette (not the rice hair):
- * 頭 = bowl head under hair · 心 = upper body · 肚 = torso · 手 · 腳 = legs
+ * Poke zones · vertical order on silhouette:
+ * 頭髮(visual) → 頭(bowl, above neck) → 頸 → 心 → 肚 → 手 → 腳
  */
 const HOTSPOTS: {
   region: BodyRegionKey;
@@ -119,12 +119,17 @@ const HOTSPOTS: {
   width: `${number}%`;
   height: `${number}%`;
 }[] = [
-  { region: 'head', top: '14%', left: '28%', width: '44%', height: '18%' },
-  { region: 'chest', top: '36%', left: '30%', width: '40%', height: '12%' },
-  { region: 'belly', top: '48%', left: '32%', width: '36%', height: '10%' },
-  { region: 'hands', top: '50%', left: '6%', width: '20%', height: '14%' },
-  { region: 'hands', top: '50%', left: '74%', width: '20%', height: '14%' },
-  { region: 'whole', top: '66%', left: '28%', width: '44%', height: '26%' },
+  // 頭 · yellow bowl face under hair, ABOVE neck (skip rice tip ~0–14%)
+  { region: 'head', top: '18%', left: '30%', width: '40%', height: '14%' },
+  // 心 · upper torso BELOW neck
+  { region: 'chest', top: '38%', left: '30%', width: '40%', height: '10%' },
+  // 肚 · below heart
+  { region: 'belly', top: '50%', left: '32%', width: '36%', height: '9%' },
+  // 手 · on the stubby hands
+  { region: 'hands', top: '54%', left: '4%', width: '22%', height: '12%' },
+  { region: 'hands', top: '54%', left: '74%', width: '22%', height: '12%' },
+  // 腳 · legs
+  { region: 'whole', top: '68%', left: '28%', width: '44%', height: '24%' },
 ];
 
 function FloatingDecor({ emoji, delay }: { emoji: string; delay: number }) {
