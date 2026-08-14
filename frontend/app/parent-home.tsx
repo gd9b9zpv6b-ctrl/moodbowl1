@@ -125,7 +125,7 @@ export default function ParentHome() {
                 '呢啲字眼可能係小朋友想搵人分擔嘅信號。柔和咁問下佢感受 · 亦可以聯絡輔導老師一齊跟進。',
                 [
                   { text: '知道了' },
-                  { text: '聯絡輔導老師', onPress: () => Alert.alert('示範版', '真實版本會直接彈 in-app message 到輔導老師。') },
+                  { text: '聯絡輔導老師', onPress: () => Alert.alert('聯絡輔導老師', '稍後會幫你直接傳訊息俾輔導老師。') },
                 ],
               )}
               style={styles.parentAlertCta}
@@ -146,7 +146,7 @@ export default function ParentHome() {
           bowlBg="#FFF"
           bowlKey="loved"
           title="家長都要照顧自己"
-          subtitle="親子關係最緊要 · 你先健康 · 小朋友先安心 · 撳我打卡"
+          subtitle="親子關係最緊要 · 你先健康 · 小朋友先安心"
         />
 
         <Text style={styles.privacyBanner}>
@@ -195,7 +195,7 @@ export default function ParentHome() {
 
         <Pressable
           style={styles.actCard}
-          onPress={() => Alert.alert('傾偈提示', '示範版：由心理專家撰寫嘅親子對話 tips · 幫你了解小朋友唔開心背後嘅原因。')}
+          onPress={() => Alert.alert('傾偈提示', '幾個柔和嘅開放式問法 · 幫你了解小朋友唔開心背後嘅原因。')}
         >
           <View style={[styles.actIcon, { backgroundColor: '#FFE9D6' }]}>
             <Feather name="message-circle" size={20} color="#F0AE64" />
@@ -209,7 +209,7 @@ export default function ParentHome() {
 
         <Pressable
           style={styles.actCard}
-          onPress={() => Alert.alert('聯絡老師', '示範版：直接 in-app message 班主任 · 保留對話紀錄。')}
+          onPress={() => Alert.alert('聯絡老師', '可以寫訊息俾班主任 · 對話會保留紀錄。')}
         >
           <View style={[styles.actIcon, { backgroundColor: '#E0EAFC' }]}>
             <Feather name="mail" size={20} color="#5A7CB0" />
@@ -223,7 +223,7 @@ export default function ParentHome() {
 
         <Pressable
           style={styles.actCard}
-          onPress={() => Alert.alert('免費專家講座', '示範版：飯碗小學家長專屬 · 心理專家 workshop 通知。')}
+          onPress={() => Alert.alert('免費專家講座', '學校會通知家長專屬嘅心理專家講座。')}
         >
           <View style={[styles.actIcon, { backgroundColor: '#FBD9E4' }]}>
             <Feather name="book-open" size={20} color="#B67A99" />

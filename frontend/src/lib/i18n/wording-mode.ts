@@ -237,7 +237,7 @@ export const WORDING: Record<WordingMode, WordingPack> = {
     home_quick_diary: '直接寫日記',
     home_album: '睇心情圖鑑',
     selfcare_title: '照顧學生之前 · 都要照顧自己',
-    selfcare_subtitle: '開自己嘅 check-in · 用成人用詞模式',
+    selfcare_subtitle: '開自己嘅 check-in · 畀自己幾分鐘',
     bridge_by_state: {
       sympathetic_fire: '平靜返少少未? 如果想講 · 可以揀分享對象',
       dorsal_sad: '重量輕咗啲未? 需要陪一陪都完全 OK',

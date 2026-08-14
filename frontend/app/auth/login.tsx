@@ -26,14 +26,13 @@ const DEMO_ACCOUNTS: {
   label: string;
   emoji: string;
   color: string;
-  mode: 'minor' | 'adult';
 }[] = [
-  { role: 'student', email: 'student@demo.moodful.app', label: '學生 A', emoji: '🎒', color: '#B9DBBC', mode: 'minor' },
-  { role: 'student', email: 'student2@demo.moodful.app', label: '學生 B', emoji: '🎒', color: '#A2D2FF', mode: 'minor' },
-  { role: 'teacher', email: 'teacher@demo.moodful.app', label: '班主任', emoji: '👩‍🏫', color: '#F0AE64', mode: 'adult' },
-  { role: 'counsellor', email: 'counsellor@demo.moodful.app', label: '輔導老師', emoji: '💚', color: '#7DBEE8', mode: 'adult' },
-  { role: 'parent', email: 'parent@demo.moodful.app', label: '家長', emoji: '👨‍👩‍👧', color: '#E499B4', mode: 'adult' },
-  { role: 'school_admin', email: 'school@demo.moodful.app', label: '校方管理', emoji: '🏫', color: '#C7A6D1', mode: 'adult' },
+  { role: 'student', email: 'student@demo.moodful.app', label: '學生 A', emoji: '🎒', color: '#B9DBBC' },
+  { role: 'student', email: 'student2@demo.moodful.app', label: '學生 B', emoji: '🎒', color: '#A2D2FF' },
+  { role: 'teacher', email: 'teacher@demo.moodful.app', label: '班主任', emoji: '👩‍🏫', color: '#F0AE64' },
+  { role: 'counsellor', email: 'counsellor@demo.moodful.app', label: '輔導老師', emoji: '💚', color: '#7DBEE8' },
+  { role: 'parent', email: 'parent@demo.moodful.app', label: '家長', emoji: '👨‍👩‍👧', color: '#E499B4' },
+  { role: 'school_admin', email: 'school@demo.moodful.app', label: '校方管理', emoji: '🏫', color: '#C7A6D1' },
 ];
 const DEMO_PASSWORD = 'demo1234';
 
@@ -62,8 +61,6 @@ export default function Login() {
 
   const quickDemoLogin = async (acc: (typeof DEMO_ACCOUNTS)[number]) => {
     setError(null);
-    setEmail(acc.email);
-    setPassword(DEMO_PASSWORD);
     setDemoLoading(acc.email);
     try {
       const next = await login(acc.email, DEMO_PASSWORD);
@@ -71,7 +68,7 @@ export default function Login() {
       await RoleStorage.set(role);
       router.replace(routerHomeForRole(role) as never);
     } catch (e: any) {
-      setError(e?.message || `登入 ${acc.label} 失敗 · 再試一次`);
+      setError(e?.message || '登入失敗 · 再試一次');
     } finally {
       setDemoLoading(null);
     }
@@ -92,49 +89,6 @@ export default function Login() {
             歡迎返嚟
           </Text>
           <Text style={styles.subtitle}>深呼吸一下,好開心你返嚟。</Text>
-
-          {FEATURE_FLAGS.ROLE_DEMO_PREVIEW && (
-            <View style={styles.demoBlock} testID="demo-login-block">
-              <Text style={styles.demoTitle}>示範帳戶 · 撳掣即登入</Text>
-              <Text style={styles.demoHint}>
-                Minor · 學生 A／B　·　Adult · 班主任／輔導／家長／校方{'\n'}
-                密碼一律 demo1234 · 已就緒
-              </Text>
-              <View style={styles.demoGrid}>
-                {DEMO_ACCOUNTS.map((acc) => {
-                  const isLoading = demoLoading === acc.email;
-                  return (
-                    <Pressable
-                      key={acc.email}
-                      testID={`demo-login-${acc.role === 'student' ? acc.email.split('@')[0] : acc.role}`}
-                      onPress={() => quickDemoLogin(acc)}
-                      disabled={!!demoLoading || loading}
-                      style={[
-                        styles.demoCard,
-                        { backgroundColor: acc.color + '35', borderColor: acc.color },
-                        demoLoading && demoLoading !== acc.email && { opacity: 0.4 },
-                      ]}
-                    >
-                      <Text style={styles.demoEmoji}>{acc.emoji}</Text>
-                      <Text style={styles.demoLabel}>{acc.label}</Text>
-                      <Text style={styles.demoMode}>{acc.mode === 'minor' ? 'Minor' : 'Adult'}</Text>
-                      {isLoading ? (
-                        <ActivityIndicator size="small" color={COLORS.textPrimary} style={{ marginTop: 4 }} />
-                      ) : (
-                        <Text style={styles.demoTap}>撳我</Text>
-                      )}
-                    </Pressable>
-                  );
-                })}
-              </View>
-            </View>
-          )}
-
-          <View style={styles.orRow}>
-            <View style={styles.orLine} />
-            <Text style={styles.orText}>或者用電郵登入</Text>
-            <View style={styles.orLine} />
-          </View>
 
           <View style={styles.field}>
             <Text style={styles.label}>電郵</Text>
@@ -209,10 +163,48 @@ export default function Login() {
           <Pressable
             testID="login-goto-forgot-btn"
             onPress={() => router.push('/auth/forgot-password' as any)}
-            style={{ marginTop: SPACING.sm, alignSelf: 'center', marginBottom: SPACING.lg }}
+            style={{ marginTop: SPACING.sm, alignSelf: 'center' }}
           >
             <Text style={styles.link}>忘記密碼？</Text>
           </Pressable>
+
+          {FEATURE_FLAGS.ROLE_DEMO_PREVIEW && (
+            <View style={styles.demoBlock} testID="demo-login-block">
+              <View style={styles.orRow}>
+                <View style={styles.orLine} />
+                <Text style={styles.orText}>或者揀一個身份</Text>
+                <View style={styles.orLine} />
+              </View>
+              <View style={styles.demoGrid}>
+                {DEMO_ACCOUNTS.map((acc) => {
+                  const isLoading = demoLoading === acc.email;
+                  return (
+                    <Pressable
+                      key={acc.email}
+                      testID={`demo-login-${acc.role === 'student' ? acc.email.split('@')[0] : acc.role}`}
+                      onPress={() => quickDemoLogin(acc)}
+                      disabled={!!demoLoading || loading}
+                      accessibilityLabel={`以${acc.label}身份登入`}
+                      style={[
+                        styles.demoCard,
+                        { backgroundColor: acc.color + '35', borderColor: acc.color },
+                        demoLoading && demoLoading !== acc.email && { opacity: 0.4 },
+                      ]}
+                    >
+                      {isLoading ? (
+                        <ActivityIndicator size="small" color={COLORS.textPrimary} />
+                      ) : (
+                        <>
+                          <Text style={styles.demoEmoji}>{acc.emoji}</Text>
+                          <Text style={styles.demoLabel}>{acc.label}</Text>
+                        </>
+                      )}
+                    </Pressable>
+                  );
+                })}
+              </View>
+            </View>
+          )}
         </ScrollView>
       </KeyboardAvoidingView>
     </SafeAreaView>
@@ -221,7 +213,7 @@ export default function Login() {
 
 const styles = StyleSheet.create({
   safe: { flex: 1, backgroundColor: COLORS.bgMain },
-  container: { padding: SPACING.lg, paddingTop: SPACING.md, flexGrow: 1 },
+  container: { padding: SPACING.lg, paddingTop: SPACING.md, flexGrow: 1, paddingBottom: SPACING.xl },
   backBtn: {
     width: 40,
     height: 40,
@@ -232,7 +224,7 @@ const styles = StyleSheet.create({
     marginBottom: SPACING.lg,
   },
   title: { fontSize: 32, fontWeight: '700', color: COLORS.textPrimary },
-  subtitle: { fontSize: 16, color: COLORS.textSecondary, marginTop: SPACING.sm, marginBottom: SPACING.lg },
+  subtitle: { fontSize: 16, color: COLORS.textSecondary, marginTop: SPACING.sm, marginBottom: SPACING.xl },
   field: { marginBottom: SPACING.md },
   label: { fontSize: 13, fontWeight: '600', color: COLORS.textSecondary, marginBottom: SPACING.sm, letterSpacing: 0.4 },
   input: {
@@ -256,67 +248,13 @@ const styles = StyleSheet.create({
   link: { color: COLORS.textSecondary, fontSize: 15 },
 
   demoBlock: {
-    backgroundColor: COLORS.bgCard,
-    borderRadius: RADIUS.md,
-    padding: SPACING.md,
-    marginBottom: SPACING.lg,
-    borderWidth: 1,
-    borderColor: COLORS.borderLight,
-  },
-  demoTitle: {
-    fontSize: 15,
-    fontWeight: '800',
-    color: COLORS.textPrimary,
-    textAlign: 'center',
-    marginBottom: 4,
-  },
-  demoHint: {
-    fontSize: 11,
-    color: COLORS.textSecondary,
-    textAlign: 'center',
-    marginBottom: SPACING.md,
-    lineHeight: 16,
-  },
-  demoGrid: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    gap: SPACING.sm,
-  },
-  demoCard: {
-    width: '31%',
-    minHeight: 96,
-    borderRadius: RADIUS.md,
-    borderWidth: 1.5,
-    alignItems: 'center',
-    justifyContent: 'center',
-    paddingVertical: SPACING.sm + 2,
-    paddingHorizontal: 6,
-    gap: 2,
-  },
-  demoEmoji: { fontSize: 22 },
-  demoLabel: {
-    fontSize: 12,
-    fontWeight: '700',
-    color: COLORS.textPrimary,
-    textAlign: 'center',
-  },
-  demoMode: {
-    fontSize: 10,
-    fontWeight: '600',
-    color: COLORS.textSecondary,
-  },
-  demoTap: {
-    fontSize: 10,
-    fontWeight: '700',
-    color: COLORS.textPrimary,
-    marginTop: 2,
-    opacity: 0.7,
+    marginTop: SPACING.xl,
   },
   orRow: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: SPACING.sm,
-    marginBottom: SPACING.lg,
+    marginBottom: SPACING.md,
   },
   orLine: {
     flex: 1,
@@ -325,7 +263,30 @@ const styles = StyleSheet.create({
   },
   orText: {
     fontSize: 12,
-    fontWeight: '700',
+    fontWeight: '600',
     color: COLORS.textSecondary,
+  },
+  demoGrid: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: SPACING.sm,
+  },
+  demoCard: {
+    width: '31%',
+    minHeight: 76,
+    borderRadius: RADIUS.md,
+    borderWidth: 1.5,
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingVertical: SPACING.sm + 2,
+    paddingHorizontal: 6,
+    gap: 4,
+  },
+  demoEmoji: { fontSize: 22 },
+  demoLabel: {
+    fontSize: 12,
+    fontWeight: '700',
+    color: COLORS.textPrimary,
+    textAlign: 'center',
   },
 });

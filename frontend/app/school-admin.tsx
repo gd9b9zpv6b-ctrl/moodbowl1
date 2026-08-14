@@ -301,7 +301,7 @@ export default function SchoolAdmin() {
               bowlBg="#FFF"
               bowlKey="peaceful"
               title="校長 · 主任都用得到"
-              subtitle="你都可以喺 MoodBowl 開自己嘅日記 · 撳我 recharge"
+              subtitle="你都可以喺 MoodBowl 開自己嘅日記 · 畀自己 recharge"
             />
 
             <View style={styles.gridWrap}>
@@ -324,7 +324,7 @@ export default function SchoolAdmin() {
             <View style={styles.footerNote}>
               <Feather name="shield" size={13} color="#7A5C3F" />
               <Text style={styles.footerText}>
-                所有學生私隱資料加密儲存 · 符合《個人資料（私隱）條例》· 老師/家長 access 均有 audit trail。
+                所有學生私隱資料加密儲存 · 符合《個人資料（私隱）條例》· 老師／家長查閱都會留底。
               </Text>
             </View>
           </>
@@ -365,18 +365,18 @@ export default function SchoolAdmin() {
           <Feather name="chevron-right" size={20} color={COLORS.textDisabled} />
         </Pressable>
 
-        <Pressable style={styles.actionCard} onPress={() => Alert.alert('Invite Code', '示範版：一次過生成／重印班級 QR code · 派發俾家長。')}>
+        <Pressable style={styles.actionCard} onPress={() => Alert.alert('邀請碼', '可以一次過生成／重印班級 QR code · 派發俾家長。')}>
           <View style={[styles.actIcon, { backgroundColor: '#FEE9CE' }]}>
             <Feather name="key" size={22} color="#B57D2A" />
           </View>
           <View style={{ flex: 1 }}>
-            <Text style={styles.actTitle}>Invite Code 派發</Text>
+            <Text style={styles.actTitle}>邀請碼派發</Text>
             <Text style={styles.actSub}>QR code · 家長信 · 一鍵生成</Text>
           </View>
           <Feather name="chevron-right" size={20} color={COLORS.textDisabled} />
         </Pressable>
 
-        <Pressable style={styles.actionCard} onPress={() => Alert.alert('老師權限', '示範版：管理班主任、輔導老師嘅 access · 分配班別。')}>
+        <Pressable style={styles.actionCard} onPress={() => Alert.alert('老師權限', '管理班主任、輔導老師嘅權限 · 同埋分配班別。')}>
           <View style={[styles.actIcon, { backgroundColor: '#E0EAFC' }]}>
             <Feather name="user-check" size={22} color="#5A7CB0" />
           </View>
@@ -1042,7 +1042,7 @@ export default function SchoolAdmin() {
           <View style={styles.footerNote}>
             <Feather name="shield" size={13} color="#7A5C3F" />
             <Text style={styles.footerText}>
-              所有學生私隱資料加密儲存 · 符合《個人資料（私隱）條例》· 老師/家長 access 均有 audit trail。
+              所有學生私隱資料加密儲存 · 符合《個人資料（私隱）條例》· 老師／家長查閱都會留底。
             </Text>
           </View>
         )}

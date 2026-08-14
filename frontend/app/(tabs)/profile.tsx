@@ -14,7 +14,6 @@ import { RoleStorage, ROLE_META, UserRole } from '@/src/lib/role-storage';
 import { COLORS, RADIUS, SPACING } from '@/src/constants/theme';
 import { experienceModeForRole, type MinorAgeBand } from '@/src/lib/experience-mode';
 import { MinorAgeBandStorage } from '@/src/lib/minor-age-band';
-import { wordingModeLabel } from '@/src/lib/i18n/wording-mode';
 import { GardenStorage } from '@/src/lib/garden-storage';
 import { useAuth } from '@/src/lib/auth-context';
 import { api } from '@/src/lib/api';
@@ -175,42 +174,28 @@ export default function Profile() {
             <Feather name="heart" size={14} color="#E86A6A" />
             <Text style={styles.creditsText}>已累積 {user?.credits ?? 0} 個小心心</Text>
           </View>
-          <View style={styles.modeChip} testID="profile-experience-mode">
-            <Text style={styles.modeChipText}>
-              {experienceMode === 'minor' ? 'Minor mode · 學生體驗' : 'Adult mode · 大人工作台'}
-            </Text>
-          </View>
         </View>
 
         {experienceMode === 'minor' && (
           <View style={styles.ageBandCard} testID="profile-minor-age-band">
-            <Text style={styles.ageBandTitle}>Minor 用詞模式</Text>
-            <Text style={styles.ageBandHint}>影響儀式入面嘅湯／身體感覺／橋接用詞</Text>
+            <Text style={styles.ageBandTitle}>我嘅年級</Text>
+            <Text style={styles.ageBandHint}>揀啱嘅組別 · 儀式會用更貼你嘅講法</Text>
             <View style={styles.ageBandRow}>
               <Pressable
                 testID="age-band-lower"
                 onPress={() => onPickAgeBand('lower')}
                 style={[styles.ageBandBtn, ageBand === 'lower' && styles.ageBandBtnActive]}
               >
-                <Text style={styles.ageBandBtnText}>低年級 · P1–P3</Text>
+                <Text style={styles.ageBandBtnText}>低年級</Text>
               </Pressable>
               <Pressable
                 testID="age-band-upper"
                 onPress={() => onPickAgeBand('upper')}
                 style={[styles.ageBandBtn, ageBand === 'upper' && styles.ageBandBtnActive]}
               >
-                <Text style={styles.ageBandBtnText}>高年級 · P4–P6</Text>
+                <Text style={styles.ageBandBtnText}>高年級</Text>
               </Pressable>
             </View>
-          </View>
-        )}
-
-        {experienceMode === 'adult' && (
-          <View style={styles.ageBandCard} testID="profile-adult-wording-mode">
-            <Text style={styles.ageBandTitle}>用詞模式</Text>
-            <Text style={styles.ageBandHint}>
-              大人工作台同自我照顧 check-in 會用 Adult 用詞 · {wordingModeLabel('adult')}
-            </Text>
           </View>
         )}
 
@@ -353,7 +338,7 @@ export default function Profile() {
               <Text style={{ fontSize: 18 }}>{ROLE_META[user.role as UserRole].emoji}</Text>
             </View>
             <View style={{ flex: 1 }}>
-              <Text style={styles.linkTitle}>返 {ROLE_META[user.role as UserRole].label} Dashboard</Text>
+              <Text style={styles.linkTitle}>返 {ROLE_META[user.role as UserRole].label} 版面</Text>
               <Text style={styles.linkHint}>睇返學生 data · 或者返自己嘅工作版面</Text>
             </View>
             <Feather name="chevron-right" size={20} color={COLORS.textPrimary} />
@@ -488,9 +473,9 @@ export default function Profile() {
               const alertsCount = data?.alerts_about_me?.length ?? 0;
               Alert.alert(
                 '📥 你嘅資料已匯出',
-                `包含：${entriesCount} 條日記 · ${alertsCount} 條警報 metadata\n\n` +
-                '示範版：真實 app 會將 JSON 檔 email 到你嘅地址 · 或者提供下載連結。\n\n' +
-                '呢個係《個人資料（私隱）條例》第 6 條你嘅法定權利。',
+                `包含：${entriesCount} 條日記 · ${alertsCount} 條警報記錄\n\n` +
+                '如需檔案副本 · 可以聯絡學校管理員協助下載。\n\n' +
+                '呢個係《個人資料（私隱）條例》你嘅法定權利。',
               );
             } catch (e: any) {
               Alert.alert('匯出失敗', e?.message || '請再試');
@@ -620,14 +605,6 @@ const styles = StyleSheet.create({
     backgroundColor: '#FFE4E4',
   },
   creditsText: { color: '#8B4513', fontWeight: '700', fontSize: 13 },
-  modeChip: {
-    marginTop: SPACING.sm,
-    backgroundColor: COLORS.primaryLight,
-    paddingHorizontal: SPACING.md,
-    paddingVertical: 6,
-    borderRadius: RADIUS.pill,
-  },
-  modeChipText: { fontSize: 12, fontWeight: '700', color: COLORS.textPrimary },
   ageBandCard: {
     backgroundColor: COLORS.bgCard,
     borderRadius: RADIUS.lg,
