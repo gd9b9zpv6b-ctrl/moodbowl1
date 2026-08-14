@@ -189,7 +189,6 @@ const styles = StyleSheet.create({
   tint: {
     ...StyleSheet.absoluteFillObject,
     borderRadius: RADIUS.lg,
-    opacity: 0.35,
   },
   title: {
     fontSize: 20,

@@ -5,6 +5,7 @@ import { Animated, Pressable, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { EmotionVisual } from '@/src/components/emotion-visual';
+import { tintWash } from '@/src/constants/bowl-color-tints';
 import { EMOTION_BY_KEY } from '@/src/constants/emotions';
 import { COLORS, RADIUS, SPACING } from '@/src/constants/theme';
 import { listMyDiaryEntries, markRitualSmileCompleted } from '@/src/lib/diary';
@@ -98,7 +99,7 @@ export default function RitualCompleteScreen() {
         <View style={styles.bowl}>
           <EmotionVisual emotion={emotion} size={200} radius={RADIUS.lg} />
           {colorTint && colorTint !== '#FFFFFF' && (
-            <View pointerEvents="none" style={[styles.tint, { backgroundColor: colorTint }]} />
+            <View pointerEvents="none" style={[styles.tint, { backgroundColor: tintWash(colorTint) }]} />
           )}
         </View>
 
@@ -142,7 +143,6 @@ const styles = StyleSheet.create({
   tint: {
     ...StyleSheet.absoluteFillObject,
     borderRadius: RADIUS.lg,
-    opacity: 0.35,
   },
   headline: {
     fontSize: 26,
