@@ -18,6 +18,13 @@ describe('detectState', () => {
     );
   });
 
+  it('detects sympathetic_fire from anger body cluster', () => {
+    expect(detectState('warm_milk', ['fists_clench'])).toBe('sympathetic_fire');
+    expect(detectState('warm_milk', ['jaw_clench', 'heat_rising'])).toBe(
+      'sympathetic_fire',
+    );
+  });
+
   it('detects dorsal_sad from no_drink', () => {
     expect(detectState('no_drink', [])).toBe('dorsal_sad');
   });
@@ -46,6 +53,19 @@ describe('detectState', () => {
     );
   });
 
+  it('detects sympathetic_anxious from sweaty_palms / shaky', () => {
+    expect(detectState('lemon_juice', ['sweaty_palms'])).toBe(
+      'sympathetic_anxious',
+    );
+    expect(detectState('lemon_juice', ['shaky', 'need_toilet'])).toBe(
+      'sympathetic_anxious',
+    );
+  });
+
+  it('detects dorsal_sad from shoulders_heavy', () => {
+    expect(detectState('strawberry_milk', ['shoulders_heavy'])).toBe('dorsal_sad');
+  });
+
   it('detects ventral_regulated from strawberry_milk alone', () => {
     expect(detectState('strawberry_milk', [])).toBe('ventral_regulated');
   });
@@ -54,21 +74,8 @@ describe('detectState', () => {
     expect(detectState('bitter_tea', ['chest_warm', 'floaty'])).toBe(
       'ventral_regulated',
     );
-  });
-
-  it('detects dorsal_sad from shoulders_heavy', () => {
-    expect(detectState('strawberry_milk', ['shoulders_heavy'])).toBe('dorsal_sad');
-  });
-
-  it('detects sympathetic_anxious from sweaty_palms', () => {
-    expect(detectState('lemon_juice', ['sweaty_palms'])).toBe(
-      'sympathetic_anxious',
-    );
-  });
-
-  it('detects sympathetic_fire from heart_fast + face_flush', () => {
-    expect(detectState('warm_milk', ['heart_fast', 'face_flush'])).toBe(
-      'sympathetic_fire',
+    expect(detectState('plain_water', ['smile_wide', 'want_jump'])).toBe(
+      'ventral_regulated',
     );
   });
 

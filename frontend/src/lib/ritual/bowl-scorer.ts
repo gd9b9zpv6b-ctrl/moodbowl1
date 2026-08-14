@@ -21,39 +21,71 @@ const SOUP_CATEGORY_SCORES: Record<SoupKey, Partial<Record<EmotionCategory, numb
   no_drink: { sad: 6, wound: 5, unspoken: 3, nervous: 1, anger: 1 },
 };
 
-/** Interoceptive category pulls — used to clarify ambiguous drink choices. */
+/**
+ * Somatic category pulls mapped from emotion→body guide:
+ * anger / anxiety / sadness / joy / fatigue.
+ */
 const CHIP_CATEGORY_SCORES: Record<BodyChipKey, Partial<Record<EmotionCategory, number>>> = {
-  chest_warm: { warm: 7 },
-  chest_tight: { sad: 4, wound: 4, unspoken: 2, nervous: 2 },
-  heart_fast: { nervous: 6, anger: 3 },
-  face_flush: { nervous: 5, anger: 3, warm: 1 },
-  belly_full: { nervous: 5, warm: 1 },
-  head_heavy: { sad: 4, unspoken: 4 },
-  shoulders_heavy: { sad: 5, unspoken: 3, wound: 2 },
-  throat_tight: { sad: 4, wound: 3, nervous: 3 },
-  sweaty_palms: { nervous: 6, anger: 2 },
-  want_jump: { warm: 5, nervous: 3 },
-  curled_up: { sad: 6, wound: 3, unspoken: 2 },
+  // Anger
+  face_flush: { anger: 5, nervous: 3, warm: 1 },
+  jaw_clench: { anger: 7, nervous: 2 },
+  fists_clench: { anger: 8, nervous: 1 },
+  breath_fast: { anger: 6, nervous: 3 },
+  heat_rising: { anger: 8, nervous: 2 },
+  body_tense: { anger: 6, nervous: 3, wound: 1 },
+  // Anxiety / fear
+  heart_fast: { nervous: 7, anger: 2 },
+  sweaty_palms: { nervous: 7 },
+  belly_full: { nervous: 6, warm: 1 },
+  shaky: { nervous: 7, wound: 1 },
+  need_toilet: { nervous: 6 },
+  // Sadness
   teary: { sad: 8, wound: 3 },
-  soft_hands: { sad: 3, unspoken: 4, nervous: 2 },
-  floaty: { warm: 3, unspoken: 4 },
+  throat_tight: { sad: 5, wound: 3, nervous: 2 },
+  chest_tight: { sad: 5, wound: 4, unspoken: 2 },
+  no_appetite: { sad: 6, unspoken: 3 },
+  curled_up: { sad: 6, wound: 3, unspoken: 2 },
+  // Joy / excitement
+  chest_warm: { warm: 7 },
+  want_jump: { warm: 6, nervous: 2 },
+  smile_wide: { warm: 7 },
+  eyes_bright: { warm: 7 },
+  // Fatigue / burnout
+  eyelids_heavy: { sad: 5, unspoken: 4 },
+  head_heavy: { sad: 4, unspoken: 5 },
+  shoulders_heavy: { sad: 5, unspoken: 3, wound: 2 },
+  brain_blank: { unspoken: 6, sad: 3 },
+  soft_hands: { sad: 4, unspoken: 4 },
+  floaty: { warm: 2, unspoken: 5 },
 };
 
 const CHIP_BOWL_SCORES: Record<BodyChipKey, string[]> = {
-  chest_warm: ['happy', 'content', 'loved', 'calm', 'peaceful', 'supported', 'grateful'],
+  face_flush: ['angry', 'furious', 'awkward', 'ashamed', 'anxious', 'proud'],
+  jaw_clench: ['angry', 'furious', 'irritable', 'frustrated', 'restless'],
+  fists_clench: ['angry', 'furious', 'irritable', 'frustrated', 'offended'],
+  breath_fast: ['angry', 'anxious', 'overwhelmed', 'furious', 'restless'],
+  heat_rising: ['angry', 'furious', 'irritable', 'offended', 'empowered'],
+  body_tense: ['angry', 'trapped', 'overwhelmed', 'anxious', 'irritable'],
+  heart_fast: ['anxious', 'scared', 'restless', 'overwhelmed', 'empowered'],
+  sweaty_palms: ['anxious', 'scared', 'uneasy', 'awkward', 'restless'],
+  belly_full: ['anxious', 'uneasy', 'worried', 'scared'],
+  shaky: ['anxious', 'scared', 'uneasy', 'restless', 'overwhelmed'],
+  need_toilet: ['anxious', 'scared', 'uneasy', 'worried'],
+  teary: ['sad', 'lonely', 'in-pain', 'in-agony', 'unloved', 'misunderstood', 'guilty', 'abandoned'],
+  throat_tight: ['suppressed', 'sad', 'misunderstood', 'hollow', 'trapped'],
   chest_tight: ['suppressed', 'overwhelmed', 'trapped', 'in-pain', 'hollow', 'sad'],
-  heart_fast: ['anxious', 'scared', 'furious', 'restless', 'overwhelmed', 'empowered'],
-  face_flush: ['awkward', 'anxious', 'furious', 'ashamed', 'restless', 'proud'],
-  belly_full: ['anxious', 'uneasy', 'worried', 'content'],
+  no_appetite: ['sad', 'empty', 'unmotivated', 'numb', 'hopeless'],
+  curled_up: ['lonely', 'empty', 'scared', 'abandoned', 'hollow', 'ashamed', 'sad'],
+  chest_warm: ['happy', 'content', 'loved', 'calm', 'peaceful', 'supported', 'grateful'],
+  want_jump: ['happy', 'empowered', 'free', 'proud', 'restless', 'content'],
+  smile_wide: ['happy', 'proud', 'grateful', 'content', 'loved', 'free'],
+  eyes_bright: ['happy', 'hopeful', 'empowered', 'proud', 'content'],
+  eyelids_heavy: ['exhausted', 'unmotivated', 'numb', 'foggy', 'hopeless'],
   head_heavy: ['exhausted', 'foggy', 'unmotivated', 'numb', 'overwhelmed'],
   shoulders_heavy: ['exhausted', 'overwhelmed', 'sad', 'unmotivated', 'suppressed', 'trapped'],
-  throat_tight: ['suppressed', 'sad', 'anxious', 'scared', 'misunderstood', 'hollow'],
-  sweaty_palms: ['anxious', 'scared', 'restless', 'uneasy', 'awkward'],
-  want_jump: ['happy', 'empowered', 'free', 'proud', 'restless', 'content'],
-  curled_up: ['lonely', 'empty', 'scared', 'abandoned', 'hollow', 'ashamed', 'sad'],
-  teary: ['sad', 'lonely', 'in-pain', 'in-agony', 'unloved', 'misunderstood', 'guilty', 'abandoned'],
-  soft_hands: ['exhausted', 'numb', 'overwhelmed', 'uneasy', 'anxious'],
-  floaty: ['peaceful', 'free', 'calm', 'empty', 'foggy'],
+  brain_blank: ['foggy', 'blank', 'numb', 'empty', 'exhausted'],
+  soft_hands: ['exhausted', 'numb', 'overwhelmed', 'uneasy', 'unmotivated'],
+  floaty: ['peaceful', 'free', 'calm', 'empty', 'foggy', 'blank'],
 };
 
 /** When body chips are present, dampen drink prior so craving ≠ state. */
@@ -119,12 +151,10 @@ export function scoreBowls(
   const expanded12 = others
     .filter((b) => topCategories.includes(b.category))
     .filter((b) => !defaultKeys.has(b.key))
-    .slice(0, 12);
+    .slice(0, 11);
 
-  const strip = ({ score: _score, ...rest }: Scored): Emotion => rest;
+  const defaultList = [...default5, hollow];
+  const expanded = [...default5, ...expanded12].slice(0, 12);
 
-  return {
-    default: [...default5.map(strip), strip(hollow)],
-    expanded: expanded12.map(strip),
-  };
+  return { default: defaultList, expanded };
 }

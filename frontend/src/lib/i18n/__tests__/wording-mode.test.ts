@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
 
+import { BODY_CHIPS, BODY_REGIONS } from '@/src/constants/body-chips';
 import { resolveWordingMode, wordingFor, wordingModeLabel } from '@/src/lib/i18n/wording-mode';
 
 describe('resolveWordingMode', () => {
@@ -22,6 +23,19 @@ describe('wording packs', () => {
     expect(wordingFor('lower').soup_title).toBe('今日想飲咩?');
     expect(wordingFor('upper').soup_title).toBe('今日嘅狀態岩飲邊樣飲品?');
     expect(wordingFor('adult').soup_title).not.toBe(wordingFor('lower').soup_title);
+  });
+
+  it('covers every body chip and region label', () => {
+    for (const mode of ['lower', 'upper', 'adult'] as const) {
+      const pack = wordingFor(mode);
+      for (const chip of BODY_CHIPS) {
+        expect(pack.chip_labels[chip.key]?.length).toBeGreaterThan(0);
+      }
+      for (const region of BODY_REGIONS) {
+        expect(pack.region_labels[region.key]?.length).toBeGreaterThan(0);
+      }
+      expect(pack.body_vessel.length).toBeGreaterThan(0);
+    }
   });
 
   it('labels modes for profile UI', () => {

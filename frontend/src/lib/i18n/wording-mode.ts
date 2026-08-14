@@ -1,6 +1,6 @@
 import type { NSState } from '@/src/lib/ritual/state-detector';
 import type { SoupKey } from '@/src/constants/soups';
-import type { BodyChipKey } from '@/src/constants/body-chips';
+import type { BodyChipKey, BodyRegionKey } from '@/src/constants/body-chips';
 import type { ExperienceMode, MinorAgeBand } from '@/src/lib/experience-mode';
 import { experienceModeForRole } from '@/src/lib/experience-mode';
 
@@ -13,9 +13,12 @@ export type WordingPack = {
   body_title: string;
   /** Clarifies L1 ambiguity · drink can be craving OR state. */
   body_clarify: string;
+  /** Body-as-vessel prompt under the chosen drink. */
+  body_vessel: string;
   body_hint: string;
   body_cta: string;
   body_skip: string;
+  region_labels: Record<BodyRegionKey, string>;
   pick_title: string;
   pick_expand: string;
   pick_collapse: string;
@@ -78,66 +81,131 @@ const SOUP_SUBS_ADULT: Record<SoupKey, string> = {
   no_drink: '提不起勁 · 想留白',
 };
 
+/** P1–P3 · playful somatic metaphors. */
 const CHIP_LOWER: Record<BodyChipKey, string> = {
+  face_flush: '面紅紅 · 好似蒸籠',
+  jaw_clench: '牙咬到咔咔聲',
+  teary: '眼酸酸 · 想喊',
+  eyelids_heavy: '眼皮掛住水桶',
+  eyes_bright: '眼睛發亮',
+  head_heavy: '頭好似大石頭',
+  brain_blank: '腦入面空空哋',
   chest_warm: '胸口暖暖',
-  chest_tight: '胸口悶悶',
-  heart_fast: '心跳得好快',
-  face_flush: '面紅',
-  head_heavy: '頭好重',
+  chest_tight: '胸口像壓住石',
+  heart_fast: '心跳像小兔砰砰跳',
+  breath_fast: '鼻子呼哧呼哧',
+  heat_rising: '熱氣衝上腦門',
+  throat_tight: '喉嚨像吞咗小石頭',
+  belly_full: '肚仔有蝴蝶亂飛',
+  no_appetite: '唔想食嘢',
+  need_toilet: '突然好想去廁所',
+  fists_clench: '拳頭硬邦邦',
+  sweaty_palms: '手心濕漉漉',
+  shaky: '手腳震震',
+  soft_hands: '手軟軟 · 冇力',
   shoulders_heavy: '膊頭好重',
-  throat_tight: '喉嚨哽哽',
-  belly_full: '肚仔嘟嘟',
-  sweaty_palms: '手心濕濕',
-  want_jump: '好想跳',
-  curled_up: '縮埋一團',
-  teary: '眼濕濕',
-  soft_hands: '手軟軟',
+  body_tense: '成身繃緊緊',
+  want_jump: '腳仔想跳跳紮',
+  smile_wide: '嘴角忍唔住笑',
+  curled_up: '想縮埋一團',
   floaty: '輕飄飄',
 };
 
+/** P4–P6 · grounded somatic language. */
 const CHIP_UPPER: Record<BodyChipKey, string> = {
-  chest_warm: '胸口暖暖',
-  chest_tight: '胸口悶悶',
+  face_flush: '面紅／臉頰發熱',
+  jaw_clench: '牙關咬緊',
+  teary: '眼眶發熱 · 鼻酸',
+  eyelids_heavy: '眼皮好重 · 睜唔開',
+  eyes_bright: '精神特別好',
+  head_heavy: '頭部沉重',
+  brain_blank: '腦袋一片空白',
+  chest_warm: '胸口溫暖',
+  chest_tight: '胸口悶悶重重',
   heart_fast: '心跳得好快',
-  face_flush: '面紅／發熱',
-  head_heavy: '頭好重',
-  shoulders_heavy: '膊頭好重',
-  throat_tight: '喉嚨哽住',
-  belly_full: '肚有感覺',
+  breath_fast: '呼吸變急',
+  heat_rising: '熱氣由胸口衝上腦',
+  throat_tight: '喉嚨哽住 · 講唔出',
+  belly_full: '胃部緊縮 · 咕嚕翻滾',
+  no_appetite: '冇胃口',
+  need_toilet: '突然想去廁所',
+  fists_clench: '拳頭不自覺捏緊',
   sweaty_palms: '手心出汗',
-  want_jump: '身體想郁',
-  curled_up: '想縮埋',
-  teary: '眼濕濕',
-  soft_hands: '手軟軟',
-  floaty: '輕飄飄',
+  shaky: '手指或腳微震',
+  soft_hands: '手軟 · 提唔起勁',
+  shoulders_heavy: '膊頭痠 · 像背重書包',
+  body_tense: '肌肉繃緊 · 像拉滿弓',
+  want_jump: '坐立不安 · 好想郁',
+  smile_wide: '說話變快 · 想分享',
+  curled_up: '想收起自己',
+  floaty: '動作變慢 · 有啲飄',
 };
 
+/** Adult · clinical-adjacent but warm. */
 const CHIP_ADULT: Record<BodyChipKey, string> = {
+  face_flush: '面頰發熱',
+  jaw_clench: '牙關咬緊',
+  teary: '眼泛淚光',
+  eyelids_heavy: '眼皮沉重',
+  eyes_bright: '眼睛有光',
+  head_heavy: '頭部沉重',
+  brain_blank: '腦袋空白 · 運轉慢',
   chest_warm: '胸口溫暖',
   chest_tight: '胸口擠逼',
   heart_fast: '心跳加快',
-  face_flush: '面頰發熱',
-  head_heavy: '頭部沉重',
-  shoulders_heavy: '膊頭沉重',
+  breath_fast: '呼吸急促',
+  heat_rising: '熱氣上湧',
   throat_tight: '喉嚨收緊',
-  belly_full: '腹部緊張',
+  belly_full: '腹部緊張／翻滾',
+  no_appetite: '食欲下降',
+  need_toilet: '突然想去洗手間',
+  fists_clench: '拳頭捏緊',
   sweaty_palms: '手心出汗',
-  want_jump: '想郁動釋放',
-  curled_up: '想收起自己',
-  teary: '眼泛淚光',
+  shaky: '手腳微震',
   soft_hands: '手腳乏力',
-  floaty: '有啲飄',
+  shoulders_heavy: '肩頸緊繃',
+  body_tense: '全身繃緊',
+  want_jump: '想郁動釋放',
+  smile_wide: '嘴角上揚 · 想講',
+  curled_up: '想收起自己',
+  floaty: '有啲抽離／飄',
+};
+
+const REGION_LOWER: Record<BodyRegionKey, string> = {
+  head: '頭同面',
+  chest: '胸口',
+  belly: '肚仔同喉嚨',
+  hands: '手同膊頭',
+  whole: '成個身體',
+};
+
+const REGION_UPPER: Record<BodyRegionKey, string> = {
+  head: '頭同面',
+  chest: '胸口',
+  belly: '肚同喉',
+  hands: '手同膊',
+  whole: '成個身體',
+};
+
+const REGION_ADULT: Record<BodyRegionKey, string> = {
+  head: '頭／面',
+  chest: '胸口',
+  belly: '腹／喉',
+  hands: '手／膊',
+  whole: '全身',
 };
 
 export const WORDING: Record<WordingMode, WordingPack> = {
   lower: {
     soup_title: '今日想飲咩?',
     soup_sub: '揀一種最似而家感覺嘅 · 唔係問你想慰勞自己',
-    body_title: '停一停 · 身體而家點?',
+    body_title: '身體係個杯 · 邊度有感覺?',
     body_clarify: '飲品得個感覺 · 身體會幫你講清楚',
+    body_vessel: '由上掃到下 · 揀最明顯嘅感覺',
     body_hint: '最多揀 3 樣',
     body_cta: '準備見碗 →',
     body_skip: '略過 →',
+    region_labels: REGION_LOWER,
     pick_title: '你今日似邊個? 揀一個',
     pick_expand: '唔啱心水? 睇多啲',
     pick_collapse: '收埋',
@@ -183,11 +251,13 @@ export const WORDING: Record<WordingMode, WordingPack> = {
   upper: {
     soup_title: '今日嘅狀態岩飲邊樣飲品?',
     soup_sub: '揀最似而家感覺嘅 · 可以係想安慰自己嘅味道 · 下一步會對齊身體',
-    body_title: '對齊一下 · 身體邊度有感覺?',
+    body_title: '身體掃描 · 邊度有反應?',
     body_clarify: '有時想飲甜嘢 · 唔等於開心 · 身體會講多啲真相',
+    body_vessel: '想像身體係個杯 · 由頭掃到腳 · 揀最明顯嘅訊號',
     body_hint: '揀 3 樣就夠啦',
     body_cta: '準備見碗 →',
     body_skip: '暫時略過 →',
+    region_labels: REGION_UPPER,
     pick_title: '你今日似邊個? 揀一個',
     pick_expand: '唔啱心水? 睇多啲 (12)',
     pick_collapse: '收埋',
@@ -233,11 +303,13 @@ export const WORDING: Record<WordingMode, WordingPack> = {
   adult: {
     soup_title: '而家呢刻 · 你比較似邊種飲品?',
     soup_sub: '用飲品做隱喻 · 可以係狀態 · 亦可以係想慰藉自己嘅味道',
-    body_title: '身體邊度有訊號? 最多揀 3 樣',
+    body_title: '身體覺察 · 邊度有訊號?',
     body_clarify: '想飲甜可以係開心 · 亦可以係想被安慰 · 身體感覺幫你分清楚',
+    body_vessel: '由頭到腳掃一次 · 揀而家最明顯嘅身體反應',
     body_hint: '唔使完美 · 揀而家最明顯嘅',
     body_cta: '下一步 · 睇碗 →',
     body_skip: '略過身體感覺 →',
+    region_labels: REGION_ADULT,
     pick_title: '邊個碗最贴近你而家?',
     pick_expand: '想睇多啲選擇',
     pick_collapse: '收起',

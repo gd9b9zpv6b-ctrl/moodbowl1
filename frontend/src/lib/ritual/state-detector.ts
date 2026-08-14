@@ -9,31 +9,86 @@ export type NSState =
   | 'ventral_regulated'
   | 'unspoken';
 
+const ANGER_CHIPS: BodyChipKey[] = [
+  'fists_clench',
+  'jaw_clench',
+  'breath_fast',
+  'heat_rising',
+  'body_tense',
+];
+
+const ANXIETY_CHIPS: BodyChipKey[] = [
+  'sweaty_palms',
+  'shaky',
+  'need_toilet',
+  'belly_full',
+  'heart_fast',
+];
+
+const SAD_CHIPS: BodyChipKey[] = [
+  'teary',
+  'curled_up',
+  'no_appetite',
+  'throat_tight',
+  'chest_tight',
+  'shoulders_heavy',
+];
+
+const FATIGUE_CHIPS: BodyChipKey[] = [
+  'eyelids_heavy',
+  'head_heavy',
+  'brain_blank',
+  'soft_hands',
+];
+
+const JOY_CHIPS: BodyChipKey[] = [
+  'chest_warm',
+  'want_jump',
+  'smile_wide',
+  'eyes_bright',
+];
+
 /**
  * Body chips clarify ambiguous drink choices (e.g. sweet drink while sad).
  * Interoceptive signals are checked before drink priors.
  */
 export function detectState(soup: SoupKey | null, chips: BodyChipKey[]): NSState {
   const has = (key: BodyChipKey) => chips.includes(key);
+  const anyOf = (keys: BodyChipKey[]) => keys.some(has);
+  const countOf = (keys: BodyChipKey[]) => keys.filter(has).length;
 
   // Body-first · clarification over craving metaphor
-  if (has('teary') || has('curled_up')) {
+  if (has('teary') || has('curled_up') || has('no_appetite')) {
     return 'dorsal_sad';
   }
-  if (has('shoulders_heavy') || (has('head_heavy') && has('throat_tight'))) {
-    return 'dorsal_sad';
-  }
-  if (has('heart_fast') && (has('chest_tight') || has('face_flush'))) {
+
+  // Anger cluster · fists / jaw / heat / tense
+  if (
+    anyOf(ANGER_CHIPS) ||
+    (has('face_flush') && (has('heart_fast') || has('breath_fast'))) ||
+    (has('heart_fast') && has('chest_tight'))
+  ) {
     return 'sympathetic_fire';
   }
-  if (has('heart_fast') || has('sweaty_palms') || (has('face_flush') && has('belly_full'))) {
+
+  // Anxiety · palms / shake / toilet / belly butterflies / heart
+  if (anyOf(ANXIETY_CHIPS)) {
     return 'sympathetic_anxious';
   }
-  if ((has('head_heavy') && has('soft_hands')) || (has('throat_tight') && has('soft_hands'))) {
-    return 'dorsal_freeze';
-  }
-  if (has('chest_warm') && (has('floaty') || has('want_jump'))) {
+
+  // Joy / regulated before fatigue (floaty can pair with warm)
+  if (countOf(JOY_CHIPS) >= 1 || (has('chest_warm') && has('floaty'))) {
     return 'ventral_regulated';
+  }
+
+  // Sad pressure / heavy shoulders
+  if (anyOf(SAD_CHIPS)) {
+    return 'dorsal_sad';
+  }
+
+  // Fatigue / freeze · heavy lids, blank mind, soft body
+  if (anyOf(FATIGUE_CHIPS) || has('floaty')) {
+    return 'dorsal_freeze';
   }
 
   // Drink priors · used when body is sparse / skipped
