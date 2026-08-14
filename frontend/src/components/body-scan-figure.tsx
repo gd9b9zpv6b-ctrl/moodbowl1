@@ -77,8 +77,8 @@ const SPOT_STYLE: Record<Spot, object> = {
   face: { top: '22%', alignSelf: 'center' }, // bowl head above neck
   chest: { top: '40%', alignSelf: 'center' }, // below neck
   belly: { top: '52%', alignSelf: 'center' },
-  leftHand: { top: '55%', left: '2%' },
-  rightHand: { top: '55%', right: '2%' },
+  leftHand: { top: '52%', left: '0%' },
+  rightHand: { top: '52%', right: '0%' },
   feet: { top: '78%', alignSelf: 'center' },
   auraL: { top: '40%', left: '2%' },
   auraR: { top: '40%', right: '2%' },
@@ -124,10 +124,10 @@ const HOTSPOTS: {
   // 心 · upper torso BELOW neck
   { region: 'chest', top: '38%', left: '30%', width: '40%', height: '10%' },
   // 肚 · below heart
-  { region: 'belly', top: '50%', left: '32%', width: '36%', height: '9%' },
-  // 手 · on the stubby hands
-  { region: 'hands', top: '54%', left: '4%', width: '22%', height: '12%' },
-  { region: 'hands', top: '54%', left: '74%', width: '22%', height: '12%' },
+  { region: 'belly', top: '50%', left: '34%', width: '32%', height: '9%' },
+  // 手 · bigger hit targets on the obvious mitten hands
+  { region: 'hands', top: '50%', left: '0%', width: '28%', height: '16%' },
+  { region: 'hands', top: '50%', left: '72%', width: '28%', height: '16%' },
   // 腳 · legs
   { region: 'whole', top: '68%', left: '28%', width: '44%', height: '24%' },
 ];
