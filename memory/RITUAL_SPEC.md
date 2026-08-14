@@ -67,7 +67,7 @@ Every step **can be skipped** if user hits X · escape hatches are honored (see 
 
 **Path** · `/app/frontend/app/ritual/soup.tsx` (new)
 **Progress dots** · `● ○ ○` (1/3)
-**Header** · `Feather chevron-left` back-btn (returns to home · confirms save-draft?) + title *「你今日想食邊碗湯？」*
+**Header** · `Feather chevron-left` back-btn (returns to home · confirms save-draft?) + title *「你今日想飲邊碗湯？」*
 
 **Layout** · Grid 2×3 · 6 soup cards
 ```
@@ -648,14 +648,14 @@ export function getAgeGroup(user: User): AgeGroup {
 
 export const STRINGS = {
   lower: {
-    soup_title: '你今日想食咩湯?',
+    soup_title: '你今日想飲咩湯?',
     body_title: '碗身體邊度有 feel?',
     pick_title: '你今日似邊個? 揀一個',
     diary_placeholder: '打幾隻字都得',
     // ... full string list
   },
   upper: {
-    soup_title: '你今日想食邊碗湯?',
+    soup_title: '你今日想飲邊碗湯?',
     body_title: '望下你嘅身體 · 邊度有 feel? 揀最多 3 樣',
     pick_title: '你今日似邊個? 揀一個',
     diary_placeholder: '一個字都得 · 或者好長都 ok',

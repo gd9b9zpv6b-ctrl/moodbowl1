@@ -111,7 +111,7 @@ const CHIP_ADULT: Record<BodyChipKey, string> = {
 
 export const WORDING: Record<WordingMode, WordingPack> = {
   lower: {
-    soup_title: '你今日想食咩湯?',
+    soup_title: '你今日想飲咩湯?',
     soup_sub: '慢慢揀 · 冇錯答案',
     body_title: '碗身體邊度有 feel?',
     body_hint: '最多揀 3 樣',
@@ -160,7 +160,7 @@ export const WORDING: Record<WordingMode, WordingPack> = {
     chip_labels: CHIP_LOWER,
   },
   upper: {
-    soup_title: '你今日想食邊碗湯?',
+    soup_title: '你今日想飲邊碗湯?',
     soup_sub: '慢慢揀 · 冇錯答案',
     body_title: '望下你嘅身體 · 邊度有 feel? 揀最多 3 樣',
     body_hint: '揀 3 樣就夠啦',
