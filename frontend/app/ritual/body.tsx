@@ -54,11 +54,11 @@ const GAG_LINES: Partial<Record<BodyChipKey, string>> = {
 };
 
 const REGION_PROMPTS: Record<BodyRegionKey, string> = {
-  head: '撳頭 · 面同腦而家點?',
-  chest: '撳胸口 · 心跳定發熱?',
-  belly: '撳肚仔 · 有蝴蝶定石頭?',
-  hands: '撳手 · 出汗定捏拳?',
-  whole: '撳腳 · 想跳定想縮?',
+  head: '戳米堆 · 頭同面而家點?',
+  chest: '戳胸口 · 心跳定發熱?',
+  belly: '戳肚仔 · 有蝴蝶定石頭?',
+  hands: '戳小手 · 出汗定捏拳?',
+  whole: '戳腳腳 · 想跳定想縮?',
 };
 
 export default function RitualBodyScreen() {
@@ -134,7 +134,7 @@ export default function RitualBodyScreen() {
             <Text style={styles.drinkEmoji}>{drink.emoji}</Text>
             <View style={{ flex: 1 }}>
               <Text style={styles.drinkLabel}>
-                呢杯「{drink.label}」入面 · 身體有咩反應?
+                呢杯「{drink.label}」入面 · 戳碗仔睇反應
               </Text>
               <Text style={styles.drinkHint}>{w.body_vessel}</Text>
             </View>
@@ -184,7 +184,7 @@ export default function RitualBodyScreen() {
 
         {bodyChips.length > 0 && (
           <View style={styles.pickedRow} testID="body-picked-summary">
-            <Text style={styles.pickedLabel}>杯入面而家有：</Text>
+            <Text style={styles.pickedLabel}>碗仔感覺到：</Text>
             {bodyChips.map((key) => {
               const chip = BODY_CHIPS.find((c) => c.key === key);
               return (
