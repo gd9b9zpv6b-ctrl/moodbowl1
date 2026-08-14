@@ -1,10 +1,15 @@
 import { Feather } from '@expo/vector-icons';
+import * as Haptics from 'expo-haptics';
 import { useRouter } from 'expo-router';
 import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { EmotionVisual } from '@/src/components/emotion-visual';
-import { BOWL_COLOR_TINTS } from '@/src/constants/bowl-color-tints';
+import {
+  BOWL_COLOR_TINTS,
+  tintLabel,
+  tintWash,
+} from '@/src/constants/bowl-color-tints';
 import { EMOTION_BY_KEY } from '@/src/constants/emotions';
 import { COLORS, RADIUS, SPACING } from '@/src/constants/theme';
 import { wordingFor } from '@/src/lib/i18n/wording-mode';
@@ -29,6 +34,19 @@ export default function RitualCustomizeScreen() {
 
   const emotion = selectedBowlKey ? EMOTION_BY_KEY[selectedBowlKey] : null;
   const scale = SIZES.find((s) => s.key === bowlSize)?.scale ?? 1;
+  const activeHex = colorTint || '#FFFFFF';
+  const wash = tintWash(activeHex);
+  const activeLabel = tintLabel(activeHex);
+
+  const onPickColor = (hex: string) => {
+    setTint(hex === '#FFFFFF' ? null : hex);
+    Haptics.selectionAsync().catch(() => {});
+  };
+
+  const onPickSize = (key: BowlSize) => {
+    setSize(key);
+    Haptics.selectionAsync().catch(() => {});
+  };
 
   return (
     <SafeAreaView style={styles.safe} edges={['top', 'bottom']}>
@@ -46,40 +64,69 @@ export default function RitualCustomizeScreen() {
 
       <ScrollView contentContainerStyle={styles.scroll} showsVerticalScrollIndicator={false}>
         <Text style={styles.title}>{w.customize_title(emotion?.label || '碗')}</Text>
+        <Text style={styles.sub}>撳顏色 · 即刻見到碗換色</Text>
 
-        <View style={styles.previewWrap}>
+        <View
+          style={[
+            styles.previewWrap,
+            activeHex !== '#FFFFFF' && { backgroundColor: activeHex + '55' },
+          ]}
+        >
           <View style={[styles.previewInner, { transform: [{ scale }] }]}>
             <EmotionVisual emotion={emotion} size={200} radius={RADIUS.lg} />
-            {colorTint && colorTint !== '#FFFFFF' && (
+            {wash !== 'transparent' && (
               <View
                 pointerEvents="none"
-                style={[styles.tintOverlay, { backgroundColor: colorTint }]}
+                style={[styles.tintOverlay, { backgroundColor: wash }]}
               />
             )}
           </View>
+          <Text style={styles.previewCaption} testID="customize-color-label">
+            而家顏色 · {activeLabel}
+          </Text>
         </View>
 
-        <Text style={styles.section}>顏色</Text>
+        <Text style={styles.section}>換顏色</Text>
         <View style={styles.colorRow}>
           {BOWL_COLOR_TINTS.map((tint) => {
-            const active = (colorTint || '#FFFFFF') === tint.hex;
+            const active = activeHex === tint.hex;
+            const isOriginal = tint.hex === '#FFFFFF';
             return (
               <Pressable
                 key={tint.hex}
                 testID={`customize-color-${tint.hex}`}
-                onPress={() => setTint(tint.hex === '#FFFFFF' ? null : tint.hex)}
-                style={[
-                  styles.colorChip,
-                  { backgroundColor: tint.hex },
-                  active && styles.colorChipActive,
-                ]}
+                onPress={() => onPickColor(tint.hex)}
+                style={styles.colorItem}
                 accessibilityLabel={tint.label}
-              />
+                accessibilityState={{ selected: active }}
+              >
+                <View
+                  style={[
+                    styles.colorChip,
+                    {
+                      backgroundColor: isOriginal ? COLORS.bgCard : tint.hex,
+                      borderColor: active ? COLORS.textPrimary : COLORS.borderLight,
+                      borderWidth: active ? 2.5 : 1,
+                    },
+                    isOriginal && styles.colorChipOriginal,
+                  ]}
+                >
+                  {isOriginal && (
+                    <Feather name="slash" size={14} color={COLORS.textSecondary} />
+                  )}
+                  {active && !isOriginal && (
+                    <Feather name="check" size={16} color="#FFF" />
+                  )}
+                </View>
+                <Text style={[styles.colorLabel, active && styles.colorLabelActive]}>
+                  {tint.label}
+                </Text>
+              </Pressable>
             );
           })}
         </View>
 
-        <Text style={styles.section}>大細</Text>
+        <Text style={styles.section}>大細 · 感覺有幾強</Text>
         <View style={styles.sizeRow}>
           {SIZES.map((s) => {
             const active = bowlSize === s.key;
@@ -87,7 +134,7 @@ export default function RitualCustomizeScreen() {
               <Pressable
                 key={s.key}
                 testID={`customize-size-${s.key}`}
-                onPress={() => setSize(s.key)}
+                onPress={() => onPickSize(s.key)}
                 style={[styles.sizeChip, active && styles.sizeChipActive]}
               >
                 <Text style={[styles.sizeLabel, active && styles.sizeLabelActive]}>
@@ -133,48 +180,78 @@ const styles = StyleSheet.create({
     fontSize: 22,
     fontWeight: '800',
     color: COLORS.textPrimary,
-    marginBottom: SPACING.lg,
+    marginBottom: SPACING.sm,
+  },
+  sub: {
+    fontSize: 13,
+    color: COLORS.textSecondary,
+    marginBottom: SPACING.md,
   },
   previewWrap: {
-    height: 260,
+    minHeight: 280,
     alignItems: 'center',
     justifyContent: 'center',
     marginBottom: SPACING.lg,
+    borderRadius: RADIUS.lg,
+    backgroundColor: COLORS.bgInput,
+    paddingVertical: SPACING.lg,
   },
   previewInner: {
     width: 200,
     height: 200,
     alignItems: 'center',
     justifyContent: 'center',
+    overflow: 'hidden',
+    borderRadius: RADIUS.lg,
   },
   tintOverlay: {
     ...StyleSheet.absoluteFillObject,
     borderRadius: RADIUS.lg,
-    opacity: 0.35,
+  },
+  previewCaption: {
+    marginTop: SPACING.md,
+    fontSize: 13,
+    fontWeight: '700',
+    color: COLORS.textPrimary,
   },
   section: {
     fontSize: 13,
     fontWeight: '700',
     color: COLORS.textSecondary,
     marginBottom: SPACING.sm,
-    letterSpacing: 0.6,
+    letterSpacing: 0.4,
   },
   colorRow: {
     flexDirection: 'row',
     flexWrap: 'wrap',
-    gap: SPACING.sm,
+    gap: SPACING.md,
     marginBottom: SPACING.lg,
   },
-  colorChip: {
-    width: 36,
-    height: 36,
-    borderRadius: RADIUS.pill,
-    borderWidth: 1,
-    borderColor: COLORS.borderLight,
+  colorItem: {
+    width: '20%',
+    minWidth: 64,
+    alignItems: 'center',
+    gap: 6,
   },
-  colorChipActive: {
-    borderWidth: 2,
-    borderColor: COLORS.textPrimary,
+  colorChip: {
+    width: 44,
+    height: 44,
+    borderRadius: RADIUS.pill,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  colorChipOriginal: {
+    backgroundColor: COLORS.bgCard,
+  },
+  colorLabel: {
+    fontSize: 11,
+    fontWeight: '600',
+    color: COLORS.textSecondary,
+    textAlign: 'center',
+  },
+  colorLabelActive: {
+    color: COLORS.textPrimary,
+    fontWeight: '800',
   },
   sizeRow: {
     flexDirection: 'row',

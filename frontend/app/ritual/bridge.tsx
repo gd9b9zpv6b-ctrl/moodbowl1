@@ -14,6 +14,7 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { EmotionVisual } from '@/src/components/emotion-visual';
+import { tintWash } from '@/src/constants/bowl-color-tints';
 import { EMOTION_BY_KEY } from '@/src/constants/emotions';
 import { COLORS, RADIUS, SPACING } from '@/src/constants/theme';
 import { saveRitualWithActivities } from '@/src/lib/diary';
@@ -102,7 +103,7 @@ export default function RitualBridgeScreen() {
             {colorTint && colorTint !== '#FFFFFF' && (
               <View
                 pointerEvents="none"
-                style={[styles.tint, { backgroundColor: colorTint }]}
+                style={[styles.tint, { backgroundColor: tintWash(colorTint) }]}
               />
             )}
           </View>
