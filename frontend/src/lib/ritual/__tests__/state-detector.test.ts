@@ -3,50 +3,58 @@ import { describe, expect, it } from 'vitest';
 import { detectState } from '../state-detector';
 
 describe('detectState', () => {
-  it('detects sympathetic_fire from curry', () => {
-    expect(detectState('curry', [])).toBe('sympathetic_fire');
+  it('detects sympathetic_fire from spicy_ginger', () => {
+    expect(detectState('spicy_ginger', [])).toBe('sympathetic_fire');
   });
 
   it('detects sympathetic_fire from heart_fast + chest_tight', () => {
-    expect(detectState('cold_lemon_tea', ['heart_fast', 'chest_tight'])).toBe(
+    expect(detectState('lemon_juice', ['heart_fast', 'chest_tight'])).toBe(
       'sympathetic_fire',
     );
   });
 
-  it('detects dorsal_sad from no_appetite', () => {
-    expect(detectState('no_appetite', [])).toBe('dorsal_sad');
+  it('detects dorsal_sad from no_drink', () => {
+    expect(detectState('no_drink', [])).toBe('dorsal_sad');
+  });
+
+  it('detects dorsal_sad from bitter_tea', () => {
+    expect(detectState('bitter_tea', [])).toBe('dorsal_sad');
   });
 
   it('detects dorsal_sad from curled_up', () => {
-    expect(detectState('cold_lemon_tea', ['curled_up'])).toBe('dorsal_sad');
+    expect(detectState('lemon_juice', ['curled_up'])).toBe('dorsal_sad');
   });
 
-  it('detects dorsal_freeze from plain_congee', () => {
-    expect(detectState('plain_congee', [])).toBe('dorsal_freeze');
+  it('detects dorsal_freeze from plain_water', () => {
+    expect(detectState('plain_water', [])).toBe('dorsal_freeze');
   });
 
   it('detects dorsal_freeze from head_heavy + soft_hands', () => {
-    expect(detectState('cold_lemon_tea', ['head_heavy', 'soft_hands'])).toBe(
+    expect(detectState('lemon_juice', ['head_heavy', 'soft_hands'])).toBe(
       'dorsal_freeze',
     );
   });
 
+  it('detects sympathetic_anxious from marble_soda', () => {
+    expect(detectState('marble_soda', [])).toBe('sympathetic_anxious');
+  });
+
   it('detects sympathetic_anxious from heart_fast + belly_full', () => {
-    expect(detectState('cold_lemon_tea', ['heart_fast', 'belly_full'])).toBe(
+    expect(detectState('lemon_juice', ['heart_fast', 'belly_full'])).toBe(
       'sympathetic_anxious',
     );
   });
 
-  it('detects ventral_regulated from sweet_soup', () => {
-    expect(detectState('sweet_soup', [])).toBe('ventral_regulated');
+  it('detects ventral_regulated from strawberry_milk', () => {
+    expect(detectState('strawberry_milk', [])).toBe('ventral_regulated');
   });
 
-  it('detects ventral_regulated from hot_milk_tea', () => {
-    expect(detectState('hot_milk_tea', [])).toBe('ventral_regulated');
+  it('detects ventral_regulated from warm_milk', () => {
+    expect(detectState('warm_milk', [])).toBe('ventral_regulated');
   });
 
   it('detects unspoken as fallback', () => {
-    expect(detectState('cold_lemon_tea', [])).toBe('unspoken');
+    expect(detectState('lemon_juice', [])).toBe('unspoken');
     expect(detectState(null, [])).toBe('unspoken');
   });
 });

@@ -12,19 +12,19 @@ export type NSState =
 export function detectState(soup: SoupKey | null, chips: BodyChipKey[]): NSState {
   const has = (key: BodyChipKey) => chips.includes(key);
 
-  if (soup === 'curry' || (has('heart_fast') && has('chest_tight'))) {
+  if (soup === 'spicy_ginger' || (has('heart_fast') && has('chest_tight'))) {
     return 'sympathetic_fire';
   }
-  if (soup === 'no_appetite' || has('curled_up') || has('teary')) {
+  if (soup === 'no_drink' || soup === 'bitter_tea' || has('curled_up') || has('teary')) {
     return 'dorsal_sad';
   }
-  if (soup === 'plain_congee' || (has('head_heavy') && has('soft_hands'))) {
+  if (soup === 'plain_water' || (has('head_heavy') && has('soft_hands'))) {
     return 'dorsal_freeze';
   }
-  if (has('heart_fast') && has('belly_full')) {
+  if (soup === 'marble_soda' || (has('heart_fast') && has('belly_full'))) {
     return 'sympathetic_anxious';
   }
-  if (soup === 'sweet_soup' || soup === 'hot_milk_tea') {
+  if (soup === 'strawberry_milk' || soup === 'warm_milk') {
     return 'ventral_regulated';
   }
   return 'unspoken';

@@ -120,7 +120,7 @@ const styles = StyleSheet.create({
     borderRadius: RADIUS.md,
     padding: SPACING.md,
     alignItems: 'center',
-    minHeight: 140,
+    minHeight: 148,
     borderWidth: 2,
     borderColor: 'transparent',
   },

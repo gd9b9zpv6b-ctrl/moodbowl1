@@ -44,30 +44,36 @@ export type WordingPack = {
 };
 
 const SOUP_SUBS_LOWER: Record<SoupKey, string> = {
-  hot_milk_tea: '舒服 warm warm',
-  cold_lemon_tea: '淡淡地',
-  curry: '熱辣辣 有火',
-  plain_congee: '冇特別',
-  sweet_soup: '好想食甜嘢',
-  no_appetite: '冇胃口',
+  strawberry_milk: '好甜 · 好滿足',
+  marble_soda: '想跳跳紮',
+  lemon_juice: '有啲委屈',
+  spicy_ginger: '熱辣辣 · 有火',
+  bitter_tea: '好累 · 想休息',
+  warm_milk: '暖暖地 · 好放心',
+  plain_water: '平平淡淡',
+  no_drink: '而家唔想',
 };
 
 const SOUP_SUBS_UPPER: Record<SoupKey, string> = {
-  hot_milk_tea: '想 hug 一下嗰種暖暖地',
-  cold_lemon_tea: '心裡面有啲距離感',
-  curry: '有嘢頂住 · 想爆',
-  plain_congee: '空落落嘅感覺',
-  sweet_soup: '想 celebrate 啲嘢',
-  no_appetite: '吞唔落嘅感覺',
+  strawberry_milk: '今日有開心嘅事 · 好甜好滿足',
+  marble_soda: '好興奮 · 成個人都想郁',
+  lemon_juice: '少少煩惱 · 或者有啲唔順',
+  spicy_ginger: '心裡面頂住 · 想爆一爆',
+  bitter_tea: '心情有啲沉重 · 需要唞一唞',
+  warm_milk: '好放鬆 · 覺得安心溫暖',
+  plain_water: '冇特別開心亦冇唔開心',
+  no_drink: '暫時咩都唔想入口',
 };
 
 const SOUP_SUBS_ADULT: Record<SoupKey, string> = {
-  hot_milk_tea: '想被溫柔包住一下',
-  cold_lemon_tea: '有啲抽離 · 想留位俾自己',
-  curry: '心裡面頂住 · 想釋放',
-  plain_congee: '平淡 · 或者有啲空',
-  sweet_soup: '想慶祝 · 想留住呢刻',
-  no_appetite: '提不起勁 · 吞唔落',
+  strawberry_milk: '滿足 · 想留住呢刻甜甜嘅感覺',
+  marble_soda: '能量偏高 · 想輕輕釋放',
+  lemon_juice: '有啲刺 · 想消化啲煩惱',
+  spicy_ginger: '心裡面頂住 · 想釋放',
+  bitter_tea: '疲累 · 想慢慢歇一歇',
+  warm_milk: '被安住 · 想溫柔對待自己',
+  plain_water: '平淡 · 或者暫時感覺唔多',
+  no_drink: '提不起勁 · 想留白',
 };
 
 const CHIP_LOWER: Record<BodyChipKey, string> = {
@@ -111,7 +117,7 @@ const CHIP_ADULT: Record<BodyChipKey, string> = {
 
 export const WORDING: Record<WordingMode, WordingPack> = {
   lower: {
-    soup_title: '你今日想飲咩湯?',
+    soup_title: '今日想飲咩?',
     soup_sub: '慢慢揀 · 冇錯答案',
     body_title: '碗身體邊度有 feel?',
     body_hint: '最多揀 3 樣',
@@ -160,7 +166,7 @@ export const WORDING: Record<WordingMode, WordingPack> = {
     chip_labels: CHIP_LOWER,
   },
   upper: {
-    soup_title: '你今日想飲邊碗湯?',
+    soup_title: '今日嘅狀態岩飲邊樣飲品?',
     soup_sub: '慢慢揀 · 冇錯答案',
     body_title: '望下你嘅身體 · 邊度有 feel? 揀最多 3 樣',
     body_hint: '揀 3 樣就夠啦',
@@ -209,8 +215,8 @@ export const WORDING: Record<WordingMode, WordingPack> = {
     chip_labels: CHIP_UPPER,
   },
   adult: {
-    soup_title: '而家呢刻 · 你比較似邊種狀態?',
-    soup_sub: '用食物做隱喻 · 幫自己對齊感覺',
+    soup_title: '而家呢刻 · 你比較似邊種飲品?',
+    soup_sub: '用飲品做隱喻 · 幫自己對齊感覺',
     body_title: '身體邊度有訊號? 最多揀 3 樣',
     body_hint: '唔使完美 · 揀而家最明顯嘅',
     body_cta: '下一步 · 睇碗 →',

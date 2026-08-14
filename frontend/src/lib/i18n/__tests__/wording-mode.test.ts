@@ -19,8 +19,9 @@ describe('resolveWordingMode', () => {
 
 describe('wording packs', () => {
   it('exposes distinct soup titles per mode', () => {
-    expect(wordingFor('lower').soup_title).not.toBe(wordingFor('adult').soup_title);
-    expect(wordingFor('upper').soup_title).not.toBe(wordingFor('adult').soup_title);
+    expect(wordingFor('lower').soup_title).toBe('今日想飲咩?');
+    expect(wordingFor('upper').soup_title).toBe('今日嘅狀態岩飲邊樣飲品?');
+    expect(wordingFor('adult').soup_title).not.toBe(wordingFor('lower').soup_title);
   });
 
   it('labels modes for profile UI', () => {

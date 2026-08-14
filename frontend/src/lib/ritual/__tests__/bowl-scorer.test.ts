@@ -4,13 +4,13 @@ import { scoreBowls } from '../bowl-scorer';
 
 describe('scoreBowls', () => {
   it('returns 6 default candidates including hollow', () => {
-    const { default: candidates } = scoreBowls('hot_milk_tea', ['chest_warm']);
+    const { default: candidates } = scoreBowls('warm_milk', ['chest_warm']);
     expect(candidates).toHaveLength(6);
     expect(candidates.map((b) => b.key)).toContain('hollow');
   });
 
-  it('keeps expanded list at most 12 for curry + heart_fast + chest_tight', () => {
-    const { default: candidates, expanded } = scoreBowls('curry', [
+  it('keeps expanded list at most 12 for spicy_ginger + heart_fast + chest_tight', () => {
+    const { default: candidates, expanded } = scoreBowls('spicy_ginger', [
       'heart_fast',
       'chest_tight',
     ]);

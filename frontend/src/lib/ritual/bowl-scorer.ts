@@ -7,12 +7,14 @@ import {
 import type { SoupKey } from '@/src/constants/soups';
 
 const SOUP_CATEGORY_SCORES: Record<SoupKey, Partial<Record<EmotionCategory, number>>> = {
-  hot_milk_tea: { warm: 8, unspoken: 2, sad: 1, nervous: 1 },
-  cold_lemon_tea: { sad: 6, unspoken: 4, nervous: 2, wound: 1 },
-  curry: { anger: 8, nervous: 3, wound: 2 },
-  plain_congee: { sad: 5, unspoken: 5, wound: 2, nervous: 1 },
-  sweet_soup: { warm: 8, nervous: 2 },
-  no_appetite: { sad: 6, wound: 5, unspoken: 2, nervous: 1, anger: 1 },
+  strawberry_milk: { warm: 8, nervous: 1 },
+  marble_soda: { warm: 6, nervous: 4 },
+  lemon_juice: { sad: 5, wound: 4, unspoken: 2, nervous: 1 },
+  spicy_ginger: { anger: 8, nervous: 3, wound: 2 },
+  bitter_tea: { sad: 5, unspoken: 3, wound: 2, nervous: 1 },
+  warm_milk: { warm: 8, unspoken: 2, sad: 1 },
+  plain_water: { unspoken: 6, sad: 3, nervous: 1 },
+  no_drink: { sad: 6, wound: 5, unspoken: 3, nervous: 1, anger: 1 },
 };
 
 const CHIP_BOWL_SCORES: Record<BodyChipKey, string[]> = {
