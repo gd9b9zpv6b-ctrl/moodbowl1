@@ -17,14 +17,10 @@ export function RoleHeader({ role, title }: { role: UserRole; title: string }) {
   const { logout } = useAuth();
   const meta = ROLE_META[role];
 
-  const handleLogout = async () => {
-    // Immediate logout — Alert.alert can be flaky on web, and this is a demo flow anyway.
-    // If the user regrets, re-login from the login screen (which is where we go).
-    try {
-      await logout();
-    } finally {
-      router.replace('/auth/login');
-    }
+  const handleLogout = () => {
+    // Navigate immediately so a hung signOut cannot trap demo staff on the dashboard.
+    logout().catch(() => {});
+    router.replace('/auth/login');
   };
 
   return (

@@ -7,6 +7,7 @@ import { EmotionVisual } from '@/src/components/emotion-visual';
 import { EMOTIONS, EMOTION_BY_KEY } from '@/src/constants/emotions';
 import { ENERGY_META, EnergyLevel } from '@/src/constants/energy';
 import { RoleHeader } from '@/src/components/role-header';
+import { RequireAuth } from '@/src/components/require-auth';
 import { RoleSelfCareCard } from '@/src/components/role-selfcare-card';
 import { AlertPolicy, DEFAULT_POLICY, SchoolAlertPolicy } from '@/src/lib/school-alert-policy';
 import { PostPolicy, DEFAULT_POST_POLICY, SchoolPostPolicy } from '@/src/lib/school-post-policy';
@@ -271,6 +272,7 @@ export default function SchoolAdmin() {
   });
 
   return (
+    <RequireAuth>
     <SafeAreaView style={styles.safe} edges={['top']}>
       <RoleHeader role="school_admin" title="校方管理 · 中心" />
 
@@ -1050,6 +1052,7 @@ export default function SchoolAdmin() {
         <View style={{ height: SPACING.xxl }} />
       </ScrollView>
     </SafeAreaView>
+    </RequireAuth>
   );
 }
 

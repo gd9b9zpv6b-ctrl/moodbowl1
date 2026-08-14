@@ -20,6 +20,15 @@ export const ROLE_META: Record<
   school_admin:{ label: '校方管理', emoji: '🏫', homePath: '/school-admin',       color: '#C7A6D1' },
 };
 
+/** Post-login landing. Students go straight to tabs so `/` cannot bounce them. */
+export function homePathForRole(role?: string | null): string {
+  if (role === 'teacher') return '/teacher-dashboard';
+  if (role === 'counsellor') return '/counsellor-panel';
+  if (role === 'parent') return '/parent-home';
+  if (role === 'school_admin') return '/school-admin';
+  return '/(tabs)';
+}
+
 export const RoleStorage = {
   async get(): Promise<UserRole> {
     const raw = await AsyncStorage.getItem(KEY);
