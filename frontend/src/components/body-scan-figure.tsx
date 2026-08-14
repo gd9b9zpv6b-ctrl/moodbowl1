@@ -71,17 +71,17 @@ const CHIP_DECOR: Partial<Record<BodyChipKey, { emoji: string; spot: Spot }>> = 
   floaty: { emoji: '✨', spot: 'auraR' },
 };
 
-/** Tuned for tall slender goblet proportions. */
+/** Tuned for goblet with clear neck · head cup / body / hands on neck / base feet. */
 const SPOT_STYLE: Record<Spot, object> = {
-  head: { top: '4%', alignSelf: 'center' },
-  face: { top: '28%', alignSelf: 'center' },
-  chest: { top: '36%', alignSelf: 'center' },
-  belly: { top: '52%', alignSelf: 'center' },
-  leftHand: { top: '40%', left: '0%' },
-  rightHand: { top: '40%', right: '0%' },
+  head: { top: '2%', alignSelf: 'center' },
+  face: { top: '22%', alignSelf: 'center' },
+  chest: { top: '30%', alignSelf: 'center' },
+  belly: { top: '42%', alignSelf: 'center' },
+  leftHand: { top: '52%', left: '8%' },
+  rightHand: { top: '52%', right: '8%' },
   feet: { bottom: '2%', alignSelf: 'center' },
-  auraL: { top: '34%', left: '2%' },
-  auraR: { top: '34%', right: '2%' },
+  auraL: { top: '28%', left: '4%' },
+  auraR: { top: '28%', right: '4%' },
 };
 
 const REGION_COLORS: Record<BodyRegionKey, string> = {
@@ -108,7 +108,7 @@ const STAGE_BG: Record<WanjaiMood, string> = {
   fiery: '#FCE8E2',
 };
 
-/** Tall bowl · vertical stack of poke zones. */
+/** Goblet · rice head, cup body, hands on neck, pedestal feet. */
 const HOTSPOTS: {
   region: BodyRegionKey;
   top: `${number}%`;
@@ -116,12 +116,12 @@ const HOTSPOTS: {
   width: `${number}%`;
   height: `${number}%`;
 }[] = [
-  { region: 'head', top: '6%', left: '30%', width: '40%', height: '16%' },
-  { region: 'chest', top: '24%', left: '30%', width: '40%', height: '20%' },
-  { region: 'belly', top: '44%', left: '30%', width: '40%', height: '18%' },
-  { region: 'hands', top: '32%', left: '6%', width: '20%', height: '22%' },
-  { region: 'hands', top: '32%', left: '74%', width: '20%', height: '22%' },
-  { region: 'whole', top: '68%', left: '32%', width: '36%', height: '24%' },
+  { region: 'head', top: '4%', left: '28%', width: '44%', height: '18%' },
+  { region: 'chest', top: '22%', left: '28%', width: '44%', height: '18%' },
+  { region: 'belly', top: '40%', left: '30%', width: '40%', height: '12%' },
+  { region: 'hands', top: '48%', left: '10%', width: '22%', height: '16%' },
+  { region: 'hands', top: '48%', left: '68%', width: '22%', height: '16%' },
+  { region: 'whole', top: '66%', left: '30%', width: '40%', height: '26%' },
 ];
 
 function FloatingDecor({ emoji, delay }: { emoji: string; delay: number }) {
@@ -476,25 +476,25 @@ const styles = StyleSheet.create({
   },
   tremble: {
     position: 'absolute',
-    top: '42%',
+    top: '50%',
     fontSize: 18,
     color: COLORS.textPrimary,
     opacity: 0.55,
     fontWeight: '800',
   },
-  trembleL: { left: 8 },
-  trembleR: { right: 8 },
+  trembleL: { left: 14 },
+  trembleR: { right: 14 },
   sweatWrap: {
     ...StyleSheet.absoluteFillObject,
     zIndex: 3,
   },
   sweat: {
     position: 'absolute',
-    top: '14%',
+    top: '10%',
     fontSize: 20,
   },
-  sweatL: { left: 36 },
-  sweatR: { right: 36 },
+  sweatL: { left: 40 },
+  sweatR: { right: 40 },
   starWrap: {
     ...StyleSheet.absoluteFillObject,
     zIndex: 3,

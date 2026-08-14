@@ -54,11 +54,11 @@ const GAG_LINES: Partial<Record<BodyChipKey, string>> = {
 };
 
 const REGION_PROMPTS: Record<BodyRegionKey, string> = {
-  head: '戳米堆 · 頭同面而家點?',
-  chest: '戳胸口 · 心跳定發熱?',
-  belly: '戳肚仔 · 有蝴蝶定石頭?',
-  hands: '戳小手 · 出汗定捏拳?',
-  whole: '戳腳腳 · 想跳定想縮?',
+  head: '戳米堆 · 頭而家點?',
+  chest: '戳碗身 · 胸口有感覺?',
+  belly: '戳下半 · 肚仔點?',
+  hands: '戳頸邊小手 · 出汗定捏緊?',
+  whole: '戳底座腳 · 想跳定想縮?',
 };
 
 export default function RitualBodyScreen() {
