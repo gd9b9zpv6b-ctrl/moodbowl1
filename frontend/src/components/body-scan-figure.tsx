@@ -1,5 +1,5 @@
 import { Image } from 'expo-image';
-import { useEffect, useRef } from 'react';
+import { useEffect, useMemo, useRef } from 'react';
 import {
   Animated,
   Easing,
@@ -15,8 +15,19 @@ import {
   type BodyRegionKey,
 } from '@/src/constants/body-chips';
 import { COLORS, RADIUS, SPACING } from '@/src/constants/theme';
+import {
+  resolveWanjaiMood,
+  type WanjaiMood,
+} from '@/src/lib/ritual/wanjai-mood';
 
-const BUDDY = require('../../assets/mascots/body-scan-buddy.png');
+/** MoodBowl 碗仔 · expression pack matching official emotion-bowl art. */
+const WANJAI = {
+  neutral: require('../../assets/mascots/wanjai-neutral.png'),
+  anxious: require('../../assets/mascots/wanjai-anxious.png'),
+  warm: require('../../assets/mascots/wanjai-warm.png'),
+  heavy: require('../../assets/mascots/wanjai-heavy.png'),
+  fiery: require('../../assets/mascots/wanjai-fiery.png'),
+} as const;
 
 type Props = {
   selected: BodyChipKey[];
@@ -25,11 +36,14 @@ type Props = {
   idlePrompt: string;
 };
 
-/** Silly floating gags that appear on 碗仔 for selected chips. */
+/** Silly floating gags · extra somatic cues on top of expression art. */
 const CHIP_GAGS: Partial<
   Record<
     BodyChipKey,
-    { emoji: string; spot: 'head' | 'face' | 'chest' | 'belly' | 'leftHand' | 'rightHand' | 'feet' | 'aura' }
+    {
+      emoji: string;
+      spot: 'head' | 'face' | 'chest' | 'belly' | 'leftHand' | 'rightHand' | 'feet' | 'aura';
+    }
   >
 > = {
   face_flush: { emoji: '♨️', spot: 'face' },
@@ -60,16 +74,15 @@ const CHIP_GAGS: Partial<
   floaty: { emoji: '🪶', spot: 'aura' },
 };
 
-/** Percentage layout over the 碗仔 PNG (tuned to mascot proportions). */
 const SPOT_STYLE: Record<string, object> = {
-  head: { top: '6%', alignSelf: 'center' },
-  face: { top: '38%', alignSelf: 'center' },
-  chest: { top: '42%', alignSelf: 'center' },
+  head: { top: '8%', alignSelf: 'center' },
+  face: { top: '40%', alignSelf: 'center' },
+  chest: { top: '44%', alignSelf: 'center' },
   belly: { top: '58%', alignSelf: 'center' },
-  leftHand: { top: '48%', left: '2%' },
-  rightHand: { top: '48%', right: '2%' },
-  feet: { bottom: '4%', alignSelf: 'center' },
-  aura: { top: '28%', right: '4%' },
+  leftHand: { top: '46%', left: '2%' },
+  rightHand: { top: '46%', right: '2%' },
+  feet: { bottom: '6%', alignSelf: 'center' },
+  aura: { top: '26%', right: '2%' },
 };
 
 const REGION_COLORS: Record<BodyRegionKey, string> = {
@@ -88,7 +101,14 @@ const REGION_SHORT: Record<BodyRegionKey, string> = {
   whole: '腳',
 };
 
-/** Invisible hit targets over the mascot · % of FIGURE size. */
+const STAGE_BG: Record<WanjaiMood, string> = {
+  neutral: '#E8F3EE',
+  anxious: '#E8E0F0',
+  warm: '#E5F5EA',
+  heavy: '#E4EAF2',
+  fiery: '#FCE8E2',
+};
+
 const HOTSPOTS: {
   region: BodyRegionKey;
   top: `${number}%`;
@@ -96,12 +116,12 @@ const HOTSPOTS: {
   width: `${number}%`;
   height: `${number}%`;
 }[] = [
-  { region: 'head', top: '8%', left: '28%', width: '44%', height: '22%' },
+  { region: 'head', top: '10%', left: '28%', width: '44%', height: '20%' },
   { region: 'chest', top: '30%', left: '28%', width: '44%', height: '22%' },
-  { region: 'belly', top: '52%', left: '28%', width: '44%', height: '18%' },
-  { region: 'hands', top: '40%', left: '4%', width: '22%', height: '28%' },
-  { region: 'hands', top: '40%', left: '74%', width: '22%', height: '28%' },
-  { region: 'whole', top: '72%', left: '30%', width: '40%', height: '22%' },
+  { region: 'belly', top: '52%', left: '28%', width: '44%', height: '16%' },
+  { region: 'hands', top: '34%', left: '4%', width: '22%', height: '30%' },
+  { region: 'hands', top: '34%', left: '74%', width: '22%', height: '30%' },
+  { region: 'whole', top: '70%', left: '30%', width: '40%', height: '22%' },
 ];
 
 function FloatingGag({ emoji, delay }: { emoji: string; delay: number }) {
@@ -137,8 +157,62 @@ function FloatingGag({ emoji, delay }: { emoji: string; delay: number }) {
   );
 }
 
+/** Extra somatic FX inspired by MoodBowl anxious bowl cards. */
+function TrembleMarks({ visible }: { visible: boolean }) {
+  const shake = useRef(new Animated.Value(0)).current;
+  useEffect(() => {
+    if (!visible) {
+      shake.setValue(0);
+      return;
+    }
+    const loop = Animated.loop(
+      Animated.sequence([
+        Animated.timing(shake, { toValue: 1, duration: 80, useNativeDriver: true }),
+        Animated.timing(shake, { toValue: -1, duration: 80, useNativeDriver: true }),
+        Animated.timing(shake, { toValue: 0, duration: 80, useNativeDriver: true }),
+      ]),
+    );
+    loop.start();
+    return () => loop.stop();
+  }, [visible, shake]);
+
+  if (!visible) return null;
+  const tx = shake.interpolate({ inputRange: [-1, 1], outputRange: [-2, 2] });
+  return (
+    <Animated.View pointerEvents="none" style={[styles.trembleWrap, { transform: [{ translateX: tx }] }]}>
+      <Text style={[styles.tremble, styles.trembleL]}>〰〰</Text>
+      <Text style={[styles.tremble, styles.trembleR]}>〰〰</Text>
+    </Animated.View>
+  );
+}
+
+function SweatDrops({ visible }: { visible: boolean }) {
+  const fall = useRef(new Animated.Value(0)).current;
+  useEffect(() => {
+    if (!visible) return;
+    const loop = Animated.loop(
+      Animated.sequence([
+        Animated.timing(fall, { toValue: 1, duration: 900, useNativeDriver: true }),
+        Animated.timing(fall, { toValue: 0, duration: 0, useNativeDriver: true }),
+      ]),
+    );
+    loop.start();
+    return () => loop.stop();
+  }, [visible, fall]);
+  if (!visible) return null;
+  const ty = fall.interpolate({ inputRange: [0, 1], outputRange: [0, 14] });
+  const op = fall.interpolate({ inputRange: [0, 0.7, 1], outputRange: [1, 1, 0] });
+  return (
+    <Animated.View pointerEvents="none" style={[styles.sweatWrap, { opacity: op, transform: [{ translateY: ty }] }]}>
+      <Text style={[styles.sweat, styles.sweatL]}>💧</Text>
+      <Text style={[styles.sweat, styles.sweatR]}>💧</Text>
+    </Animated.View>
+  );
+}
+
 /**
- * MoodBowl 碗仔 · pokeable rice-bowl buddy for somatic body scan.
+ * MoodBowl 碗仔 · pokeable rice-bowl buddy with expression states
+ * (neutral / anxious / warm / heavy / fiery) matching official mascot language.
  */
 export function BodyScanFigure({
   selected,
@@ -146,44 +220,34 @@ export function BodyScanFigure({
   onSelectRegion,
   idlePrompt,
 }: Props) {
-  const wiggle = useRef(new Animated.Value(0)).current;
   const bounce = useRef(new Animated.Value(0)).current;
   const glow = useRef(new Animated.Value(0.35)).current;
+  const mood = useMemo(() => resolveWanjaiMood(selected), [selected]);
 
   const wantsJump = selected.includes('want_jump');
-  const isTense = selected.includes('body_tense') || selected.includes('fists_clench');
-  const isCurled = selected.includes('curled_up');
-  const isFloaty = selected.includes('floaty');
-  const isFlush = selected.includes('face_flush');
+  const showTremble =
+    mood === 'anxious' ||
+    selected.includes('shaky') ||
+    selected.includes('body_tense') ||
+    selected.includes('heart_fast');
+  const showSweat =
+    mood === 'anxious' ||
+    selected.includes('sweaty_palms') ||
+    selected.includes('face_flush');
 
   useEffect(() => {
-    if (wantsJump) {
+    if (wantsJump || mood === 'warm') {
       const loop = Animated.loop(
         Animated.sequence([
-          Animated.timing(bounce, { toValue: 1, duration: 280, useNativeDriver: true }),
-          Animated.timing(bounce, { toValue: 0, duration: 280, useNativeDriver: true }),
+          Animated.timing(bounce, { toValue: 1, duration: 320, useNativeDriver: true }),
+          Animated.timing(bounce, { toValue: 0, duration: 320, useNativeDriver: true }),
         ]),
       );
       loop.start();
       return () => loop.stop();
     }
     bounce.setValue(0);
-  }, [wantsJump, bounce]);
-
-  useEffect(() => {
-    if (isTense) {
-      const loop = Animated.loop(
-        Animated.sequence([
-          Animated.timing(wiggle, { toValue: 1, duration: 90, useNativeDriver: true }),
-          Animated.timing(wiggle, { toValue: -1, duration: 90, useNativeDriver: true }),
-          Animated.timing(wiggle, { toValue: 0, duration: 90, useNativeDriver: true }),
-        ]),
-      );
-      loop.start();
-      return () => loop.stop();
-    }
-    wiggle.setValue(0);
-  }, [isTense, wiggle]);
+  }, [wantsJump, mood, bounce]);
 
   useEffect(() => {
     const loop = Animated.loop(
@@ -207,16 +271,15 @@ export function BodyScanFigure({
     focusRegion === region ||
     selected.some((k) => BODY_CHIPS.find((c) => c.key === k)?.region === region);
 
-  const figureScale = isCurled ? 0.86 : isFloaty ? 1.05 : 1;
-  const translateY = bounce.interpolate({ inputRange: [0, 1], outputRange: [0, -16] });
-  const rotate = wiggle.interpolate({
-    inputRange: [-1, 0, 1],
-    outputRange: ['-4deg', '0deg', '4deg'],
+  const figureScale = mood === 'heavy' || selected.includes('curled_up') ? 0.9 : 1;
+  const translateY = bounce.interpolate({
+    inputRange: [0, 1],
+    outputRange: [0, mood === 'warm' || wantsJump ? -14 : -6],
   });
 
   return (
     <View style={styles.wrap} testID="body-scan-figure">
-      <View style={styles.speech}>
+      <View style={[styles.speech, { borderColor: mood === 'anxious' ? '#C4B0D8' : '#F0D78C' }]}>
         <Text style={styles.speechName}>碗仔話</Text>
         <Text style={styles.speechText}>{idlePrompt}</Text>
       </View>
@@ -224,28 +287,21 @@ export function BodyScanFigure({
       <Animated.View
         style={[
           styles.stage,
-          {
-            transform: [{ translateY }, { rotate }, { scale: figureScale }],
-          },
+          { backgroundColor: STAGE_BG[mood] },
+          { transform: [{ translateY }, { scale: figureScale }] },
         ]}
       >
-        <View style={styles.stageGlow} />
         <Image
-          source={BUDDY}
+          source={WANJAI[mood]}
           style={styles.buddy}
           contentFit="contain"
-          accessibilityLabel="MoodBowl 碗仔"
+          accessibilityLabel={`MoodBowl 碗仔 · ${mood}`}
+          testID={`wanjai-${mood}`}
         />
 
-        {/* Soft blush overlay when 面紅 */}
-        {isFlush && (
-          <>
-            <View style={[styles.blush, styles.blushL]} />
-            <View style={[styles.blush, styles.blushR]} />
-          </>
-        )}
+        <TrembleMarks visible={showTremble} />
+        <SweatDrops visible={showSweat} />
 
-        {/* Region hotspot highlights */}
         {HOTSPOTS.map((hs, i) => {
           const active = focusRegion === hs.region;
           const lit = regionLit(hs.region);
@@ -263,14 +319,13 @@ export function BodyScanFigure({
                   height: hs.height,
                   borderColor: REGION_COLORS[hs.region],
                   backgroundColor: REGION_COLORS[hs.region],
-                  opacity: active ? glow : 0.22,
+                  opacity: active ? glow : 0.2,
                 },
               ]}
             />
           );
         })}
 
-        {/* Poke targets */}
         {HOTSPOTS.map((hs, i) => (
           <Pressable
             key={`hit-${hs.region}-${i}`}
@@ -289,7 +344,6 @@ export function BodyScanFigure({
           />
         ))}
 
-        {/* Floating gags */}
         {gags.map(({ key, gag }, i) => (
           <View key={key} pointerEvents="none" style={[styles.gagSlot, SPOT_STYLE[gag.spot]]}>
             <FloatingGag emoji={gag.emoji} delay={i * 120} />
@@ -297,7 +351,7 @@ export function BodyScanFigure({
         ))}
       </Animated.View>
 
-      <Text style={styles.pokeHint}>戳戳碗仔 · 邊度有感覺?</Text>
+      <Text style={styles.pokeHint}>戳戳碗仔 · 睇吓佢點反應</Text>
 
       <View style={styles.regionRow}>
         {(['head', 'chest', 'belly', 'hands', 'whole'] as BodyRegionKey[]).map((r) => (
@@ -319,7 +373,7 @@ export function BodyScanFigure({
   );
 }
 
-const FIGURE = 260;
+const FIGURE = 268;
 
 const styles = StyleSheet.create({
   wrap: {
@@ -333,7 +387,6 @@ const styles = StyleSheet.create({
     paddingVertical: SPACING.sm,
     marginBottom: SPACING.md,
     borderWidth: 2,
-    borderColor: '#F0D78C',
     maxWidth: 300,
   },
   speechName: {
@@ -353,35 +406,17 @@ const styles = StyleSheet.create({
   stage: {
     width: FIGURE,
     height: FIGURE,
+    borderRadius: RADIUS.lg,
     alignItems: 'center',
     justifyContent: 'center',
     marginBottom: SPACING.sm,
-  },
-  stageGlow: {
-    position: 'absolute',
-    width: FIGURE * 0.72,
-    height: FIGURE * 0.72,
-    borderRadius: FIGURE,
-    backgroundColor: '#FFF6D6',
-    opacity: 0.55,
+    overflow: 'hidden',
   },
   buddy: {
     width: FIGURE,
     height: FIGURE,
     zIndex: 1,
   },
-  blush: {
-    position: 'absolute',
-    width: 28,
-    height: 18,
-    borderRadius: 10,
-    backgroundColor: '#F4A09A',
-    opacity: 0.55,
-    top: '44%',
-    zIndex: 2,
-  },
-  blushL: { left: '28%' },
-  blushR: { right: '28%' },
   hotspot: {
     position: 'absolute',
     zIndex: 4,
@@ -399,6 +434,31 @@ const styles = StyleSheet.create({
   gag: {
     fontSize: 26,
   },
+  trembleWrap: {
+    ...StyleSheet.absoluteFillObject,
+    zIndex: 3,
+  },
+  tremble: {
+    position: 'absolute',
+    top: '48%',
+    fontSize: 18,
+    color: COLORS.textPrimary,
+    opacity: 0.55,
+    fontWeight: '800',
+  },
+  trembleL: { left: 10 },
+  trembleR: { right: 10 },
+  sweatWrap: {
+    ...StyleSheet.absoluteFillObject,
+    zIndex: 3,
+  },
+  sweat: {
+    position: 'absolute',
+    top: '18%',
+    fontSize: 20,
+  },
+  sweatL: { left: 28 },
+  sweatR: { right: 28 },
   pokeHint: {
     fontSize: 13,
     fontWeight: '700',
