@@ -172,10 +172,10 @@ const CHIP_ADULT: Record<BodyChipKey, string> = {
 };
 
 const REGION_LOWER: Record<BodyRegionKey, string> = {
-  head: '頭同面',
-  chest: '胸口',
+  head: '個頭同張面',
+  chest: '個胸口',
   belly: '肚仔同喉嚨',
-  hands: '手同膊頭',
+  hands: '雙手同膊頭',
   whole: '成個身體',
 };
 
@@ -199,10 +199,10 @@ export const WORDING: Record<WordingMode, WordingPack> = {
   lower: {
     soup_title: '今日想飲咩?',
     soup_sub: '揀一種最似而家感覺嘅 · 唔係問你想慰勞自己',
-    body_title: '身體係個杯 · 邊度有感覺?',
-    body_clarify: '飲品得個感覺 · 身體會幫你講清楚',
-    body_vessel: '由上掃到下 · 揀最明顯嘅感覺',
-    body_hint: '最多揀 3 樣',
+    body_title: '戳一戳身體 · 邊度喺度嘈?',
+    body_clarify: '身體係個搞搞震嘅杯 · 撳吓邊度有感覺',
+    body_vessel: '由頭頂戳到腳趾 · 最多揀 3 樣最嘈嘅',
+    body_hint: '最多揀 3 樣 · 唔好塞爆個杯!',
     body_cta: '準備見碗 →',
     body_skip: '略過 →',
     region_labels: REGION_LOWER,
@@ -251,10 +251,10 @@ export const WORDING: Record<WordingMode, WordingPack> = {
   upper: {
     soup_title: '今日嘅狀態岩飲邊樣飲品?',
     soup_sub: '揀最似而家感覺嘅 · 可以係想安慰自己嘅味道 · 下一步會對齊身體',
-    body_title: '身體掃描 · 邊度有反應?',
-    body_clarify: '有時想飲甜嘢 · 唔等於開心 · 身體會講多啲真相',
-    body_vessel: '想像身體係個杯 · 由頭掃到腳 · 揀最明顯嘅訊號',
-    body_hint: '揀 3 樣就夠啦',
+    body_title: '身體掃描遊戲 · 邊度喺度出聲?',
+    body_clarify: '想飲甜唔等於開心 · 戳吓身體睇真相',
+    body_vessel: '想像身體係個杯 · 撳部位 · 睇吓浮起咩感覺',
+    body_hint: '揀 3 樣就夠 · 杯滿啦!',
     body_cta: '準備見碗 →',
     body_skip: '暫時略過 →',
     region_labels: REGION_UPPER,
@@ -303,9 +303,9 @@ export const WORDING: Record<WordingMode, WordingPack> = {
   adult: {
     soup_title: '而家呢刻 · 你比較似邊種飲品?',
     soup_sub: '用飲品做隱喻 · 可以係狀態 · 亦可以係想慰藉自己嘅味道',
-    body_title: '身體覺察 · 邊度有訊號?',
-    body_clarify: '想飲甜可以係開心 · 亦可以係想被安慰 · 身體感覺幫你分清楚',
-    body_vessel: '由頭到腳掃一次 · 揀而家最明顯嘅身體反應',
+    body_title: '身體掃描 · 邊度有訊號?',
+    body_clarify: '想飲甜可以係開心 · 亦可以係想被安慰 · 身體幫你分清楚',
+    body_vessel: '撳身體部位 · 睇吓浮起嘅感覺',
     body_hint: '唔使完美 · 揀而家最明顯嘅',
     body_cta: '下一步 · 睇碗 →',
     body_skip: '略過身體感覺 →',

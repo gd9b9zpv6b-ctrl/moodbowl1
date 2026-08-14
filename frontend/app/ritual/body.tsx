@@ -1,9 +1,8 @@
 import { Feather } from '@expo/vector-icons';
 import * as Haptics from 'expo-haptics';
 import { useRouter } from 'expo-router';
-import { useRef, useState } from 'react';
+import { useMemo, useState } from 'react';
 import {
-  Animated,
   Pressable,
   ScrollView,
   StyleSheet,
@@ -12,16 +11,55 @@ import {
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
+import { BodyScanFigure } from '@/src/components/body-scan-figure';
 import { ProgressDots } from '@/src/components/progress-dots';
 import {
   BODY_CHIPS,
-  BODY_REGIONS,
   type BodyChipKey,
+  type BodyRegionKey,
 } from '@/src/constants/body-chips';
 import { SOUP_BY_KEY } from '@/src/constants/soups';
 import { COLORS, RADIUS, SPACING } from '@/src/constants/theme';
 import { wordingFor } from '@/src/lib/i18n/wording-mode';
 import { useRitualStore } from '@/src/lib/ritual/ritual-store';
+
+/** Silly one-liners when the figure reacts to a pick. */
+const GAG_LINES: Partial<Record<BodyChipKey, string>> = {
+  face_flush: '嘩 · 面紅到可以蒸包!',
+  jaw_clench: '牙關咬到出聲呀…',
+  teary: '眼眶開始發酸啦…',
+  eyelids_heavy: '眼皮掛住兩個小水桶!',
+  eyes_bright: '眼睛亮到似星星!',
+  head_heavy: '頭頂放咗塊大石頭?',
+  brain_blank: '腦入面載入緊… 404',
+  chest_warm: '胸口亮起一盞小燈!',
+  chest_tight: '胸口像壓住磚頭…',
+  heart_fast: '有隻小兔喺度砰砰跳!',
+  breath_fast: '呼哧呼哧 · 像小牛!',
+  heat_rising: '熱氣衝上腦門啦!',
+  throat_tight: '喉嚨卡住粒小石頭…',
+  belly_full: '肚仔有蝴蝶開派對!',
+  no_appetite: '碗都暫時唔想見…',
+  need_toilet: '突然想衝廁所!',
+  fists_clench: '拳頭變咗小石頭!',
+  sweaty_palms: '手心濕漉漉黏嗒嗒!',
+  shaky: '手腳開始震震!',
+  soft_hands: '手軟到似拉麵!',
+  shoulders_heavy: '膊頭背住成個書包!',
+  body_tense: '全身繃到似拉滿弓!',
+  want_jump: '腳裝咗彈簧 · 跳!',
+  smile_wide: '嘴角偷偷向上爬!',
+  curled_up: '想縮成一隻小貝殼…',
+  floaty: '輕飄飄 · 差啲飛起!',
+};
+
+const REGION_PROMPTS: Record<BodyRegionKey, string> = {
+  head: '撳頭 · 面同腦而家點?',
+  chest: '撳胸口 · 心跳定發熱?',
+  belly: '撳肚仔 · 有蝴蝶定石頭?',
+  hands: '撳手 · 出汗定捏拳?',
+  whole: '撳腳 · 想跳定想縮?',
+};
 
 export default function RitualBodyScreen() {
   const router = useRouter();
@@ -31,22 +69,34 @@ export default function RitualBodyScreen() {
   const toggleChip = useRitualStore((s) => s.toggleChip);
   const skipChips = useRitualStore((s) => s.skipChips);
   const [toast, setToast] = useState<string | null>(null);
-  const pulse = useRef(new Animated.Value(1)).current;
+  const [focusRegion, setFocusRegion] = useState<BodyRegionKey | null>('head');
+  const [gagLine, setGagLine] = useState<string | null>(null);
   const w = wordingFor(ageGroup);
   const drink = soup ? SOUP_BY_KEY[soup] : null;
+
+  const visibleChips = useMemo(() => {
+    if (!focusRegion) return BODY_CHIPS;
+    return BODY_CHIPS.filter((c) => c.region === focusRegion);
+  }, [focusRegion]);
+
+  const idlePrompt =
+    gagLine ||
+    (focusRegion ? REGION_PROMPTS[focusRegion] : w.body_vessel);
 
   const onToggle = (key: BodyChipKey) => {
     const wasSelected = bodyChips.includes(key);
     if (!wasSelected && bodyChips.length >= 3) {
       setToast(w.body_hint);
       setTimeout(() => setToast(null), 1600);
+      return;
     }
     toggleChip(key);
-    Haptics.selectionAsync().catch(() => {});
-    Animated.sequence([
-      Animated.timing(pulse, { toValue: 0.92, duration: 120, useNativeDriver: true }),
-      Animated.timing(pulse, { toValue: 1, duration: 180, useNativeDriver: true }),
-    ]).start();
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light).catch(() => {});
+    if (!wasSelected) {
+      const line = GAG_LINES[key] || w.chip_labels[key];
+      setGagLine(line);
+      setTimeout(() => setGagLine(null), 2200);
+    }
   };
 
   const goPick = () => router.push('/ritual/pick');
@@ -83,64 +133,72 @@ export default function RitualBodyScreen() {
           <View style={styles.drinkChip} testID="body-drink-context">
             <Text style={styles.drinkEmoji}>{drink.emoji}</Text>
             <View style={{ flex: 1 }}>
-              <Text style={styles.drinkLabel}>你啱啱揀咗 · {drink.label}</Text>
+              <Text style={styles.drinkLabel}>
+                呢杯「{drink.label}」入面 · 身體有咩反應?
+              </Text>
               <Text style={styles.drinkHint}>{w.body_vessel}</Text>
             </View>
           </View>
         )}
 
-        <Animated.View style={[styles.vessel, { transform: [{ scale: pulse }] }]}>
-          <View style={styles.vesselInner}>
-            <Text style={styles.vesselEmoji}>{drink?.emoji || '🥛'}</Text>
-            <Text style={styles.vesselTitle}>身體 · 飲品容器</Text>
-            <Text style={styles.vesselHint}>{w.body_vessel}</Text>
-            {bodyChips.length > 0 && (
-              <View style={styles.vesselActive}>
-                {bodyChips.map((key) => {
-                  const chip = BODY_CHIPS.find((c) => c.key === key);
-                  return (
-                    <Text key={key} style={styles.vesselChipEmoji}>
-                      {chip?.emoji}
-                    </Text>
-                  );
-                })}
-              </View>
-            )}
-          </View>
-        </Animated.View>
+        <BodyScanFigure
+          selected={bodyChips}
+          focusRegion={focusRegion}
+          onSelectRegion={(region) => {
+            setFocusRegion(region);
+            setGagLine(REGION_PROMPTS[region]);
+            Haptics.selectionAsync().catch(() => {});
+          }}
+          idlePrompt={idlePrompt}
+        />
 
-        {BODY_REGIONS.map((region) => {
-          const regionChips = BODY_CHIPS.filter((c) => c.region === region.key);
-          return (
-            <View key={region.key} style={styles.regionBlock} testID={`body-region-${region.key}`}>
-              <View style={styles.regionHeader}>
-                <Text style={styles.regionEmoji}>{region.emoji}</Text>
-                <Text style={styles.regionTitle}>{w.region_labels[region.key]}</Text>
-              </View>
-              <View style={styles.chipWrap}>
-                {regionChips.map((chip) => {
-                  const active = bodyChips.includes(chip.key);
-                  return (
-                    <Pressable
-                      key={chip.key}
-                      testID={`body-chip-${chip.key}`}
-                      onPress={() => onToggle(chip.key)}
-                      style={[styles.chip, active && styles.chipActive]}
-                    >
-                      {active && (
-                        <Feather name="check" size={14} color={COLORS.textPrimary} />
-                      )}
-                      <Text style={styles.chipEmoji}>{chip.emoji}</Text>
-                      <Text style={[styles.chipLabel, active && styles.chipLabelActive]}>
-                        {w.chip_labels[chip.key]}
-                      </Text>
-                    </Pressable>
-                  );
-                })}
-              </View>
-            </View>
-          );
-        })}
+        <View style={styles.chipPanel}>
+          <Text style={styles.chipPanelTitle}>
+            {focusRegion
+              ? `揀「${w.region_labels[focusRegion]}」嘅感覺`
+              : '揀身體感覺'}
+            <Text style={styles.chipCount}> · {bodyChips.length}/3</Text>
+          </Text>
+          <View style={styles.chipWrap}>
+            {visibleChips.map((chip) => {
+              const active = bodyChips.includes(chip.key);
+              return (
+                <Pressable
+                  key={chip.key}
+                  testID={`body-chip-${chip.key}`}
+                  onPress={() => onToggle(chip.key)}
+                  style={[styles.chip, active && styles.chipActive]}
+                >
+                  {active && (
+                    <Feather name="check" size={14} color={COLORS.textPrimary} />
+                  )}
+                  <Text style={styles.chipEmoji}>{chip.emoji}</Text>
+                  <Text style={[styles.chipLabel, active && styles.chipLabelActive]}>
+                    {w.chip_labels[chip.key]}
+                  </Text>
+                </Pressable>
+              );
+            })}
+          </View>
+        </View>
+
+        {bodyChips.length > 0 && (
+          <View style={styles.pickedRow} testID="body-picked-summary">
+            <Text style={styles.pickedLabel}>杯入面而家有：</Text>
+            {bodyChips.map((key) => {
+              const chip = BODY_CHIPS.find((c) => c.key === key);
+              return (
+                <Pressable
+                  key={key}
+                  onPress={() => onToggle(key)}
+                  style={styles.pickedChip}
+                >
+                  <Text style={styles.pickedEmoji}>{chip?.emoji}</Text>
+                </Pressable>
+              );
+            })}
+          </View>
+        )}
 
         {toast && (
           <View style={styles.toast}>
@@ -207,49 +265,21 @@ const styles = StyleSheet.create({
   drinkEmoji: { fontSize: 28 },
   drinkLabel: { fontSize: 14, fontWeight: '700', color: COLORS.textPrimary },
   drinkHint: { fontSize: 12, color: COLORS.textSecondary, marginTop: 2 },
-  vessel: {
-    alignSelf: 'center',
-    width: '100%',
-    maxWidth: 320,
+  chipPanel: {
+    backgroundColor: COLORS.bgCard,
     borderRadius: RADIUS.lg,
-    backgroundColor: COLORS.bgInput,
-    marginBottom: SPACING.lg,
-    paddingVertical: SPACING.lg,
-    paddingHorizontal: SPACING.md,
+    padding: SPACING.md,
+    marginBottom: SPACING.md,
+    borderWidth: 1,
+    borderColor: COLORS.borderLight,
   },
-  vesselInner: { alignItems: 'center', gap: 6 },
-  vesselEmoji: { fontSize: 48, opacity: 0.7 },
-  vesselTitle: {
-    fontSize: 15,
-    fontWeight: '800',
-    color: COLORS.textPrimary,
-    marginTop: 4,
-  },
-  vesselHint: {
-    fontSize: 12,
-    color: COLORS.textSecondary,
-    textAlign: 'center',
-    lineHeight: 17,
-  },
-  vesselActive: {
-    flexDirection: 'row',
-    gap: 8,
-    marginTop: SPACING.sm,
-  },
-  vesselChipEmoji: { fontSize: 22 },
-  regionBlock: { marginBottom: SPACING.md },
-  regionHeader: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 6,
-    marginBottom: SPACING.sm,
-  },
-  regionEmoji: { fontSize: 16 },
-  regionTitle: {
+  chipPanelTitle: {
     fontSize: 14,
     fontWeight: '800',
     color: COLORS.textPrimary,
+    marginBottom: SPACING.sm,
   },
+  chipCount: { fontWeight: '600', color: COLORS.textSecondary },
   chipWrap: {
     flexDirection: 'row',
     flexWrap: 'wrap',
@@ -274,6 +304,27 @@ const styles = StyleSheet.create({
     flexShrink: 1,
   },
   chipLabelActive: { color: COLORS.textPrimary },
+  pickedRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    flexWrap: 'wrap',
+    gap: 8,
+    marginBottom: SPACING.md,
+  },
+  pickedLabel: {
+    fontSize: 13,
+    fontWeight: '700',
+    color: COLORS.textSecondary,
+  },
+  pickedChip: {
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    backgroundColor: COLORS.primaryLight,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  pickedEmoji: { fontSize: 18 },
   toast: {
     backgroundColor: '#FEF9E7',
     borderLeftWidth: 3,
@@ -289,7 +340,7 @@ const styles = StyleSheet.create({
     backgroundColor: COLORS.primary,
     alignItems: 'center',
     justifyContent: 'center',
-    marginTop: SPACING.md,
+    marginTop: SPACING.sm,
   },
   ctaText: { fontSize: 17, fontWeight: '700', color: COLORS.textPrimary },
 });
