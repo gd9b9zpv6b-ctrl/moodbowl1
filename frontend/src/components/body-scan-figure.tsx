@@ -71,17 +71,17 @@ const CHIP_DECOR: Partial<Record<BodyChipKey, { emoji: string; spot: Spot }>> = 
   floaty: { emoji: '✨', spot: 'auraR' },
 };
 
-/** Hair=rice · head cup · neck ABOVE hands · body with hands · feet. */
+/** Decor on anatomy: hair tip / bowl-head / chest / belly / hands / legs. */
 const SPOT_STYLE: Record<Spot, object> = {
-  head: { top: '1%', alignSelf: 'center' },
-  face: { top: '18%', alignSelf: 'center' },
-  chest: { top: '28%', alignSelf: 'center' },
-  belly: { top: '48%', alignSelf: 'center' },
-  leftHand: { top: '56%', left: '6%' },
-  rightHand: { top: '56%', right: '6%' },
-  feet: { bottom: '1%', alignSelf: 'center' },
-  auraL: { top: '24%', left: '4%' },
-  auraR: { top: '24%', right: '4%' },
+  head: { top: '5%', alignSelf: 'center' }, // hair tip decorations
+  face: { top: '20%', alignSelf: 'center' }, // bowl head (not hair)
+  chest: { top: '40%', alignSelf: 'center' },
+  belly: { top: '52%', alignSelf: 'center' },
+  leftHand: { top: '54%', left: '4%' },
+  rightHand: { top: '54%', right: '4%' },
+  feet: { top: '78%', alignSelf: 'center' },
+  auraL: { top: '36%', left: '2%' },
+  auraR: { top: '36%', right: '2%' },
 };
 
 const REGION_COLORS: Record<BodyRegionKey, string> = {
@@ -108,7 +108,10 @@ const STAGE_BG: Record<WanjaiMood, string> = {
   fiery: '#FCE8E2',
 };
 
-/** Rice hair · head · neck(above hands) · hands on body · pedestal feet. */
+/**
+ * Poke zones aligned to silhouette (not the rice hair):
+ * 頭 = bowl head under hair · 心 = upper body · 肚 = torso · 手 · 腳 = legs
+ */
 const HOTSPOTS: {
   region: BodyRegionKey;
   top: `${number}%`;
@@ -116,12 +119,12 @@ const HOTSPOTS: {
   width: `${number}%`;
   height: `${number}%`;
 }[] = [
-  { region: 'head', top: '3%', left: '28%', width: '44%', height: '16%' },
-  { region: 'chest', top: '20%', left: '28%', width: '44%', height: '18%' },
-  { region: 'belly', top: '42%', left: '32%', width: '36%', height: '12%' },
-  { region: 'hands', top: '52%', left: '8%', width: '22%', height: '14%' },
-  { region: 'hands', top: '52%', left: '70%', width: '22%', height: '14%' },
-  { region: 'whole', top: '68%', left: '30%', width: '40%', height: '24%' },
+  { region: 'head', top: '14%', left: '28%', width: '44%', height: '18%' },
+  { region: 'chest', top: '36%', left: '30%', width: '40%', height: '12%' },
+  { region: 'belly', top: '48%', left: '32%', width: '36%', height: '10%' },
+  { region: 'hands', top: '50%', left: '6%', width: '20%', height: '14%' },
+  { region: 'hands', top: '50%', left: '74%', width: '20%', height: '14%' },
+  { region: 'whole', top: '66%', left: '28%', width: '44%', height: '26%' },
 ];
 
 function FloatingDecor({ emoji, delay }: { emoji: string; delay: number }) {
@@ -387,7 +390,7 @@ export function BodyScanFigure({
         ))}
       </Animated.View>
 
-      <Text style={styles.pokeHint}>戳戳碗仔 · 裝飾會話你知佢點</Text>
+      <Text style={styles.pokeHint}>戳碗頭／心／肚／手／腳 · 唔使戳頭髮</Text>
 
       <View style={styles.regionRow}>
         {(['head', 'chest', 'belly', 'hands', 'whole'] as BodyRegionKey[]).map((r) => (
@@ -476,25 +479,25 @@ const styles = StyleSheet.create({
   },
   tremble: {
     position: 'absolute',
-    top: '50%',
+    top: '48%',
     fontSize: 18,
     color: COLORS.textPrimary,
     opacity: 0.55,
     fontWeight: '800',
   },
-  trembleL: { left: 14 },
-  trembleR: { right: 14 },
+  trembleL: { left: 10 },
+  trembleR: { right: 10 },
   sweatWrap: {
     ...StyleSheet.absoluteFillObject,
     zIndex: 3,
   },
   sweat: {
     position: 'absolute',
-    top: '10%',
+    top: '16%',
     fontSize: 20,
   },
-  sweatL: { left: 40 },
-  sweatR: { right: 40 },
+  sweatL: { left: 38 },
+  sweatR: { right: 38 },
   starWrap: {
     ...StyleSheet.absoluteFillObject,
     zIndex: 3,
