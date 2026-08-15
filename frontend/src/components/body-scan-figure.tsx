@@ -10,6 +10,7 @@ import {
 } from 'react-native';
 
 import {
+  BODY_CHIP_BY_KEY,
   BODY_CHIPS,
   type BodyChipKey,
   type BodyRegionKey,
@@ -40,36 +41,6 @@ type Spot =
   | 'feet'
   | 'auraL'
   | 'auraR';
-
-/** Decorations only · water / stars / steam / hearts — never facial features. */
-const CHIP_DECOR: Partial<Record<BodyChipKey, { emoji: string; spot: Spot }>> = {
-  face_flush: { emoji: '♨️', spot: 'face' },
-  jaw_clench: { emoji: '💢', spot: 'face' },
-  teary: { emoji: '💧', spot: 'face' },
-  eyelids_heavy: { emoji: '💤', spot: 'head' },
-  eyes_bright: { emoji: '✨', spot: 'head' },
-  head_heavy: { emoji: '🪨', spot: 'head' },
-  brain_blank: { emoji: '💭', spot: 'head' },
-  chest_warm: { emoji: '🌟', spot: 'chest' },
-  chest_tight: { emoji: '💢', spot: 'chest' },
-  heart_fast: { emoji: '💓', spot: 'chest' },
-  breath_fast: { emoji: '💨', spot: 'chest' },
-  heat_rising: { emoji: '🔥', spot: 'auraL' },
-  throat_tight: { emoji: '🫧', spot: 'belly' },
-  belly_full: { emoji: '🦋', spot: 'belly' },
-  no_appetite: { emoji: '🍂', spot: 'belly' },
-  need_toilet: { emoji: '💦', spot: 'belly' },
-  fists_clench: { emoji: '✊', spot: 'leftHand' },
-  sweaty_palms: { emoji: '💧', spot: 'rightHand' },
-  shaky: { emoji: '〰', spot: 'auraR' },
-  soft_hands: { emoji: '🍃', spot: 'rightHand' },
-  shoulders_heavy: { emoji: '📚', spot: 'auraL' },
-  body_tense: { emoji: '〰', spot: 'auraL' },
-  want_jump: { emoji: '⭐', spot: 'feet' },
-  smile_wide: { emoji: '⭐', spot: 'face' },
-  curled_up: { emoji: '🌑', spot: 'auraR' },
-  floaty: { emoji: '✨', spot: 'auraR' },
-};
 
 /** Decor anchors · measured against wanjai-base.png silhouette. */
 const SPOT_STYLE: Record<Spot, object> = {
@@ -274,10 +245,9 @@ export function BodyScanFigure({
     selected.includes('teary') ||
     selected.includes('face_flush');
   const showStars =
-    mood === 'warm' ||
     selected.includes('eyes_bright') ||
-    selected.includes('smile_wide') ||
-    selected.includes('chest_warm');
+    selected.includes('chest_warm') ||
+    selected.includes('floaty');
 
   useEffect(() => {
     if (wantsJump || mood === 'warm') {
@@ -304,16 +274,11 @@ export function BodyScanFigure({
     return () => loop.stop();
   }, [glow]);
 
-  const decors = selected
-    .map((key) => ({ key, decor: CHIP_DECOR[key] }))
-    .filter(
-      (x): x is { key: BodyChipKey; decor: NonNullable<(typeof CHIP_DECOR)[BodyChipKey]> } =>
-        !!x.decor,
-    );
+  const decors = selected.map((key) => BODY_CHIP_BY_KEY[key]);
 
   const regionLit = (region: BodyRegionKey) =>
     focusRegion === region ||
-    selected.some((k) => BODY_CHIPS.find((c) => c.key === k)?.region === region);
+    selected.some((k) => BODY_CHIP_BY_KEY[k]?.region === region);
 
   const figureScale = mood === 'heavy' || selected.includes('curled_up') ? 0.92 : 1;
   const translateY = bounce.interpolate({
@@ -389,9 +354,13 @@ export function BodyScanFigure({
           />
         ))}
 
-        {decors.map(({ key, decor }, i) => (
-          <View key={key} pointerEvents="none" style={[styles.decorSlot, SPOT_STYLE[decor.spot]]}>
-            <FloatingDecor emoji={decor.emoji} delay={i * 120} />
+        {decors.map((chip, i) => (
+          <View
+            key={chip.key}
+            pointerEvents="none"
+            style={[styles.decorSlot, SPOT_STYLE[chip.decorSpot]]}
+          >
+            <FloatingDecor emoji={chip.emoji} delay={i * 120} />
           </View>
         ))}
       </Animated.View>
