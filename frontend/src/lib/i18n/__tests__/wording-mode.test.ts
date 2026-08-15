@@ -19,9 +19,11 @@ describe('resolveWordingMode', () => {
 });
 
 describe('wording packs', () => {
-  it('exposes distinct soup titles per mode', () => {
-    expect(wordingFor('lower').soup_title).toBe('今日想飲咩?');
-    expect(wordingFor('upper').soup_title).toBe('今日嘅狀態岩飲邊樣飲品?');
+  it('exposes bowl-spirit drink invitation titles', () => {
+    expect(wordingFor('lower').soup_title).toContain('碗星靈');
+    expect(wordingFor('upper').soup_title).toContain('碗星靈');
+    expect(wordingFor('adult').soup_title).toContain('碗星靈');
+    expect(wordingFor('lower').soup_offer_done('草莓牛奶')).toContain('草莓牛奶');
     expect(wordingFor('adult').soup_title).not.toBe(wordingFor('lower').soup_title);
   });
 
