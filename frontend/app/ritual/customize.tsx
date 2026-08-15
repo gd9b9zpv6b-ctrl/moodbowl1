@@ -135,10 +135,18 @@ export default function RitualCustomizeScreen() {
 
         <Pressable
           testID="customize-next-btn"
-          onPress={() => router.push('/ritual/regulate')}
+          onPress={() => router.push('/ritual/release')}
           style={styles.cta}
         >
           <Text style={styles.ctaText}>{w.customize_next}</Text>
+        </Pressable>
+
+        <Pressable
+          testID="customize-skip-btn"
+          onPress={() => router.push('/ritual/release')}
+          style={styles.skipBtn}
+        >
+          <Text style={styles.skipText}>{w.customize_skip}</Text>
         </Pressable>
       </ScrollView>
     </SafeAreaView>
@@ -277,4 +285,6 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   ctaText: { fontSize: 17, fontWeight: '700', color: COLORS.textPrimary },
+  skipBtn: { alignItems: 'center', paddingVertical: SPACING.md, marginTop: SPACING.sm },
+  skipText: { fontSize: 14, fontWeight: '700', color: COLORS.textSecondary },
 });

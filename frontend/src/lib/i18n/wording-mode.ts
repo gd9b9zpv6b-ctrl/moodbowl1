@@ -27,6 +27,15 @@ export type WordingPack = {
   customize_title: (bowlLabel: string) => string;
   customize_sub: string;
   customize_next: string;
+  customize_skip: string;
+  release_title: (bowlLabel: string) => string;
+  release_sub: string;
+  release_actions: Record<
+    import('@/src/constants/bowl-release').BowlReleaseKey,
+    { label: string; hint: string }
+  >;
+  release_finish: string;
+  release_regulate: string;
   talk_got_bowl: (bowlLabel: string) => string;
   talk_title: (bowlLabel: string) => string;
   talk_speech: string;
@@ -221,8 +230,20 @@ export const WORDING: Record<WordingMode, WordingPack> = {
     talk_hug: '今日靜靜哋 · 得個抱 · 去打扮',
     customize_got_bowl: (bowl) => `寫完啦 · 呢個就係你嘅「${bowl}」`,
     customize_title: (bowl) => `幫 ${bowl} 打扮一下`,
-    customize_sub: '加裝飾 · 再揀感覺有幾強',
+    customize_sub: '加裝飾 · 再揀感覺有幾強 · 唔想可以跳過',
     customize_next: '打扮好 · 繼續 →',
+    customize_skip: '唔打扮 · 跳過 →',
+    release_title: (bowl) => `想點處理「${bowl}」?`,
+    release_sub: '用一個小動作 · 同今日嘅感覺道別或者抱一抱',
+    release_actions: {
+      empty: { label: '倒低碗', hint: '將裏面嘅嘢倒走 · 輕鬆啲' },
+      set_aside: { label: '蓋住放低', hint: '唔使而家處理 · 放一放先' },
+      send_away: { label: '送走佢', hint: '輕輕送走 · 唔再掹住' },
+      wash: { label: '洗乾淨', hint: '沖一沖 · 整返清爽' },
+      keep_hug: { label: '抱住留低', hint: '呢份感覺想留低 · 抱抱佢' },
+    },
+    release_finish: '搞掂 · 完成打卡 →',
+    release_regulate: '想先做個調節練習',
     regulate_skip: '唔洗 · 我 OK',
     bridge_share_class: '想同人講 · 派俾同學',
     bridge_share_family: '派俾家人',
@@ -276,8 +297,20 @@ export const WORDING: Record<WordingMode, WordingPack> = {
     talk_hug: '今日靜靜哋 · 得個抱 · 去打扮',
     customize_got_bowl: (bowl) => `寫完啦 · 呢個就係你嘅「${bowl}」`,
     customize_title: (bowl) => `幫 ${bowl} 打扮一下`,
-    customize_sub: '加裝飾 · 再揀感覺有幾強',
+    customize_sub: '加裝飾 · 再揀感覺有幾強 · 唔想可以跳過',
     customize_next: '打扮好 · 繼續 →',
+    customize_skip: '唔打扮 · 跳過 →',
+    release_title: (bowl) => `想點處理「${bowl}」?`,
+    release_sub: '揀一個象徵動作 · 幫自己同呢份感覺道別或者安頓',
+    release_actions: {
+      empty: { label: '倒低碗', hint: '倒走裏面嘅重量 · 俾自己透氣' },
+      set_aside: { label: '蓋住放低', hint: '暫時唔處理 · 放一旁先' },
+      send_away: { label: '送走佢', hint: '輕輕放手 · 唔再掹住' },
+      wash: { label: '洗乾淨', hint: '沖走殘留 · 整返清爽' },
+      keep_hug: { label: '抱住留低', hint: '呢份感覺有意思 · 抱抱留住' },
+    },
+    release_finish: '搞掂 · 完成打卡 →',
+    release_regulate: '想先做個調節練習',
     regulate_skip: '唔洗 · 我 OK',
     bridge_share_class: '想同人講嘢 · 派俾我班同學',
     bridge_share_family: '派俾家人（如果連咗）',
@@ -331,8 +364,20 @@ export const WORDING: Record<WordingMode, WordingPack> = {
     talk_hug: '今日只想靜一靜 · 去打扮',
     customize_got_bowl: (bowl) => `寫完之後 · 呢個係你嘅「${bowl}」`,
     customize_title: (bowl) => `為「${bowl}」加裝飾同調校大細`,
-    customize_sub: '揀幾件裝飾 · 再調感覺強度',
+    customize_sub: '揀幾件裝飾 · 再調感覺強度 · 可略過',
     customize_next: '打扮好 · 繼續 →',
+    customize_skip: '略過打扮 →',
+    release_title: (bowl) => `你想點安頓「${bowl}」?`,
+    release_sub: '用一個象徵動作 · 為今日嘅情緒做個收束',
+    release_actions: {
+      empty: { label: '倒空', hint: '釋放裏面嘅重量' },
+      set_aside: { label: '蓋住放低', hint: '暫時安放 · 稍後再理' },
+      send_away: { label: '送走', hint: '象徵性地放手' },
+      wash: { label: '清洗', hint: '沖走殘留 · 回復清爽' },
+      keep_hug: { label: '抱住留下', hint: '呢份感覺值得被抱住' },
+    },
+    release_finish: '完成打卡 →',
+    release_regulate: '想先做調節練習',
     regulate_skip: '暫時唔使 · 我 OK',
     bridge_share_class: '分享俾同事／同學圈（可選）',
     bridge_share_family: '分享俾家人（可選）',
