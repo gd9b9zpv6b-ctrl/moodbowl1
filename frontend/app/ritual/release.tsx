@@ -56,6 +56,7 @@ export default function RitualReleaseScreen() {
 
   const emotion = selectedBowlKey ? EMOTION_BY_KEY[selectedBowlKey] : null;
   const diaryMode = checkInType === 'quick_diary' || !selectedBowlKey;
+  const wroteDiary = checkInType !== 'hug_only' && diaryText.trim().length > 0;
   const releaseActions = diaryMode ? w.release_diary_actions : w.release_actions;
   const releaseTitle = diaryMode
     ? w.release_diary_title
@@ -182,6 +183,11 @@ export default function RitualReleaseScreen() {
           <Text style={styles.doneSub}>
             {w.release_done_sub(minutes)}
           </Text>
+          {wroteDiary && (
+            <Text testID="release-wrote-praise" style={styles.wrotePraise}>
+              {w.release_wrote_praise}
+            </Text>
+          )}
 
           <Text style={styles.smileHint}>{w.release_smile_hint}</Text>
           <Pressable
@@ -240,6 +246,11 @@ export default function RitualReleaseScreen() {
 
         <Text style={styles.title}>{releaseTitle}</Text>
         <Text style={styles.sub}>{releaseSub}</Text>
+        {wroteDiary && (
+          <Text testID="release-wrote-praise-act" style={styles.wrotePraiseAct}>
+            {w.release_wrote_praise}
+          </Text>
+        )}
 
         <View style={styles.list}>
           {BOWL_RELEASE_ACTIONS.map((action) => {
@@ -433,7 +444,26 @@ const styles = StyleSheet.create({
     color: COLORS.textPrimary,
     textAlign: 'center',
     lineHeight: 22,
+    marginBottom: SPACING.sm,
+  },
+  wrotePraise: {
+    fontSize: 14,
+    color: COLORS.textSecondary,
+    textAlign: 'center',
+    lineHeight: 22,
     marginBottom: SPACING.lg,
+  },
+  wrotePraiseAct: {
+    fontSize: 14,
+    fontWeight: '700',
+    color: COLORS.textPrimary,
+    backgroundColor: COLORS.primaryLight,
+    borderRadius: RADIUS.md,
+    paddingHorizontal: SPACING.md,
+    paddingVertical: SPACING.sm,
+    marginBottom: SPACING.lg,
+    lineHeight: 22,
+    overflow: 'hidden',
   },
   smileHint: {
     fontSize: 13,

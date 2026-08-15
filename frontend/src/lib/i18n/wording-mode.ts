@@ -46,6 +46,8 @@ export type WordingPack = {
   release_share_heading: string;
   release_done_title: string;
   release_done_sub: (minutes: number) => string;
+  /** Praise when the user wrote diary text this session. */
+  release_wrote_praise: string;
   release_smile_hint: string;
   release_smile_hold: string;
   release_smile_done: string;
@@ -273,6 +275,7 @@ export const WORDING: Record<WordingMode, WordingPack> = {
     release_share_heading: '想唔想將今日發生嘅嘢話俾人聽?',
     release_done_title: '搞掂啦',
     release_done_sub: (m) => `你今日同自己相處咗 ${m} 分鐘 · 好厲害`,
+    release_wrote_praise: '你今日肯寫日記 · 呢件事本身好勇敢 · 好棒',
     release_smile_hint: '對住自己笑一笑 · 2 秒（可選）',
     release_smile_hold: '撳住 2 秒',
     release_smile_done: '多謝你嘅笑',
@@ -357,6 +360,7 @@ export const WORDING: Record<WordingMode, WordingPack> = {
     release_share_heading: '想唔想將今日發生嘅嘢話俾人聽?',
     release_done_title: '搞掂啦',
     release_done_sub: (m) => `你今日同自己相處咗 ${m} 分鐘 · 好厲害`,
+    release_wrote_praise: '你今日肯寫低自己嘅嘢 · 呢件事本身好厲害',
     release_smile_hint: '對住自己笑一笑 · 2 秒（可選）',
     release_smile_hold: '撳住 2 秒',
     release_smile_done: '多謝你嘅笑',
@@ -441,6 +445,7 @@ export const WORDING: Record<WordingMode, WordingPack> = {
     release_share_heading: '想唔想將今日發生嘅事話俾人聽?',
     release_done_title: '搞掂啦',
     release_done_sub: (m) => `你今日同自己相處咗 ${m} 分鐘 · 好厲害`,
+    release_wrote_praise: '你今日肯為自己寫低呢段 · 值得被肯定',
     release_smile_hint: '對住自己笑一笑 · 2 秒（可選）',
     release_smile_hold: '撳住 2 秒',
     release_smile_done: '多謝你嘅笑',
