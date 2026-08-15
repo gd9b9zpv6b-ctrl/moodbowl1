@@ -9,6 +9,7 @@ import { EmotionVisual } from '@/src/components/emotion-visual';
 import { EntryDetailModal } from '@/src/components/entry-detail-modal';
 import { EntryEditModal } from '@/src/components/entry-edit-modal';
 import { SupportCtaRow } from '@/src/components/support-cta-row';
+import { tintBackdrop } from '@/src/constants/bowl-color-tints';
 import { EMOTION_BY_KEY } from '@/src/constants/emotions';
 import { COLORS, RADIUS, SPACING } from '@/src/constants/theme';
 import { api, Entry, User } from '@/src/lib/api';
