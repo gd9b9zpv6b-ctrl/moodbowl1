@@ -1,7 +1,7 @@
 import { Feather } from '@expo/vector-icons';
 import * as Haptics from 'expo-haptics';
 import { useRouter } from 'expo-router';
-import { useCallback, useRef, useState } from 'react';
+import { useCallback, useMemo, useRef, useState } from 'react';
 import {
   ActivityIndicator,
   Alert,
@@ -24,11 +24,21 @@ import {
 } from '@/src/constants/bowl-release';
 import { EMOTION_BY_KEY } from '@/src/constants/emotions';
 import { COLORS, RADIUS, SPACING } from '@/src/constants/theme';
-import { markRitualSmileCompleted, saveRitualWithActivities } from '@/src/lib/diary';
+import {
+  listMyDiaryEntries,
+  markRitualSmileCompleted,
+  saveRitualWithActivities,
+} from '@/src/lib/diary';
 import { wordingFor } from '@/src/lib/i18n/wording-mode';
+import { pickPraise } from '@/src/lib/ritual/praise-pool';
+import { detectState } from '@/src/lib/ritual/state-detector';
 import { useRitualStore } from '@/src/lib/ritual/ritual-store';
 
 const SMILE_HOLD_MS = 2000;
+
+function startOfLocalDay(d: Date) {
+  return new Date(d.getFullYear(), d.getMonth(), d.getDate()).getTime();
+}
 
 /**
  * Symbolic release + share/save + short done (smile / home) in one step.
@@ -55,6 +65,9 @@ export default function RitualReleaseScreen() {
   const reset = useRitualStore((s) => s.reset);
   const w = wordingFor(ageGroup);
 
+  const nsState = useMemo(() => detectState(soup, bodyChips), [soup, bodyChips]);
+  const bridgeLine = w.bridge_by_state[nsState];
+
   const emotion = selectedBowlKey ? EMOTION_BY_KEY[selectedBowlKey] : null;
   const hasBowl = !!emotion;
   const wroteDiary = checkInType !== 'hug_only' && diaryText.trim().length > 0;
@@ -70,6 +83,7 @@ export default function RitualReleaseScreen() {
   const [entryId, setEntryId] = useState<string | null>(null);
   const [minutes, setMinutes] = useState(1);
   const [smiled, setSmiled] = useState(false);
+  const [praiseLine, setPraiseLine] = useState<string | null>(null);
 
   const holdProgress = useRef(new Animated.Value(0)).current;
   const holdTimer = useRef<ReturnType<typeof setInterval> | null>(null);
@@ -85,6 +99,47 @@ export default function RitualReleaseScreen() {
     addRegulation(`release:${key}`);
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium).catch(() => {});
     setPhase('anim');
+  };
+
+  const buildPraise = async (bowlKey: string | null) => {
+    try {
+      const entries = await listMyDiaryEntries();
+      const now = Date.now();
+      const weekAgo = now - 7 * 24 * 60 * 60 * 1000;
+      const monthStart = new Date();
+      monthStart.setDate(1);
+      monthStart.setHours(0, 0, 0, 0);
+      const weekEntries = entries.filter((e) => {
+        const t = e.created_at ? Date.parse(e.created_at) : 0;
+        return t >= weekAgo;
+      }).length;
+      let daysSinceLast = 0;
+      if (entries.length >= 2) {
+        const prev = entries[1];
+        const prevT = prev.created_at ? Date.parse(prev.created_at) : now;
+        daysSinceLast = Math.max(
+          0,
+          Math.floor((startOfLocalDay(new Date()) - startOfLocalDay(new Date(prevT))) / 86400000),
+        );
+      }
+      const isNewBowlThisMonth =
+        !!bowlKey &&
+        !entries.slice(1).some((e) => {
+          const t = e.created_at ? Date.parse(e.created_at) : 0;
+          const key = e.emotions?.[0] || e.emotion;
+          return t >= monthStart.getTime() && key === bowlKey;
+        });
+      setPraiseLine(
+        pickPraise({
+          totalEntries: entries.length,
+          weekEntries,
+          daysSinceLast,
+          isNewBowlThisMonth,
+        }),
+      );
+    } catch {
+      setPraiseLine(pickPraise({ totalEntries: 1, weekEntries: 1, daysSinceLast: 0 }));
+    }
   };
 
   const onSave = async () => {
@@ -112,6 +167,7 @@ export default function RitualReleaseScreen() {
       );
       setEntryId(entry.id);
       setMinutes(Math.max(1, Math.round((timeSpent || 60) / 60)));
+      await buildPraise(selectedBowlKey);
       setPhase('done');
       Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success).catch(() => {});
     } catch (e: unknown) {
@@ -185,6 +241,11 @@ export default function RitualReleaseScreen() {
           <Text style={styles.doneSub}>
             {w.release_done_sub(minutes)}
           </Text>
+          {praiseLine ? (
+            <Text testID="release-praise-pool" style={styles.wrotePraise}>
+              {praiseLine}
+            </Text>
+          ) : null}
           {wroteDiary && (
             <Text testID="release-wrote-praise" style={styles.wrotePraise}>
               {w.release_wrote_praise}
@@ -301,7 +362,9 @@ export default function RitualReleaseScreen() {
           })}
         </View>
 
-        <Text style={styles.shareHeading}>{w.release_share_heading}</Text>
+        <Text testID="release-bridge-line" style={styles.shareHeading}>
+          {bridgeLine}
+        </Text>
         <View style={styles.row}>
           <Text style={styles.rowLabel}>{w.bridge_share_family}</Text>
           <Switch
