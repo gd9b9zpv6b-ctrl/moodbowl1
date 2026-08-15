@@ -158,7 +158,10 @@ export default function CalendarScreen() {
               const tint = featured?.bowl_color_tint;
               const decors = decodeDecorations(tint);
               const legacyBg = isLegacyTint(tint) ? tint : undefined;
-              const visualSize = Math.round(38 * (albumMode ? albumSizeScale(featured?.bowl_size) : 1));
+              const visualSize = Math.round(
+                38 * (albumMode ? albumSizeScale(featured?.bowl_size) : 1),
+              );
+              const showDecorated = decors.length > 0;
 
               return (
                 <Pressable
@@ -174,7 +177,7 @@ export default function CalendarScreen() {
                         albumMode && legacyBg && { backgroundColor: legacyBg },
                       ]}
                     >
-                      {albumMode && decors.length > 0 ? (
+                      {showDecorated ? (
                         <BowlWithDecor
                           emotion={em}
                           size={visualSize}
@@ -247,6 +250,7 @@ export default function CalendarScreen() {
                 const em = emList[0];
                 const active = featuredIdForSelected === entry.id;
                 const isLoading = featuring === entry.id;
+                const pickerDecors = decodeDecorations(entry.bowl_color_tint);
                 return (
                   <Pressable
                     key={entry.id}
@@ -259,7 +263,16 @@ export default function CalendarScreen() {
                       active && styles.pickerChipActive,
                     ]}
                   >
-                    <EmotionVisual emotion={em} size={44} radius={RADIUS.sm} />
+                    {pickerDecors.length > 0 ? (
+                      <BowlWithDecor
+                        emotion={em}
+                        size={44}
+                        radius={RADIUS.sm}
+                        decorations={pickerDecors}
+                      />
+                    ) : (
+                      <EmotionVisual emotion={em} size={44} radius={RADIUS.sm} />
+                    )}
                     <Text style={styles.pickerChipLabel} numberOfLines={1}>
                       {emList.map((e) => e.label).join('·')}
                     </Text>
@@ -293,6 +306,7 @@ export default function CalendarScreen() {
             const em = emList[0];
             const isFeatured = featuredIdForSelected === entry.id;
             const noteIsLong = (entry.note || '').length > 60;
+            const entryDecors = decodeDecorations(entry.bowl_color_tint);
             return (
               <Pressable
                 key={entry.id}
@@ -315,7 +329,16 @@ export default function CalendarScreen() {
                           { marginLeft: i === 0 ? 0 : -14, zIndex: 3 - i },
                         ]}
                       >
-                        <EmotionVisual emotion={e} size={40} radius={RADIUS.sm} />
+                        {i === 0 && entryDecors.length > 0 ? (
+                          <BowlWithDecor
+                            emotion={e}
+                            size={40}
+                            radius={RADIUS.sm}
+                            decorations={entryDecors}
+                          />
+                        ) : (
+                          <EmotionVisual emotion={e} size={40} radius={RADIUS.sm} />
+                        )}
                       </View>
                     ))}
                     {emList.length > 3 && (

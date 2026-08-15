@@ -11,6 +11,8 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { DiaryPaper } from '@/src/components/diary-paper';
+import { BowlWithDecor } from '@/src/components/bowl-with-decor';
+import { decodeDecorations } from '@/src/constants/bowl-decorations';
 import { EMOTION_BY_KEY } from '@/src/constants/emotions';
 import { PAPER_TINTS as PAPER_TINT_LIST } from '@/src/constants/diary-style';
 import { COLORS, RADIUS, SPACING } from '@/src/constants/theme';
@@ -56,6 +58,7 @@ export function EntryDetailModal({ visible, entry, onClose, onEdit }: Props) {
     .map((k) => EMOTION_BY_KEY[k])
     .filter(Boolean);
   const em = emList[0];
+  const entryDecors = decodeDecorations(entry.bowl_color_tint);
 
   // Premium selection or default
   const isPremium = !!user?.is_premium;
@@ -124,7 +127,16 @@ export function EntryDetailModal({ visible, entry, onClose, onEdit }: Props) {
                   { marginLeft: i === 0 ? 0 : -18, zIndex: 3 - i },
                 ]}
               >
-                <EmotionVisual emotion={e} size={80} radius={RADIUS.md} />
+                {i === 0 && entryDecors.length > 0 ? (
+                  <BowlWithDecor
+                    emotion={e}
+                    size={80}
+                    radius={RADIUS.md}
+                    decorations={entryDecors}
+                  />
+                ) : (
+                  <EmotionVisual emotion={e} size={80} radius={RADIUS.md} />
+                )}
               </View>
             ))}
             {emList.length > 3 && (
