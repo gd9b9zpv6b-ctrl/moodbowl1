@@ -34,7 +34,10 @@ create table if not exists public.diaries (
   -- Ritual answers
   soup                 text        check (soup in
                                      ('hot_milk_tea','cold_lemon_tea','curry',
-                                      'plain_congee','sweet_soup','no_appetite')),
+                                      'plain_congee','sweet_soup','no_appetite',
+                                      'strawberry_milk','marble_soda','lemon_juice',
+                                      'spicy_ginger','bitter_tea','warm_milk',
+                                      'plain_water','no_drink')),
   body_chips           text[]      not null default '{}',
   bowl_emotion_key     text,                          -- e.g. 'angry','hollow'
   bowl_color_tint      text,                          -- hex e.g. '#FBEBEB'

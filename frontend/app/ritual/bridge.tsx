@@ -13,8 +13,8 @@ import {
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
-import { EmotionVisual } from '@/src/components/emotion-visual';
-import { tintBackdrop } from '@/src/constants/bowl-color-tints';
+import { BowlWithDecor } from '@/src/components/bowl-with-decor';
+import { encodeDecorations } from '@/src/constants/bowl-decorations';
 import { EMOTION_BY_KEY } from '@/src/constants/emotions';
 import { COLORS, RADIUS, SPACING } from '@/src/constants/theme';
 import { saveRitualWithActivities } from '@/src/lib/diary';
@@ -28,7 +28,7 @@ export default function RitualBridgeScreen() {
   const soup = useRitualStore((s) => s.soup);
   const bodyChips = useRitualStore((s) => s.bodyChips);
   const selectedBowlKey = useRitualStore((s) => s.selectedBowlKey);
-  const colorTint = useRitualStore((s) => s.colorTint);
+  const decorations = useRitualStore((s) => s.decorations);
   const bowlSize = useRitualStore((s) => s.bowlSize);
   const diaryText = useRitualStore((s) => s.diaryText);
   const checkInType = useRitualStore((s) => s.checkInType);
@@ -55,7 +55,7 @@ export default function RitualBridgeScreen() {
           soup,
           body_chips: bodyChips,
           bowl_emotion_key: selectedBowlKey,
-          bowl_color_tint: colorTint,
+          bowl_color_tint: encodeDecorations(decorations),
           bowl_size: bowlSize,
           diary_text: checkInType === 'hug_only' ? null : diaryText || null,
           check_in_type: checkInType === 'hug_only' ? 'hug_only' : 'full',
@@ -97,13 +97,13 @@ export default function RitualBridgeScreen() {
       </View>
 
       <ScrollView contentContainerStyle={styles.scroll} showsVerticalScrollIndicator={false}>
-        <View
-          style={[
-            styles.bowl,
-            tintBackdrop(colorTint) && { backgroundColor: tintBackdrop(colorTint) },
-          ]}
-        >
-          <EmotionVisual emotion={emotion} size={180} radius={RADIUS.lg} />
+        <View style={styles.bowl}>
+          <BowlWithDecor
+            emotion={emotion}
+            size={180}
+            radius={RADIUS.lg}
+            decorations={decorations}
+          />
         </View>
 
         <Text style={styles.title}>{w.bridge_by_state[state]}</Text>

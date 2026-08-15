@@ -1,6 +1,7 @@
 import { create } from 'zustand';
 
 import type { BodyChipKey } from '@/src/constants/body-chips';
+import { MAX_BOWL_DECORS } from '@/src/constants/bowl-decorations';
 import type { SoupKey } from '@/src/constants/soups';
 
 export type BowlSize = 'S' | 'M' | 'L' | 'XL';
@@ -13,7 +14,9 @@ type RitualState = {
   soup: SoupKey | null;
   bodyChips: BodyChipKey[];
   selectedBowlKey: string | null;
+  /** @deprecated kept for older entries · prefer decorations */
   colorTint: string | null;
+  decorations: string[];
   bowlSize: BowlSize;
   diaryText: string;
   checkInType: CheckInType;
@@ -28,6 +31,8 @@ type RitualState = {
   toggleChip: (chip: BodyChipKey) => void;
   setBowl: (key: string) => void;
   setTint: (hex: string | null) => void;
+  toggleDecoration: (key: string) => void;
+  clearDecorations: () => void;
   setSize: (size: BowlSize) => void;
   setDiaryText: (text: string) => void;
   setCheckInType: (type: CheckInType) => void;
@@ -47,6 +52,7 @@ const initialState = {
   bodyChips: [] as BodyChipKey[],
   selectedBowlKey: null as string | null,
   colorTint: null as string | null,
+  decorations: [] as string[],
   bowlSize: 'M' as BowlSize,
   diaryText: '',
   checkInType: 'full' as CheckInType,
@@ -82,6 +88,20 @@ export const useRitualStore = create<RitualState>((set, get) => ({
 
   setBowl: (key) => set({ selectedBowlKey: key }),
   setTint: (hex) => set({ colorTint: hex }),
+
+  toggleDecoration: (key) => {
+    const current = get().decorations;
+    if (current.includes(key)) {
+      set({ decorations: current.filter((k) => k !== key), colorTint: null });
+      return;
+    }
+    const next = [...current, key];
+    if (next.length > MAX_BOWL_DECORS) next.shift();
+    set({ decorations: next, colorTint: null });
+  },
+
+  clearDecorations: () => set({ decorations: [], colorTint: null }),
+
   setSize: (size) => set({ bowlSize: size }),
   setDiaryText: (text) => set({ diaryText: text }),
   setCheckInType: (type) => set({ checkInType: type }),

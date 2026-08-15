@@ -4,8 +4,7 @@ import { useEffect, useMemo, useRef, useState } from 'react';
 import { Animated, Pressable, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
-import { EmotionVisual } from '@/src/components/emotion-visual';
-import { tintBackdrop } from '@/src/constants/bowl-color-tints';
+import { BowlWithDecor } from '@/src/components/bowl-with-decor';
 import { EMOTION_BY_KEY } from '@/src/constants/emotions';
 import { COLORS, RADIUS, SPACING } from '@/src/constants/theme';
 import { listMyDiaryEntries, markRitualSmileCompleted } from '@/src/lib/diary';
@@ -16,7 +15,7 @@ export default function RitualCompleteScreen() {
   const router = useRouter();
   const { entryId, minutes } = useLocalSearchParams<{ entryId?: string; minutes?: string }>();
   const selectedBowlKey = useRitualStore((s) => s.selectedBowlKey);
-  const colorTint = useRitualStore((s) => s.colorTint);
+  const decorations = useRitualStore((s) => s.decorations);
   const reset = useRitualStore((s) => s.reset);
   const emotion = selectedBowlKey ? EMOTION_BY_KEY[selectedBowlKey] : null;
 
@@ -96,13 +95,13 @@ export default function RitualCompleteScreen() {
   return (
     <SafeAreaView style={styles.safe} edges={['top', 'bottom']}>
       <View style={styles.content}>
-        <View
-          style={[
-            styles.bowl,
-            tintBackdrop(colorTint) && { backgroundColor: tintBackdrop(colorTint) },
-          ]}
-        >
-          <EmotionVisual emotion={emotion} size={200} radius={RADIUS.lg} />
+        <View style={styles.bowl}>
+          <BowlWithDecor
+            emotion={emotion}
+            size={200}
+            radius={RADIUS.lg}
+            decorations={decorations}
+          />
         </View>
 
         <Text style={styles.headline}>✨ 你搞掂啦 🌸</Text>

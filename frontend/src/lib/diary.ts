@@ -1,4 +1,5 @@
 import { asArray, Entry } from '@/src/lib/api';
+import { soupForDb } from '@/src/lib/ritual/soup-persist';
 import { supabase } from '@/src/lib/supabase-client';
 
 /**
@@ -61,6 +62,12 @@ function friendlyDiaryError(error: { message?: string } | null): Error {
   }
   if (message.includes('row-level security') || message.includes('permission')) {
     return new Error('而家未有權限寫日記 · 請確認已登入');
+  }
+  if (message.includes('diaries_soup_check') || message.includes('soup_check')) {
+    return new Error('飲品資料未更新 · 請重新揀一次飲品');
+  }
+  if (error?.message) {
+    return new Error(`日記儲存唔到 · ${error.message}`);
   }
   return new Error('日記儲存唔到 · 過陣再試');
 }
@@ -241,7 +248,7 @@ export type RitualDiaryDraft = {
 function ritualBridgePayload(userId: string, draft: RitualDiaryDraft) {
   return {
     user_id: userId,
-    soup: draft.soup,
+    soup: soupForDb(draft.soup),
     body_chips: draft.body_chips || [],
     bowl_emotion_key: draft.bowl_emotion_key,
     bowl_color_tint: draft.bowl_color_tint,
@@ -539,7 +546,7 @@ export async function saveRitualWithActivities(
 
   try {
     const { data, error } = await supabase.rpc('save_ritual_entry', {
-      p_soup: draft.soup,
+      p_soup: soupForDb(draft.soup),
       p_body_chips: draft.body_chips || [],
       p_bowl_emotion_key: draft.bowl_emotion_key,
       p_bowl_color_tint: draft.bowl_color_tint,

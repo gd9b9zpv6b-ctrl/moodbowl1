@@ -5,11 +5,12 @@ import { ActivityIndicator, Pressable, ScrollView, StyleSheet, Text, View } from
 import { Calendar, DateData } from 'react-native-calendars';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
+import { BowlWithDecor } from '@/src/components/bowl-with-decor';
 import { EmotionVisual } from '@/src/components/emotion-visual';
 import { EntryDetailModal } from '@/src/components/entry-detail-modal';
 import { EntryEditModal } from '@/src/components/entry-edit-modal';
 import { SupportCtaRow } from '@/src/components/support-cta-row';
-import { tintBackdrop } from '@/src/constants/bowl-color-tints';
+import { decodeDecorations, isLegacyTint } from '@/src/constants/bowl-decorations';
 import { EMOTION_BY_KEY } from '@/src/constants/emotions';
 import { COLORS, RADIUS, SPACING } from '@/src/constants/theme';
 import { api, Entry, User } from '@/src/lib/api';
@@ -155,6 +156,8 @@ export default function CalendarScreen() {
               const isToday = todayISO() === date.dateString;
               const isDisabled = state === 'disabled';
               const tint = featured?.bowl_color_tint;
+              const decors = decodeDecorations(tint);
+              const legacyBg = isLegacyTint(tint) ? tint : undefined;
               const visualSize = Math.round(38 * (albumMode ? albumSizeScale(featured?.bowl_size) : 1));
 
               return (
@@ -168,14 +171,19 @@ export default function CalendarScreen() {
                       style={[
                         styles.dayIconWrap,
                         isSelected && styles.dayIconWrapSelected,
+                        albumMode && legacyBg && { backgroundColor: legacyBg },
                       ]}
                     >
-                      <EmotionVisual
-                        emotion={em}
-                        size={visualSize}
-                        radius={RADIUS.sm}
-                        colorTint={albumMode ? tint : null}
-                      />
+                      {albumMode && decors.length > 0 ? (
+                        <BowlWithDecor
+                          emotion={em}
+                          size={visualSize}
+                          radius={RADIUS.sm}
+                          decorations={decors}
+                        />
+                      ) : (
+                        <EmotionVisual emotion={em} size={visualSize} radius={RADIUS.sm} />
+                      )}
                     </View>
                   ) : (
                     <View

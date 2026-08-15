@@ -4,12 +4,11 @@ import { useRouter } from 'expo-router';
 import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
-import { EmotionVisual } from '@/src/components/emotion-visual';
+import { BowlWithDecor } from '@/src/components/bowl-with-decor';
 import {
-  BOWL_COLOR_TINTS,
-  tintBackdrop,
-  tintLabel,
-} from '@/src/constants/bowl-color-tints';
+  BOWL_DECORATIONS,
+  MAX_BOWL_DECORS,
+} from '@/src/constants/bowl-decorations';
 import { EMOTION_BY_KEY } from '@/src/constants/emotions';
 import { COLORS, RADIUS, SPACING } from '@/src/constants/theme';
 import { wordingFor } from '@/src/lib/i18n/wording-mode';
@@ -26,19 +25,18 @@ export default function RitualCustomizeScreen() {
   const router = useRouter();
   const ageGroup = useRitualStore((s) => s.ageGroup);
   const selectedBowlKey = useRitualStore((s) => s.selectedBowlKey);
-  const colorTint = useRitualStore((s) => s.colorTint);
+  const decorations = useRitualStore((s) => s.decorations);
   const bowlSize = useRitualStore((s) => s.bowlSize);
-  const setTint = useRitualStore((s) => s.setTint);
+  const toggleDecoration = useRitualStore((s) => s.toggleDecoration);
+  const clearDecorations = useRitualStore((s) => s.clearDecorations);
   const setSize = useRitualStore((s) => s.setSize);
   const w = wordingFor(ageGroup);
 
   const emotion = selectedBowlKey ? EMOTION_BY_KEY[selectedBowlKey] : null;
   const scale = SIZES.find((s) => s.key === bowlSize)?.scale ?? 1;
-  const activeHex = colorTint || '#FFFFFF';
-  const activeLabel = tintLabel(activeHex);
 
-  const onPickColor = (hex: string) => {
-    setTint(hex === '#FFFFFF' ? null : hex);
+  const onToggleDecor = (key: string) => {
+    toggleDecoration(key);
     Haptics.selectionAsync().catch(() => {});
   };
 
@@ -68,54 +66,47 @@ export default function RitualCustomizeScreen() {
         <Text style={styles.title}>{w.customize_title(emotion?.label || '碗')}</Text>
         <Text style={styles.sub}>{w.customize_sub}</Text>
 
-        <View
-          style={[
-            styles.previewWrap,
-            tintBackdrop(activeHex) && { backgroundColor: tintBackdrop(activeHex) },
-          ]}
-        >
+        <View style={styles.previewWrap}>
           <View style={[styles.previewInner, { transform: [{ scale }] }]}>
-            <EmotionVisual emotion={emotion} size={200} radius={RADIUS.lg} />
+            <BowlWithDecor
+              emotion={emotion}
+              size={200}
+              radius={RADIUS.lg}
+              decorations={decorations}
+            />
           </View>
-          <Text style={styles.previewCaption} testID="customize-color-label">
-            而家背景 · {activeLabel}
+          <Text style={styles.previewCaption} testID="customize-decor-label">
+            {decorations.length === 0
+              ? '未加裝飾'
+              : `已加 ${decorations.length} 件裝飾`}
           </Text>
         </View>
 
-        <Text style={styles.section}>換背景</Text>
-        <View style={styles.colorRow}>
-          {BOWL_COLOR_TINTS.map((tint) => {
-            const active = activeHex === tint.hex;
-            const isOriginal = tint.hex === '#FFFFFF';
+        <View style={styles.sectionRow}>
+          <Text style={styles.section}>加裝飾 · 最多 {MAX_BOWL_DECORS} 件</Text>
+          {decorations.length > 0 && (
+            <Pressable testID="customize-clear-decor" onPress={clearDecorations} hitSlop={8}>
+              <Text style={styles.clearText}>清晒</Text>
+            </Pressable>
+          )}
+        </View>
+        <View style={styles.decorRow}>
+          {BOWL_DECORATIONS.map((decor) => {
+            const active = decorations.includes(decor.key);
             return (
               <Pressable
-                key={tint.hex}
-                testID={`customize-color-${tint.hex}`}
-                onPress={() => onPickColor(tint.hex)}
-                style={styles.colorItem}
-                accessibilityLabel={tint.label}
+                key={decor.key}
+                testID={`customize-decor-${decor.key}`}
+                onPress={() => onToggleDecor(decor.key)}
+                style={styles.decorItem}
+                accessibilityLabel={decor.label}
                 accessibilityState={{ selected: active }}
               >
-                <View
-                  style={[
-                    styles.colorChip,
-                    {
-                      backgroundColor: isOriginal ? COLORS.bgCard : tint.hex,
-                      borderColor: active ? COLORS.textPrimary : COLORS.borderLight,
-                      borderWidth: active ? 2.5 : 1,
-                    },
-                    isOriginal && styles.colorChipOriginal,
-                  ]}
-                >
-                  {isOriginal && (
-                    <Feather name="slash" size={14} color={COLORS.textSecondary} />
-                  )}
-                  {active && !isOriginal && (
-                    <Feather name="check" size={16} color="#FFF" />
-                  )}
+                <View style={[styles.decorChip, active && styles.decorChipActive]}>
+                  <Text style={styles.decorEmoji}>{decor.emoji}</Text>
                 </View>
-                <Text style={[styles.colorLabel, active && styles.colorLabelActive]}>
-                  {tint.label}
+                <Text style={[styles.decorLabel, active && styles.decorLabelActive]}>
+                  {decor.label}
                 </Text>
               </Pressable>
             );
@@ -204,8 +195,6 @@ const styles = StyleSheet.create({
     height: 200,
     alignItems: 'center',
     justifyContent: 'center',
-    overflow: 'hidden',
-    borderRadius: RADIUS.lg,
   },
   previewCaption: {
     marginTop: SPACING.md,
@@ -213,42 +202,54 @@ const styles = StyleSheet.create({
     fontWeight: '700',
     color: COLORS.textPrimary,
   },
+  sectionRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    marginBottom: SPACING.sm,
+  },
   section: {
     fontSize: 13,
     fontWeight: '700',
     color: COLORS.textSecondary,
-    marginBottom: SPACING.sm,
     letterSpacing: 0.4,
   },
-  colorRow: {
+  clearText: { fontSize: 13, fontWeight: '700', color: COLORS.primary },
+  decorRow: {
     flexDirection: 'row',
     flexWrap: 'wrap',
-    gap: SPACING.md,
+    gap: SPACING.sm,
     marginBottom: SPACING.lg,
   },
-  colorItem: {
-    width: '20%',
+  decorItem: {
+    width: '22%',
     minWidth: 64,
     alignItems: 'center',
     gap: 6,
   },
-  colorChip: {
-    width: 44,
-    height: 44,
-    borderRadius: RADIUS.pill,
+  decorChip: {
+    width: 52,
+    height: 52,
+    borderRadius: RADIUS.md,
+    backgroundColor: COLORS.bgCard,
     alignItems: 'center',
     justifyContent: 'center',
+    borderWidth: 1,
+    borderColor: COLORS.borderLight,
   },
-  colorChipOriginal: {
-    backgroundColor: COLORS.bgCard,
+  decorChipActive: {
+    borderColor: COLORS.textPrimary,
+    borderWidth: 2.5,
+    backgroundColor: COLORS.primaryLight,
   },
-  colorLabel: {
+  decorEmoji: { fontSize: 26 },
+  decorLabel: {
     fontSize: 11,
     fontWeight: '600',
     color: COLORS.textSecondary,
     textAlign: 'center',
   },
-  colorLabelActive: {
+  decorLabelActive: {
     color: COLORS.textPrimary,
     fontWeight: '800',
   },
