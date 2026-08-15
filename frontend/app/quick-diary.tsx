@@ -1,9 +1,7 @@
 import { Feather } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
-import { useMemo, useState } from 'react';
+import { useMemo } from 'react';
 import {
-  ActivityIndicator,
-  Alert,
   KeyboardAvoidingView,
   Platform,
   Pressable,
@@ -16,14 +14,8 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { COLORS, RADIUS, SPACING } from '@/src/constants/theme';
-import { createDiaryEntry } from '@/src/lib/diary';
 import { wordingFor } from '@/src/lib/i18n/wording-mode';
 import { useRitualStore } from '@/src/lib/ritual/ritual-store';
-
-function todayISO() {
-  const d = new Date();
-  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
-}
 
 function tierHint(n: number): string {
   if (n <= 0) return '慢慢講 · 一個字都得';
@@ -35,48 +27,27 @@ function tierHint(n: number): string {
 }
 
 /**
- * Standalone diary · same layout as ritual talk, with empty bowl (no pick yet).
- * Opened from home「直接寫日記」and ritual escape.
+ * Standalone diary · ritual-talk layout with empty bowl.
+ * After writing, continues into release (dispose + share) like the full ritual.
  */
 export default function QuickDiaryScreen() {
   const router = useRouter();
   const ageGroup = useRitualStore((s) => s.ageGroup);
-  const reset = useRitualStore((s) => s.reset);
+  const diaryText = useRitualStore((s) => s.diaryText);
+  const setDiaryText = useRitualStore((s) => s.setDiaryText);
+  const setCheckInType = useRitualStore((s) => s.setCheckInType);
+  const ensureStarted = useRitualStore((s) => s.ensureStarted);
   const w = wordingFor(ageGroup);
 
-  const [note, setNote] = useState('');
-  const [saving, setSaving] = useState(false);
-
-  const count = note.trim().length;
+  const count = diaryText.trim().length;
   const hint = useMemo(() => tierHint(count), [count]);
-  const canSave = count > 0 && !saving;
+  const canContinue = count > 0;
 
-  const goHome = () => {
-    reset();
-    router.replace('/(tabs)');
-  };
-
-  const save = async () => {
-    if (!canSave) return;
-    setSaving(true);
-    try {
-      await createDiaryEntry({
-        emotions: [],
-        note,
-        is_public: false,
-        is_secret: false,
-        energy_level: null,
-        entry_date: todayISO(),
-      });
-      Alert.alert('寫好喇', '日記已經儲存', [
-        { text: '返主頁', onPress: goHome },
-      ]);
-    } catch (e: unknown) {
-      const msg = e instanceof Error ? e.message : '過陣再試';
-      Alert.alert('儲存唔到', msg, [{ text: '好' }]);
-    } finally {
-      setSaving(false);
-    }
+  const onContinue = () => {
+    if (!canContinue) return;
+    ensureStarted();
+    setCheckInType('quick_diary');
+    router.push('/ritual/release');
   };
 
   return (
@@ -117,8 +88,8 @@ export default function QuickDiaryScreen() {
 
           <TextInput
             testID="quick-diary-note"
-            value={note}
-            onChangeText={setNote}
+            value={diaryText}
+            onChangeText={setDiaryText}
             placeholder={w.talk_placeholder}
             placeholderTextColor={COLORS.textDisabled}
             multiline
@@ -131,16 +102,12 @@ export default function QuickDiaryScreen() {
           </Text>
 
           <Pressable
-            testID="quick-diary-save"
-            onPress={save}
-            disabled={!canSave}
-            style={[styles.cta, !canSave && { opacity: 0.45 }]}
+            testID="quick-diary-continue"
+            onPress={onContinue}
+            disabled={!canContinue}
+            style={[styles.cta, !canContinue && { opacity: 0.45 }]}
           >
-            {saving ? (
-              <ActivityIndicator color={COLORS.textPrimary} />
-            ) : (
-              <Text style={styles.ctaText}>儲存日記</Text>
-            )}
+            <Text style={styles.ctaText}>{w.quick_diary_continue}</Text>
           </Pressable>
         </ScrollView>
       </KeyboardAvoidingView>

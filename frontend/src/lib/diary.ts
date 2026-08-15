@@ -89,7 +89,8 @@ export function diaryRowToEntry(row: DiaryRow, extras?: { hearted_by_me?: boolea
   const isRitual =
     row.check_in_type === 'full' ||
     row.check_in_type === 'hug_only' ||
-    row.check_in_type === 'skipped';
+    row.check_in_type === 'skipped' ||
+    row.check_in_type === 'quick_diary';
 
   let emotions: string[];
   if (legacyEmotions.length > 0) {
@@ -239,7 +240,7 @@ export type RitualDiaryDraft = {
   bowl_color_tint: string | null;
   bowl_size: 'S' | 'M' | 'L' | 'XL';
   diary_text: string | null;
-  check_in_type: 'full' | 'hug_only';
+  check_in_type: 'full' | 'hug_only' | 'quick_diary';
   is_public: boolean;
   shared_with_class: boolean;
   shared_with_family: boolean;
@@ -282,8 +283,12 @@ function ritualLegacyAwarePayload(userId: string, draft: RitualDiaryDraft) {
 /** Full ritual check-in · writes ritual + Phase 2 columns when available. */
 export async function createRitualDiaryEntry(draft: RitualDiaryDraft): Promise<Entry> {
   const userId = await requireUserId();
-  if (!draft.bowl_emotion_key && draft.check_in_type !== 'hug_only') {
+  const isQuick = draft.check_in_type === 'quick_diary';
+  if (!draft.bowl_emotion_key && draft.check_in_type !== 'hug_only' && !isQuick) {
     throw new Error('未揀好碗 · 返去再試');
+  }
+  if (isQuick && !(draft.diary_text || '').trim()) {
+    throw new Error('寫啲嘢先啦');
   }
 
   const full = await supabase

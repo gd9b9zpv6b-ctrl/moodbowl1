@@ -55,6 +55,12 @@ export default function RitualReleaseScreen() {
   const w = wordingFor(ageGroup);
 
   const emotion = selectedBowlKey ? EMOTION_BY_KEY[selectedBowlKey] : null;
+  const diaryMode = checkInType === 'quick_diary' || !selectedBowlKey;
+  const releaseActions = diaryMode ? w.release_diary_actions : w.release_actions;
+  const releaseTitle = diaryMode
+    ? w.release_diary_title
+    : w.release_title(emotion?.label || '碗');
+  const releaseSub = diaryMode ? w.release_diary_sub : w.release_sub;
   const [picked, setPicked] = useState<BowlReleaseKey | null>(bowlRelease);
   const [saving, setSaving] = useState(false);
   const [phase, setPhase] = useState<'act' | 'done'>('act');
@@ -87,7 +93,12 @@ export default function RitualReleaseScreen() {
           bowl_color_tint: encodeDecorations(decorations),
           bowl_size: bowlSize,
           diary_text: checkInType === 'hug_only' ? null : diaryText || null,
-          check_in_type: checkInType === 'hug_only' ? 'hug_only' : 'full',
+          check_in_type:
+            checkInType === 'hug_only'
+              ? 'hug_only'
+              : checkInType === 'quick_diary'
+                ? 'quick_diary'
+                : 'full',
           is_public: shareClass,
           shared_with_class: shareClass,
           shared_with_family: shareFamily,
@@ -155,12 +166,16 @@ export default function RitualReleaseScreen() {
       <SafeAreaView style={styles.safe} edges={['top', 'bottom']}>
         <View style={styles.doneWrap}>
           <View style={styles.bowl}>
-            <BowlWithDecor
-              emotion={emotion}
-              size={160}
-              radius={RADIUS.lg}
-              decorations={decorations}
-            />
+            {emotion ? (
+              <BowlWithDecor
+                emotion={emotion}
+                size={160}
+                radius={RADIUS.lg}
+                decorations={decorations}
+              />
+            ) : (
+              <View style={[styles.emptyBowl, { width: 160, height: 160 }]} />
+            )}
           </View>
 
           <Text style={styles.doneTitle}>{w.release_done_title}</Text>
@@ -208,20 +223,28 @@ export default function RitualReleaseScreen() {
 
       <ScrollView contentContainerStyle={styles.scroll} showsVerticalScrollIndicator={false}>
         <View style={styles.bowl}>
-          <BowlWithDecor
-            emotion={emotion}
-            size={140}
-            radius={RADIUS.lg}
-            decorations={decorations}
-          />
+          {emotion ? (
+            <BowlWithDecor
+              emotion={emotion}
+              size={140}
+              radius={RADIUS.lg}
+              decorations={decorations}
+            />
+          ) : (
+            <View
+              testID="release-empty-bowl"
+              style={[styles.emptyBowl, { width: 140, height: 140 }]}
+            />
+          )}
         </View>
 
-        <Text style={styles.title}>{w.release_title(emotion?.label || '碗')}</Text>
-        <Text style={styles.sub}>{w.release_sub}</Text>
+        <Text style={styles.title}>{releaseTitle}</Text>
+        <Text style={styles.sub}>{releaseSub}</Text>
 
         <View style={styles.list}>
           {BOWL_RELEASE_ACTIONS.map((action) => {
             const active = picked === action.key;
+            const copy = releaseActions[action.key];
             return (
               <Pressable
                 key={action.key}
@@ -231,8 +254,8 @@ export default function RitualReleaseScreen() {
               >
                 <Text style={styles.emoji}>{action.emoji}</Text>
                 <View style={{ flex: 1 }}>
-                  <Text style={styles.cardTitle}>{w.release_actions[action.key].label}</Text>
-                  <Text style={styles.cardHint}>{w.release_actions[action.key].hint}</Text>
+                  <Text style={styles.cardTitle}>{copy.label}</Text>
+                  <Text style={styles.cardHint}>{copy.hint}</Text>
                 </View>
                 {active && <Feather name="check" size={18} color={COLORS.textPrimary} />}
               </Pressable>
@@ -242,11 +265,11 @@ export default function RitualReleaseScreen() {
 
         <Text style={styles.shareHeading}>{w.release_share_heading}</Text>
         <View style={styles.row}>
-          <Text style={styles.rowLabel}>{w.bridge_share_timeline}</Text>
+          <Text style={styles.rowLabel}>{w.bridge_share_family}</Text>
           <Switch
-            testID="release-share-timeline"
-            value={shareTimeline}
-            onValueChange={(v) => setShares({ shareTimeline: v })}
+            testID="release-share-family"
+            value={shareFamily}
+            onValueChange={(v) => setShares({ shareFamily: v })}
             trackColor={{ true: COLORS.primary, false: COLORS.bgInput }}
             thumbColor={COLORS.bgCard}
           />
@@ -262,11 +285,11 @@ export default function RitualReleaseScreen() {
           />
         </View>
         <View style={styles.row}>
-          <Text style={styles.rowLabel}>{w.bridge_share_family}</Text>
+          <Text style={styles.rowLabel}>{w.bridge_share_timeline}</Text>
           <Switch
-            testID="release-share-family"
-            value={shareFamily}
-            onValueChange={(v) => setShares({ shareFamily: v })}
+            testID="release-share-timeline"
+            value={shareTimeline}
+            onValueChange={(v) => setShares({ shareTimeline: v })}
             trackColor={{ true: COLORS.primary, false: COLORS.bgInput }}
             thumbColor={COLORS.bgCard}
           />
@@ -323,6 +346,13 @@ const styles = StyleSheet.create({
   headerSpacer: { width: 40 },
   scroll: { paddingHorizontal: SPACING.lg, paddingBottom: SPACING.xxl },
   bowl: { alignItems: 'center', marginBottom: SPACING.md },
+  emptyBowl: {
+    borderRadius: RADIUS.lg,
+    backgroundColor: COLORS.bgInput,
+    borderWidth: 1.5,
+    borderColor: COLORS.borderLight,
+    borderStyle: 'dashed',
+  },
   title: {
     fontSize: 22,
     fontWeight: '800',

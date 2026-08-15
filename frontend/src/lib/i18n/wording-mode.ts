@@ -34,6 +34,13 @@ export type WordingPack = {
     import('@/src/constants/bowl-release').BowlReleaseKey,
     { label: string; hint: string }
   >;
+  /** When no bowl was picked (直接寫日記) · dispose-the-diary framing. */
+  release_diary_title: string;
+  release_diary_sub: string;
+  release_diary_actions: Record<
+    import('@/src/constants/bowl-release').BowlReleaseKey,
+    { label: string; hint: string }
+  >;
   release_finish: string;
   release_regulate: string;
   release_share_heading: string;
@@ -49,6 +56,8 @@ export type WordingPack = {
   talk_placeholder: string;
   talk_submit: string;
   talk_hug: string;
+  /** Continue from standalone quick diary into release. */
+  quick_diary_continue: string;
   regulate_skip: string;
   bridge_share_class: string;
   bridge_share_family: string;
@@ -235,6 +244,7 @@ export const WORDING: Record<WordingMode, WordingPack> = {
     talk_placeholder: '打幾隻字都得',
     talk_submit: '寫好 · 去打扮碗 →',
     talk_hug: '今日靜靜哋 · 得個抱 · 去打扮',
+    quick_diary_continue: '寫好 · 繼續 →',
     customize_got_bowl: (bowl) => `寫完啦 · 呢個就係你嘅「${bowl}」`,
     customize_title: (bowl) => `幫 ${bowl} 打扮一下`,
     customize_sub: '加裝飾 · 再揀感覺有幾強 · 唔想可以跳過',
@@ -249,18 +259,27 @@ export const WORDING: Record<WordingMode, WordingPack> = {
       wash: { label: '洗乾淨', hint: '沖一沖 · 整返清爽' },
       keep_hug: { label: '抱住留低', hint: '呢份感覺想留低 · 抱抱佢' },
     },
+    release_diary_title: '想點處置今日呢份日記?',
+    release_diary_sub: '用一個小動作 · 同呢頁日記道別或者留低',
+    release_diary_actions: {
+      empty: { label: '撕走 / 倒低', hint: '將寫咗嘅嘢倒走 · 輕鬆啲' },
+      set_aside: { label: '合埋放低', hint: '唔使而家再睇 · 放一放先' },
+      send_away: { label: '送走呢頁', hint: '輕輕送走 · 唔再掹住' },
+      wash: { label: '抹乾淨', hint: '抹走殘留 · 整返清爽' },
+      keep_hug: { label: '抱住留低', hint: '呢份日記想留低 · 抱抱佢' },
+    },
     release_finish: '搞掂 · 儲存',
     release_regulate: '想先做個調節練習',
-    release_share_heading: '想留低 / 分享嗎?',
+    release_share_heading: '想唔想將今日發生嘅嘢話俾人聽?',
     release_done_title: '搞掂啦',
     release_done_sub: (m) => `你今日同自己相處咗 ${m} 分鐘 · 好厲害`,
-    release_smile_hint: '對住碗笑一笑 · 2 秒（可選）',
+    release_smile_hint: '對住自己笑一笑 · 2 秒（可選）',
     release_smile_hold: '撳住 2 秒',
     release_smile_done: '多謝你嘅笑',
     release_home: '回主頁',
     regulate_skip: '唔洗 · 我 OK',
-    bridge_share_class: '想同人講 · 派俾同學',
-    bridge_share_family: '派俾家人',
+    bridge_share_class: '想話俾老師聽',
+    bridge_share_family: '想話俾屋企人聽',
     bridge_share_timeline: '留返俾自己睇',
     bridge_complete: '完成啦 · 搞掂',
     home_ritual_cta: '同碗打招呼 · 3 分鐘',
@@ -309,6 +328,7 @@ export const WORDING: Record<WordingMode, WordingPack> = {
     talk_placeholder: '一個字都得 · 或者好長都 ok',
     talk_submit: '寫好 · 去打扮碗 →',
     talk_hug: '今日靜靜哋 · 得個抱 · 去打扮',
+    quick_diary_continue: '寫好 · 繼續 →',
     customize_got_bowl: (bowl) => `寫完啦 · 呢個就係你嘅「${bowl}」`,
     customize_title: (bowl) => `幫 ${bowl} 打扮一下`,
     customize_sub: '加裝飾 · 再揀感覺有幾強 · 唔想可以跳過',
@@ -323,18 +343,27 @@ export const WORDING: Record<WordingMode, WordingPack> = {
       wash: { label: '洗乾淨', hint: '沖走殘留 · 整返清爽' },
       keep_hug: { label: '抱住留低', hint: '呢份感覺有意思 · 抱抱留住' },
     },
+    release_diary_title: '想點處置今日呢份日記?',
+    release_diary_sub: '揀一個象徵動作 · 幫自己同呢頁日記道別或者安頓',
+    release_diary_actions: {
+      empty: { label: '撕走 / 倒低', hint: '倒走裏面嘅重量 · 俾自己透氣' },
+      set_aside: { label: '合埋放低', hint: '暫時唔再睇 · 放一旁先' },
+      send_away: { label: '送走呢頁', hint: '輕輕放手 · 唔再掹住' },
+      wash: { label: '抹乾淨', hint: '抹走殘留 · 整返清爽' },
+      keep_hug: { label: '抱住留低', hint: '呢份日記有意思 · 抱抱留住' },
+    },
     release_finish: '搞掂 · 儲存',
     release_regulate: '想先做個調節練習',
-    release_share_heading: '想留低 / 分享嗎?',
+    release_share_heading: '想唔想將今日發生嘅嘢話俾人聽?',
     release_done_title: '搞掂啦',
     release_done_sub: (m) => `你今日同自己相處咗 ${m} 分鐘 · 好厲害`,
-    release_smile_hint: '對住碗笑一笑 · 2 秒（可選）',
+    release_smile_hint: '對住自己笑一笑 · 2 秒（可選）',
     release_smile_hold: '撳住 2 秒',
     release_smile_done: '多謝你嘅笑',
     release_home: '回主頁',
     regulate_skip: '唔洗 · 我 OK',
-    bridge_share_class: '想同人講嘢 · 派俾我班同學',
-    bridge_share_family: '派俾家人（如果連咗）',
+    bridge_share_class: '想話俾老師聽',
+    bridge_share_family: '想話俾屋企人聽',
     bridge_share_timeline: '留返俾我自己 timeline',
     bridge_complete: '完成啦 · 搞掂',
     home_ritual_cta: '同碗打招呼 · 3 分鐘',
@@ -383,6 +412,7 @@ export const WORDING: Record<WordingMode, WordingPack> = {
     talk_placeholder: '寫幾句都得 · 亦可以淨係留白',
     talk_submit: '寫好 · 去打扮 →',
     talk_hug: '今日只想靜一靜 · 去打扮',
+    quick_diary_continue: '寫好 · 繼續 →',
     customize_got_bowl: (bowl) => `寫完之後 · 呢個係你嘅「${bowl}」`,
     customize_title: (bowl) => `為「${bowl}」加裝飾同調校大細`,
     customize_sub: '揀幾件裝飾 · 再調感覺強度 · 可略過',
@@ -397,18 +427,27 @@ export const WORDING: Record<WordingMode, WordingPack> = {
       wash: { label: '清洗', hint: '沖走殘留 · 回復清爽' },
       keep_hug: { label: '抱住留下', hint: '呢份感覺值得被抱住' },
     },
+    release_diary_title: '你想點處置今日呢份日記?',
+    release_diary_sub: '用一個象徵動作 · 為呢頁日記做個收束',
+    release_diary_actions: {
+      empty: { label: '撕走 / 倒空', hint: '釋放裏面嘅重量' },
+      set_aside: { label: '合埋放低', hint: '暫時安放 · 稍後再理' },
+      send_away: { label: '送走呢頁', hint: '象徵性地放手' },
+      wash: { label: '抹乾淨', hint: '抹走殘留 · 回復清爽' },
+      keep_hug: { label: '抱住留下', hint: '呢份日記值得被抱住' },
+    },
     release_finish: '儲存打卡',
     release_regulate: '想先做調節練習',
-    release_share_heading: '留低同分享',
+    release_share_heading: '想唔想將今日發生嘅事話俾人聽?',
     release_done_title: '搞掂啦',
     release_done_sub: (m) => `你今日同自己相處咗 ${m} 分鐘 · 好厲害`,
-    release_smile_hint: '對住碗笑一笑 · 2 秒（可選）',
+    release_smile_hint: '對住自己笑一笑 · 2 秒（可選）',
     release_smile_hold: '撳住 2 秒',
     release_smile_done: '多謝你嘅笑',
     release_home: '回主頁',
     regulate_skip: '暫時唔使 · 我 OK',
-    bridge_share_class: '分享俾同事／同學圈（可選）',
-    bridge_share_family: '分享俾家人（可選）',
+    bridge_share_class: '想話俾老師／同事聽（可選）',
+    bridge_share_family: '想話俾屋企人聽（可選）',
     bridge_share_timeline: '留喺自己 timeline',
     bridge_complete: '完成打卡',
     home_ritual_cta: '同自己 check-in · 約 3 分鐘',
