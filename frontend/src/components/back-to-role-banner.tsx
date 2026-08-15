@@ -38,8 +38,8 @@ export function BackToRoleBanner() {
     >
       <Text style={styles.emoji}>{meta.emoji}</Text>
       <View style={{ flex: 1 }}>
-        <Text style={styles.title}>返 {meta.label} Dashboard</Text>
-        <Text style={styles.sub}>你依家喺自己嘅日記空間 · 撳我返 {meta.label} 工作版面</Text>
+        <Text style={styles.title}>返 {meta.label} 版面</Text>
+        <Text style={styles.sub}>返去繼續你嘅工作</Text>
       </View>
       <Feather name="arrow-right-circle" size={20} color={COLORS.textPrimary} />
     </Pressable>

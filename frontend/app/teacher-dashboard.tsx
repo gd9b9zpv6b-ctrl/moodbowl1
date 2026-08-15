@@ -116,7 +116,7 @@ export default function TeacherDashboard() {
 
   return (
     <SafeAreaView style={styles.safe} edges={['top']}>
-      <RoleHeader role="teacher" title="老師 · Dashboard" />
+      <RoleHeader role="teacher" title="老師版面" />
 
       <ScrollView contentContainerStyle={styles.scroll} showsVerticalScrollIndicator={false}>
         <View style={styles.hero}>
@@ -132,7 +132,7 @@ export default function TeacherDashboard() {
           border="#F0D8A8"
           bowlKey="happy"
           title="老師都可以用呢個 App"
-          subtitle="關心學生之前 · 先關心自己 · 撳我打卡今日心情"
+          subtitle="關心學生之前 · 先關心自己 · 開始今日心情"
         />
 
         {/* Real keyword alerts (only students in this teacher's class) */}
@@ -186,7 +186,7 @@ export default function TeacherDashboard() {
               key={i}
               onPress={() => Alert.alert(
                 `${a.name} · ${a.className}`,
-                `原因：${a.reason}\n\n（示範版）撳「跟進」會通知輔導老師 · 或者你可以自己安排單獨傾談。`,
+                `原因：${a.reason}\n\n可以通知輔導老師跟進 · 或者自己安排單獨傾談。`,
               )}
               style={styles.alertItem}
             >
@@ -199,7 +199,7 @@ export default function TeacherDashboard() {
             </Pressable>
           ))}
           <Text style={styles.alertHint}>
-            🔒 你只會見到姓氏 + 一個字 · 詳情要撳入去 · 每次 access 都有 audit trail。
+            🔒 你只會見到姓氏 + 一個字 · 詳情要撳入去 · 每次查閱都會留底。
           </Text>
         </View>
 

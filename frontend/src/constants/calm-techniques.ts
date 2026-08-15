@@ -259,9 +259,9 @@ export const CALM_SITUATIONS: CalmSituation[] = [
   },
   {
     key: 'work',
-    emoji: '💼',
-    title: '返緊工',
-    subtitle: '唔想俾人見到 · 要保持專業',
+    emoji: '🏢',
+    title: '公開場合',
+    subtitle: '課室、辦公室都得 · 唔想俾人見到 · 要保持淡定',
     color: '#E4E9F5',
     techniqueKeys: ['desk-breathing', 'jaw-release', 'cold-water', 'grounding', 'heart-touch'],
   },

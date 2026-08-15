@@ -3,6 +3,7 @@ import { useFocusEffect, useRouter } from 'expo-router';
 import { useCallback, useMemo, useState } from 'react';
 import {
   ActivityIndicator,
+  Alert,
   KeyboardAvoidingView,
   Platform,
   Pressable,
@@ -16,8 +17,10 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { HABITS, HABIT_CATEGORIES, HabitCategory, Habit } from '@/src/constants/habits';
 import { COLORS, RADIUS, SPACING } from '@/src/constants/theme';
-import { api, Task } from '@/src/lib/api';
+import { asArray, Task } from '@/src/lib/api';
 import { useAuth } from '@/src/lib/auth-context';
+import { GardenStorage } from '@/src/lib/garden-storage';
+import { createTask, deleteTask, listTasksForDate, setTaskCompleted } from '@/src/lib/tasks';
 
 function todayISO() {
   const d = new Date();
@@ -35,22 +38,25 @@ function shuffleThree(list: Habit[]): Habit[] {
 
 export default function Tasks() {
   const today = useMemo(() => todayISO(), []);
-  const { user, refreshUser } = useAuth();
+  const { user } = useAuth();
   const router = useRouter();
   const [tasks, setTasks] = useState<Task[]>([]);
   const [loading, setLoading] = useState(true);
   const [newTitle, setNewTitle] = useState('');
   const [adding, setAdding] = useState(false);
   const [rewardFlash, setRewardFlash] = useState(false);
+  const [hearts, setHearts] = useState(0);
   const [activeCategory, setActiveCategory] = useState<HabitCategory | 'all'>('all');
   const [suggestions, setSuggestions] = useState<Habit[]>(() => shuffleThree(HABITS));
 
   const load = useCallback(async () => {
     try {
-      const list = await api.get<Task[]>(`/tasks?task_date=${today}`);
-      setTasks(list);
-    } catch {
-      // ignore
+      const [list, h] = await Promise.all([listTasksForDate(today), GardenStorage.getHearts()]);
+      setTasks(asArray(list));
+      setHearts(h);
+    } catch (e: any) {
+      setTasks([]);
+      Alert.alert('載入唔到', String(e?.message || '過陣再試'));
     } finally {
       setLoading(false);
     }
@@ -60,8 +66,7 @@ export default function Tasks() {
     useCallback(() => {
       setLoading(true);
       load();
-      refreshUser();
-    }, [load, refreshUser]),
+    }, [load]),
   );
 
   const addTask = async (title: string) => {
@@ -69,14 +74,11 @@ export default function Tasks() {
     if (!t) return;
     setAdding(true);
     try {
-      const created = await api.post<Task>('/tasks', {
-        title: t,
-        task_date: today,
-      });
+      const created = await createTask(t, today);
       setTasks((prev) => [...prev, created]);
       if (title === newTitle) setNewTitle('');
-    } catch {
-      // ignore
+    } catch (e: any) {
+      Alert.alert('加唔到', String(e?.message || '過陣再試'));
     } finally {
       setAdding(false);
     }
@@ -86,13 +88,17 @@ export default function Tasks() {
     const next = !t.completed;
     setTasks((prev) => prev.map((x) => (x.id === t.id ? { ...x, completed: next } : x)));
     try {
-      await api.patch<Task>(`/tasks/${t.id}`, { completed: next });
-      await refreshUser();
+      await setTaskCompleted(t.id, next);
       if (next) {
+        const h = await GardenStorage.getHearts();
+        const awarded = h + 1;
+        await GardenStorage.setHearts(awarded);
+        setHearts(awarded);
         setRewardFlash(true);
         setTimeout(() => setRewardFlash(false), 1600);
       }
-    } catch {
+    } catch (e: any) {
+      Alert.alert('更新唔到', String(e?.message || '過陣再試'));
       load();
     }
   };
@@ -100,13 +106,15 @@ export default function Tasks() {
   const remove = async (id: string) => {
     setTasks((prev) => prev.filter((x) => x.id !== id));
     try {
-      await api.del(`/tasks/${id}`);
-    } catch {
+      await deleteTask(id);
+    } catch (e: any) {
+      Alert.alert('刪除唔到', String(e?.message || '過陣再試'));
       load();
     }
   };
 
-  const done = tasks.filter((t) => t.completed).length;
+  const safeTasks = asArray(tasks);
+  const done = safeTasks.filter((t) => t.completed).length;
 
   const filteredHabits = useMemo(
     () => (activeCategory === 'all' ? HABITS : HABITS.filter((h) => h.category === activeCategory)),
@@ -130,12 +138,12 @@ export default function Tasks() {
                 小小溫柔事
               </Text>
               <Text style={styles.subtitle}>
-                一次做一件小事{'\n'}今日已完成 {done} / {tasks.length}
+                一次做一件小事{'\n'}今日已完成 {done} / {safeTasks.length}
               </Text>
             </View>
             <View style={styles.creditBadge} testID="credits-badge">
               <Feather name="heart" size={16} color="#E86A6A" />
-              <Text style={styles.creditText}>{user?.credits ?? 0}</Text>
+              <Text style={styles.creditText}>{hearts || user?.credits || 0}</Text>
             </View>
           </View>
 
@@ -163,6 +171,67 @@ export default function Tasks() {
             </View>
             <Feather name="chevron-right" size={20} color={COLORS.textPrimary} />
           </Pressable>
+
+          <Text style={[styles.sectionTitle, { marginTop: SPACING.lg }]}>今日清單</Text>
+          {loading ? (
+            <ActivityIndicator style={{ marginTop: SPACING.xl }} color={COLORS.primary} />
+          ) : safeTasks.length === 0 ? (
+            <View style={styles.emptyCard} testID="tasks-empty">
+              <Feather name="check-square" size={30} color={COLORS.textDisabled} />
+              <Text style={styles.emptyText}>
+                今日仲未有事。細如「飲一杯水」都算數。
+              </Text>
+            </View>
+          ) : (
+            <View style={{ marginTop: SPACING.md }}>
+              {safeTasks.map((t) => (
+                <View key={t.id} style={styles.taskRow} testID={`task-row-${t.id}`}>
+                  <Pressable
+                    testID={`task-toggle-${t.id}`}
+                    onPress={() => toggle(t)}
+                    style={[styles.checkbox, t.completed && styles.checkboxDone]}
+                  >
+                    {t.completed && <Feather name="check" size={16} color={COLORS.textInverse} />}
+                  </Pressable>
+                  <Text
+                    style={[styles.taskTitle, t.completed && styles.taskTitleDone]}
+                    numberOfLines={2}
+                  >
+                    {t.title}
+                  </Text>
+                  <Pressable
+                    testID={`task-delete-${t.id}`}
+                    onPress={() => remove(t.id)}
+                    style={styles.deleteBtn}
+                    hitSlop={10}
+                  >
+                    <Feather name="x" size={18} color={COLORS.textSecondary} />
+                  </Pressable>
+                </View>
+              ))}
+            </View>
+          )}
+
+          <View style={styles.addRow}>
+            <TextInput
+              testID="new-task-input"
+              value={newTitle}
+              onChangeText={setNewTitle}
+              placeholder="或者自己加一件今日想做嘅小事…"
+              placeholderTextColor={COLORS.textDisabled}
+              style={styles.input}
+              onSubmitEditing={() => addTask(newTitle)}
+              returnKeyType="done"
+            />
+            <Pressable
+              testID="add-task-btn"
+              onPress={() => addTask(newTitle)}
+              disabled={adding || !newTitle.trim()}
+              style={[styles.addBtn, (adding || !newTitle.trim()) && { opacity: 0.5 }]}
+            >
+              <Feather name="plus" size={22} color={COLORS.textPrimary} />
+            </Pressable>
+          </View>
 
           <Text style={styles.sectionTitle}>習慣庫</Text>
           <Text style={styles.sectionHint}>撳一下 加入今日</Text>
@@ -248,66 +317,6 @@ export default function Tasks() {
             ))}
           </View>
 
-          <View style={styles.addRow}>
-            <TextInput
-              testID="new-task-input"
-              value={newTitle}
-              onChangeText={setNewTitle}
-              placeholder="或者自己加一件今日想做嘅小事…"
-              placeholderTextColor={COLORS.textDisabled}
-              style={styles.input}
-              onSubmitEditing={() => addTask(newTitle)}
-              returnKeyType="done"
-            />
-            <Pressable
-              testID="add-task-btn"
-              onPress={() => addTask(newTitle)}
-              disabled={adding || !newTitle.trim()}
-              style={[styles.addBtn, (adding || !newTitle.trim()) && { opacity: 0.5 }]}
-            >
-              <Feather name="plus" size={22} color={COLORS.textPrimary} />
-            </Pressable>
-          </View>
-
-          <Text style={[styles.sectionTitle, { marginTop: SPACING.lg }]}>今日清單</Text>
-          {loading ? (
-            <ActivityIndicator style={{ marginTop: SPACING.xl }} color={COLORS.primary} />
-          ) : tasks.length === 0 ? (
-            <View style={styles.emptyCard} testID="tasks-empty">
-              <Feather name="check-square" size={30} color={COLORS.textDisabled} />
-              <Text style={styles.emptyText}>
-                今日仲未有事。細如「飲一杯水」都算數。
-              </Text>
-            </View>
-          ) : (
-            <View style={{ marginTop: SPACING.md }}>
-              {tasks.map((t) => (
-                <View key={t.id} style={styles.taskRow} testID={`task-row-${t.id}`}>
-                  <Pressable
-                    testID={`task-toggle-${t.id}`}
-                    onPress={() => toggle(t)}
-                    style={[styles.checkbox, t.completed && styles.checkboxDone]}
-                  >
-                    {t.completed && <Feather name="check" size={16} color={COLORS.textInverse} />}
-                  </Pressable>
-                  <Text
-                    style={[styles.taskTitle, t.completed && styles.taskTitleDone]}
-                    numberOfLines={2}
-                  >
-                    {t.title}
-                  </Text>
-                  <Pressable
-                    testID={`task-delete-${t.id}`}
-                    onPress={() => remove(t.id)}
-                    style={styles.deleteBtn}
-                    hitSlop={10}
-                  >
-                    <Feather name="x" size={18} color={COLORS.textSecondary} />
-                  </Pressable>
-                </View>
-              ))}
-            </View>
-          )}
           <View style={{ height: SPACING.xxl }} />
         </ScrollView>
       </KeyboardAvoidingView>

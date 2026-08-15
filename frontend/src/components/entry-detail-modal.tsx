@@ -1,4 +1,5 @@
 import { Feather } from '@expo/vector-icons';
+import { useEffect, useState } from 'react';
 import {
   Modal,
   Platform,
@@ -10,9 +11,11 @@ import {
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
+import { BowlWithDecor } from '@/src/components/bowl-with-decor';
 import { DiaryPaper } from '@/src/components/diary-paper';
-import { EMOTION_BY_KEY } from '@/src/constants/emotions';
+import { decodeDecorations } from '@/src/constants/bowl-decorations';
 import { PAPER_TINTS as PAPER_TINT_LIST } from '@/src/constants/diary-style';
+import { EMOTION_BY_KEY } from '@/src/constants/emotions';
 import { COLORS, RADIUS, SPACING } from '@/src/constants/theme';
 import { DIARY_FONTS } from '@/src/hooks/use-diary-fonts';
 import { Entry } from '@/src/lib/api';
@@ -49,16 +52,33 @@ const PAPER_TINTS = Object.fromEntries(
   PAPER_TINT_LIST.map((t) => [t.key, { bg: t.bg, line: t.line }]),
 ) as Record<string, { bg: string; line: string }>;
 
+/**
+ * Keep a cached entry while the modal closes so we never unmount Modal by
+ * returning null mid-close (that leaves a stuck overlay on web / Expo).
+ */
 export function EntryDetailModal({ visible, entry, onClose, onEdit }: Props) {
   const { user } = useAuth();
-  if (!entry) return null;
-  const emList = (entry.emotions?.length ? entry.emotions : [entry.emotion])
+  const [cached, setCached] = useState<Entry | null>(entry);
+
+  useEffect(() => {
+    if (entry) setCached(entry);
+  }, [entry]);
+
+  useEffect(() => {
+    if (visible || !cached) return;
+    const t = setTimeout(() => setCached(null), 400);
+    return () => clearTimeout(t);
+  }, [visible, cached]);
+
+  const display = entry ?? cached;
+  if (!display) return null;
+
+  const emList = (display.emotions?.length ? display.emotions : [display.emotion])
     .map((k) => EMOTION_BY_KEY[k])
     .filter(Boolean);
   const em = emList[0];
+  const entryDecors = decodeDecorations(display.bowl_color_tint);
 
-  // Premium selection or default
-  const isPremium = !!user?.is_premium;
   const tintKey = user?.diary_style?.paper_tint || 'cream';
   const tint = PAPER_TINTS[tintKey] || PAPER_TINTS.cream;
   const isDark = tintKey === 'night';
@@ -68,9 +88,8 @@ export function EntryDetailModal({ visible, entry, onClose, onEdit }: Props) {
   // Auto-upgrade old chunky default to the new elegant 手寫明體
   // (users who never explicitly picked a font were auto-assigned ZCOOLKuaiLe before)
   const savedFont = user?.diary_style?.font_family;
-  const noteFontFamily = !savedFont || savedFont === 'ZCOOLKuaiLe'
-    ? DIARY_FONTS.wenkai
-    : savedFont;
+  const noteFontFamily =
+    !savedFont || savedFont === 'ZCOOLKuaiLe' ? DIARY_FONTS.wenkai : savedFont;
   const noteTextColor = user?.diary_style?.text_color || (isDark ? '#F0EEE7' : '#2D3142');
   const noteFontSize = user?.diary_style?.font_size || 20;
 
@@ -81,16 +100,18 @@ export function EntryDetailModal({ visible, entry, onClose, onEdit }: Props) {
           testID="entry-detail-close"
           onPress={onClose}
           style={[styles.headerBtn, isDark && styles.headerBtnDark]}
-          hitSlop={10}
+          hitSlop={12}
+          accessibilityRole="button"
+          accessibilityLabel="返回心情曆"
         >
           <Feather name="arrow-left" size={22} color={noteTextColor} />
         </Pressable>
         <View style={styles.headerCenter}>
           <Text style={[styles.headerDate, { color: noteTextColor }]}>
-            {fmtDate(entry.entry_date)}
+            {fmtDate(display.entry_date)}
           </Text>
           <Text style={[styles.headerTime, { color: noteTextColor, opacity: 0.7 }]}>
-            {fmtTime(entry.created_at)}
+            {fmtTime(display.created_at)}
           </Text>
         </View>
         {onEdit ? (
@@ -101,7 +122,9 @@ export function EntryDetailModal({ visible, entry, onClose, onEdit }: Props) {
               setTimeout(() => onEdit(), 300);
             }}
             style={[styles.headerBtn, isDark && styles.headerBtnDark]}
-            hitSlop={10}
+            hitSlop={12}
+            accessibilityRole="button"
+            accessibilityLabel="編輯"
           >
             <Feather name="edit-2" size={20} color={noteTextColor} />
           </Pressable>
@@ -110,10 +133,7 @@ export function EntryDetailModal({ visible, entry, onClose, onEdit }: Props) {
         )}
       </View>
 
-      <ScrollView
-        contentContainerStyle={styles.scroll}
-        showsVerticalScrollIndicator={false}
-      >
+      <ScrollView contentContainerStyle={styles.scroll} showsVerticalScrollIndicator={false}>
         <View style={styles.emotionStrip}>
           <View style={styles.emotionStripStack}>
             {emList.slice(0, 3).map((e, i) => (
@@ -124,7 +144,16 @@ export function EntryDetailModal({ visible, entry, onClose, onEdit }: Props) {
                   { marginLeft: i === 0 ? 0 : -18, zIndex: 3 - i },
                 ]}
               >
-                <EmotionVisual emotion={e} size={80} radius={RADIUS.md} />
+                {i === 0 && entryDecors.length > 0 ? (
+                  <BowlWithDecor
+                    emotion={e}
+                    size={80}
+                    radius={RADIUS.md}
+                    decorations={entryDecors}
+                  />
+                ) : (
+                  <EmotionVisual emotion={e} size={80} radius={RADIUS.md} />
+                )}
               </View>
             ))}
             {emList.length > 3 && (
@@ -140,19 +169,19 @@ export function EntryDetailModal({ visible, entry, onClose, onEdit }: Props) {
                 { color: noteTextColor, fontFamily: DIARY_FONTS.brush },
               ]}
             >
-              {emList.map((e) => e.label).join(' · ') || (em?.label || entry.emotion)}
+              {emList.map((e) => e.label).join(' · ') || em?.label || display.emotion}
             </Text>
             <Text style={[styles.emotionDesc, { color: noteTextColor, opacity: 0.7 }]}>
               {emList.length <= 1 ? em?.description : `混合咗 ${emList.length} 種心情`}
             </Text>
             <View style={styles.badgeRow}>
-              {entry.is_secret && (
+              {display.is_secret && (
                 <View style={[styles.badge, { backgroundColor: '#FFE4E4' }]}>
                   <Feather name="lock" size={11} color="#E86A6A" />
                   <Text style={[styles.badgeText, { color: '#E86A6A' }]}>秘密</Text>
                 </View>
               )}
-              {entry.is_public && (
+              {display.is_public && (
                 <View style={styles.badge}>
                   <Feather name="users" size={11} color={COLORS.textSecondary} />
                   <Text style={styles.badgeText}>已分享</Text>
@@ -175,11 +204,9 @@ export function EntryDetailModal({ visible, entry, onClose, onEdit }: Props) {
               },
             ]}
           >
-            {entry.note || '呢一段冇寫故事。'}
+            {display.note || '呢一段冇寫故事。'}
           </Text>
         </View>
-
-        {/* premium nudge removed — all students have full features now */}
       </ScrollView>
     </SafeAreaView>
   );
@@ -279,16 +306,4 @@ const styles = StyleSheet.create({
   noteText: {
     fontSize: 20,
   },
-  premiumNudge: {
-    marginTop: SPACING.xl,
-    alignSelf: 'center',
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: SPACING.xs,
-    paddingHorizontal: SPACING.md,
-    paddingVertical: SPACING.sm,
-    borderRadius: RADIUS.pill,
-    backgroundColor: COLORS.primaryLight,
-  },
-  premiumNudgeText: { fontSize: 12, fontWeight: '700', color: COLORS.primary },
 });

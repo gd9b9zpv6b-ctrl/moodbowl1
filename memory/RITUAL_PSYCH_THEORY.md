@@ -12,7 +12,7 @@
 
 ---
 
-## 📚 支撐 L1「食湯選擇」嘅心理學理論
+## 📚 支撐 L1「飲湯選擇」嘅心理學理論
 
 ### 理論 1 · 投射技巧（Projective Techniques）
 
@@ -25,7 +25,7 @@
 - Chapman et al. (2024, Foods)· 用食物繪畫作為 primary school 兒童情緒表達工具 · 發現 8-12 歲兒童特別容易透過**食物**去表達內在狀態，因為食物同**照顧感、家庭、安全**強烈連結
 
 **MoodBowl 應用**：
-- 「你今日想食邊碗湯？」 = 典型 **food-metaphor projective prompt**
+- 「你今日想飲邊碗湯？」 = 典型 **food-metaphor projective prompt**
 - 6 種湯覆蓋 warm/cool/spicy/bland/sweet/no-appetite · 對應 6 大 emotional temperature
 - **關鍵**：問題唔係「你係咩情緒」· 而係「你想食咩」 · 用戶不自覺投射狀態
 

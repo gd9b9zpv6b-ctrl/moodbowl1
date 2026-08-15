@@ -5,6 +5,7 @@ import React, { createContext, useCallback, useContext, useEffect, useMemo, useR
 import { Alert, AppState, AppStateStatus, Platform } from 'react-native';
 
 import { api, loadToken, onApiActivity, onAuthInvalid, setToken, User } from './api';
+import { demoRoleForEmail } from './demo-accounts';
 import { RoleStorage, UserRole } from './role-storage';
 import { supabase } from './supabase-client';
 
@@ -25,7 +26,7 @@ type RegisterResult = {
 type AuthCtx = {
   user: User | null;
   loading: boolean;
-  login: (email: string, password: string) => Promise<void>;
+  login: (email: string, password: string) => Promise<User>;
   register: (email: string, password: string, displayName?: string) => Promise<RegisterResult>;
   logout: (reason?: 'manual' | 'inactivity') => Promise<void>;
   refreshUser: () => Promise<User | null>;
@@ -45,13 +46,22 @@ function friendlyAuthError(message: string): Error {
     return new Error('電郵或者密碼唔啱 · 慢慢再試一次');
   }
   if (lower.includes('email not confirmed')) {
-    return new Error('電郵仲未確認 · 睇下 inbox 入面嘅確認信');
+    return new Error('電郵仲未確認 · 去電郵信箱撳確認連結');
   }
   if (lower.includes('user already registered')) {
     return new Error('呢個電郵已經有帳戶 · 可以直接登入');
   }
   if (lower.includes('password')) {
     return new Error('密碼未符合要求 · 至少輸入 6 個字元');
+  }
+  if (
+    lower.includes('network') ||
+    lower.includes('fetch') ||
+    lower.includes('failed to fetch') ||
+    lower.includes('timeout') ||
+    lower.includes('abort')
+  ) {
+    return new Error('連線唔到 · 檢查網絡後再試');
   }
   return new Error('出咗少少問題 · 過陣再試');
 }
@@ -77,37 +87,97 @@ async function registerForPush(userId: string) {
   }
 }
 
-async function loadAppUser(authUser: SupabaseUser): Promise<User> {
-  const { data: profile, error } = await supabase
-    .from('profiles')
-    .select('id, display_name, role, is_premium, created_at')
-    .eq('id', authUser.id)
-    .single<ProfileRow>();
+function userFromAuth(
+  authUser: SupabaseUser,
+  profile?: ProfileRow | null,
+  compatibility?: Partial<User> | null,
+): User {
+  const extra = compatibility && typeof compatibility === 'object' ? compatibility : {};
+  const metaName =
+    (typeof authUser.user_metadata?.display_name === 'string' && authUser.user_metadata.display_name) ||
+    authUser.email?.split('@')[0] ||
+    '朋友';
 
-  if (error) throw error;
-
-  let compatibility: Partial<User> = {};
-  try {
-    // Temporary · keeps settings and unmigrated screens working through Phase 4.
-    compatibility = await api.get<User>('/auth/me');
-  } catch {
-    // Supabase Auth remains usable while the compatibility backend is offline.
-  }
+  const demoRole = demoRoleForEmail(authUser.email);
+  const role = (profile?.role || demoRole || 'student') as UserRole;
 
   return {
     id: authUser.id,
     email: authUser.email || '',
-    display_name: profile.display_name,
-    created_at: profile.created_at,
-    credits: compatibility.credits ?? 0,
-    is_premium: compatibility.is_premium ?? profile.is_premium,
-    is_admin: compatibility.is_admin ?? profile.role === 'school_admin',
-    has_secret_pin: compatibility.has_secret_pin ?? false,
-    diary_style: compatibility.diary_style ?? {},
-    active_icon_pack: compatibility.active_icon_pack ?? 'classic',
-    featured_by_date: compatibility.featured_by_date ?? {},
-    role: compatibility.role || profile.role || 'student',
+    display_name: profile?.display_name || metaName,
+    created_at: profile?.created_at || authUser.created_at || new Date().toISOString(),
+    credits: extra.credits ?? 0,
+    is_premium: extra.is_premium ?? profile?.is_premium ?? false,
+    // Role trust boundary · never take role / is_admin from FastAPI compatibility.
+    is_admin: role === 'school_admin',
+    has_secret_pin: extra.has_secret_pin ?? false,
+    diary_style: extra.diary_style ?? {},
+    active_icon_pack: extra.active_icon_pack ?? 'classic',
+    featured_by_date: extra.featured_by_date ?? {},
+    role,
   };
+}
+
+async function readProfile(userId: string): Promise<ProfileRow | null> {
+  const attempt = async () =>
+    supabase
+      .from('profiles')
+      .select('id, display_name, role, is_premium, created_at')
+      .eq('id', userId)
+      .maybeSingle();
+
+  let result = await attempt();
+  const msg = result.error?.message?.toLowerCase() || '';
+  // Brief retry · JWT clock skew ("issued at future") is often transient.
+  if (result.error && (msg.includes('jwt') || msg.includes('future') || msg.includes('expired'))) {
+    await new Promise((r) => setTimeout(r, 700));
+    result = await attempt();
+  }
+
+  if (result.error) {
+    console.warn('[auth] profile read failed', result.error.message);
+    return null;
+  }
+  return (result.data as ProfileRow | null) ?? null;
+}
+
+async function loadAppUser(authUser: SupabaseUser): Promise<User> {
+  let profile: ProfileRow | null = null;
+  let compatibility: Partial<User> | null = null;
+
+  try {
+    profile = await readProfile(authUser.id);
+  } catch (e) {
+    console.warn('[auth] profile read threw', e);
+  }
+
+  // Demo preview fallback when profile RLS/clock skew hides the role row.
+  if (!profile?.role) {
+    const demoRole = demoRoleForEmail(authUser.email);
+    if (demoRole) {
+      profile = {
+        id: authUser.id,
+        display_name:
+          (typeof authUser.user_metadata?.display_name === 'string' &&
+            authUser.user_metadata.display_name) ||
+          null,
+        role: demoRole,
+        is_premium: false,
+        created_at: authUser.created_at || new Date().toISOString(),
+      };
+    }
+  }
+
+  try {
+    // Temporary · keeps settings and unmigrated screens working through Phase 4.
+    // Empty/missing backend can return null · never treat that as a real user payload.
+    const me = await api.get<User | null>('/auth/me');
+    if (me && typeof me === 'object') compatibility = me;
+  } catch {
+    // Supabase Auth remains usable while the compatibility backend is offline.
+  }
+
+  return userFromAuth(authUser, profile, compatibility);
 }
 
 export function AuthProvider({ children }: { children: React.ReactNode }) {
@@ -122,18 +192,22 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   }, []);
 
   const hydrateSession = useCallback(async (session: Session | null) => {
-    if (!session) {
+    if (!session?.user) {
       if (mountedRef.current) setUser(null);
       return null;
     }
+
     try {
       const next = await loadAppUser(session.user);
       if (mountedRef.current) setUser(next);
-      registerForPush(next.id);
+      void registerForPush(next.id);
       return next;
-    } catch {
-      if (mountedRef.current) setUser(null);
-      return null;
+    } catch (e) {
+      // Never drop a valid Supabase session just because profile enrichment failed.
+      console.warn('[auth] hydrate fallback', e);
+      const fallback = userFromAuth(session.user);
+      if (mountedRef.current) setUser(fallback);
+      return fallback;
     }
   }, [setUser]);
 
@@ -148,7 +222,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           try {
             const legacyUser = await api.get<User>('/auth/me');
             if (mountedRef.current) setUser(legacyUser);
-            registerForPush(legacyUser.id);
+            void registerForPush(legacyUser.id);
             return legacyUser;
           } catch {
             await setToken(null);
@@ -163,7 +237,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     const { data: listener } = supabase.auth.onAuthStateChange((event, session) => {
       if (event === 'INITIAL_SESSION' && !session) return;
       // Avoid issuing another Supabase request from inside the auth callback lock.
-      setTimeout(() => hydrateSession(session), 0);
+      setTimeout(() => {
+        void hydrateSession(session);
+      }, 0);
     });
 
     return () => {
@@ -188,13 +264,26 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   }, []);
 
   const login = useCallback(async (email: string, password: string) => {
-    await setToken(null);
+    // Don't block on legacy token clear — SecureStore can stall on some devices.
+    void setToken(null);
     const { data, error } = await supabase.auth.signInWithPassword({
       email: email.trim().toLowerCase(),
       password,
     });
     if (error) throw friendlyAuthError(error.message);
-    await hydrateSession(data.session);
+
+    let session = data.session;
+    if (!session) {
+      const refreshed = await supabase.auth.getSession();
+      session = refreshed.data.session;
+    }
+    if (!session?.user) {
+      throw new Error('登入未完成 · 請再試一次');
+    }
+
+    const next = await hydrateSession(session);
+    if (!next) throw new Error('登入未完成 · 請再試一次');
+    return next;
   }, [hydrateSession]);
 
   const register = useCallback(async (
@@ -213,8 +302,23 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       },
     });
     if (error) throw friendlyAuthError(error.message);
-    if (data.session) await hydrateSession(data.session);
-    return { requiresEmailConfirmation: !data.session };
+
+    let session = data.session;
+    if (!session) {
+      // Confirm-email may still be on for older projects · try password login once.
+      const signedIn = await supabase.auth.signInWithPassword({
+        email: email.trim().toLowerCase(),
+        password,
+      });
+      session = signedIn.data.session;
+    }
+
+    if (session?.user) {
+      await hydrateSession(session);
+      return { requiresEmailConfirmation: false };
+    }
+
+    return { requiresEmailConfirmation: true };
   }, [hydrateSession]);
 
   const logout = useCallback(async (reason: 'manual' | 'inactivity' = 'manual') => {

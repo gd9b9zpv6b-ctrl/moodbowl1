@@ -46,7 +46,7 @@ function CaseCard({ item }: { item: typeof URGENT[number] }) {
       onPress={() =>
         Alert.alert(
           `${item.name} · ${item.className}`,
-          `Trigger: ${item.reason}\n\n（示範版）撳「開啟 case」會：\n1. 記錄 access audit\n2. 顯示學生情緒趨勢圖\n3. 提供介入建議\n4. 可以標記轉介校外專業支援`,
+          `原因：${item.reason}\n\n開啟個案後可以：\n1. 睇學生情緒趨勢\n2. 睇介入建議\n3. 標記轉介校外支援`,
         )
       }
       style={styles.case}
@@ -175,7 +175,7 @@ export default function CounsellorPanel() {
           bowlBg="#EEF6FF"
           bowlKey="calm"
           title="幫人之前 · 記得幫自己"
-          subtitle="輔導工作情緒負荷大 · 撳我用返呢個 App 為自己打卡"
+          subtitle="輔導工作情緒負荷大 · 用呢度為自己留幾分鐘"
         />
 
         {/* Real keyword alerts */}
