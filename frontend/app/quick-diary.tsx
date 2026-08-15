@@ -1,6 +1,5 @@
 import { Feather } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
-import { useMemo } from 'react';
 import {
   KeyboardAvoidingView,
   Platform,
@@ -15,14 +14,14 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 
 import {
   TypingRainbowBowl,
-  typingTierHint,
+  TypingRainbowProgress,
 } from '@/src/components/typing-rainbow-bowl';
 import { COLORS, RADIUS, SPACING } from '@/src/constants/theme';
 import { wordingFor } from '@/src/lib/i18n/wording-mode';
 import { useRitualStore } from '@/src/lib/ritual/ritual-store';
 
 /**
- * Same as ritual talk · empty bowl (no pick). Continues to customize → release.
+ * Same as ritual talk · empty bowl (no pick). Continues to customize → regulate → release.
  */
 export default function QuickDiaryScreen() {
   const router = useRouter();
@@ -34,7 +33,6 @@ export default function QuickDiaryScreen() {
   const w = wordingFor(ageGroup);
 
   const count = diaryText.trim().length;
-  const hint = useMemo(() => typingTierHint(count), [count]);
 
   const goCustomize = () => {
     ensureStarted();
@@ -86,9 +84,7 @@ export default function QuickDiaryScreen() {
             style={styles.input}
           />
 
-          <Text testID="quick-diary-tier-progress" style={styles.progress}>
-            🌈 已寫 {count} 字 · {hint}
-          </Text>
+          <TypingRainbowProgress charCount={count} testID="quick-diary-tier-progress" />
 
           <Pressable
             testID="quick-diary-continue"
@@ -163,11 +159,6 @@ const styles = StyleSheet.create({
     fontSize: 15,
     color: COLORS.textPrimary,
     marginBottom: SPACING.sm,
-  },
-  progress: {
-    fontSize: 13,
-    color: COLORS.textSecondary,
-    marginBottom: SPACING.lg,
   },
   cta: {
     height: 56,
