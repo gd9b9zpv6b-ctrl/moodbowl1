@@ -55,13 +55,7 @@ export default function RitualReleaseScreen() {
   const w = wordingFor(ageGroup);
 
   const emotion = selectedBowlKey ? EMOTION_BY_KEY[selectedBowlKey] : null;
-  const diaryMode = checkInType === 'quick_diary' || !selectedBowlKey;
   const wroteDiary = checkInType !== 'hug_only' && diaryText.trim().length > 0;
-  const releaseActions = diaryMode ? w.release_diary_actions : w.release_actions;
-  const releaseTitle = diaryMode
-    ? w.release_diary_title
-    : w.release_title(emotion?.label || '碗');
-  const releaseSub = diaryMode ? w.release_diary_sub : w.release_sub;
   const [picked, setPicked] = useState<BowlReleaseKey | null>(bowlRelease);
   const [saving, setSaving] = useState(false);
   const [phase, setPhase] = useState<'act' | 'done'>('act');
@@ -94,12 +88,7 @@ export default function RitualReleaseScreen() {
           bowl_color_tint: encodeDecorations(decorations),
           bowl_size: bowlSize,
           diary_text: checkInType === 'hug_only' ? null : diaryText || null,
-          check_in_type:
-            checkInType === 'hug_only'
-              ? 'hug_only'
-              : checkInType === 'quick_diary'
-                ? 'quick_diary'
-                : 'full',
+          check_in_type: checkInType === 'hug_only' ? 'hug_only' : 'full',
           is_public: shareClass,
           shared_with_class: shareClass,
           shared_with_family: shareFamily,
@@ -244,8 +233,8 @@ export default function RitualReleaseScreen() {
           )}
         </View>
 
-        <Text style={styles.title}>{releaseTitle}</Text>
-        <Text style={styles.sub}>{releaseSub}</Text>
+        <Text style={styles.title}>{w.release_title(emotion?.label || '碗')}</Text>
+        <Text style={styles.sub}>{w.release_sub}</Text>
         {wroteDiary && (
           <Text testID="release-wrote-praise-act" style={styles.wrotePraiseAct}>
             {w.release_wrote_praise}
@@ -255,7 +244,6 @@ export default function RitualReleaseScreen() {
         <View style={styles.list}>
           {BOWL_RELEASE_ACTIONS.map((action) => {
             const active = picked === action.key;
-            const copy = releaseActions[action.key];
             return (
               <Pressable
                 key={action.key}
@@ -265,8 +253,8 @@ export default function RitualReleaseScreen() {
               >
                 <Text style={styles.emoji}>{action.emoji}</Text>
                 <View style={{ flex: 1 }}>
-                  <Text style={styles.cardTitle}>{copy.label}</Text>
-                  <Text style={styles.cardHint}>{copy.hint}</Text>
+                  <Text style={styles.cardTitle}>{w.release_actions[action.key].label}</Text>
+                  <Text style={styles.cardHint}>{w.release_actions[action.key].hint}</Text>
                 </View>
                 {active && <Feather name="check" size={18} color={COLORS.textPrimary} />}
               </Pressable>

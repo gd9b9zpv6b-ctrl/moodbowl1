@@ -27,8 +27,7 @@ function tierHint(n: number): string {
 }
 
 /**
- * Standalone diary · ritual-talk layout with empty bowl.
- * After writing, continues into release (dispose + share) like the full ritual.
+ * Same as ritual talk · empty bowl (no pick). Continues to customize → release.
  */
 export default function QuickDiaryScreen() {
   const router = useRouter();
@@ -41,13 +40,10 @@ export default function QuickDiaryScreen() {
 
   const count = diaryText.trim().length;
   const hint = useMemo(() => tierHint(count), [count]);
-  const canContinue = count > 0;
 
-  const onContinue = () => {
-    if (!canContinue) return;
+  const goCustomize = () => {
     ensureStarted();
-    setCheckInType('quick_diary');
-    router.push('/ritual/release');
+    router.push('/ritual/customize');
   };
 
   return (
@@ -103,11 +99,25 @@ export default function QuickDiaryScreen() {
 
           <Pressable
             testID="quick-diary-continue"
-            onPress={onContinue}
-            disabled={!canContinue}
-            style={[styles.cta, !canContinue && { opacity: 0.45 }]}
+            onPress={() => {
+              setCheckInType('full');
+              goCustomize();
+            }}
+            style={styles.cta}
           >
-            <Text style={styles.ctaText}>{w.quick_diary_continue}</Text>
+            <Text style={styles.ctaText}>{w.talk_submit}</Text>
+          </Pressable>
+
+          <Pressable
+            testID="quick-diary-hug"
+            onPress={() => {
+              setCheckInType('hug_only');
+              setDiaryText('');
+              goCustomize();
+            }}
+            style={styles.secondary}
+          >
+            <Text style={styles.secondaryText}>{w.talk_hug}</Text>
           </Pressable>
         </ScrollView>
       </KeyboardAvoidingView>
@@ -181,6 +191,14 @@ const styles = StyleSheet.create({
     backgroundColor: COLORS.primary,
     alignItems: 'center',
     justifyContent: 'center',
+    marginBottom: SPACING.sm,
   },
   ctaText: { fontSize: 17, fontWeight: '700', color: COLORS.textPrimary },
+  secondary: {
+    height: 56,
+    borderRadius: RADIUS.pill,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  secondaryText: { fontSize: 15, fontWeight: '500', color: COLORS.textPrimary },
 });

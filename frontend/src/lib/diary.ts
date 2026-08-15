@@ -283,12 +283,10 @@ function ritualLegacyAwarePayload(userId: string, draft: RitualDiaryDraft) {
 /** Full ritual check-in · writes ritual + Phase 2 columns when available. */
 export async function createRitualDiaryEntry(draft: RitualDiaryDraft): Promise<Entry> {
   const userId = await requireUserId();
-  const isQuick = draft.check_in_type === 'quick_diary';
-  if (!draft.bowl_emotion_key && draft.check_in_type !== 'hug_only' && !isQuick) {
+  const hasDiary = !!(draft.diary_text || '').trim();
+  // Full ritual usually picks a bowl; empty-bowl path (直接寫日記) may save without one.
+  if (!draft.bowl_emotion_key && draft.check_in_type !== 'hug_only' && !hasDiary) {
     throw new Error('未揀好碗 · 返去再試');
-  }
-  if (isQuick && !(draft.diary_text || '').trim()) {
-    throw new Error('寫啲嘢先啦');
   }
 
   const full = await supabase

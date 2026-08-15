@@ -68,12 +68,19 @@ export default function RitualCustomizeScreen() {
 
         <View style={styles.previewWrap}>
           <View style={[styles.previewInner, { transform: [{ scale }] }]}>
-            <BowlWithDecor
-              emotion={emotion}
-              size={200}
-              radius={RADIUS.lg}
-              decorations={decorations}
-            />
+            {emotion ? (
+              <BowlWithDecor
+                emotion={emotion}
+                size={200}
+                radius={RADIUS.lg}
+                decorations={decorations}
+              />
+            ) : (
+              <View
+                testID="customize-empty-bowl"
+                style={[styles.emptyBowl, { width: 200, height: 200 }]}
+              />
+            )}
           </View>
           <Text style={styles.previewCaption} testID="customize-decor-label">
             {decorations.length === 0
@@ -203,6 +210,13 @@ const styles = StyleSheet.create({
     height: 200,
     alignItems: 'center',
     justifyContent: 'center',
+  },
+  emptyBowl: {
+    borderRadius: RADIUS.lg,
+    backgroundColor: COLORS.bgCard,
+    borderWidth: 1.5,
+    borderColor: COLORS.borderLight,
+    borderStyle: 'dashed',
   },
   previewCaption: {
     marginTop: SPACING.md,
