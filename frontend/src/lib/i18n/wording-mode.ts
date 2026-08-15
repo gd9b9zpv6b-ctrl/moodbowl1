@@ -101,7 +101,11 @@ export type WordingPack = {
   home_album: string;
   selfcare_title: string;
   selfcare_subtitle: string;
+  /** Label above the bridge question. */
+  bridge_eyebrow: string;
   bridge_by_state: Record<NSState, string>;
+  /** Lead line before symbolic dispose · also state-toned. */
+  release_lead_by_state: Record<NSState, string>;
   regulate_by_state: Record<NSState, string>;
   soup_subs: Record<SoupKey, string>;
   chip_labels: Record<BodyChipKey, string>;
@@ -358,13 +362,22 @@ export const WORDING: Record<WordingMode, WordingPack> = {
     home_album: '睇心情圖鑑',
     selfcare_title: '你都值得記錄自己嘅心情',
     selfcare_subtitle: '撳我開始同自己坐一坐',
+    bridge_eyebrow: '過橋 · 想唔想搵人?',
     bridge_by_state: {
-      sympathetic_fire: '返返靜咗未呀? 想搵人講嗎?',
-      dorsal_sad: '感覺舒服返啲未? 想搵朋友嗎?',
-      sympathetic_anxious: '心跳慢返未? 有人陪一陣?',
-      dorsal_freeze: '有 feel 番嗎? 講一句話都得',
-      ventral_regulated: '想同人 share 嗎?',
-      unspoken: '留返俾自己都得',
+      sympathetic_fire: '火退咗少少未呀? 想搵人講吓發生咩事嗎?',
+      dorsal_sad: '重唔重輕咗啲? 想搵個朋友陪一陪嗎?',
+      sympathetic_anxious: '心跳慢返未? 想有人喺身邊嗎?',
+      dorsal_freeze: '有 feel 番少少未? 講一句都得',
+      ventral_regulated: '呢種開心 · 想派俾邊個?',
+      unspoken: '今日留返俾自己都完全 OK',
+    },
+    release_lead_by_state: {
+      sympathetic_fire: '火氣出咗之後 · 想點安頓呢份感覺?',
+      dorsal_sad: '睇完溫柔畫面 · 想點安頓呢份重?',
+      sympathetic_anxious: '定咗少少 · 想點安頓呢陣掛住?',
+      dorsal_freeze: '郁返少少 · 想點安頓今日呢份感覺?',
+      ventral_regulated: '靚感覺想留低 · 定係輕輕放下?',
+      unspoken: '坐完一陣 · 想點處置今日呢頁?',
     },
     regulate_by_state: {
       sympathetic_fire: '一齊發洩啦！',
@@ -480,6 +493,7 @@ export const WORDING: Record<WordingMode, WordingPack> = {
     home_album: '睇心情圖鑑',
     selfcare_title: '你都值得記錄自己嘅心情',
     selfcare_subtitle: '撳我開始同自己坐一坐',
+    bridge_eyebrow: '過橋 · 想唔想連繫?',
     bridge_by_state: {
       sympathetic_fire: '而家平靜返啲啦嘛? 想同人講咩發生咗咩事嗎?',
       dorsal_sad: '而家 feel 冇咁重嗎? 想搵個朋友唞唞氣嗎?',
@@ -487,6 +501,14 @@ export const WORDING: Record<WordingMode, WordingPack> = {
       dorsal_freeze: '而家有啲返到自己嗎? 如果想同人講一句話 · 都得',
       ventral_regulated: '今日呢種靚感覺 · 想派俾人一齊分享嗎?',
       unspoken: '今日呢件事 · 留返俾自己都完全 OK',
+    },
+    release_lead_by_state: {
+      sympathetic_fire: '發洩完之後 · 想點安頓呢份火?',
+      dorsal_sad: '睇過溫柔嘢之後 · 想點安頓呢份重?',
+      sympathetic_anxious: '落地之後 · 想點安頓呢陣掛住?',
+      dorsal_freeze: '搞醒少少之後 · 想點安頓今日?',
+      ventral_regulated: '呢個靚瞬間 · 想留低定輕輕放手?',
+      unspoken: '坐完之後 · 想點處置今日呢頁?',
     },
     regulate_by_state: {
       sympathetic_fire: '同碗一齊發洩',
@@ -602,6 +624,7 @@ export const WORDING: Record<WordingMode, WordingPack> = {
     home_album: '睇心情圖鑑',
     selfcare_title: '照顧學生之前 · 都要照顧自己',
     selfcare_subtitle: '開自己嘅 check-in · 畀自己幾分鐘',
+    bridge_eyebrow: '過橋 · 要唔要連繫?',
     bridge_by_state: {
       sympathetic_fire: '平靜返少少未? 如果想講 · 可以揀分享對象',
       dorsal_sad: '重量輕咗啲未? 需要陪一陪都完全 OK',
@@ -609,6 +632,14 @@ export const WORDING: Record<WordingMode, WordingPack> = {
       dorsal_freeze: '有返啲感覺未? 一句話都夠',
       ventral_regulated: '呢種狀態想唔想輕輕分享出去?',
       unspoken: '今日可以淨係留俾自己',
+    },
+    release_lead_by_state: {
+      sympathetic_fire: '釋放之後 · 想點安頓呢份能量?',
+      dorsal_sad: '托住自己之後 · 想點安頓呢份重量?',
+      sympathetic_anxious: '落地之後 · 想點安頓呢陣緊張?',
+      dorsal_freeze: '激活之後 · 想點安頓今日?',
+      ventral_regulated: '呢個狀態 · 想留低定輕輕放手?',
+      unspoken: '坐完之後 · 想點處置今日呢段?',
     },
     regulate_by_state: {
       sympathetic_fire: '一齊釋放一下',

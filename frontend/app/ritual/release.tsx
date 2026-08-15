@@ -17,6 +17,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { BowlWithDecor } from '@/src/components/bowl-with-decor';
 import { ReleaseActionAnim } from '@/src/components/release-action-anim';
+import { STATE_REACTION } from '@/src/components/regulate-state-stage';
 import { encodeDecorations } from '@/src/constants/bowl-decorations';
 import {
   BOWL_RELEASE_ACTIONS,
@@ -67,13 +68,12 @@ export default function RitualReleaseScreen() {
 
   const nsState = useMemo(() => detectState(soup, bodyChips), [soup, bodyChips]);
   const bridgeLine = w.bridge_by_state[nsState];
+  const releaseLead = w.release_lead_by_state[nsState];
+  const reaction = STATE_REACTION[nsState];
 
   const emotion = selectedBowlKey ? EMOTION_BY_KEY[selectedBowlKey] : null;
   const hasBowl = !!emotion;
   const wroteDiary = checkInType !== 'hug_only' && diaryText.trim().length > 0;
-  const releaseTitle = hasBowl
-    ? w.release_title(emotion!.label)
-    : w.release_diary_title;
   const releaseSub = hasBowl ? w.release_sub : w.release_diary_sub;
   const releaseActions = hasBowl ? w.release_actions : w.release_diary_actions;
   const animCaptions = hasBowl ? w.release_anim_captions : w.release_diary_anim_captions;
@@ -332,39 +332,21 @@ export default function RitualReleaseScreen() {
           )}
         </View>
 
-        <Text style={styles.title}>{releaseTitle}</Text>
-        <Text style={styles.sub}>{releaseSub}</Text>
-        {wroteDiary && (
-          <Text testID="release-wrote-praise-act" style={styles.wrotePraiseAct}>
-            {w.release_wrote_praise}
+        {/* 過橋 · first · state × age tone */}
+        <View
+          testID="release-bridge-card"
+          style={[styles.bridgeCard, { backgroundColor: reaction.tint, borderColor: reaction.accent }]}
+        >
+          <Text style={styles.bridgeEyebrow}>{w.bridge_eyebrow}</Text>
+          <Text style={styles.bridgeEmoji}>{reaction.emoji}</Text>
+          <Text style={[styles.bridgeFeel, { color: reaction.accent }]}>
+            碗 feel 到 · {reaction.feel}
           </Text>
-        )}
-
-        <View style={styles.list}>
-          {BOWL_RELEASE_ACTIONS.map((action) => {
-            const active = picked === action.key;
-            const copy = releaseActions[action.key];
-            return (
-              <Pressable
-                key={action.key}
-                testID={`release-${action.key}`}
-                onPress={() => onPick(action.key)}
-                style={[styles.card, active && styles.cardActive]}
-              >
-                <Text style={styles.emoji}>{action.emoji}</Text>
-                <View style={{ flex: 1 }}>
-                  <Text style={styles.cardTitle}>{copy.label}</Text>
-                  <Text style={styles.cardHint}>{copy.hint}</Text>
-                </View>
-                {active && <Feather name="check" size={18} color={COLORS.textPrimary} />}
-              </Pressable>
-            );
-          })}
+          <Text testID="release-bridge-line" style={styles.bridgeLine}>
+            {bridgeLine}
+          </Text>
         </View>
 
-        <Text testID="release-bridge-line" style={styles.shareHeading}>
-          {bridgeLine}
-        </Text>
         <View style={styles.row}>
           <Text style={styles.rowLabel}>{w.bridge_share_family}</Text>
           <Switch
@@ -394,6 +376,38 @@ export default function RitualReleaseScreen() {
             trackColor={{ true: COLORS.primary, false: COLORS.bgInput }}
             thumbColor={COLORS.bgCard}
           />
+        </View>
+
+        <Text testID="release-lead" style={styles.title}>
+          {releaseLead}
+        </Text>
+        <Text style={styles.sub}>{releaseSub}</Text>
+        {wroteDiary && (
+          <Text testID="release-wrote-praise-act" style={styles.wrotePraiseAct}>
+            {w.release_wrote_praise}
+          </Text>
+        )}
+
+        <View style={styles.list}>
+          {BOWL_RELEASE_ACTIONS.map((action) => {
+            const active = picked === action.key;
+            const copy = releaseActions[action.key];
+            return (
+              <Pressable
+                key={action.key}
+                testID={`release-${action.key}`}
+                onPress={() => onPick(action.key)}
+                style={[styles.card, active && styles.cardActive]}
+              >
+                <Text style={styles.emoji}>{action.emoji}</Text>
+                <View style={{ flex: 1 }}>
+                  <Text style={styles.cardTitle}>{copy.label}</Text>
+                  <Text style={styles.cardHint}>{copy.hint}</Text>
+                </View>
+                {active && <Feather name="check" size={18} color={COLORS.textPrimary} />}
+              </Pressable>
+            );
+          })}
         </View>
 
         <Pressable
@@ -471,6 +485,32 @@ const styles = StyleSheet.create({
   emoji: { fontSize: 28 },
   cardTitle: { fontSize: 16, fontWeight: '800', color: COLORS.textPrimary },
   cardHint: { fontSize: 12, color: COLORS.textSecondary, marginTop: 2 },
+  bridgeCard: {
+    borderRadius: RADIUS.lg,
+    borderWidth: 2,
+    padding: SPACING.md,
+    alignItems: 'center',
+    marginBottom: SPACING.md,
+  },
+  bridgeEyebrow: {
+    fontSize: 12,
+    fontWeight: '800',
+    color: COLORS.textSecondary,
+    marginBottom: SPACING.sm,
+  },
+  bridgeEmoji: { fontSize: 40, marginBottom: SPACING.xs },
+  bridgeFeel: {
+    fontSize: 13,
+    fontWeight: '800',
+    marginBottom: SPACING.sm,
+  },
+  bridgeLine: {
+    fontSize: 17,
+    fontWeight: '800',
+    color: COLORS.textPrimary,
+    textAlign: 'center',
+    lineHeight: 26,
+  },
   shareHeading: {
     fontSize: 13,
     fontWeight: '700',
