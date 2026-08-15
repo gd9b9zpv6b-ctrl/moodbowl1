@@ -37,6 +37,12 @@ export type WordingPack = {
   release_finish: string;
   release_regulate: string;
   release_share_heading: string;
+  release_done_title: string;
+  release_done_sub: (minutes: number) => string;
+  release_smile_hint: string;
+  release_smile_hold: string;
+  release_smile_done: string;
+  release_home: string;
   talk_got_bowl: (bowlLabel: string) => string;
   talk_title: (bowlLabel: string) => string;
   talk_speech: string;
@@ -243,8 +249,15 @@ export const WORDING: Record<WordingMode, WordingPack> = {
       wash: { label: '洗乾淨', hint: '沖一沖 · 整返清爽' },
       keep_hug: { label: '抱住留低', hint: '呢份感覺想留低 · 抱抱佢' },
     },
-    release_finish: '搞掂 · 完成打卡 →',
+    release_finish: '搞掂 · 儲存',
     release_regulate: '想先做個調節練習',
+    release_share_heading: '想留低 / 分享嗎?',
+    release_done_title: '搞掂啦',
+    release_done_sub: (m) => `你今日同自己相處咗 ${m} 分鐘 · 好厲害`,
+    release_smile_hint: '對住碗笑一笑 · 2 秒（可選）',
+    release_smile_hold: '撳住 2 秒',
+    release_smile_done: '多謝你嘅笑',
+    release_home: '回主頁',
     regulate_skip: '唔洗 · 我 OK',
     bridge_share_class: '想同人講 · 派俾同學',
     bridge_share_family: '派俾家人',
@@ -310,8 +323,15 @@ export const WORDING: Record<WordingMode, WordingPack> = {
       wash: { label: '洗乾淨', hint: '沖走殘留 · 整返清爽' },
       keep_hug: { label: '抱住留低', hint: '呢份感覺有意思 · 抱抱留住' },
     },
-    release_finish: '搞掂 · 完成打卡 →',
+    release_finish: '搞掂 · 儲存',
     release_regulate: '想先做個調節練習',
+    release_share_heading: '想留低 / 分享嗎?',
+    release_done_title: '搞掂啦',
+    release_done_sub: (m) => `你今日同自己相處咗 ${m} 分鐘 · 好厲害`,
+    release_smile_hint: '對住碗笑一笑 · 2 秒（可選）',
+    release_smile_hold: '撳住 2 秒',
+    release_smile_done: '多謝你嘅笑',
+    release_home: '回主頁',
     regulate_skip: '唔洗 · 我 OK',
     bridge_share_class: '想同人講嘢 · 派俾我班同學',
     bridge_share_family: '派俾家人（如果連咗）',
@@ -377,8 +397,15 @@ export const WORDING: Record<WordingMode, WordingPack> = {
       wash: { label: '清洗', hint: '沖走殘留 · 回復清爽' },
       keep_hug: { label: '抱住留下', hint: '呢份感覺值得被抱住' },
     },
-    release_finish: '完成打卡 →',
+    release_finish: '儲存打卡',
     release_regulate: '想先做調節練習',
+    release_share_heading: '留低同分享',
+    release_done_title: '搞掂啦',
+    release_done_sub: (m) => `你今日同自己相處咗 ${m} 分鐘 · 好厲害`,
+    release_smile_hint: '對住碗笑一笑 · 2 秒（可選）',
+    release_smile_hold: '撳住 2 秒',
+    release_smile_done: '多謝你嘅笑',
+    release_home: '回主頁',
     regulate_skip: '暫時唔使 · 我 OK',
     bridge_share_class: '分享俾同事／同學圈（可選）',
     bridge_share_family: '分享俾家人（可選）',

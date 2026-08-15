@@ -107,7 +107,7 @@ export default function RitualRegulateScreen() {
               testID={`regulate-activity-${a.key}`}
               onPress={() => {
                 if (a.kind === 'skip_hint') {
-                  goBridge();
+                  goRelease();
                   return;
                 }
                 setActive(a.kind);
@@ -127,11 +127,11 @@ export default function RitualRegulateScreen() {
           );
         })}
 
-        <Pressable testID="regulate-skip-btn" onPress={goBridge} style={styles.skip}>
+        <Pressable testID="regulate-skip-btn" onPress={goRelease} style={styles.skip}>
           <Text style={styles.skipText}>{w.regulate_skip}</Text>
         </Pressable>
 
-        <Pressable testID="regulate-next-btn" onPress={goBridge} style={styles.cta}>
+        <Pressable testID="regulate-next-btn" onPress={goRelease} style={styles.cta}>
           <Text style={styles.ctaText}>下一步 →</Text>
         </Pressable>
       </ScrollView>

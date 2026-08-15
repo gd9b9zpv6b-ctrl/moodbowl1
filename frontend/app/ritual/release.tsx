@@ -1,10 +1,11 @@
 import { Feather } from '@expo/vector-icons';
 import * as Haptics from 'expo-haptics';
 import { useRouter } from 'expo-router';
-import { useState } from 'react';
+import { useRef, useState } from 'react';
 import {
   ActivityIndicator,
   Alert,
+  Animated,
   Pressable,
   ScrollView,
   StyleSheet,
@@ -22,12 +23,14 @@ import {
 } from '@/src/constants/bowl-release';
 import { EMOTION_BY_KEY } from '@/src/constants/emotions';
 import { COLORS, RADIUS, SPACING } from '@/src/constants/theme';
-import { saveRitualWithActivities } from '@/src/lib/diary';
+import { markRitualSmileCompleted, saveRitualWithActivities } from '@/src/lib/diary';
 import { wordingFor } from '@/src/lib/i18n/wording-mode';
 import { useRitualStore } from '@/src/lib/ritual/ritual-store';
 
+const SMILE_HOLD_MS = 2000;
+
 /**
- * Symbolic release + save/share in one step (bridge merged here).
+ * Symbolic release + share/save + short done (smile / home) in one step.
  */
 export default function RitualReleaseScreen() {
   const router = useRouter();
@@ -48,11 +51,20 @@ export default function RitualReleaseScreen() {
   const setBowlRelease = useRitualStore((s) => s.setBowlRelease);
   const addRegulation = useRitualStore((s) => s.addRegulation);
   const setShares = useRitualStore((s) => s.setShares);
+  const reset = useRitualStore((s) => s.reset);
   const w = wordingFor(ageGroup);
 
   const emotion = selectedBowlKey ? EMOTION_BY_KEY[selectedBowlKey] : null;
   const [picked, setPicked] = useState<BowlReleaseKey | null>(bowlRelease);
   const [saving, setSaving] = useState(false);
+  const [phase, setPhase] = useState<'act' | 'done'>('act');
+  const [entryId, setEntryId] = useState<string | null>(null);
+  const [minutes, setMinutes] = useState(1);
+  const [smiled, setSmiled] = useState(false);
+
+  const holdProgress = useRef(new Animated.Value(0)).current;
+  const holdTimer = useRef<ReturnType<typeof setInterval> | null>(null);
+  const holdStarted = useRef(0);
 
   const onPick = (key: BowlReleaseKey) => {
     setPicked(key);
@@ -61,7 +73,7 @@ export default function RitualReleaseScreen() {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium).catch(() => {});
   };
 
-  const onComplete = async () => {
+  const onSave = async () => {
     if (!picked || saving) return;
     setSaving(true);
     try {
@@ -84,13 +96,10 @@ export default function RitualReleaseScreen() {
         },
         regulationUsed,
       );
-      router.replace({
-        pathname: '/ritual/complete',
-        params: {
-          entryId: entry.id,
-          minutes: String(Math.max(1, Math.round((timeSpent || 60) / 60))),
-        },
-      });
+      setEntryId(entry.id);
+      setMinutes(Math.max(1, Math.round((timeSpent || 60) / 60)));
+      setPhase('done');
+      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success).catch(() => {});
     } catch (e: unknown) {
       const msg = e instanceof Error ? e.message : '過陣再試';
       Alert.alert('儲存唔到', msg, [{ text: '好' }]);
@@ -98,6 +107,90 @@ export default function RitualReleaseScreen() {
       setSaving(false);
     }
   };
+
+  const clearHold = () => {
+    if (holdTimer.current) clearInterval(holdTimer.current);
+    holdTimer.current = null;
+    Animated.timing(holdProgress, { toValue: 0, duration: 150, useNativeDriver: false }).start();
+  };
+
+  const onSmilePressIn = () => {
+    if (smiled) return;
+    holdStarted.current = Date.now();
+    holdProgress.setValue(0);
+    Animated.timing(holdProgress, {
+      toValue: 1,
+      duration: SMILE_HOLD_MS,
+      useNativeDriver: false,
+    }).start();
+    holdTimer.current = setInterval(() => {
+      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light).catch(() => {});
+      if (Date.now() - holdStarted.current >= SMILE_HOLD_MS) {
+        clearHold();
+        setSmiled(true);
+        Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success).catch(() => {});
+        if (entryId) {
+          markRitualSmileCompleted(entryId).catch(() => {});
+        }
+      }
+    }, 500);
+  };
+
+  const onSmilePressOut = () => {
+    if (!smiled) clearHold();
+  };
+
+  const goHome = () => {
+    reset();
+    router.replace('/(tabs)');
+  };
+
+  const ringWidth = holdProgress.interpolate({
+    inputRange: [0, 1],
+    outputRange: ['0%', '100%'],
+  });
+
+  if (phase === 'done') {
+    return (
+      <SafeAreaView style={styles.safe} edges={['top', 'bottom']}>
+        <View style={styles.doneWrap}>
+          <View style={styles.bowl}>
+            <BowlWithDecor
+              emotion={emotion}
+              size={160}
+              radius={RADIUS.lg}
+              decorations={decorations}
+            />
+          </View>
+
+          <Text style={styles.doneTitle}>{w.release_done_title}</Text>
+          <Text style={styles.doneSub}>
+            {w.release_done_sub(minutes)}
+          </Text>
+
+          <Text style={styles.smileHint}>{w.release_smile_hint}</Text>
+          <Pressable
+            testID="release-smile-btn"
+            onPressIn={onSmilePressIn}
+            onPressOut={onSmilePressOut}
+            style={[styles.smileBtn, smiled && styles.smileBtnDone]}
+          >
+            <Text style={styles.smileEmoji}>{smiled ? '😊' : '🙂'}</Text>
+            <View style={styles.progressTrack}>
+              <Animated.View style={[styles.progressFill, { width: ringWidth }]} />
+            </View>
+            <Text style={styles.smileLabel}>
+              {smiled ? w.release_smile_done : w.release_smile_hold}
+            </Text>
+          </Pressable>
+
+          <Pressable testID="release-home-btn" onPress={goHome} style={styles.cta}>
+            <Text style={styles.ctaText}>{w.release_home}</Text>
+          </Pressable>
+        </View>
+      </SafeAreaView>
+    );
+  }
 
   return (
     <SafeAreaView style={styles.safe} edges={['top', 'bottom']}>
@@ -181,7 +274,7 @@ export default function RitualReleaseScreen() {
 
         <Pressable
           testID="release-finish-btn"
-          onPress={onComplete}
+          onPress={onSave}
           disabled={!picked || saving}
           style={[styles.cta, (!picked || saving) && { opacity: 0.45 }]}
         >
@@ -287,8 +380,54 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     marginTop: SPACING.md,
     marginBottom: SPACING.sm,
+    paddingHorizontal: SPACING.xl,
+    minWidth: 200,
   },
   ctaText: { fontSize: 17, fontWeight: '700', color: COLORS.textPrimary },
   secondary: { alignItems: 'center', paddingVertical: SPACING.md },
   secondaryText: { fontSize: 14, fontWeight: '700', color: COLORS.textSecondary },
+  doneWrap: {
+    flex: 1,
+    padding: SPACING.lg,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  doneTitle: {
+    fontSize: 24,
+    fontWeight: '800',
+    color: COLORS.textPrimary,
+    marginBottom: SPACING.sm,
+  },
+  doneSub: {
+    fontSize: 15,
+    color: COLORS.textPrimary,
+    textAlign: 'center',
+    lineHeight: 22,
+    marginBottom: SPACING.lg,
+  },
+  smileHint: {
+    fontSize: 13,
+    color: COLORS.textSecondary,
+    marginBottom: SPACING.sm,
+  },
+  smileBtn: {
+    width: 150,
+    alignItems: 'center',
+    backgroundColor: COLORS.bgCard,
+    borderRadius: RADIUS.lg,
+    padding: SPACING.md,
+    marginBottom: SPACING.lg,
+    gap: SPACING.sm,
+  },
+  smileBtnDone: { backgroundColor: COLORS.primaryLight },
+  smileEmoji: { fontSize: 36 },
+  progressTrack: {
+    width: '100%',
+    height: 6,
+    borderRadius: 999,
+    backgroundColor: COLORS.bgInput,
+    overflow: 'hidden',
+  },
+  progressFill: { height: '100%', backgroundColor: COLORS.primary },
+  smileLabel: { fontSize: 12, color: COLORS.textSecondary, fontWeight: '600' },
 });
