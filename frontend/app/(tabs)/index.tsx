@@ -332,7 +332,15 @@ export default function Home() {
                 </Pressable>
                 <Pressable
                   testID="home-diary-quick-btn"
-                  onPress={() => router.push('/quick-diary')}
+                  onPress={async () => {
+                    const { MinorAgeBandStorage } = await import('@/src/lib/minor-age-band');
+                    const band = await MinorAgeBandStorage.get();
+                    const mode = resolveWordingMode({ role: user?.role, minorBand: band });
+                    ritualReset();
+                    setAgeGroup(mode);
+                    setHomeWordingMode(mode);
+                    router.push('/quick-diary');
+                  }}
                   style={styles.ritualLinkBtn}
                 >
                   <Text style={styles.ritualLinkText}>{homeWording.home_quick_diary}</Text>
