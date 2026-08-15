@@ -85,6 +85,11 @@ export type WordingPack = {
   /** Continue from standalone quick diary into release. */
   quick_diary_continue: string;
   regulate_skip: string;
+  /** Eyebrow / step label on regulate screen. */
+  regulate_eyebrow: string;
+  /** Why we are accompanying · per nervous-system state. */
+  regulate_sub_by_state: Record<NSState, string>;
+  regulate_next: string;
   bridge_share_class: string;
   bridge_share_family: string;
   bridge_share_timeline: string;
@@ -287,8 +292,8 @@ export const WORDING: Record<WordingMode, WordingPack> = {
     customize_place_hint_solo: (d) => `撳上面 · 放「${d}」`,
     customize_idle_hint: '先揀一件飾品 · 再撳碗上想放嘅位置',
     customize_idle_hint_solo: '先揀一件飾品 · 再撳想放嘅位置',
-    customize_next: '打扮好 · 繼續 →',
-    customize_skip: '唔打扮 · 跳過 →',
+    customize_next: '打扮好 · 去陪碗 →',
+    customize_skip: '唔打扮 · 去陪碗 →',
     release_title: (bowl) => `想點處理「${bowl}」?`,
     release_sub: '用一個小動作 · 同今日嘅感覺道別或者抱一抱',
     release_actions: {
@@ -332,6 +337,16 @@ export const WORDING: Record<WordingMode, WordingPack> = {
     release_smile_done: '多謝你嘅笑',
     release_home: '回主頁',
     regulate_skip: '唔洗 · 我 OK',
+    regulate_eyebrow: '陪碗做啲嘢',
+    regulate_sub_by_state: {
+      sympathetic_fire: '睇落你有啲熱辣辣 · 一齊發洩同慢慢呼吸',
+      dorsal_sad: '睇落有啲重 · 一齊睇啲溫柔得意嘅畫面',
+      sympathetic_anxious: '睇落有啲掛住 · 碗陪你慢慢落地',
+      dorsal_freeze: '睇落有啲空空哋 · 輕輕搞醒少少感覺',
+      ventral_regulated: '睇落幾靚 · 一齊留住呢個瞬間',
+      unspoken: '唔使特別目標 · 同碗靜靜坐一陣都得',
+    },
+    regulate_next: '陪完 · 繼續 →',
     bridge_share_class: '想話俾老師聽',
     bridge_share_family: '想話俾屋企人聽',
     bridge_share_timeline: '留返俾自己睇',
@@ -399,8 +414,8 @@ export const WORDING: Record<WordingMode, WordingPack> = {
     customize_place_hint_solo: (d) => `撳上面 · 放「${d}」`,
     customize_idle_hint: '先揀一件飾品 · 再撳碗上想放嘅位置',
     customize_idle_hint_solo: '先揀一件飾品 · 再撳想放嘅位置',
-    customize_next: '打扮好 · 繼續 →',
-    customize_skip: '唔打扮 · 跳過 →',
+    customize_next: '打扮好 · 去陪碗 →',
+    customize_skip: '唔打扮 · 去陪碗 →',
     release_title: (bowl) => `想點處理「${bowl}」?`,
     release_sub: '揀一個象徵動作 · 幫自己同呢份感覺道別或者安頓',
     release_actions: {
@@ -444,6 +459,16 @@ export const WORDING: Record<WordingMode, WordingPack> = {
     release_smile_done: '多謝你嘅笑',
     release_home: '回主頁',
     regulate_skip: '唔洗 · 我 OK',
+    regulate_eyebrow: '陪碗做啲嘢',
+    regulate_sub_by_state: {
+      sympathetic_fire: '睇落你有啲熱辣辣 · 一齊發洩同慢慢呼吸',
+      dorsal_sad: '睇落有啲重 · 一齊睇啲溫柔得意嘅畫面',
+      sympathetic_anxious: '睇落有啲掛住 · 碗陪你慢慢落地',
+      dorsal_freeze: '睇落有啲空空哋 · 輕輕搞醒少少感覺',
+      ventral_regulated: '睇落幾靚 · 一齊留住呢個瞬間',
+      unspoken: '唔使特別目標 · 同碗靜靜坐一陣都得',
+    },
+    regulate_next: '陪完 · 繼續 →',
     bridge_share_class: '想話俾老師聽',
     bridge_share_family: '想話俾屋企人聽',
     bridge_share_timeline: '留返俾我自己 timeline',
@@ -511,8 +536,8 @@ export const WORDING: Record<WordingMode, WordingPack> = {
     customize_place_hint_solo: (d) => `撳上面 · 放「${d}」`,
     customize_idle_hint: '先揀一件飾品 · 再撳碗上想放嘅位置',
     customize_idle_hint_solo: '先揀一件飾品 · 再撳想放嘅位置',
-    customize_next: '打扮好 · 繼續 →',
-    customize_skip: '略過打扮 →',
+    customize_next: '打扮好 · 去做調節 →',
+    customize_skip: '略過打扮 · 去做調節 →',
     release_title: (bowl) => `你想點安頓「${bowl}」?`,
     release_sub: '用一個象徵動作 · 為今日嘅情緒做個收束',
     release_actions: {
@@ -556,6 +581,16 @@ export const WORDING: Record<WordingMode, WordingPack> = {
     release_smile_done: '多謝你嘅笑',
     release_home: '回主頁',
     regulate_skip: '暫時唔使 · 我 OK',
+    regulate_eyebrow: '陪自己做啲調節',
+    regulate_sub_by_state: {
+      sympathetic_fire: '身體有啲被点燃 · 一齊釋放同呼吸',
+      dorsal_sad: '能量偏低 · 一齊睇啲溫柔畫面托住自己',
+      sympathetic_anxious: '節奏偏快 · 一齊慢慢落地',
+      dorsal_freeze: '有啲抽離 · 輕輕激活少少感覺',
+      ventral_regulated: '狀態幾穩 · 一齊留住呢個瞬間',
+      unspoken: '唔使特別目標 · 同自己靜靜坐一陣都得',
+    },
+    regulate_next: '調節完 · 繼續 →',
     bridge_share_class: '想話俾老師／同事聽（可選）',
     bridge_share_family: '想話俾屋企人聽（可選）',
     bridge_share_timeline: '留喺自己 timeline',

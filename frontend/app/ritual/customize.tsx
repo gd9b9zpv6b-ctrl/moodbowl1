@@ -206,7 +206,7 @@ export default function RitualCustomizeScreen() {
 
         <Pressable
           testID="customize-next-btn"
-          onPress={() => router.push('/ritual/release')}
+          onPress={() => router.push('/ritual/regulate')}
           style={styles.cta}
         >
           <Text style={styles.ctaText}>{w.customize_next}</Text>
@@ -214,7 +214,7 @@ export default function RitualCustomizeScreen() {
 
         <Pressable
           testID="customize-skip-btn"
-          onPress={() => router.push('/ritual/release')}
+          onPress={() => router.push('/ritual/regulate')}
           style={styles.skipBtn}
         >
           <Text style={styles.skipText}>{w.customize_skip}</Text>

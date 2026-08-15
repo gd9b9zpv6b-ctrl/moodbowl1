@@ -408,20 +408,6 @@ export default function RitualReleaseScreen() {
             <Text style={styles.ctaText}>{w.release_finish}</Text>
           )}
         </Pressable>
-
-        <Pressable
-          testID="release-regulate-btn"
-          onPress={() => {
-            if (!picked) return;
-            router.push('/ritual/regulate');
-          }}
-          disabled={!picked || saving}
-          style={styles.secondary}
-        >
-          <Text style={[styles.secondaryText, !picked && { opacity: 0.45 }]}>
-            {w.release_regulate}
-          </Text>
-        </Pressable>
       </ScrollView>
     </SafeAreaView>
   );

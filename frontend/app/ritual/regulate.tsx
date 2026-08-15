@@ -27,8 +27,7 @@ type ActivityKind =
   | 'affirmation'
   | 'soft_scenes'
   | 'gentle_stretch'
-  | 'savor_3'
-  | 'skip_hint';
+  | 'savor_3';
 
 type ActivityDef = {
   key: string;
@@ -38,7 +37,7 @@ type ActivityDef = {
 };
 
 /**
- * 「陪碗做啲嘢」· mapped to product table (shake / music / video deferred).
+ * Main-path companion step · activities differ by detected nervous-system state.
  */
 const ACTIVITIES: Record<NSState, ActivityDef[]> = {
   sympathetic_fire: [
@@ -67,9 +66,8 @@ const ACTIVITIES: Record<NSState, ActivityDef[]> = {
     { key: 'slideshow_affirmations', label: '溫柔金句', icon: 'heart', kind: 'affirmation' },
   ],
   unspoken: [
-    { key: 'sit_with_bowl', label: '同碗坐一坐', icon: 'coffee', kind: 'breath_4_7_8' },
+    { key: 'sit_with_bowl', label: '同碗坐一坐 · 呼吸', icon: 'coffee', kind: 'breath_4_7_8' },
     { key: 'slideshow_affirmations', label: '淡淡地金句', icon: 'heart', kind: 'affirmation' },
-    { key: 'soft_skip', label: '唔使 goal · 直接繼續', icon: 'skip-forward', kind: 'skip_hint' },
   ],
 };
 
@@ -86,23 +84,26 @@ export default function RitualRegulateScreen() {
   const state = useMemo(() => detectState(soup, bodyChips), [soup, bodyChips]);
   const activities = ACTIVITIES[state];
   const emotion = selectedBowlKey ? EMOTION_BY_KEY[selectedBowlKey] : null;
+  const didCompanion = useMemo(
+    () => activities.some((a) => regulationUsed.includes(a.key)),
+    [activities, regulationUsed],
+  );
 
   const [active, setActive] = useState<ActivityKind | null>(null);
   const [activeKey, setActiveKey] = useState<string | null>(null);
+  const [sessionDone, setSessionDone] = useState<string[]>([]);
 
   const goRelease = () => router.push('/ritual/release');
 
   const openActivity = (a: ActivityDef) => {
-    if (a.kind === 'skip_hint') {
-      goRelease();
-      return;
-    }
     setActiveKey(a.key);
     setActive(a.kind);
   };
 
   const completeActivity = (key?: string) => {
-    addRegulation(key || activeKey || 'activity');
+    const k = key || activeKey || 'activity';
+    addRegulation(k);
+    setSessionDone((prev) => (prev.includes(k) ? prev : [...prev, k]));
     setActive(null);
     setActiveKey(null);
   };
@@ -111,6 +112,8 @@ export default function RitualRegulateScreen() {
     setActive(null);
     setActiveKey(null);
   };
+
+  const accompanied = didCompanion || sessionDone.length > 0;
 
   return (
     <SafeAreaView style={styles.safe} edges={['top', 'bottom']}>
@@ -127,22 +130,30 @@ export default function RitualRegulateScreen() {
       </View>
 
       <ScrollView contentContainerStyle={styles.scroll} showsVerticalScrollIndicator={false}>
+        <Text testID="regulate-eyebrow" style={styles.eyebrow}>
+          {w.regulate_eyebrow}
+        </Text>
+
         <View style={styles.bowl}>
           <EmotionVisual emotion={emotion} size={160} radius={RADIUS.lg} />
         </View>
+
         <Text testID="regulate-state-title" style={styles.title}>
           {w.regulate_by_state[state]}
         </Text>
-        <Text style={styles.sub}>揀一樣同碗一齊做 · 唔使全部</Text>
+        <Text testID="regulate-state-sub" style={styles.sub}>
+          {w.regulate_sub_by_state[state]}
+        </Text>
+        <Text style={styles.hint}>揀一樣同碗一齊做完 · 再繼續（唔使全部）</Text>
 
         {activities.map((a) => {
-          const done = regulationUsed.includes(a.key);
+          const done = regulationUsed.includes(a.key) || sessionDone.includes(a.key);
           return (
             <Pressable
               key={a.key}
               testID={`regulate-activity-${a.key}`}
               onPress={() => openActivity(a)}
-              style={styles.activity}
+              style={[styles.activity, done && styles.activityDone]}
             >
               <View style={styles.activityIcon}>
                 <Feather name={a.icon} size={18} color={COLORS.textPrimary} />
@@ -157,12 +168,17 @@ export default function RitualRegulateScreen() {
           );
         })}
 
-        <Pressable testID="regulate-skip-btn" onPress={goRelease} style={styles.skip}>
-          <Text style={styles.skipText}>{w.regulate_skip}</Text>
+        <Pressable
+          testID="regulate-next-btn"
+          onPress={goRelease}
+          disabled={!accompanied}
+          style={[styles.cta, !accompanied && { opacity: 0.4 }]}
+        >
+          <Text style={styles.ctaText}>{w.regulate_next}</Text>
         </Pressable>
 
-        <Pressable testID="regulate-next-btn" onPress={goRelease} style={styles.cta}>
-          <Text style={styles.ctaText}>下一步 →</Text>
+        <Pressable testID="regulate-skip-btn" onPress={goRelease} style={styles.skip}>
+          <Text style={styles.skipText}>{w.regulate_skip}</Text>
         </Pressable>
       </ScrollView>
 
@@ -229,6 +245,12 @@ const styles = StyleSheet.create({
   },
   headerSpacer: { width: 40 },
   scroll: { paddingHorizontal: SPACING.lg, paddingBottom: SPACING.xxl },
+  eyebrow: {
+    fontSize: 13,
+    fontWeight: '700',
+    color: COLORS.textSecondary,
+    marginBottom: SPACING.sm,
+  },
   bowl: { alignItems: 'center', marginBottom: SPACING.md },
   title: {
     fontSize: 22,
@@ -238,6 +260,13 @@ const styles = StyleSheet.create({
     lineHeight: 30,
   },
   sub: {
+    fontSize: 15,
+    fontWeight: '600',
+    color: COLORS.textPrimary,
+    marginBottom: SPACING.sm,
+    lineHeight: 22,
+  },
+  hint: {
     fontSize: 13,
     color: COLORS.textSecondary,
     marginBottom: SPACING.lg,
@@ -251,6 +280,12 @@ const styles = StyleSheet.create({
     borderRadius: RADIUS.md,
     padding: SPACING.md,
     marginBottom: SPACING.sm,
+    borderWidth: 1.5,
+    borderColor: 'transparent',
+  },
+  activityDone: {
+    borderColor: COLORS.primary,
+    backgroundColor: COLORS.primaryLight,
   },
   activityIcon: {
     width: 36,
@@ -269,7 +304,7 @@ const styles = StyleSheet.create({
     backgroundColor: COLORS.primary,
     alignItems: 'center',
     justifyContent: 'center',
-    marginTop: SPACING.sm,
+    marginTop: SPACING.md,
   },
   ctaText: { fontSize: 17, fontWeight: '700', color: COLORS.textPrimary },
 });
