@@ -10,6 +10,9 @@ export type WordingMode = 'lower' | 'upper' | 'adult';
 export type WordingPack = {
   soup_title: string;
   soup_sub: string;
+  /** After picking a drink · shown during the offer animation. */
+  soup_offer_done: (drinkLabel: string) => string;
+  soup_offer_skip: string;
   body_title: string;
   /** Clarifies L1 ambiguity · drink can be craving OR state. */
   body_clarify: string;
@@ -227,8 +230,10 @@ const REGION_ADULT: Record<BodyRegionKey, string> = {
 
 export const WORDING: Record<WordingMode, WordingPack> = {
   lower: {
-    soup_title: '今日想飲咩?',
-    soup_sub: '揀一種最似而家感覺嘅飲品 · 慢慢揀就得',
+    soup_title: '你想請你嘅碗星靈飲啲乜嘢啊?',
+    soup_sub: '揀一杯請佢 · 慢慢揀就得',
+    soup_offer_done: (drink) => `請咗「${drink}」俾碗星靈 · 佢好開心`,
+    soup_offer_skip: '碗星靈明白 · 今日唔使飲',
     body_title: '戳戳碗仔 · 邊度喺度嘈?',
     body_clarify: '碗仔係你嘅身體地圖 · 撳吓邊度有感覺',
     body_vessel: '由米堆戳到腳趾 · 最多揀 3 樣最嘈嘅',
@@ -312,8 +317,10 @@ export const WORDING: Record<WordingMode, WordingPack> = {
     chip_labels: CHIP_LOWER,
   },
   upper: {
-    soup_title: '今日嘅狀態岩飲邊樣飲品?',
-    soup_sub: '揀最似而家感覺嘅 · 可以係想安慰自己嘅味道 · 下一步會對齊身體',
+    soup_title: '你想請你嘅碗星靈飲啲乜嘢啊?',
+    soup_sub: '揀一杯請佢 · 可以係想安慰自己嘅味道 · 下一步會對齊身體',
+    soup_offer_done: (drink) => `請咗「${drink}」俾碗星靈 · 精靈收咗`,
+    soup_offer_skip: '碗星靈明白 · 今日唔使飲',
     body_title: '戳戳碗仔 · 身體掃描',
     body_clarify: '想飲甜唔等於開心 · 戳碗仔睇真相',
     body_vessel: '撳碗仔部位 · 睇吓浮起咩感覺',
@@ -397,8 +404,10 @@ export const WORDING: Record<WordingMode, WordingPack> = {
     chip_labels: CHIP_UPPER,
   },
   adult: {
-    soup_title: '而家呢刻 · 你比較似邊種飲品?',
-    soup_sub: '用飲品做隱喻 · 可以係狀態 · 亦可以係想慰藉自己嘅味道',
+    soup_title: '你想請你嘅碗星靈飲啲乜?',
+    soup_sub: '用一杯飲品請佢 · 可以係狀態 · 亦可以係想慰藉自己嘅味道',
+    soup_offer_done: (drink) => `已請「${drink}」俾碗星靈`,
+    soup_offer_skip: '碗星靈明白 · 今日可以唔飲',
     body_title: '戳戳碗仔 · 身體覺察',
     body_clarify: '想飲甜可以係開心 · 亦可以係想被安慰 · 身體幫你分清楚',
     body_vessel: '撳碗仔部位 · 睇吓浮起嘅感覺',
