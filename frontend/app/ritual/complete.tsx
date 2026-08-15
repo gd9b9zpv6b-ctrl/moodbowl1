@@ -6,6 +6,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { EmotionVisual } from '@/src/components/emotion-visual';
 import { RitualDiaryEscape } from '@/src/components/ritual-diary-escape';
+import { tintBackdrop } from '@/src/constants/bowl-color-tints';
 import { EMOTION_BY_KEY } from '@/src/constants/emotions';
 import { COLORS, RADIUS, SPACING } from '@/src/constants/theme';
 import { listMyDiaryEntries, markRitualSmileCompleted } from '@/src/lib/diary';
@@ -100,13 +101,13 @@ export default function RitualCompleteScreen() {
         <RitualDiaryEscape />
       </View>
       <View style={styles.content}>
-        <View style={styles.bowl}>
-          <EmotionVisual
-            emotion={emotion}
-            size={200}
-            radius={RADIUS.lg}
-            colorTint={colorTint}
-          />
+        <View
+          style={[
+            styles.bowl,
+            tintBackdrop(colorTint) && { backgroundColor: tintBackdrop(colorTint) },
+          ]}
+        >
+          <EmotionVisual emotion={emotion} size={200} radius={RADIUS.lg} />
         </View>
 
         <Text style={styles.headline}>✨ 你搞掂啦 🌸</Text>
@@ -153,7 +154,12 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
   },
-  bowl: { marginBottom: SPACING.lg },
+  bowl: {
+    marginBottom: SPACING.lg,
+    padding: SPACING.lg,
+    borderRadius: RADIUS.lg,
+    backgroundColor: COLORS.bgInput,
+  },
   headline: {
     fontSize: 26,
     fontWeight: '800',

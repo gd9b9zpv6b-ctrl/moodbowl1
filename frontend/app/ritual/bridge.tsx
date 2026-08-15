@@ -15,6 +15,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { EmotionVisual } from '@/src/components/emotion-visual';
 import { RitualDiaryEscape } from '@/src/components/ritual-diary-escape';
+import { tintBackdrop } from '@/src/constants/bowl-color-tints';
 import { EMOTION_BY_KEY } from '@/src/constants/emotions';
 import { COLORS, RADIUS, SPACING } from '@/src/constants/theme';
 import { saveRitualWithActivities } from '@/src/lib/diary';
@@ -97,13 +98,13 @@ export default function RitualBridgeScreen() {
       </View>
 
       <ScrollView contentContainerStyle={styles.scroll} showsVerticalScrollIndicator={false}>
-        <View style={styles.bowl}>
-          <EmotionVisual
-            emotion={emotion}
-            size={180}
-            radius={RADIUS.lg}
-            colorTint={colorTint}
-          />
+        <View
+          style={[
+            styles.bowl,
+            tintBackdrop(colorTint) && { backgroundColor: tintBackdrop(colorTint) },
+          ]}
+        >
+          <EmotionVisual emotion={emotion} size={180} radius={RADIUS.lg} />
         </View>
 
         <Text style={styles.title}>{w.bridge_by_state[state]}</Text>
@@ -182,7 +183,14 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   scroll: { paddingHorizontal: SPACING.lg, paddingBottom: SPACING.xxl },
-  bowl: { alignItems: 'center', marginBottom: SPACING.lg },
+  bowl: {
+    alignItems: 'center',
+    marginBottom: SPACING.lg,
+    alignSelf: 'center',
+    padding: SPACING.lg,
+    borderRadius: RADIUS.lg,
+    backgroundColor: COLORS.bgInput,
+  },
   title: {
     fontSize: 20,
     fontWeight: '800',

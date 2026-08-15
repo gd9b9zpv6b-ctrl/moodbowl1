@@ -8,6 +8,7 @@ import { EmotionVisual } from '@/src/components/emotion-visual';
 import { RitualDiaryEscape } from '@/src/components/ritual-diary-escape';
 import {
   BOWL_COLOR_TINTS,
+  tintBackdrop,
   tintLabel,
 } from '@/src/constants/bowl-color-tints';
 import { EMOTION_BY_KEY } from '@/src/constants/emotions';
@@ -63,23 +64,23 @@ export default function RitualCustomizeScreen() {
 
       <ScrollView contentContainerStyle={styles.scroll} showsVerticalScrollIndicator={false}>
         <Text style={styles.title}>{w.customize_title(emotion?.label || '碗')}</Text>
-        <Text style={styles.sub}>撳顏色 · 即刻見到碗換色</Text>
+        <Text style={styles.sub}>撳顏色 · 換碗後面嘅背景</Text>
 
-        <View style={styles.previewWrap}>
+        <View
+          style={[
+            styles.previewWrap,
+            tintBackdrop(activeHex) && { backgroundColor: tintBackdrop(activeHex) },
+          ]}
+        >
           <View style={[styles.previewInner, { transform: [{ scale }] }]}>
-            <EmotionVisual
-              emotion={emotion}
-              size={200}
-              radius={RADIUS.lg}
-              colorTint={colorTint}
-            />
+            <EmotionVisual emotion={emotion} size={200} radius={RADIUS.lg} />
           </View>
           <Text style={styles.previewCaption} testID="customize-color-label">
-            而家顏色 · {activeLabel}
+            而家背景 · {activeLabel}
           </Text>
         </View>
 
-        <Text style={styles.section}>換顏色</Text>
+        <Text style={styles.section}>換背景</Text>
         <View style={styles.colorRow}>
           {BOWL_COLOR_TINTS.map((tint) => {
             const active = activeHex === tint.hex;

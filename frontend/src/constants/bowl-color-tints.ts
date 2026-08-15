@@ -4,8 +4,8 @@ export type BowlColorTint = {
 };
 
 /**
- * User-picked bowl recolors for the customize step.
- * Applied via EmotionVisual mix-blend (recolors the art, not a wash on top).
+ * User-picked backdrop colours for the customize step.
+ * Applied behind the bowl art · the mascot PNG itself stays original.
  */
 export const BOWL_COLOR_TINTS: BowlColorTint[] = [
   { hex: '#FFFFFF', label: '原本' },
@@ -22,4 +22,10 @@ export const BOWL_COLOR_TINTS: BowlColorTint[] = [
 export function tintLabel(hex: string | null | undefined): string {
   if (!hex || hex === '#FFFFFF') return '原本';
   return BOWL_COLOR_TINTS.find((t) => t.hex === hex)?.label || '顏色';
+}
+
+/** Backdrop fill for a saved / picked tint · null when “原本”. */
+export function tintBackdrop(hex: string | null | undefined): string | undefined {
+  if (!hex || hex === '#FFFFFF') return undefined;
+  return hex;
 }
