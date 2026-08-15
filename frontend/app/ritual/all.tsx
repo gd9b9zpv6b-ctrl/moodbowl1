@@ -4,7 +4,7 @@ import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { EmotionVisual } from '@/src/components/emotion-visual';
-import { RitualDiaryEscape } from '@/src/components/ritual-diary-escape';
+import { RitualDiaryFooter } from '@/src/components/ritual-diary-escape';
 import { EMOTIONS } from '@/src/constants/emotions';
 import { COLORS, RADIUS, SPACING } from '@/src/constants/theme';
 import { useRitualStore } from '@/src/lib/ritual/ritual-store';
@@ -25,7 +25,7 @@ export default function RitualAllScreen() {
           <Feather name="chevron-left" size={22} color={COLORS.textPrimary} />
         </Pressable>
         <Text style={styles.headerTitle}>全部心情碗</Text>
-        <RitualDiaryEscape />
+        <View style={styles.headerSpacer} />
       </View>
 
       <ScrollView contentContainerStyle={styles.scroll} showsVerticalScrollIndicator={false}>
@@ -48,6 +48,7 @@ export default function RitualAllScreen() {
           ))}
         </View>
       </ScrollView>
+      <RitualDiaryFooter />
     </SafeAreaView>
   );
 }
@@ -70,6 +71,7 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   headerTitle: { fontSize: 18, fontWeight: '700', color: COLORS.textPrimary },
+  headerSpacer: { width: 40 },
   scroll: { paddingHorizontal: SPACING.lg, paddingBottom: SPACING.xxl },
   grid: { flexDirection: 'row', flexWrap: 'wrap', gap: SPACING.sm },
   card: {

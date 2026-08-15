@@ -7,7 +7,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { EmotionVisual } from '@/src/components/emotion-visual';
 import { ProgressDots } from '@/src/components/progress-dots';
-import { RitualDiaryEscape } from '@/src/components/ritual-diary-escape';
+import { RitualDiaryFooter } from '@/src/components/ritual-diary-escape';
 import type { Emotion } from '@/src/constants/emotions';
 import { COLORS, RADIUS, SPACING } from '@/src/constants/theme';
 import { wordingFor } from '@/src/lib/i18n/wording-mode';
@@ -67,7 +67,7 @@ export default function RitualPickScreen() {
           <Feather name="chevron-left" size={22} color={COLORS.textPrimary} />
         </Pressable>
         <ProgressDots total={3} active={3} />
-        <RitualDiaryEscape />
+        <View style={styles.headerSpacer} />
       </View>
 
       <ScrollView contentContainerStyle={styles.scroll} showsVerticalScrollIndicator={false}>
@@ -113,6 +113,7 @@ export default function RitualPickScreen() {
           </>
         )}
       </ScrollView>
+      <RitualDiaryFooter />
     </SafeAreaView>
   );
 }
@@ -134,6 +135,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
   },
+  headerSpacer: { width: 40 },
   scroll: { paddingHorizontal: SPACING.lg, paddingBottom: SPACING.xxl },
   title: {
     fontSize: 26,

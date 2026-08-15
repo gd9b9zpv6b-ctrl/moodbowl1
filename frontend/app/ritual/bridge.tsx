@@ -14,7 +14,7 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { EmotionVisual } from '@/src/components/emotion-visual';
-import { RitualDiaryEscape } from '@/src/components/ritual-diary-escape';
+import { RitualDiaryFooter } from '@/src/components/ritual-diary-escape';
 import { tintBackdrop } from '@/src/constants/bowl-color-tints';
 import { EMOTION_BY_KEY } from '@/src/constants/emotions';
 import { COLORS, RADIUS, SPACING } from '@/src/constants/theme';
@@ -94,7 +94,7 @@ export default function RitualBridgeScreen() {
         >
           <Feather name="chevron-left" size={22} color={COLORS.textPrimary} />
         </Pressable>
-        <RitualDiaryEscape />
+        <View style={styles.headerSpacer} />
       </View>
 
       <ScrollView contentContainerStyle={styles.scroll} showsVerticalScrollIndicator={false}>
@@ -161,6 +161,7 @@ export default function RitualBridgeScreen() {
           )}
         </Pressable>
       </ScrollView>
+      <RitualDiaryFooter />
     </SafeAreaView>
   );
 }
@@ -182,6 +183,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
   },
+  headerSpacer: { width: 40 },
   scroll: { paddingHorizontal: SPACING.lg, paddingBottom: SPACING.xxl },
   bowl: {
     alignItems: 'center',

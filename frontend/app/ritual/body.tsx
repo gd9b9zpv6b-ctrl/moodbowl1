@@ -13,7 +13,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { BodyScanFigure } from '@/src/components/body-scan-figure';
 import { ProgressDots } from '@/src/components/progress-dots';
-import { RitualDiaryEscape } from '@/src/components/ritual-diary-escape';
+import { RitualDiaryFooter } from '@/src/components/ritual-diary-escape';
 import {
   BODY_CHIPS,
   type BodyChipKey,
@@ -125,7 +125,6 @@ export default function RitualBodyScreen() {
           >
             <Text style={styles.skip}>{w.body_skip}</Text>
           </Pressable>
-          <RitualDiaryEscape />
         </View>
       </View>
 
@@ -219,6 +218,7 @@ export default function RitualBodyScreen() {
           <Text style={styles.ctaText}>{w.body_cta}</Text>
         </Pressable>
       </ScrollView>
+      <RitualDiaryFooter />
     </SafeAreaView>
   );
 }

@@ -5,7 +5,7 @@ import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { EmotionVisual } from '@/src/components/emotion-visual';
-import { RitualDiaryEscape } from '@/src/components/ritual-diary-escape';
+import { RitualDiaryFooter } from '@/src/components/ritual-diary-escape';
 import {
   BOWL_COLOR_TINTS,
   tintBackdrop,
@@ -59,7 +59,7 @@ export default function RitualCustomizeScreen() {
         >
           <Feather name="chevron-left" size={22} color={COLORS.textPrimary} />
         </Pressable>
-        <RitualDiaryEscape />
+        <View style={styles.headerSpacer} />
       </View>
 
       <ScrollView contentContainerStyle={styles.scroll} showsVerticalScrollIndicator={false}>
@@ -148,6 +148,7 @@ export default function RitualCustomizeScreen() {
           <Text style={styles.ctaText}>{w.customize_next}</Text>
         </Pressable>
       </ScrollView>
+      <RitualDiaryFooter />
     </SafeAreaView>
   );
 }
@@ -169,6 +170,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
   },
+  headerSpacer: { width: 40 },
   scroll: { paddingHorizontal: SPACING.lg, paddingBottom: SPACING.xxl },
   title: {
     fontSize: 22,

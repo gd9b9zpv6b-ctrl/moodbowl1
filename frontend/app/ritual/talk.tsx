@@ -14,7 +14,7 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { EmotionVisual } from '@/src/components/emotion-visual';
-import { RitualDiaryEscape } from '@/src/components/ritual-diary-escape';
+import { RitualDiaryFooter } from '@/src/components/ritual-diary-escape';
 import { EMOTION_BY_KEY } from '@/src/constants/emotions';
 import { COLORS, RADIUS, SPACING } from '@/src/constants/theme';
 import { wordingFor } from '@/src/lib/i18n/wording-mode';
@@ -59,7 +59,7 @@ export default function RitualTalkScreen() {
           >
             <Feather name="chevron-left" size={22} color={COLORS.textPrimary} />
           </Pressable>
-          <RitualDiaryEscape />
+          <View style={styles.headerSpacer} />
         </View>
 
         <ScrollView
@@ -114,6 +114,7 @@ export default function RitualTalkScreen() {
             <Text style={styles.secondaryText}>{w.talk_hug}</Text>
           </Pressable>
         </ScrollView>
+        <RitualDiaryFooter />
       </KeyboardAvoidingView>
     </SafeAreaView>
   );
@@ -136,6 +137,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
   },
+  headerSpacer: { width: 40 },
   scroll: { paddingHorizontal: SPACING.lg, paddingBottom: SPACING.xxl },
   bowlBlock: { alignItems: 'center', marginBottom: SPACING.md },
   speech: {
