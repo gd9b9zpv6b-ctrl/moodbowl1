@@ -42,7 +42,7 @@ export default function RitualTalkScreen() {
   const count = diaryText.trim().length;
   const hint = useMemo(() => tierHint(count), [count]);
 
-  const goRegulate = () => router.push('/ritual/regulate');
+  const goCustomize = () => router.push('/ritual/customize');
 
   return (
     <SafeAreaView style={styles.safe} edges={['top', 'bottom']}>
@@ -74,6 +74,12 @@ export default function RitualTalkScreen() {
             </View>
           </View>
 
+          {emotion && (
+            <Text style={styles.gotBowl} testID="talk-got-bowl">
+              {w.talk_got_bowl(emotion.label)}
+            </Text>
+          )}
+
           <Text style={styles.title}>{w.talk_title(emotion?.label || '碗')}</Text>
 
           <TextInput
@@ -95,7 +101,7 @@ export default function RitualTalkScreen() {
             testID="talk-submit-btn"
             onPress={() => {
               setCheckInType('full');
-              goRegulate();
+              goCustomize();
             }}
             style={styles.cta}
           >
@@ -107,7 +113,7 @@ export default function RitualTalkScreen() {
             onPress={() => {
               setCheckInType('hug_only');
               setDiaryText('');
-              goRegulate();
+              goCustomize();
             }}
             style={styles.secondary}
           >
@@ -148,6 +154,13 @@ const styles = StyleSheet.create({
     paddingVertical: SPACING.sm,
   },
   speechText: { fontSize: 13, color: COLORS.textSecondary },
+  gotBowl: {
+    textAlign: 'center',
+    fontSize: 15,
+    fontWeight: '800',
+    color: COLORS.textPrimary,
+    marginBottom: SPACING.sm,
+  },
   title: {
     fontSize: 20,
     fontWeight: '800',

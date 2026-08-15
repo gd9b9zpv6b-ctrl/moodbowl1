@@ -23,8 +23,11 @@ export type WordingPack = {
   pick_expand: string;
   pick_collapse: string;
   pick_see_all: string;
+  customize_got_bowl: (bowlLabel: string) => string;
   customize_title: (bowlLabel: string) => string;
+  customize_sub: string;
   customize_next: string;
+  talk_got_bowl: (bowlLabel: string) => string;
   talk_title: (bowlLabel: string) => string;
   talk_speech: string;
   talk_placeholder: string;

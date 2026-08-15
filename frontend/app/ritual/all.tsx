@@ -36,7 +36,7 @@ export default function RitualAllScreen() {
               testID={`bowl-all-${emotion.key}`}
               onPress={() => {
                 setBowl(emotion.key);
-                router.push('/ritual/customize');
+                router.push('/ritual/talk');
               }}
               style={[styles.card, { backgroundColor: emotion.color + '4D' }]}
             >

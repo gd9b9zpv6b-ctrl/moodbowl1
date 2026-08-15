@@ -31,7 +31,7 @@ export default function RitualPickScreen() {
   const onPick = (emotion: Emotion) => {
     setBowl(emotion.key);
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium).catch(() => {});
-    router.push('/ritual/customize');
+    router.push('/ritual/talk');
   };
 
   const renderCard = (emotion: Emotion) => (

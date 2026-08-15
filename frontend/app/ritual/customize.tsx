@@ -63,8 +63,11 @@ export default function RitualCustomizeScreen() {
       </View>
 
       <ScrollView contentContainerStyle={styles.scroll} showsVerticalScrollIndicator={false}>
+        <Text style={styles.gotBowl} testID="customize-got-bowl">
+          {w.customize_got_bowl(emotion?.label || '碗')}
+        </Text>
         <Text style={styles.title}>{w.customize_title(emotion?.label || '碗')}</Text>
-        <Text style={styles.sub}>撳顏色 · 換碗後面嘅背景</Text>
+        <Text style={styles.sub}>{w.customize_sub}</Text>
 
         <View
           style={[
@@ -142,7 +145,7 @@ export default function RitualCustomizeScreen() {
 
         <Pressable
           testID="customize-next-btn"
-          onPress={() => router.push('/ritual/talk')}
+          onPress={() => router.push('/ritual/regulate')}
           style={styles.cta}
         >
           <Text style={styles.ctaText}>{w.customize_next}</Text>
@@ -172,6 +175,12 @@ const styles = StyleSheet.create({
   },
   headerSpacer: { width: 40 },
   scroll: { paddingHorizontal: SPACING.lg, paddingBottom: SPACING.xxl },
+  gotBowl: {
+    fontSize: 16,
+    fontWeight: '800',
+    color: COLORS.textPrimary,
+    marginBottom: SPACING.xs,
+  },
   title: {
     fontSize: 22,
     fontWeight: '800',
