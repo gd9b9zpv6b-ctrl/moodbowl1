@@ -203,8 +203,10 @@ function toLegacyAwarePayload(userId: string, draft: DiaryDraft) {
 
 export async function createDiaryEntry(draft: DiaryDraft): Promise<Entry> {
   const userId = await requireUserId();
-  if (!draft.emotions?.length) {
-    throw new Error('揀至少一個心情先啦');
+  const hasEmotions = (draft.emotions || []).filter(Boolean).length > 0;
+  const hasNote = !!(draft.note || '').trim();
+  if (!hasEmotions && !hasNote) {
+    throw new Error('寫啲嘢或者揀心情先啦');
   }
 
   const full = await supabase

@@ -1,5 +1,5 @@
 import { Feather } from '@expo/vector-icons';
-import { useFocusEffect, useLocalSearchParams, useRouter } from 'expo-router';
+import { useFocusEffect, useRouter } from 'expo-router';
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import {
   ActivityIndicator,
@@ -54,7 +54,6 @@ export const resetOnboardingSession = () => {
 export default function Home() {
   const { user } = useAuth();
   const router = useRouter();
-  const params = useLocalSearchParams<{ openQuickDiary?: string }>();
   const layout = useResponsiveLayout();
   const [selectedKeys, setSelectedKeys] = useState<string[]>([]);
   const [note, setNote] = useState('');
@@ -84,21 +83,12 @@ export default function Home() {
     })();
   }, [user?.role]);
   const [activeCategory, setActiveCategory] = useState<EmotionCategory | 'all'>('all');
-  const [showQuickDiary, setShowQuickDiary] = useState(false);
   const [homeWordingMode, setHomeWordingMode] = useState<WordingMode>('upper');
   const ritualReset = useRitualStore((s) => s.reset);
   const setAgeGroup = useRitualStore((s) => s.setAgeGroup);
   const { recent, track } = useRecentEmotions();
   const ritualEnabled = FEATURE_FLAGS.RITUAL_V1;
   const homeWording = wordingFor(homeWordingMode);
-
-  // Ritual escape hatch · open inline diary when arriving with openQuickDiary=1
-  useEffect(() => {
-    if (params.openQuickDiary === '1') {
-      setShowQuickDiary(true);
-      router.setParams({ openQuickDiary: undefined });
-    }
-  }, [params.openQuickDiary, router]);
 
   useFocusEffect(
     useCallback(() => {
@@ -342,21 +332,10 @@ export default function Home() {
                 </Pressable>
                 <Pressable
                   testID="home-diary-quick-btn"
-                  onPress={() => setShowQuickDiary((v) => !v)}
+                  onPress={() => router.push('/quick-diary')}
                   style={styles.ritualLinkBtn}
                 >
-                  <Text style={styles.ritualLinkText}>
-                    {showQuickDiary ? `收埋${homeWording.home_quick_diary}` : homeWording.home_quick_diary}
-                  </Text>
-                </Pressable>
-                <Pressable
-                  testID="home-album-btn"
-                  onPress={() =>
-                    router.push({ pathname: '/(tabs)/calendar', params: { mode: 'album' } })
-                  }
-                  style={styles.ritualLinkBtn}
-                >
-                  <Text style={styles.ritualLinkText}>{homeWording.home_album}</Text>
+                  <Text style={styles.ritualLinkText}>{homeWording.home_quick_diary}</Text>
                 </Pressable>
               </View>
             )}
@@ -396,7 +375,7 @@ export default function Home() {
               </Pressable>
             </View>
 
-            {(!ritualEnabled || showQuickDiary) && (
+            {!ritualEnabled && (
             <>
             <View style={styles.emotionPromptRow}>
               <Text style={styles.emotionPromptTitle}>你今日嘅感受點啊</Text>
