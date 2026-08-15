@@ -1,7 +1,7 @@
 import { Feather } from '@expo/vector-icons';
 import { Image } from 'expo-image';
 import React from 'react';
-import { StyleSheet, View, ViewStyle } from 'react-native';
+import { Platform, StyleSheet, View, ViewStyle } from 'react-native';
 
 import { Emotion } from '@/src/constants/emotions';
 import { COLORS, RADIUS } from '@/src/constants/theme';
@@ -26,6 +26,7 @@ function hasTint(hex?: string | null): hex is string {
  *
  * When `colorTint` is set, the bowl art is recolored with mix-blend `color`
  * so shading / outlines stay from the original — not a translucent overlay.
+ * Android uses a softer opacity so a missing blend never fully covers the art.
  */
 export function EmotionVisual({ emotion, size, radius, style, colorTint }: Props) {
   if (!emotion) return null;
@@ -55,6 +56,8 @@ export function EmotionVisual({ emotion, size, radius, style, colorTint }: Props
                 backgroundColor: tint,
                 // Recolor artwork: take hue/sat from tint, keep luminosity from PNG.
                 mixBlendMode: 'color' as const,
+                // If blend is unavailable on some Android builds, stay translucent.
+                opacity: Platform.OS === 'android' ? 0.55 : 1,
               },
             ]}
           />
