@@ -15,7 +15,6 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { EmotionVisual } from '@/src/components/emotion-visual';
 import { RitualDiaryEscape } from '@/src/components/ritual-diary-escape';
-import { tintWash } from '@/src/constants/bowl-color-tints';
 import { EMOTION_BY_KEY } from '@/src/constants/emotions';
 import { COLORS, RADIUS, SPACING } from '@/src/constants/theme';
 import { saveRitualWithActivities } from '@/src/lib/diary';
@@ -99,15 +98,12 @@ export default function RitualBridgeScreen() {
 
       <ScrollView contentContainerStyle={styles.scroll} showsVerticalScrollIndicator={false}>
         <View style={styles.bowl}>
-          <View>
-            <EmotionVisual emotion={emotion} size={180} radius={RADIUS.lg} />
-            {colorTint && colorTint !== '#FFFFFF' && (
-              <View
-                pointerEvents="none"
-                style={[styles.tint, { backgroundColor: tintWash(colorTint) }]}
-              />
-            )}
-          </View>
+          <EmotionVisual
+            emotion={emotion}
+            size={180}
+            radius={RADIUS.lg}
+            colorTint={colorTint}
+          />
         </View>
 
         <Text style={styles.title}>{w.bridge_by_state[state]}</Text>
@@ -187,10 +183,6 @@ const styles = StyleSheet.create({
   },
   scroll: { paddingHorizontal: SPACING.lg, paddingBottom: SPACING.xxl },
   bowl: { alignItems: 'center', marginBottom: SPACING.lg },
-  tint: {
-    ...StyleSheet.absoluteFillObject,
-    borderRadius: RADIUS.lg,
-  },
   title: {
     fontSize: 20,
     fontWeight: '800',
