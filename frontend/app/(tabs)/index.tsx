@@ -1,5 +1,5 @@
 import { Feather } from '@expo/vector-icons';
-import { useFocusEffect, useRouter } from 'expo-router';
+import { useFocusEffect, useLocalSearchParams, useRouter } from 'expo-router';
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import {
   ActivityIndicator,
@@ -54,6 +54,7 @@ export const resetOnboardingSession = () => {
 export default function Home() {
   const { user } = useAuth();
   const router = useRouter();
+  const params = useLocalSearchParams<{ openQuickDiary?: string }>();
   const layout = useResponsiveLayout();
   const [selectedKeys, setSelectedKeys] = useState<string[]>([]);
   const [note, setNote] = useState('');
@@ -90,6 +91,14 @@ export default function Home() {
   const { recent, track } = useRecentEmotions();
   const ritualEnabled = FEATURE_FLAGS.RITUAL_V1;
   const homeWording = wordingFor(homeWordingMode);
+
+  // Ritual escape hatch · open inline diary when arriving with openQuickDiary=1
+  useEffect(() => {
+    if (params.openQuickDiary === '1') {
+      setShowQuickDiary(true);
+      router.setParams({ openQuickDiary: undefined });
+    }
+  }, [params.openQuickDiary, router]);
 
   useFocusEffect(
     useCallback(() => {

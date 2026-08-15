@@ -13,6 +13,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { BodyScanFigure } from '@/src/components/body-scan-figure';
 import { ProgressDots } from '@/src/components/progress-dots';
+import { RitualDiaryEscape } from '@/src/components/ritual-diary-escape';
 import {
   BODY_CHIPS,
   type BodyChipKey,
@@ -113,16 +114,19 @@ export default function RitualBodyScreen() {
           <Feather name="chevron-left" size={22} color={COLORS.textPrimary} />
         </Pressable>
         <ProgressDots total={3} active={2} />
-        <Pressable
-          testID="ritual-body-skip"
-          onPress={() => {
-            skipChips();
-            goPick();
-          }}
-          hitSlop={8}
-        >
-          <Text style={styles.skip}>{w.body_skip}</Text>
-        </Pressable>
+        <View style={styles.headerRight}>
+          <Pressable
+            testID="ritual-body-skip"
+            onPress={() => {
+              skipChips();
+              goPick();
+            }}
+            hitSlop={8}
+          >
+            <Text style={styles.skip}>{w.body_skip}</Text>
+          </Pressable>
+          <RitualDiaryEscape />
+        </View>
       </View>
 
       <ScrollView contentContainerStyle={styles.scroll} showsVerticalScrollIndicator={false}>
@@ -236,7 +240,8 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
   },
-  skip: { fontSize: 13, color: COLORS.textSecondary, fontWeight: '600' },
+  skip: { fontSize: 12, color: COLORS.textSecondary, fontWeight: '600', textAlign: 'right' },
+  headerRight: { alignItems: 'flex-end', gap: 2, maxWidth: 110 },
   scroll: { paddingHorizontal: SPACING.lg, paddingBottom: SPACING.xxl },
   title: {
     fontSize: 22,

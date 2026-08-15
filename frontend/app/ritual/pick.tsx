@@ -7,6 +7,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { EmotionVisual } from '@/src/components/emotion-visual';
 import { ProgressDots } from '@/src/components/progress-dots';
+import { RitualDiaryEscape } from '@/src/components/ritual-diary-escape';
 import type { Emotion } from '@/src/constants/emotions';
 import { COLORS, RADIUS, SPACING } from '@/src/constants/theme';
 import { wordingFor } from '@/src/lib/i18n/wording-mode';
@@ -66,7 +67,7 @@ export default function RitualPickScreen() {
           <Feather name="chevron-left" size={22} color={COLORS.textPrimary} />
         </Pressable>
         <ProgressDots total={3} active={3} />
-        <View style={{ width: 40 }} />
+        <RitualDiaryEscape />
       </View>
 
       <ScrollView contentContainerStyle={styles.scroll} showsVerticalScrollIndicator={false}>
@@ -106,13 +107,6 @@ export default function RitualPickScreen() {
                   style={styles.seeAll}
                 >
                   <Text style={styles.seeAllText}>{w.pick_see_all}</Text>
-                </Pressable>
-                <Pressable
-                  testID="bowl-quick-diary"
-                  onPress={() => router.replace('/(tabs)')}
-                  style={styles.quickLink}
-                >
-                  <Text style={styles.quickLinkText}>{w.home_quick_diary}</Text>
                 </Pressable>
               </>
             )}
@@ -186,6 +180,4 @@ const styles = StyleSheet.create({
   expandText: { fontSize: 13, color: COLORS.textSecondary, fontWeight: '600' },
   seeAll: { alignItems: 'center', paddingVertical: SPACING.sm },
   seeAllText: { fontSize: 13, color: COLORS.textSecondary },
-  quickLink: { alignItems: 'center', paddingVertical: SPACING.sm },
-  quickLinkText: { fontSize: 13, color: COLORS.textSecondary, fontWeight: '700' },
 });

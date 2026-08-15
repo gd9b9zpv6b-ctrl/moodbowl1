@@ -6,6 +6,7 @@ import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { ProgressDots } from '@/src/components/progress-dots';
+import { RitualDiaryEscape } from '@/src/components/ritual-diary-escape';
 import { SOUPS, type SoupKey } from '@/src/constants/soups';
 import { COLORS, RADIUS, SPACING } from '@/src/constants/theme';
 import { wordingFor } from '@/src/lib/i18n/wording-mode';
@@ -40,7 +41,7 @@ export default function RitualSoupScreen() {
           <Feather name="chevron-left" size={22} color={COLORS.textPrimary} />
         </Pressable>
         <ProgressDots total={3} active={1} />
-        <View style={{ width: 40 }} />
+        <RitualDiaryEscape />
       </View>
 
       <ScrollView

@@ -5,6 +5,7 @@ import { Animated, Pressable, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { EmotionVisual } from '@/src/components/emotion-visual';
+import { RitualDiaryEscape } from '@/src/components/ritual-diary-escape';
 import { tintWash } from '@/src/constants/bowl-color-tints';
 import { EMOTION_BY_KEY } from '@/src/constants/emotions';
 import { COLORS, RADIUS, SPACING } from '@/src/constants/theme';
@@ -95,6 +96,10 @@ export default function RitualCompleteScreen() {
 
   return (
     <SafeAreaView style={styles.safe} edges={['top', 'bottom']}>
+      <View style={styles.header}>
+        <View style={styles.headerSpacer} />
+        <RitualDiaryEscape />
+      </View>
       <View style={styles.content}>
         <View style={styles.bowl}>
           <EmotionVisual emotion={emotion} size={200} radius={RADIUS.lg} />
@@ -133,6 +138,14 @@ export default function RitualCompleteScreen() {
 
 const styles = StyleSheet.create({
   safe: { flex: 1, backgroundColor: COLORS.bgMain },
+  header: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'flex-end',
+    paddingHorizontal: SPACING.lg,
+    paddingVertical: SPACING.sm,
+  },
+  headerSpacer: { flex: 1 },
   content: {
     flex: 1,
     padding: SPACING.lg,

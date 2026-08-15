@@ -10,6 +10,7 @@ import { BoxBreathing } from '@/src/components/regulation/box-breathing';
 import { Breath478 } from '@/src/components/regulation/breath-4-7-8';
 import { Grounding54321 } from '@/src/components/regulation/grounding-5-4-3-2-1';
 import { PunchBag } from '@/src/components/regulation/punch-bag';
+import { RitualDiaryEscape } from '@/src/components/ritual-diary-escape';
 import { EMOTION_BY_KEY } from '@/src/constants/emotions';
 import { COLORS, RADIUS, SPACING } from '@/src/constants/theme';
 import { wordingFor } from '@/src/lib/i18n/wording-mode';
@@ -90,7 +91,7 @@ export default function RitualRegulateScreen() {
         >
           <Feather name="chevron-left" size={22} color={COLORS.textPrimary} />
         </Pressable>
-        <View style={{ width: 40 }} />
+        <RitualDiaryEscape />
       </View>
 
       <ScrollView contentContainerStyle={styles.scroll} showsVerticalScrollIndicator={false}>

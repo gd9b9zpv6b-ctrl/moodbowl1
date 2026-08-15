@@ -4,6 +4,7 @@ import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { EmotionVisual } from '@/src/components/emotion-visual';
+import { RitualDiaryEscape } from '@/src/components/ritual-diary-escape';
 import { EMOTIONS } from '@/src/constants/emotions';
 import { COLORS, RADIUS, SPACING } from '@/src/constants/theme';
 import { useRitualStore } from '@/src/lib/ritual/ritual-store';
@@ -24,7 +25,7 @@ export default function RitualAllScreen() {
           <Feather name="chevron-left" size={22} color={COLORS.textPrimary} />
         </Pressable>
         <Text style={styles.headerTitle}>全部心情碗</Text>
-        <View style={{ width: 40 }} />
+        <RitualDiaryEscape />
       </View>
 
       <ScrollView contentContainerStyle={styles.scroll} showsVerticalScrollIndicator={false}>
