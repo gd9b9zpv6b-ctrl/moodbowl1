@@ -10,7 +10,6 @@ import { BoxBreathing } from '@/src/components/regulation/box-breathing';
 import { Breath478 } from '@/src/components/regulation/breath-4-7-8';
 import { Grounding54321 } from '@/src/components/regulation/grounding-5-4-3-2-1';
 import { PunchBag } from '@/src/components/regulation/punch-bag';
-import { RitualDiaryFooter } from '@/src/components/ritual-diary-escape';
 import { EMOTION_BY_KEY } from '@/src/constants/emotions';
 import { COLORS, RADIUS, SPACING } from '@/src/constants/theme';
 import { wordingFor } from '@/src/lib/i18n/wording-mode';
@@ -136,8 +135,6 @@ export default function RitualRegulateScreen() {
           <Text style={styles.ctaText}>下一步 →</Text>
         </Pressable>
       </ScrollView>
-
-      <RitualDiaryFooter />
 
       <Breath478
         visible={active === 'breath_4_7_8'}

@@ -14,7 +14,6 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { EmotionVisual } from '@/src/components/emotion-visual';
-import { RitualDiaryFooter } from '@/src/components/ritual-diary-escape';
 import { tintBackdrop } from '@/src/constants/bowl-color-tints';
 import { EMOTION_BY_KEY } from '@/src/constants/emotions';
 import { COLORS, RADIUS, SPACING } from '@/src/constants/theme';
@@ -161,7 +160,6 @@ export default function RitualBridgeScreen() {
           )}
         </Pressable>
       </ScrollView>
-      <RitualDiaryFooter />
     </SafeAreaView>
   );
 }

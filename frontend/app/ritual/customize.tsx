@@ -5,7 +5,6 @@ import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { EmotionVisual } from '@/src/components/emotion-visual';
-import { RitualDiaryFooter } from '@/src/components/ritual-diary-escape';
 import {
   BOWL_COLOR_TINTS,
   tintBackdrop,
@@ -151,7 +150,6 @@ export default function RitualCustomizeScreen() {
           <Text style={styles.ctaText}>{w.customize_next}</Text>
         </Pressable>
       </ScrollView>
-      <RitualDiaryFooter />
     </SafeAreaView>
   );
 }
