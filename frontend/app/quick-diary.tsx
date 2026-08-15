@@ -73,14 +73,14 @@ export default function QuickDiaryScreen() {
             <View
               testID="quick-diary-empty-bowl"
               style={styles.emptyBowl}
-              accessibilityLabel="未揀碗"
+              accessibilityLabel="日記"
             />
             <View style={styles.speech}>
-              <Text style={styles.speechText}>{w.talk_speech}</Text>
+              <Text style={styles.speechText}>{w.talk_solo_speech}</Text>
             </View>
           </View>
 
-          <Text style={styles.title}>{w.talk_title('碗')}</Text>
+          <Text style={styles.title}>{w.talk_solo_title}</Text>
 
           <TextInput
             testID="quick-diary-note"
@@ -105,7 +105,7 @@ export default function QuickDiaryScreen() {
             }}
             style={styles.cta}
           >
-            <Text style={styles.ctaText}>{w.talk_submit}</Text>
+            <Text style={styles.ctaText}>{w.talk_solo_submit}</Text>
           </Pressable>
 
           <Pressable
@@ -117,7 +117,7 @@ export default function QuickDiaryScreen() {
             }}
             style={styles.secondary}
           >
-            <Text style={styles.secondaryText}>{w.talk_hug}</Text>
+            <Text style={styles.secondaryText}>{w.talk_solo_hug}</Text>
           </Pressable>
         </ScrollView>
       </KeyboardAvoidingView>

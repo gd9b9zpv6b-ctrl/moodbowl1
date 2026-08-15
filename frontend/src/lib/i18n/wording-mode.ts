@@ -61,6 +61,18 @@ export type WordingPack = {
   talk_placeholder: string;
   talk_submit: string;
   talk_hug: string;
+  /** 直接寫日記 · no bowl picked yet. */
+  talk_solo_title: string;
+  talk_solo_speech: string;
+  talk_solo_submit: string;
+  talk_solo_hug: string;
+  customize_solo_got: string;
+  customize_solo_title: string;
+  customize_solo_sub: string;
+  customize_place_hint: (decorLabel: string) => string;
+  customize_place_hint_solo: (decorLabel: string) => string;
+  customize_idle_hint: string;
+  customize_idle_hint_solo: string;
   /** Continue from standalone quick diary into release. */
   quick_diary_continue: string;
   regulate_skip: string;
@@ -251,10 +263,21 @@ export const WORDING: Record<WordingMode, WordingPack> = {
     talk_placeholder: '打幾隻字都得',
     talk_submit: '寫好 · 去打扮碗 →',
     talk_hug: '今日靜靜哋 · 得個抱 · 去打扮',
+    talk_solo_title: '想寫吓今日發生咩事?',
+    talk_solo_speech: '我聽緊 · 慢慢寫 · 一個字都得',
+    talk_solo_submit: '寫好 · 繼續 →',
+    talk_solo_hug: '今日靜靜哋 · 得個抱 · 繼續',
     quick_diary_continue: '寫好 · 繼續 →',
     customize_got_bowl: (bowl) => `寫完啦 · 呢個就係你嘅「${bowl}」`,
     customize_title: (bowl) => `幫 ${bowl} 打扮一下`,
     customize_sub: '先揀飾品 · 再撳碗上想放嘅位置 · 唔想可以跳過',
+    customize_solo_got: '寫完啦 · 想加啲裝飾嗎?',
+    customize_solo_title: '幫今日嘅日記打扮一下',
+    customize_solo_sub: '先揀飾品 · 再撳上面想放嘅位置 · 唔想可以跳過',
+    customize_place_hint: (d) => `撳碗上面 · 放「${d}」`,
+    customize_place_hint_solo: (d) => `撳上面 · 放「${d}」`,
+    customize_idle_hint: '先揀一件飾品 · 再撳碗上想放嘅位置',
+    customize_idle_hint_solo: '先揀一件飾品 · 再撳想放嘅位置',
     customize_next: '打扮好 · 繼續 →',
     customize_skip: '唔打扮 · 跳過 →',
     release_title: (bowl) => `想點處理「${bowl}」?`,
@@ -338,10 +361,21 @@ export const WORDING: Record<WordingMode, WordingPack> = {
     talk_placeholder: '一個字都得 · 或者好長都 ok',
     talk_submit: '寫好 · 去打扮碗 →',
     talk_hug: '今日靜靜哋 · 得個抱 · 去打扮',
+    talk_solo_title: '想寫吓今日發生咩事?',
+    talk_solo_speech: '我聽緊 · 慢慢寫 · 唔使完美',
+    talk_solo_submit: '寫好 · 繼續 →',
+    talk_solo_hug: '今日靜靜哋 · 得個抱 · 繼續',
     quick_diary_continue: '寫好 · 繼續 →',
     customize_got_bowl: (bowl) => `寫完啦 · 呢個就係你嘅「${bowl}」`,
     customize_title: (bowl) => `幫 ${bowl} 打扮一下`,
     customize_sub: '先揀飾品 · 再撳碗上想放嘅位置 · 唔想可以跳過',
+    customize_solo_got: '寫完啦 · 想加啲裝飾嗎?',
+    customize_solo_title: '幫今日嘅日記打扮一下',
+    customize_solo_sub: '先揀飾品 · 再撳上面想放嘅位置 · 唔想可以跳過',
+    customize_place_hint: (d) => `撳碗上面 · 放「${d}」`,
+    customize_place_hint_solo: (d) => `撳上面 · 放「${d}」`,
+    customize_idle_hint: '先揀一件飾品 · 再撳碗上想放嘅位置',
+    customize_idle_hint_solo: '先揀一件飾品 · 再撳想放嘅位置',
     customize_next: '打扮好 · 繼續 →',
     customize_skip: '唔打扮 · 跳過 →',
     release_title: (bowl) => `想點處理「${bowl}」?`,
@@ -425,10 +459,21 @@ export const WORDING: Record<WordingMode, WordingPack> = {
     talk_placeholder: '寫幾句都得 · 亦可以淨係留白',
     talk_submit: '寫好 · 去打扮 →',
     talk_hug: '今日只想靜一靜 · 去打扮',
+    talk_solo_title: '想寫吓今日發生咩事?',
+    talk_solo_speech: '我喺度 · 你可以慢慢寫',
+    talk_solo_submit: '寫好 · 繼續 →',
+    talk_solo_hug: '今日只想靜一靜 · 繼續',
     quick_diary_continue: '寫好 · 繼續 →',
     customize_got_bowl: (bowl) => `寫完之後 · 呢個係你嘅「${bowl}」`,
     customize_title: (bowl) => `為「${bowl}」加裝飾同調校大細`,
     customize_sub: '揀飾品後撳碗上位置放置 · 再調感覺強度 · 可略過',
+    customize_solo_got: '寫完之後 · 想加啲裝飾嗎?',
+    customize_solo_title: '為今日嘅日記加裝飾同調校大細',
+    customize_solo_sub: '揀飾品後撳上面放置 · 再調感覺強度 · 可略過',
+    customize_place_hint: (d) => `撳碗上面 · 放「${d}」`,
+    customize_place_hint_solo: (d) => `撳上面 · 放「${d}」`,
+    customize_idle_hint: '先揀一件飾品 · 再撳碗上想放嘅位置',
+    customize_idle_hint_solo: '先揀一件飾品 · 再撳想放嘅位置',
     customize_next: '打扮好 · 繼續 →',
     customize_skip: '略過打扮 →',
     release_title: (bowl) => `你想點安頓「${bowl}」?`,

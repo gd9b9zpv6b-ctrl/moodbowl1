@@ -55,7 +55,13 @@ export default function RitualReleaseScreen() {
   const w = wordingFor(ageGroup);
 
   const emotion = selectedBowlKey ? EMOTION_BY_KEY[selectedBowlKey] : null;
+  const hasBowl = !!emotion;
   const wroteDiary = checkInType !== 'hug_only' && diaryText.trim().length > 0;
+  const releaseTitle = hasBowl
+    ? w.release_title(emotion!.label)
+    : w.release_diary_title;
+  const releaseSub = hasBowl ? w.release_sub : w.release_diary_sub;
+  const releaseActions = hasBowl ? w.release_actions : w.release_diary_actions;
   const [picked, setPicked] = useState<BowlReleaseKey | null>(bowlRelease);
   const [saving, setSaving] = useState(false);
   const [phase, setPhase] = useState<'act' | 'done'>('act');
@@ -233,8 +239,8 @@ export default function RitualReleaseScreen() {
           )}
         </View>
 
-        <Text style={styles.title}>{w.release_title(emotion?.label || '碗')}</Text>
-        <Text style={styles.sub}>{w.release_sub}</Text>
+        <Text style={styles.title}>{releaseTitle}</Text>
+        <Text style={styles.sub}>{releaseSub}</Text>
         {wroteDiary && (
           <Text testID="release-wrote-praise-act" style={styles.wrotePraiseAct}>
             {w.release_wrote_praise}
@@ -244,6 +250,7 @@ export default function RitualReleaseScreen() {
         <View style={styles.list}>
           {BOWL_RELEASE_ACTIONS.map((action) => {
             const active = picked === action.key;
+            const copy = releaseActions[action.key];
             return (
               <Pressable
                 key={action.key}
@@ -253,8 +260,8 @@ export default function RitualReleaseScreen() {
               >
                 <Text style={styles.emoji}>{action.emoji}</Text>
                 <View style={{ flex: 1 }}>
-                  <Text style={styles.cardTitle}>{w.release_actions[action.key].label}</Text>
-                  <Text style={styles.cardHint}>{w.release_actions[action.key].hint}</Text>
+                  <Text style={styles.cardTitle}>{copy.label}</Text>
+                  <Text style={styles.cardHint}>{copy.hint}</Text>
                 </View>
                 {active && <Feather name="check" size={18} color={COLORS.textPrimary} />}
               </Pressable>

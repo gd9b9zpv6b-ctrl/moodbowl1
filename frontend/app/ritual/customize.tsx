@@ -37,6 +37,7 @@ export default function RitualCustomizeScreen() {
   const [pendingKey, setPendingKey] = useState<string | null>(null);
 
   const emotion = selectedBowlKey ? EMOTION_BY_KEY[selectedBowlKey] : null;
+  const hasBowl = !!emotion;
   const scale = SIZES.find((s) => s.key === bowlSize)?.scale ?? 1;
   const pendingDecor = pendingKey ? BOWL_DECORATIONS.find((d) => d.key === pendingKey) : null;
 
@@ -78,10 +79,12 @@ export default function RitualCustomizeScreen() {
 
       <ScrollView contentContainerStyle={styles.scroll} showsVerticalScrollIndicator={false}>
         <Text style={styles.gotBowl} testID="customize-got-bowl">
-          {w.customize_got_bowl(emotion?.label || '碗')}
+          {hasBowl ? w.customize_got_bowl(emotion!.label) : w.customize_solo_got}
         </Text>
-        <Text style={styles.title}>{w.customize_title(emotion?.label || '碗')}</Text>
-        <Text style={styles.sub}>{w.customize_sub}</Text>
+        <Text style={styles.title}>
+          {hasBowl ? w.customize_title(emotion!.label) : w.customize_solo_title}
+        </Text>
+        <Text style={styles.sub}>{hasBowl ? w.customize_sub : w.customize_solo_sub}</Text>
 
         <View style={styles.previewWrap}>
           <View style={[styles.previewInner, { transform: [{ scale }] }]}>
@@ -98,9 +101,13 @@ export default function RitualCustomizeScreen() {
           </View>
           <Text style={styles.previewCaption} testID="customize-decor-label">
             {pendingDecor
-              ? `撳碗上面 · 放「${pendingDecor.label}」`
+              ? hasBowl
+                ? w.customize_place_hint(pendingDecor.label)
+                : w.customize_place_hint_solo(pendingDecor.label)
               : decorations.length === 0
-                ? '先揀一件飾品 · 再撳碗上想放嘅位置'
+                ? hasBowl
+                  ? w.customize_idle_hint
+                  : w.customize_idle_hint_solo
                 : `已放 ${decorations.length} 件 · 撳飾品可移除`}
           </Text>
         </View>
