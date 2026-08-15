@@ -1,6 +1,5 @@
 import { Feather } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
-import { useMemo } from 'react';
 import {
   KeyboardAvoidingView,
   Platform,
@@ -15,7 +14,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 
 import {
   TypingRainbowBowl,
-  typingTierHint,
+  TypingRainbowProgress,
 } from '@/src/components/typing-rainbow-bowl';
 import { EMOTION_BY_KEY } from '@/src/constants/emotions';
 import { COLORS, RADIUS, SPACING } from '@/src/constants/theme';
@@ -33,7 +32,6 @@ export default function RitualTalkScreen() {
 
   const emotion = selectedBowlKey ? EMOTION_BY_KEY[selectedBowlKey] : null;
   const count = diaryText.trim().length;
-  const hint = useMemo(() => typingTierHint(count), [count]);
 
   const goCustomize = () => router.push('/ritual/customize');
 
@@ -86,9 +84,7 @@ export default function RitualTalkScreen() {
             style={styles.input}
           />
 
-          <Text testID="talk-tier-progress" style={styles.progress}>
-            🌈 已寫 {count} 字 · {hint}
-          </Text>
+          <TypingRainbowProgress charCount={count} testID="talk-tier-progress" />
 
           <Pressable
             testID="talk-submit-btn"
@@ -170,11 +166,6 @@ const styles = StyleSheet.create({
     fontSize: 15,
     color: COLORS.textPrimary,
     marginBottom: SPACING.sm,
-  },
-  progress: {
-    fontSize: 13,
-    color: COLORS.textSecondary,
-    marginBottom: SPACING.lg,
   },
   cta: {
     height: 56,
