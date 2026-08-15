@@ -71,6 +71,8 @@ export default function Profile() {
   const onPickAgeBand = async (band: MinorAgeBand) => {
     setAgeBand(band);
     await MinorAgeBandStorage.set(band);
+    const { useRitualStore } = await import('@/src/lib/ritual/ritual-store');
+    useRitualStore.getState().setAgeGroup(band);
   };
 
   const loadGarden = useCallback(async () => {
