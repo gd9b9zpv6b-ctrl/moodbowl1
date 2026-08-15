@@ -9,7 +9,6 @@ import { RitualDiaryEscape } from '@/src/components/ritual-diary-escape';
 import {
   BOWL_COLOR_TINTS,
   tintLabel,
-  tintWash,
 } from '@/src/constants/bowl-color-tints';
 import { EMOTION_BY_KEY } from '@/src/constants/emotions';
 import { COLORS, RADIUS, SPACING } from '@/src/constants/theme';
@@ -36,7 +35,6 @@ export default function RitualCustomizeScreen() {
   const emotion = selectedBowlKey ? EMOTION_BY_KEY[selectedBowlKey] : null;
   const scale = SIZES.find((s) => s.key === bowlSize)?.scale ?? 1;
   const activeHex = colorTint || '#FFFFFF';
-  const wash = tintWash(activeHex);
   const activeLabel = tintLabel(activeHex);
 
   const onPickColor = (hex: string) => {
@@ -67,20 +65,14 @@ export default function RitualCustomizeScreen() {
         <Text style={styles.title}>{w.customize_title(emotion?.label || '碗')}</Text>
         <Text style={styles.sub}>撳顏色 · 即刻見到碗換色</Text>
 
-        <View
-          style={[
-            styles.previewWrap,
-            activeHex !== '#FFFFFF' && { backgroundColor: activeHex + '55' },
-          ]}
-        >
+        <View style={styles.previewWrap}>
           <View style={[styles.previewInner, { transform: [{ scale }] }]}>
-            <EmotionVisual emotion={emotion} size={200} radius={RADIUS.lg} />
-            {wash !== 'transparent' && (
-              <View
-                pointerEvents="none"
-                style={[styles.tintOverlay, { backgroundColor: wash }]}
-              />
-            )}
+            <EmotionVisual
+              emotion={emotion}
+              size={200}
+              radius={RADIUS.lg}
+              colorTint={colorTint}
+            />
           </View>
           <Text style={styles.previewCaption} testID="customize-color-label">
             而家顏色 · {activeLabel}
@@ -203,10 +195,6 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     overflow: 'hidden',
-    borderRadius: RADIUS.lg,
-  },
-  tintOverlay: {
-    ...StyleSheet.absoluteFillObject,
     borderRadius: RADIUS.lg,
   },
   previewCaption: {

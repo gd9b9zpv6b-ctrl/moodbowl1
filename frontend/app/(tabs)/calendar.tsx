@@ -169,13 +169,12 @@ export default function CalendarScreen() {
                         isSelected && styles.dayIconWrapSelected,
                       ]}
                     >
-                      <EmotionVisual emotion={em} size={visualSize} radius={RADIUS.sm} />
-                      {albumMode && tint && tint !== '#FFFFFF' ? (
-                        <View
-                          pointerEvents="none"
-                          style={[styles.albumTint, { backgroundColor: tint }]}
-                        />
-                      ) : null}
+                      <EmotionVisual
+                        emotion={em}
+                        size={visualSize}
+                        radius={RADIUS.sm}
+                        colorTint={albumMode ? tint : null}
+                      />
                     </View>
                   ) : (
                     <View
@@ -433,11 +432,6 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     overflow: 'hidden',
-  },
-  albumTint: {
-    ...StyleSheet.absoluteFillObject,
-    borderRadius: RADIUS.pill,
-    opacity: 0.35,
   },
   dayIconWrapSelected: {
     borderWidth: 2,
