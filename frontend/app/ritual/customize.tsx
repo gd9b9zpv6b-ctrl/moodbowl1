@@ -1,7 +1,8 @@
 import { Feather } from '@expo/vector-icons';
+import Slider from '@react-native-community/slider';
 import * as Haptics from 'expo-haptics';
 import { useRouter } from 'expo-router';
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
 import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
@@ -22,6 +23,11 @@ const SIZES: { key: BowlSize; label: string; hint: string; scale: number }[] = [
   { key: 'XL', label: 'XL', hint: '巨型', scale: 1.5 },
 ];
 
+function sizeIndex(key: BowlSize): number {
+  const i = SIZES.findIndex((s) => s.key === key);
+  return i >= 0 ? i : 1;
+}
+
 export default function RitualCustomizeScreen() {
   const router = useRouter();
   const ageGroup = useRitualStore((s) => s.ageGroup);
@@ -38,7 +44,11 @@ export default function RitualCustomizeScreen() {
 
   const emotion = selectedBowlKey ? EMOTION_BY_KEY[selectedBowlKey] : null;
   const hasBowl = !!emotion;
-  const scale = SIZES.find((s) => s.key === bowlSize)?.scale ?? 1;
+  const sizeMeta = useMemo(
+    () => SIZES[sizeIndex(bowlSize)] ?? SIZES[1],
+    [bowlSize],
+  );
+  const scale = sizeMeta.scale;
   const pendingDecor = pendingKey ? BOWL_DECORATIONS.find((d) => d.key === pendingKey) : null;
 
   const onPickDecor = (key: string) => {
@@ -58,8 +68,11 @@ export default function RitualCustomizeScreen() {
     Haptics.selectionAsync().catch(() => {});
   };
 
-  const onPickSize = (key: BowlSize) => {
-    setSize(key);
+  const onSizeSlide = (raw: number) => {
+    const idx = Math.max(0, Math.min(SIZES.length - 1, Math.round(raw)));
+    const next = SIZES[idx].key;
+    if (next === bowlSize) return;
+    setSize(next);
     Haptics.selectionAsync().catch(() => {});
   };
 
@@ -156,23 +169,39 @@ export default function RitualCustomizeScreen() {
         </View>
 
         <Text style={styles.section}>大細 · 感覺有幾強</Text>
-        <View style={styles.sizeRow}>
-          {SIZES.map((s) => {
-            const active = bowlSize === s.key;
-            return (
-              <Pressable
+        <View style={styles.sizeBar}>
+          <View style={styles.sizeBarHeader}>
+            <Text style={styles.sizeBarLabel}>拉細</Text>
+            <View style={styles.sizePill} testID="customize-size-value">
+              <Text style={styles.sizePillText}>
+                {sizeMeta.label} · {sizeMeta.hint}
+              </Text>
+            </View>
+            <Text style={styles.sizeBarLabel}>拉大</Text>
+          </View>
+          <Slider
+            testID="customize-size-slider"
+            style={styles.sizeSlider}
+            minimumValue={0}
+            maximumValue={SIZES.length - 1}
+            step={1}
+            value={sizeIndex(bowlSize)}
+            onValueChange={onSizeSlide}
+            minimumTrackTintColor={COLORS.primary}
+            maximumTrackTintColor={COLORS.bgCard}
+            thumbTintColor={COLORS.textPrimary}
+            accessibilityLabel="拉大拉細"
+          />
+          <View style={styles.sizeTicks}>
+            {SIZES.map((s) => (
+              <Text
                 key={s.key}
-                testID={`customize-size-${s.key}`}
-                onPress={() => onPickSize(s.key)}
-                style={[styles.sizeChip, active && styles.sizeChipActive]}
+                style={[styles.sizeTick, s.key === bowlSize && styles.sizeTickActive]}
               >
-                <Text style={[styles.sizeLabel, active && styles.sizeLabelActive]}>
-                  {s.label}
-                </Text>
-                <Text style={styles.sizeHint}>{s.hint}</Text>
-              </Pressable>
-            );
-          })}
+                {s.label}
+              </Text>
+            ))}
+          </View>
         </View>
 
         <Pressable
@@ -321,22 +350,54 @@ const styles = StyleSheet.create({
     color: COLORS.textPrimary,
     fontWeight: '800',
   },
-  sizeRow: {
-    flexDirection: 'row',
-    gap: SPACING.sm,
+  sizeBar: {
+    backgroundColor: COLORS.bgCard,
+    borderRadius: RADIUS.md,
+    paddingHorizontal: SPACING.md,
+    paddingTop: SPACING.md,
+    paddingBottom: SPACING.sm,
     marginBottom: SPACING.xl,
   },
-  sizeChip: {
-    flex: 1,
-    backgroundColor: COLORS.bgInput,
-    borderRadius: RADIUS.md,
-    paddingVertical: SPACING.md,
+  sizeBarHeader: {
+    flexDirection: 'row',
     alignItems: 'center',
+    justifyContent: 'space-between',
+    marginBottom: SPACING.xs,
   },
-  sizeChipActive: { backgroundColor: COLORS.primaryLight },
-  sizeLabel: { fontSize: 15, fontWeight: '700', color: COLORS.textSecondary },
-  sizeLabelActive: { color: COLORS.textPrimary },
-  sizeHint: { fontSize: 11, color: COLORS.textSecondary, marginTop: 2 },
+  sizeBarLabel: {
+    fontSize: 12,
+    fontWeight: '700',
+    color: COLORS.textSecondary,
+  },
+  sizePill: {
+    backgroundColor: COLORS.primaryLight,
+    borderRadius: RADIUS.pill,
+    paddingHorizontal: 12,
+    paddingVertical: 4,
+  },
+  sizePillText: {
+    fontSize: 13,
+    fontWeight: '800',
+    color: COLORS.textPrimary,
+  },
+  sizeSlider: {
+    width: '100%',
+    height: 40,
+  },
+  sizeTicks: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    paddingHorizontal: 4,
+  },
+  sizeTick: {
+    fontSize: 12,
+    fontWeight: '600',
+    color: COLORS.textSecondary,
+  },
+  sizeTickActive: {
+    color: COLORS.textPrimary,
+    fontWeight: '800',
+  },
   cta: {
     height: 56,
     borderRadius: RADIUS.pill,
