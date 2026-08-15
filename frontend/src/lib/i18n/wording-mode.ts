@@ -365,7 +365,7 @@ export const WORDING: Record<WordingMode, WordingPack> = {
     home_album: '睇心情圖鑑',
     selfcare_title: '你都值得記錄自己嘅心情',
     selfcare_subtitle: '撳我開始同自己坐一坐',
-    bridge_eyebrow: '過橋 · 想唔想搵人?',
+    bridge_eyebrow: '想唔想搵人講?',
     /** Canonical · memory/RITUAL_SPEC.md § Bridge Wording per State (lower). */
     bridge_by_state: {
       sympathetic_fire: '返返靜咗未呀? 想搵人講嗎?',
@@ -500,7 +500,7 @@ export const WORDING: Record<WordingMode, WordingPack> = {
     home_album: '睇心情圖鑑',
     selfcare_title: '你都值得記錄自己嘅心情',
     selfcare_subtitle: '撳我開始同自己坐一坐',
-    bridge_eyebrow: '過橋 · 想唔想連繫?',
+    bridge_eyebrow: '想唔想同人講吓?',
     /** Canonical · memory/RITUAL_SPEC.md § Bridge Wording per State (upper). */
     bridge_by_state: {
       sympathetic_fire: '而家平靜返啲啦嘛? 想同人講咩發生咗咩事嗎?',
@@ -634,7 +634,7 @@ export const WORDING: Record<WordingMode, WordingPack> = {
     home_album: '睇心情圖鑑',
     selfcare_title: '照顧學生之前 · 都要照顧自己',
     selfcare_subtitle: '開自己嘅 check-in · 畀自己幾分鐘',
-    bridge_eyebrow: '過橋 · 要唔要連繫?',
+    bridge_eyebrow: '想唔想同人分享?',
     bridge_by_state: {
       sympathetic_fire: '平靜返少少未? 如果想講 · 可以揀分享對象',
       dorsal_sad: '重量輕咗啲未? 需要陪一陪都完全 OK',

@@ -40,6 +40,15 @@ describe('wording packs', () => {
     expect(wordingFor('lower').release_done_title).toBe('你搞掂啦');
   });
 
+  it('never surfaces internal ritual jargon like 過橋 in user copy', () => {
+    for (const mode of ['lower', 'upper', 'adult'] as const) {
+      const pack = wordingFor(mode);
+      const blob = JSON.stringify(pack);
+      expect(blob).not.toContain('過橋');
+      expect(pack.bridge_eyebrow).not.toContain('過橋');
+    }
+  });
+
   it('covers every body chip and region label', () => {
     for (const mode of ['lower', 'upper', 'adult'] as const) {
       const pack = wordingFor(mode);

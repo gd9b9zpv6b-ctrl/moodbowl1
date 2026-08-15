@@ -332,7 +332,7 @@ export default function RitualReleaseScreen() {
           )}
         </View>
 
-        {/* 過橋 · first · state × age tone */}
+        {/* Optional share invite · state × age tone · first */}
         <View
           testID="release-bridge-card"
           style={[styles.bridgeCard, { backgroundColor: reaction.tint, borderColor: reaction.accent }]}
