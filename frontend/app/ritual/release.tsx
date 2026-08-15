@@ -2,35 +2,57 @@ import { Feather } from '@expo/vector-icons';
 import * as Haptics from 'expo-haptics';
 import { useRouter } from 'expo-router';
 import { useState } from 'react';
-import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import {
+  ActivityIndicator,
+  Alert,
+  Pressable,
+  ScrollView,
+  StyleSheet,
+  Switch,
+  Text,
+  View,
+} from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { BowlWithDecor } from '@/src/components/bowl-with-decor';
+import { encodeDecorations } from '@/src/constants/bowl-decorations';
 import {
   BOWL_RELEASE_ACTIONS,
   type BowlReleaseKey,
 } from '@/src/constants/bowl-release';
 import { EMOTION_BY_KEY } from '@/src/constants/emotions';
 import { COLORS, RADIUS, SPACING } from '@/src/constants/theme';
+import { saveRitualWithActivities } from '@/src/lib/diary';
 import { wordingFor } from '@/src/lib/i18n/wording-mode';
 import { useRitualStore } from '@/src/lib/ritual/ritual-store';
 
 /**
- * Symbolic release · what to do with today's bowl after writing.
- * Default next is bridge (finish); regulate is optional.
+ * Symbolic release + save/share in one step (bridge merged here).
  */
 export default function RitualReleaseScreen() {
   const router = useRouter();
   const ageGroup = useRitualStore((s) => s.ageGroup);
+  const soup = useRitualStore((s) => s.soup);
+  const bodyChips = useRitualStore((s) => s.bodyChips);
   const selectedBowlKey = useRitualStore((s) => s.selectedBowlKey);
   const decorations = useRitualStore((s) => s.decorations);
+  const bowlSize = useRitualStore((s) => s.bowlSize);
+  const diaryText = useRitualStore((s) => s.diaryText);
+  const checkInType = useRitualStore((s) => s.checkInType);
   const bowlRelease = useRitualStore((s) => s.bowlRelease);
+  const shareClass = useRitualStore((s) => s.shareClass);
+  const shareFamily = useRitualStore((s) => s.shareFamily);
+  const shareTimeline = useRitualStore((s) => s.shareTimeline);
+  const startedAt = useRitualStore((s) => s.startedAt);
+  const regulationUsed = useRitualStore((s) => s.regulationUsed);
   const setBowlRelease = useRitualStore((s) => s.setBowlRelease);
   const addRegulation = useRitualStore((s) => s.addRegulation);
+  const setShares = useRitualStore((s) => s.setShares);
   const w = wordingFor(ageGroup);
 
   const emotion = selectedBowlKey ? EMOTION_BY_KEY[selectedBowlKey] : null;
   const [picked, setPicked] = useState<BowlReleaseKey | null>(bowlRelease);
+  const [saving, setSaving] = useState(false);
 
   const onPick = (key: BowlReleaseKey) => {
     setPicked(key);
@@ -39,9 +61,42 @@ export default function RitualReleaseScreen() {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium).catch(() => {});
   };
 
-  const goBridge = () => {
-    if (!picked) return;
-    router.push('/ritual/bridge');
+  const onComplete = async () => {
+    if (!picked || saving) return;
+    setSaving(true);
+    try {
+      const timeSpent =
+        startedAt != null ? Math.max(0, Math.round((Date.now() - startedAt) / 1000)) : null;
+      const entry = await saveRitualWithActivities(
+        {
+          soup,
+          body_chips: bodyChips,
+          bowl_emotion_key: selectedBowlKey,
+          bowl_color_tint: encodeDecorations(decorations),
+          bowl_size: bowlSize,
+          diary_text: checkInType === 'hug_only' ? null : diaryText || null,
+          check_in_type: checkInType === 'hug_only' ? 'hug_only' : 'full',
+          is_public: shareClass,
+          shared_with_class: shareClass,
+          shared_with_family: shareFamily,
+          smile_completed: false,
+          time_spent_sec: timeSpent,
+        },
+        regulationUsed,
+      );
+      router.replace({
+        pathname: '/ritual/complete',
+        params: {
+          entryId: entry.id,
+          minutes: String(Math.max(1, Math.round((timeSpent || 60) / 60))),
+        },
+      });
+    } catch (e: unknown) {
+      const msg = e instanceof Error ? e.message : '過陣再試';
+      Alert.alert('儲存唔到', msg, [{ text: '好' }]);
+    } finally {
+      setSaving(false);
+    }
   };
 
   return (
@@ -62,7 +117,7 @@ export default function RitualReleaseScreen() {
         <View style={styles.bowl}>
           <BowlWithDecor
             emotion={emotion}
-            size={160}
+            size={140}
             radius={RADIUS.lg}
             decorations={decorations}
           />
@@ -92,13 +147,49 @@ export default function RitualReleaseScreen() {
           })}
         </View>
 
+        <Text style={styles.shareHeading}>{w.release_share_heading}</Text>
+        <View style={styles.row}>
+          <Text style={styles.rowLabel}>{w.bridge_share_timeline}</Text>
+          <Switch
+            testID="release-share-timeline"
+            value={shareTimeline}
+            onValueChange={(v) => setShares({ shareTimeline: v })}
+            trackColor={{ true: COLORS.primary, false: COLORS.bgInput }}
+            thumbColor={COLORS.bgCard}
+          />
+        </View>
+        <View style={styles.row}>
+          <Text style={styles.rowLabel}>{w.bridge_share_class}</Text>
+          <Switch
+            testID="release-share-class"
+            value={shareClass}
+            onValueChange={(v) => setShares({ shareClass: v })}
+            trackColor={{ true: COLORS.primary, false: COLORS.bgInput }}
+            thumbColor={COLORS.bgCard}
+          />
+        </View>
+        <View style={styles.row}>
+          <Text style={styles.rowLabel}>{w.bridge_share_family}</Text>
+          <Switch
+            testID="release-share-family"
+            value={shareFamily}
+            onValueChange={(v) => setShares({ shareFamily: v })}
+            trackColor={{ true: COLORS.primary, false: COLORS.bgInput }}
+            thumbColor={COLORS.bgCard}
+          />
+        </View>
+
         <Pressable
           testID="release-finish-btn"
-          onPress={goBridge}
-          disabled={!picked}
-          style={[styles.cta, !picked && { opacity: 0.45 }]}
+          onPress={onComplete}
+          disabled={!picked || saving}
+          style={[styles.cta, (!picked || saving) && { opacity: 0.45 }]}
         >
-          <Text style={styles.ctaText}>{w.release_finish}</Text>
+          {saving ? (
+            <ActivityIndicator color={COLORS.textPrimary} />
+          ) : (
+            <Text style={styles.ctaText}>{w.release_finish}</Text>
+          )}
         </Pressable>
 
         <Pressable
@@ -107,7 +198,7 @@ export default function RitualReleaseScreen() {
             if (!picked) return;
             router.push('/ritual/regulate');
           }}
-          disabled={!picked}
+          disabled={!picked || saving}
           style={styles.secondary}
         >
           <Text style={[styles.secondaryText, !picked && { opacity: 0.45 }]}>
@@ -152,7 +243,7 @@ const styles = StyleSheet.create({
     marginBottom: SPACING.lg,
     lineHeight: 20,
   },
-  list: { gap: SPACING.sm, marginBottom: SPACING.xl },
+  list: { gap: SPACING.sm, marginBottom: SPACING.lg },
   card: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -170,12 +261,31 @@ const styles = StyleSheet.create({
   emoji: { fontSize: 28 },
   cardTitle: { fontSize: 16, fontWeight: '800', color: COLORS.textPrimary },
   cardHint: { fontSize: 12, color: COLORS.textSecondary, marginTop: 2 },
+  shareHeading: {
+    fontSize: 13,
+    fontWeight: '700',
+    color: COLORS.textSecondary,
+    marginBottom: SPACING.sm,
+  },
+  row: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    backgroundColor: COLORS.bgCard,
+    borderRadius: RADIUS.md,
+    paddingHorizontal: SPACING.md,
+    paddingVertical: SPACING.sm,
+    marginBottom: SPACING.sm,
+    gap: SPACING.md,
+  },
+  rowLabel: { flex: 1, fontSize: 14, fontWeight: '600', color: COLORS.textPrimary },
   cta: {
     height: 56,
     borderRadius: RADIUS.pill,
     backgroundColor: COLORS.primary,
     alignItems: 'center',
     justifyContent: 'center',
+    marginTop: SPACING.md,
     marginBottom: SPACING.sm,
   },
   ctaText: { fontSize: 17, fontWeight: '700', color: COLORS.textPrimary },

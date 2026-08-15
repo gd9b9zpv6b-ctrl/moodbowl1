@@ -36,6 +36,7 @@ export type WordingPack = {
   >;
   release_finish: string;
   release_regulate: string;
+  release_share_heading: string;
   talk_got_bowl: (bowlLabel: string) => string;
   talk_title: (bowlLabel: string) => string;
   talk_speech: string;

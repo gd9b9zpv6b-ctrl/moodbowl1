@@ -77,7 +77,7 @@ export default function RitualRegulateScreen() {
     setActive(null);
   };
 
-  const goBridge = () => router.push('/ritual/bridge');
+  const goRelease = () => router.push('/ritual/release');
 
   return (
     <SafeAreaView style={styles.safe} edges={['top', 'bottom']}>
