@@ -71,7 +71,6 @@ export function EmotionVisual({ emotion, size, radius, style, colorTint }: Props
                 width: maskW,
                 height: maskH,
                 borderRadius: Math.min(maskW, maskH) / 2,
-                isolation: 'isolate' as const,
               },
             ]}
           >
