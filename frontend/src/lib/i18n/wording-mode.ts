@@ -44,6 +44,15 @@ export type WordingPack = {
     import('@/src/constants/bowl-release').BowlReleaseKey,
     { label: string; hint: string }
   >;
+  /** Short caption under the release action animation. */
+  release_anim_captions: Record<
+    import('@/src/constants/bowl-release').BowlReleaseKey,
+    string
+  >;
+  release_diary_anim_captions: Record<
+    import('@/src/constants/bowl-release').BowlReleaseKey,
+    string
+  >;
   release_finish: string;
   release_regulate: string;
   release_share_heading: string;
@@ -298,6 +307,20 @@ export const WORDING: Record<WordingMode, WordingPack> = {
       wash: { label: '抹乾淨', hint: '抹走殘留 · 整返清爽' },
       keep_hug: { label: '抱住留低', hint: '呢份日記想留低 · 抱抱佢' },
     },
+    release_anim_captions: {
+      empty: '倒緊走……',
+      set_aside: '蓋住 · 放低……',
+      send_away: '輕輕送走……',
+      wash: '沖一沖 · 清爽……',
+      keep_hug: '抱抱 · 留低……',
+    },
+    release_diary_anim_captions: {
+      empty: '倒走呢頁……',
+      set_aside: '合埋 · 放低……',
+      send_away: '送走呢頁……',
+      wash: '抹乾淨……',
+      keep_hug: '抱抱 · 留低……',
+    },
     release_finish: '搞掂 · 儲存',
     release_regulate: '想先做個調節練習',
     release_share_heading: '想唔想將今日發生嘅嘢話俾人聽?',
@@ -396,6 +419,20 @@ export const WORDING: Record<WordingMode, WordingPack> = {
       wash: { label: '抹乾淨', hint: '抹走殘留 · 整返清爽' },
       keep_hug: { label: '抱住留低', hint: '呢份日記有意思 · 抱抱留住' },
     },
+    release_anim_captions: {
+      empty: '倒緊走……',
+      set_aside: '蓋住 · 放低……',
+      send_away: '輕輕送走……',
+      wash: '沖一沖 · 清爽……',
+      keep_hug: '抱抱 · 留低……',
+    },
+    release_diary_anim_captions: {
+      empty: '倒走呢頁……',
+      set_aside: '合埋 · 放低……',
+      send_away: '送走呢頁……',
+      wash: '抹乾淨……',
+      keep_hug: '抱抱 · 留低……',
+    },
     release_finish: '搞掂 · 儲存',
     release_regulate: '想先做個調節練習',
     release_share_heading: '想唔想將今日發生嘅嘢話俾人聽?',
@@ -493,6 +530,20 @@ export const WORDING: Record<WordingMode, WordingPack> = {
       send_away: { label: '送走呢頁', hint: '象徵性地放手' },
       wash: { label: '抹乾淨', hint: '抹走殘留 · 回復清爽' },
       keep_hug: { label: '抱住留下', hint: '呢份日記值得被抱住' },
+    },
+    release_anim_captions: {
+      empty: '倒空緊……',
+      set_aside: '蓋住 · 放低……',
+      send_away: '送走緊……',
+      wash: '清洗緊……',
+      keep_hug: '抱住 · 留下……',
+    },
+    release_diary_anim_captions: {
+      empty: '倒空呢頁……',
+      set_aside: '合埋 · 放低……',
+      send_away: '送走呢頁……',
+      wash: '抹乾淨……',
+      keep_hug: '抱住 · 留下……',
     },
     release_finish: '儲存打卡',
     release_regulate: '想先做調節練習',

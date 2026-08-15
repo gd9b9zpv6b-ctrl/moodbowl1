@@ -1,7 +1,7 @@
 import { Feather } from '@expo/vector-icons';
 import * as Haptics from 'expo-haptics';
 import { useRouter } from 'expo-router';
-import { useRef, useState } from 'react';
+import { useCallback, useRef, useState } from 'react';
 import {
   ActivityIndicator,
   Alert,
@@ -16,6 +16,7 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { BowlWithDecor } from '@/src/components/bowl-with-decor';
+import { ReleaseActionAnim } from '@/src/components/release-action-anim';
 import { encodeDecorations } from '@/src/constants/bowl-decorations';
 import {
   BOWL_RELEASE_ACTIONS,
@@ -62,9 +63,10 @@ export default function RitualReleaseScreen() {
     : w.release_diary_title;
   const releaseSub = hasBowl ? w.release_sub : w.release_diary_sub;
   const releaseActions = hasBowl ? w.release_actions : w.release_diary_actions;
+  const animCaptions = hasBowl ? w.release_anim_captions : w.release_diary_anim_captions;
   const [picked, setPicked] = useState<BowlReleaseKey | null>(bowlRelease);
   const [saving, setSaving] = useState(false);
-  const [phase, setPhase] = useState<'act' | 'done'>('act');
+  const [phase, setPhase] = useState<'act' | 'anim' | 'done'>('act');
   const [entryId, setEntryId] = useState<string | null>(null);
   const [minutes, setMinutes] = useState(1);
   const [smiled, setSmiled] = useState(false);
@@ -73,11 +75,16 @@ export default function RitualReleaseScreen() {
   const holdTimer = useRef<ReturnType<typeof setInterval> | null>(null);
   const holdStarted = useRef(0);
 
+  const onAnimDone = useCallback(() => {
+    setPhase('act');
+  }, []);
+
   const onPick = (key: BowlReleaseKey) => {
     setPicked(key);
     setBowlRelease(key);
     addRegulation(`release:${key}`);
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium).catch(() => {});
+    setPhase('anim');
   };
 
   const onSave = async () => {
@@ -202,6 +209,31 @@ export default function RitualReleaseScreen() {
 
           <Pressable testID="release-home-btn" onPress={goHome} style={styles.cta}>
             <Text style={styles.ctaText}>{w.release_home}</Text>
+          </Pressable>
+        </View>
+      </SafeAreaView>
+    );
+  }
+
+  if (phase === 'anim' && picked) {
+    return (
+      <SafeAreaView style={styles.safe} edges={['top', 'bottom']}>
+        <View style={styles.animWrap}>
+          <ReleaseActionAnim
+            action={picked}
+            emotion={emotion}
+            decorations={decorations}
+            diaryMode={!hasBowl}
+            caption={animCaptions[picked]}
+            onDone={onAnimDone}
+          />
+          <Pressable
+            testID="release-anim-skip"
+            onPress={onAnimDone}
+            style={styles.animSkip}
+            accessibilityLabel="繼續"
+          >
+            <Text style={styles.animSkipText}>繼續</Text>
           </Pressable>
         </View>
       </SafeAreaView>
@@ -422,6 +454,22 @@ const styles = StyleSheet.create({
   ctaText: { fontSize: 17, fontWeight: '700', color: COLORS.textPrimary },
   secondary: { alignItems: 'center', paddingVertical: SPACING.md },
   secondaryText: { fontSize: 14, fontWeight: '700', color: COLORS.textSecondary },
+  animWrap: {
+    flex: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingHorizontal: SPACING.lg,
+  },
+  animSkip: {
+    marginTop: SPACING.lg,
+    paddingVertical: SPACING.sm,
+    paddingHorizontal: SPACING.lg,
+  },
+  animSkipText: {
+    fontSize: 14,
+    fontWeight: '700',
+    color: COLORS.textSecondary,
+  },
   doneWrap: {
     flex: 1,
     padding: SPACING.lg,
