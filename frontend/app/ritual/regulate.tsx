@@ -194,9 +194,7 @@ export default function RitualRegulateScreen() {
           <EmotionVisual emotion={emotion} size={120} radius={RADIUS.lg} />
         </View>
 
-        <Text style={styles.hint}>
-          因為你而家「{reaction.feel}」· 碗準備咗呢啲陪你（揀一樣就得）
-        </Text>
+        <Text style={styles.hint}>{w.regulate_pick_hint(reaction.feel)}</Text>
 
         {activityDefs.map((a) => {
           const done = regulationUsed.includes(a.key) || sessionDone.includes(a.key);

@@ -347,6 +347,9 @@ export default function RitualReleaseScreen() {
           </Text>
         </View>
 
+        <Text testID="release-share-heading" style={styles.shareHeading}>
+          {w.release_share_heading}
+        </Text>
         <View style={styles.row}>
           <Text style={styles.rowLabel}>{w.bridge_share_family}</Text>
           <Switch

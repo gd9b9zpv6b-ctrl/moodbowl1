@@ -89,6 +89,8 @@ export type WordingPack = {
   regulate_eyebrow: string;
   /** Why we are accompanying · per nervous-system state. */
   regulate_sub_by_state: Record<NSState, string>;
+  /** Hint above activity list · age-banded. */
+  regulate_pick_hint: (feel: string) => string;
   regulate_next: string;
   bridge_share_class: string;
   bridge_share_family: string;
@@ -260,7 +262,7 @@ const REGION_ADULT: Record<BodyRegionKey, string> = {
 
 export const WORDING: Record<WordingMode, WordingPack> = {
   lower: {
-    soup_title: '你想請你嘅碗星靈飲啲乜嘢啊?',
+    soup_title: '請碗星靈飲杯嘢?',
     soup_sub: '揀一杯請佢 · 慢慢揀就得',
     soup_offer_done: (drink) => `請咗「${drink}」俾碗星靈 · 佢好開心`,
     soup_offer_skip: '碗星靈明白 · 今日唔使飲',
@@ -333,8 +335,8 @@ export const WORDING: Record<WordingMode, WordingPack> = {
     release_finish: '搞掂 · 儲存',
     release_regulate: '陪碗做啲嘢',
     release_share_heading: '想唔想將今日發生嘅嘢話俾人聽?',
-    release_done_title: '搞掂啦',
-    release_done_sub: (m) => `你今日同自己相處咗 ${m} 分鐘 · 好厲害`,
+    release_done_title: '你搞掂啦',
+    release_done_sub: (m) => `你今日肯坐低同自己相處咗 ${m} 分鐘 · 好厲害 · 好棒`,
     release_wrote_praise: '你今日肯寫日記 · 呢件事本身好勇敢 · 好棒',
     release_smile_hint: '對住自己笑一笑 · 2 秒（可選）',
     release_smile_hold: '撳住 2 秒',
@@ -350,6 +352,7 @@ export const WORDING: Record<WordingMode, WordingPack> = {
       ventral_regulated: '今日好靚 · 記低三樣開心嘢',
       unspoken: '唔知講咩都 OK · 坐一陣先',
     },
+    regulate_pick_hint: (feel) => `因為你而家「${feel}」· 碗準備咗呢啲陪你（揀一樣就得）`,
     regulate_next: '陪完 · 繼續 →',
     bridge_share_class: '想話俾老師聽',
     bridge_share_family: '想話俾屋企人聽',
@@ -363,13 +366,14 @@ export const WORDING: Record<WordingMode, WordingPack> = {
     selfcare_title: '你都值得記錄自己嘅心情',
     selfcare_subtitle: '撳我開始同自己坐一坐',
     bridge_eyebrow: '過橋 · 想唔想搵人?',
+    /** Canonical · memory/RITUAL_SPEC.md § Bridge Wording per State (lower). */
     bridge_by_state: {
-      sympathetic_fire: '火退咗少少未呀? 想搵人講吓發生咩事嗎?',
-      dorsal_sad: '重唔重輕咗啲? 想搵個朋友陪一陪嗎?',
-      sympathetic_anxious: '心跳慢返未? 想有人喺身邊嗎?',
-      dorsal_freeze: '有 feel 番少少未? 講一句都得',
-      ventral_regulated: '呢種開心 · 想派俾邊個?',
-      unspoken: '今日留返俾自己都完全 OK',
+      sympathetic_fire: '返返靜咗未呀? 想搵人講嗎?',
+      dorsal_sad: '感覺舒服返啲未? 想搵朋友嗎?',
+      sympathetic_anxious: '心跳慢返未? 有人陪一陣?',
+      dorsal_freeze: '有 feel 番嗎? 講一句話都得',
+      ventral_regulated: '想同人 share 嗎?',
+      unspoken: '留返俾自己都得',
     },
     release_lead_by_state: {
       sympathetic_fire: '火氣出咗之後 · 想點安頓呢份感覺?',
@@ -379,12 +383,13 @@ export const WORDING: Record<WordingMode, WordingPack> = {
       ventral_regulated: '靚感覺想留低 · 定係輕輕放下?',
       unspoken: '坐完一陣 · 想點處置今日呢頁?',
     },
+    /** Companion job titles · same as upper · age live in sub lines. */
     regulate_by_state: {
-      sympathetic_fire: '一齊發洩啦！',
-      dorsal_sad: '一齊睇得意嘢',
-      sympathetic_anxious: '碗陪你定定',
-      dorsal_freeze: '輕輕搞醒你',
-      ventral_regulated: '留住靚感覺',
+      sympathetic_fire: '同碗一齊發洩',
+      dorsal_sad: '同碗睇啲嘢',
+      sympathetic_anxious: '碗陪你落地',
+      dorsal_freeze: '碗想搞醒你',
+      ventral_regulated: '留住呢個瞬間',
       unspoken: '同碗坐一坐',
     },
     soup_subs: SOUP_SUBS_LOWER,
@@ -464,8 +469,8 @@ export const WORDING: Record<WordingMode, WordingPack> = {
     release_finish: '搞掂 · 儲存',
     release_regulate: '陪碗做啲嘢',
     release_share_heading: '想唔想將今日發生嘅嘢話俾人聽?',
-    release_done_title: '搞掂啦',
-    release_done_sub: (m) => `你今日同自己相處咗 ${m} 分鐘 · 好厲害`,
+    release_done_title: '你搞掂啦',
+    release_done_sub: (m) => `你今日肯坐低同自己相處咗 ${m} 分鐘 · 好厲害 · 好棒`,
     release_wrote_praise: '你今日肯寫低自己嘅嘢 · 呢件事本身好厲害',
     release_smile_hint: '對住自己笑一笑 · 2 秒（可選）',
     release_smile_hold: '撳住 2 秒',
@@ -481,6 +486,8 @@ export const WORDING: Record<WordingMode, WordingPack> = {
       ventral_regulated: '睇落幾靚 · 一齊留住呢個瞬間',
       unspoken: '唔使特別目標 · 同碗靜靜坐一陣都得',
     },
+    regulate_pick_hint: (feel) =>
+      `睇落你而家「${feel}」· 碗準備咗呢啲陪你（揀一樣就得）`,
     regulate_next: '陪完 · 繼續 →',
     bridge_share_class: '想話俾老師聽',
     bridge_share_family: '想話俾屋企人聽',
@@ -494,6 +501,7 @@ export const WORDING: Record<WordingMode, WordingPack> = {
     selfcare_title: '你都值得記錄自己嘅心情',
     selfcare_subtitle: '撳我開始同自己坐一坐',
     bridge_eyebrow: '過橋 · 想唔想連繫?',
+    /** Canonical · memory/RITUAL_SPEC.md § Bridge Wording per State (upper). */
     bridge_by_state: {
       sympathetic_fire: '而家平靜返啲啦嘛? 想同人講咩發生咗咩事嗎?',
       dorsal_sad: '而家 feel 冇咁重嗎? 想搵個朋友唞唞氣嗎?',
@@ -514,7 +522,7 @@ export const WORDING: Record<WordingMode, WordingPack> = {
       sympathetic_fire: '同碗一齊發洩',
       dorsal_sad: '同碗睇啲嘢',
       sympathetic_anxious: '碗陪你落地',
-      dorsal_freeze: '碗想搞醒你少少',
+      dorsal_freeze: '碗想搞醒你',
       ventral_regulated: '留住呢個瞬間',
       unspoken: '同碗坐一坐',
     },
@@ -595,8 +603,8 @@ export const WORDING: Record<WordingMode, WordingPack> = {
     release_finish: '儲存打卡',
     release_regulate: '陪自己做啲調節',
     release_share_heading: '想唔想將今日發生嘅事話俾人聽?',
-    release_done_title: '搞掂啦',
-    release_done_sub: (m) => `你今日同自己相處咗 ${m} 分鐘 · 好厲害`,
+    release_done_title: '你搞掂啦',
+    release_done_sub: (m) => `你今日肯坐低同自己相處咗 ${m} 分鐘 · 好厲害 · 好棒`,
     release_wrote_praise: '你今日肯為自己寫低呢段 · 值得被肯定',
     release_smile_hint: '對住自己笑一笑 · 2 秒（可選）',
     release_smile_hold: '撳住 2 秒',
@@ -612,6 +620,8 @@ export const WORDING: Record<WordingMode, WordingPack> = {
       ventral_regulated: '狀態幾穩 · 一齊留住呢個瞬間',
       unspoken: '唔使特別目標 · 同自己靜靜坐一陣都得',
     },
+    regulate_pick_hint: (feel) =>
+      `因為而家「${feel}」· 呢度有啲調節方式（揀一樣就得）`,
     regulate_next: '調節完 · 繼續 →',
     bridge_share_class: '想話俾老師／同事聽（可選）',
     bridge_share_family: '想話俾屋企人聽（可選）',

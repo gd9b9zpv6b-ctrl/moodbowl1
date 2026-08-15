@@ -25,6 +25,19 @@ describe('wording packs', () => {
     expect(wordingFor('adult').soup_title).toContain('碗星靈');
     expect(wordingFor('lower').soup_offer_done('草莓牛奶')).toContain('草莓牛奶');
     expect(wordingFor('adult').soup_title).not.toBe(wordingFor('lower').soup_title);
+    expect(wordingFor('lower').soup_title).not.toBe(wordingFor('upper').soup_title);
+  });
+
+  it('keeps bridge wording aligned with RITUAL_SPEC age × state table', () => {
+    expect(wordingFor('lower').bridge_by_state.sympathetic_fire).toBe(
+      '返返靜咗未呀? 想搵人講嗎?',
+    );
+    expect(wordingFor('upper').bridge_by_state.dorsal_sad).toBe(
+      '而家 feel 冇咁重嗎? 想搵個朋友唞唞氣嗎?',
+    );
+    expect(wordingFor('lower').regulate_by_state.sympathetic_fire).toBe('同碗一齊發洩');
+    expect(wordingFor('upper').regulate_by_state.dorsal_freeze).toBe('碗想搞醒你');
+    expect(wordingFor('lower').release_done_title).toBe('你搞掂啦');
   });
 
   it('covers every body chip and region label', () => {
