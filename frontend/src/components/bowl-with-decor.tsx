@@ -42,6 +42,7 @@ export function BowlWithDecor({
   const r = radius ?? RADIUS.sm;
   const emojiSize = Math.max(18, Math.round(size * 0.18));
   const interactive = !!(onPlace || onRemoveAt);
+  const Wrap = interactive ? Pressable : View;
 
   const handlePlace = (locationX: number, locationY: number) => {
     if (!onPlace) return;
@@ -51,18 +52,21 @@ export function BowlWithDecor({
   };
 
   return (
-    <Pressable
-      disabled={!interactive}
-      onPress={(e) => {
-        if (!onPlace) return;
-        handlePlace(e.nativeEvent.locationX, e.nativeEvent.locationY);
-      }}
+    <Wrap
+      {...(interactive
+        ? {
+            onPress: (e: { nativeEvent: { locationX: number; locationY: number } }) => {
+              if (!onPlace) return;
+              handlePlace(e.nativeEvent.locationX, e.nativeEvent.locationY);
+            },
+            accessibilityLabel: placing ? '撳呢度放飾品' : '碗',
+          }
+        : { accessibilityLabel: '碗' })}
       style={[
         { width: size, height: size },
         placing && styles.placingRing,
         style,
       ]}
-      accessibilityLabel={placing ? '撳呢度放飾品' : '碗'}
     >
       {emotion && !empty ? (
         <EmotionVisual emotion={emotion} size={size} radius={r} />
@@ -130,7 +134,7 @@ export function BowlWithDecor({
           </View>
         );
       })}
-    </Pressable>
+    </Wrap>
   );
 }
 
