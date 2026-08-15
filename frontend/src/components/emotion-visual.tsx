@@ -11,7 +11,7 @@ type Props = {
   size: number;
   radius?: number;
   style?: ViewStyle;
-  /** Recolors the mascot itself (hue/sat) instead of laying a wash on top. */
+  /** Recolors the bowl body only · card background stays original. */
   colorTint?: string | null;
 };
 
@@ -20,13 +20,22 @@ function hasTint(hex?: string | null): hex is string {
 }
 
 /**
+ * Fraction of the square art where the bowl character sits.
+ * Tint is clipped to this oval so the baked-in card background keeps its color.
+ */
+const BOWL_MASK = {
+  left: 0.14,
+  top: 0.12,
+  width: 0.72,
+  height: 0.76,
+} as const;
+
+/**
  * Renders an emotion's PNG mascot when one exists, otherwise falls back to a
- * Feather icon inside a coloured circle. Keeps every emotion visually usable
- * even before the rice-bowl mascot for it has been generated.
+ * Feather icon inside a coloured circle.
  *
- * When `colorTint` is set, the bowl art is recolored with mix-blend `color`
- * so shading / outlines stay from the original — not a translucent overlay.
- * Android uses a softer opacity so a missing blend never fully covers the art.
+ * When `colorTint` is set, only the bowl character is recolored (mix-blend
+ * `color` inside an oval mask). The original square background is unchanged.
  */
 export function EmotionVisual({ emotion, size, radius, style, colorTint }: Props) {
   if (!emotion) return null;
@@ -34,6 +43,11 @@ export function EmotionVisual({ emotion, size, radius, style, colorTint }: Props
   const tint = hasTint(colorTint) ? colorTint : null;
 
   if (emotion.image) {
+    const maskLeft = size * BOWL_MASK.left;
+    const maskTop = size * BOWL_MASK.top;
+    const maskW = size * BOWL_MASK.width;
+    const maskH = size * BOWL_MASK.height;
+
     return (
       <View
         style={[
@@ -50,17 +64,28 @@ export function EmotionVisual({ emotion, size, radius, style, colorTint }: Props
           <View
             pointerEvents="none"
             style={[
-              StyleSheet.absoluteFillObject,
+              styles.bowlMask,
               {
-                borderRadius: r,
+                left: maskLeft,
+                top: maskTop,
+                width: maskW,
+                height: maskH,
+                borderRadius: Math.min(maskW, maskH) / 2,
+                isolation: 'isolate' as const,
+              },
+            ]}
+          >
+            <View
+              style={{
+                flex: 1,
                 backgroundColor: tint,
-                // Recolor artwork: take hue/sat from tint, keep luminosity from PNG.
+                // Recolor bowl art only: hue/sat from tint, luminosity from PNG.
                 mixBlendMode: 'color' as const,
                 // If blend is unavailable on some Android builds, stay translucent.
                 opacity: Platform.OS === 'android' ? 0.55 : 1,
-              },
-            ]}
-          />
+              }}
+            />
+          </View>
         ) : null}
       </View>
     );
@@ -94,6 +119,10 @@ const styles = StyleSheet.create({
     overflow: 'hidden',
     alignItems: 'center',
     justifyContent: 'center',
+  },
+  bowlMask: {
+    position: 'absolute',
+    overflow: 'hidden',
   },
   iconWrap: { alignItems: 'center', justifyContent: 'center' },
 });
