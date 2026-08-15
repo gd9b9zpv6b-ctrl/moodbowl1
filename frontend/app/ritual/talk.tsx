@@ -13,20 +13,14 @@ import {
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
-import { EmotionVisual } from '@/src/components/emotion-visual';
+import {
+  TypingRainbowBowl,
+  typingTierHint,
+} from '@/src/components/typing-rainbow-bowl';
 import { EMOTION_BY_KEY } from '@/src/constants/emotions';
 import { COLORS, RADIUS, SPACING } from '@/src/constants/theme';
 import { wordingFor } from '@/src/lib/i18n/wording-mode';
 import { useRitualStore } from '@/src/lib/ritual/ritual-store';
-
-function tierHint(n: number): string {
-  if (n <= 0) return '慢慢講 · 一個字都得';
-  if (n <= 10) return '開始啦 · 繼續都可以';
-  if (n <= 30) return '講多咗少少 · 好好';
-  if (n <= 60) return '傾得幾深 · 精靈聽緊';
-  if (n <= 100) return '火花閃緊 · 你好叻';
-  return '深度傾訴 · 精靈記住咗';
-}
 
 export default function RitualTalkScreen() {
   const router = useRouter();
@@ -39,7 +33,7 @@ export default function RitualTalkScreen() {
 
   const emotion = selectedBowlKey ? EMOTION_BY_KEY[selectedBowlKey] : null;
   const count = diaryText.trim().length;
-  const hint = useMemo(() => tierHint(count), [count]);
+  const hint = useMemo(() => typingTierHint(count), [count]);
 
   const goCustomize = () => router.push('/ritual/customize');
 
@@ -67,7 +61,7 @@ export default function RitualTalkScreen() {
           showsVerticalScrollIndicator={false}
         >
           <View style={styles.bowlBlock}>
-            <EmotionVisual emotion={emotion} size={140} radius={RADIUS.lg} />
+            <TypingRainbowBowl emotion={emotion} charCount={count} size={140} />
             <View style={styles.speech}>
               <Text style={styles.speechText}>{w.talk_speech}</Text>
             </View>
@@ -92,7 +86,7 @@ export default function RitualTalkScreen() {
             style={styles.input}
           />
 
-          <Text style={styles.progress}>
+          <Text testID="talk-tier-progress" style={styles.progress}>
             🌈 已寫 {count} 字 · {hint}
           </Text>
 

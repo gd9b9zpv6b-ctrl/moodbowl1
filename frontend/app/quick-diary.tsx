@@ -13,18 +13,13 @@ import {
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
+import {
+  TypingRainbowBowl,
+  typingTierHint,
+} from '@/src/components/typing-rainbow-bowl';
 import { COLORS, RADIUS, SPACING } from '@/src/constants/theme';
 import { wordingFor } from '@/src/lib/i18n/wording-mode';
 import { useRitualStore } from '@/src/lib/ritual/ritual-store';
-
-function tierHint(n: number): string {
-  if (n <= 0) return '慢慢講 · 一個字都得';
-  if (n <= 10) return '開始啦 · 繼續都可以';
-  if (n <= 30) return '講多咗少少 · 好好';
-  if (n <= 60) return '傾得幾深 · 精靈聽緊';
-  if (n <= 100) return '火花閃緊 · 你好叻';
-  return '深度傾訴 · 精靈記住咗';
-}
 
 /**
  * Same as ritual talk · empty bowl (no pick). Continues to customize → release.
@@ -39,7 +34,7 @@ export default function QuickDiaryScreen() {
   const w = wordingFor(ageGroup);
 
   const count = diaryText.trim().length;
-  const hint = useMemo(() => tierHint(count), [count]);
+  const hint = useMemo(() => typingTierHint(count), [count]);
 
   const goCustomize = () => {
     ensureStarted();
@@ -70,11 +65,9 @@ export default function QuickDiaryScreen() {
           showsVerticalScrollIndicator={false}
         >
           <View style={styles.bowlBlock}>
-            <View
-              testID="quick-diary-empty-bowl"
-              style={styles.emptyBowl}
-              accessibilityLabel="日記"
-            />
+            <View testID="quick-diary-empty-bowl">
+              <TypingRainbowBowl charCount={count} size={140} emptyLabel="日記" />
+            </View>
             <View style={styles.speech}>
               <Text style={styles.speechText}>{w.talk_solo_speech}</Text>
             </View>
@@ -93,7 +86,7 @@ export default function QuickDiaryScreen() {
             style={styles.input}
           />
 
-          <Text style={styles.progress}>
+          <Text testID="quick-diary-tier-progress" style={styles.progress}>
             🌈 已寫 {count} 字 · {hint}
           </Text>
 
@@ -145,15 +138,6 @@ const styles = StyleSheet.create({
   headerSpacer: { width: 40 },
   scroll: { paddingHorizontal: SPACING.lg, paddingBottom: SPACING.xxl },
   bowlBlock: { alignItems: 'center', marginBottom: SPACING.md },
-  emptyBowl: {
-    width: 140,
-    height: 140,
-    borderRadius: RADIUS.lg,
-    backgroundColor: COLORS.bgInput,
-    borderWidth: 1.5,
-    borderColor: COLORS.borderLight,
-    borderStyle: 'dashed',
-  },
   speech: {
     marginTop: SPACING.sm,
     backgroundColor: COLORS.bgCard,
