@@ -5,6 +5,10 @@ import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { EmotionVisual } from '@/src/components/emotion-visual';
+import {
+  RegulateStateStage,
+  STATE_REACTION,
+} from '@/src/components/regulate-state-stage';
 import { AffirmationSlideshow } from '@/src/components/regulation/affirmation-slideshow';
 import { BoxBreathing } from '@/src/components/regulation/box-breathing';
 import { Breath478 } from '@/src/components/regulation/breath-4-7-8';
@@ -17,7 +21,7 @@ import { EMOTION_BY_KEY } from '@/src/constants/emotions';
 import { COLORS, RADIUS, SPACING } from '@/src/constants/theme';
 import { wordingFor } from '@/src/lib/i18n/wording-mode';
 import { detectState, type NSState } from '@/src/lib/ritual/state-detector';
-import { useRitualStore } from '@/src/lib/ritual/ritual-store';
+import { useRitualStore, type AgeGroup } from '@/src/lib/ritual/ritual-store';
 
 type ActivityKind =
   | 'breath_4_7_8'
@@ -31,44 +35,89 @@ type ActivityKind =
 
 type ActivityDef = {
   key: string;
-  label: string;
-  icon: keyof typeof Feather.glyphMap;
   kind: ActivityKind;
+  icon: keyof typeof Feather.glyphMap;
 };
 
-/**
- * Main-path companion step · activities differ by detected nervous-system state.
- */
-const ACTIVITIES: Record<NSState, ActivityDef[]> = {
+const ACTIVITY_KEYS: Record<NSState, ActivityDef[]> = {
   sympathetic_fire: [
-    { key: 'punch_bag', label: '打沙包 · 撳快啲', icon: 'zap', kind: 'punch_bag' },
-    { key: 'ice_breath', label: '冰塊呼吸 · 4-7-8', icon: 'cloud-snow', kind: 'breath_4_7_8' },
-    { key: 'box_breathing', label: '冷靜 box breathing', icon: 'square', kind: 'box_breathing' },
+    { key: 'punch_bag', kind: 'punch_bag', icon: 'zap' },
+    { key: 'ice_breath', kind: 'breath_4_7_8', icon: 'cloud-snow' },
+    { key: 'box_breathing', kind: 'box_breathing', icon: 'square' },
   ],
   dorsal_sad: [
-    { key: 'soft_scenes', label: '靚靚風景／小動物', icon: 'image', kind: 'soft_scenes' },
-    { key: 'slideshow_affirmations', label: '溫柔小故事', icon: 'book-open', kind: 'affirmation' },
-    { key: 'soft_breath', label: '慢慢唞一陣', icon: 'wind', kind: 'breath_4_7_8' },
+    { key: 'soft_scenes', kind: 'soft_scenes', icon: 'image' },
+    { key: 'slideshow_affirmations', kind: 'affirmation', icon: 'book-open' },
+    { key: 'soft_breath', kind: 'breath_4_7_8', icon: 'wind' },
   ],
   dorsal_freeze: [
-    { key: 'grounding_5_4_3_2_1', label: '五感 5-4-3-2-1', icon: 'sun', kind: 'grounding' },
-    { key: 'gentle_stretch', label: '慢慢伸個懶腰', icon: 'arrow-up', kind: 'gentle_stretch' },
-    { key: 'wake_breath', label: '輕輕呼吸', icon: 'wind', kind: 'breath_4_7_8' },
+    { key: 'grounding_5_4_3_2_1', kind: 'grounding', icon: 'sun' },
+    { key: 'gentle_stretch', kind: 'gentle_stretch', icon: 'arrow-up' },
+    { key: 'wake_breath', kind: 'breath_4_7_8', icon: 'wind' },
   ],
   sympathetic_anxious: [
-    { key: 'box_breathing', label: 'Box breathing · 落地', icon: 'square', kind: 'box_breathing' },
-    { key: 'breath_4_7_8', label: '4-7-8 呼吸', icon: 'wind', kind: 'breath_4_7_8' },
-    { key: 'grounding_5_4_3_2_1', label: '五感 grounding', icon: 'eye', kind: 'grounding' },
+    { key: 'box_breathing', kind: 'box_breathing', icon: 'square' },
+    { key: 'breath_4_7_8', kind: 'breath_4_7_8', icon: 'wind' },
+    { key: 'grounding_5_4_3_2_1', kind: 'grounding', icon: 'eye' },
   ],
   ventral_regulated: [
-    { key: 'savor_3_things', label: '寫 3 樣今日靚嘢', icon: 'edit-3', kind: 'savor_3' },
-    { key: 'savor_breath', label: '繼續 savor 呼吸', icon: 'wind', kind: 'breath_4_7_8' },
-    { key: 'slideshow_affirmations', label: '溫柔金句', icon: 'heart', kind: 'affirmation' },
+    { key: 'savor_3_things', kind: 'savor_3', icon: 'edit-3' },
+    { key: 'savor_breath', kind: 'breath_4_7_8', icon: 'wind' },
+    { key: 'slideshow_affirmations', kind: 'affirmation', icon: 'heart' },
   ],
   unspoken: [
-    { key: 'sit_with_bowl', label: '同碗坐一坐 · 呼吸', icon: 'coffee', kind: 'breath_4_7_8' },
-    { key: 'slideshow_affirmations', label: '淡淡地金句', icon: 'heart', kind: 'affirmation' },
+    { key: 'sit_with_bowl', kind: 'breath_4_7_8', icon: 'coffee' },
+    { key: 'slideshow_affirmations', kind: 'affirmation', icon: 'heart' },
   ],
+};
+
+/** Age-banded labels so P1–P3 vs P4–P6 feel different. */
+const ACTIVITY_LABELS: Record<AgeGroup, Record<string, string>> = {
+  lower: {
+    punch_bag: '大力撳沙包！',
+    ice_breath: '凍凍哋呼吸',
+    box_breathing: '畫個四方唞氣',
+    soft_scenes: '睇得意動物／風景',
+    slideshow_affirmations: '聽溫柔小故事',
+    soft_breath: '慢慢唞一陣',
+    grounding_5_4_3_2_1: '玩 5-4-3-2-1',
+    gentle_stretch: '伸個懶腰',
+    wake_breath: '輕輕唞',
+    breath_4_7_8: '慢慢數住唞',
+    savor_3_things: '寫 3 樣開心嘢',
+    savor_breath: '再唞多陣',
+    sit_with_bowl: '同碗坐一坐',
+  },
+  upper: {
+    punch_bag: '打沙包 · 撳快啲',
+    ice_breath: '冰塊呼吸 · 4-7-8',
+    box_breathing: '冷靜 box breathing',
+    soft_scenes: '靚靚風景／小動物',
+    slideshow_affirmations: '溫柔小故事',
+    soft_breath: '慢慢唞一陣',
+    grounding_5_4_3_2_1: '五感 5-4-3-2-1',
+    gentle_stretch: '慢慢伸個懶腰',
+    wake_breath: '輕輕呼吸',
+    breath_4_7_8: '4-7-8 呼吸',
+    savor_3_things: '寫 3 樣今日靚嘢',
+    savor_breath: '繼續 savor 呼吸',
+    sit_with_bowl: '同碗坐一坐 · 呼吸',
+  },
+  adult: {
+    punch_bag: '釋放 · 打沙包',
+    ice_breath: '冰塊呼吸引導',
+    box_breathing: 'Box breathing',
+    soft_scenes: '溫柔畫面',
+    slideshow_affirmations: '溫柔金句',
+    soft_breath: '慢慢呼吸',
+    grounding_5_4_3_2_1: '五感 grounding',
+    gentle_stretch: '伸展懶腰',
+    wake_breath: '輕輕呼吸',
+    breath_4_7_8: '4-7-8 呼吸',
+    savor_3_things: '寫下今日 3 樣好事',
+    savor_breath: 'savor 呼吸',
+    sit_with_bowl: '同自己坐一坐',
+  },
 };
 
 export default function RitualRegulateScreen() {
@@ -82,11 +131,13 @@ export default function RitualRegulateScreen() {
   const w = wordingFor(ageGroup);
 
   const state = useMemo(() => detectState(soup, bodyChips), [soup, bodyChips]);
-  const activities = ACTIVITIES[state];
+  const reaction = STATE_REACTION[state];
+  const activityDefs = ACTIVITY_KEYS[state];
+  const labels = ACTIVITY_LABELS[ageGroup] || ACTIVITY_LABELS.upper;
   const emotion = selectedBowlKey ? EMOTION_BY_KEY[selectedBowlKey] : null;
   const didCompanion = useMemo(
-    () => activities.some((a) => regulationUsed.includes(a.key)),
-    [activities, regulationUsed],
+    () => activityDefs.some((a) => regulationUsed.includes(a.key)),
+    [activityDefs, regulationUsed],
   );
 
   const [active, setActive] = useState<ActivityKind | null>(null);
@@ -126,41 +177,46 @@ export default function RitualRegulateScreen() {
         >
           <Feather name="chevron-left" size={22} color={COLORS.textPrimary} />
         </Pressable>
+        <Text testID="regulate-eyebrow" style={styles.eyebrow}>
+          {w.regulate_eyebrow}
+        </Text>
         <View style={styles.headerSpacer} />
       </View>
 
       <ScrollView contentContainerStyle={styles.scroll} showsVerticalScrollIndicator={false}>
-        <Text testID="regulate-eyebrow" style={styles.eyebrow}>
-          {w.regulate_eyebrow}
-        </Text>
+        <RegulateStateStage
+          state={state}
+          title={w.regulate_by_state[state]}
+          subtitle={w.regulate_sub_by_state[state]}
+        />
 
         <View style={styles.bowl}>
-          <EmotionVisual emotion={emotion} size={160} radius={RADIUS.lg} />
+          <EmotionVisual emotion={emotion} size={120} radius={RADIUS.lg} />
         </View>
 
-        <Text testID="regulate-state-title" style={styles.title}>
-          {w.regulate_by_state[state]}
+        <Text style={styles.hint}>
+          因為你而家「{reaction.feel}」· 碗準備咗呢啲陪你（揀一樣就得）
         </Text>
-        <Text testID="regulate-state-sub" style={styles.sub}>
-          {w.regulate_sub_by_state[state]}
-        </Text>
-        <Text style={styles.hint}>揀一樣同碗一齊做完 · 再繼續（唔使全部）</Text>
 
-        {activities.map((a) => {
+        {activityDefs.map((a) => {
           const done = regulationUsed.includes(a.key) || sessionDone.includes(a.key);
           return (
             <Pressable
               key={a.key}
               testID={`regulate-activity-${a.key}`}
               onPress={() => openActivity(a)}
-              style={[styles.activity, done && styles.activityDone]}
+              style={[
+                styles.activity,
+                { borderColor: done ? reaction.accent : 'transparent' },
+                done && { backgroundColor: reaction.tint },
+              ]}
             >
-              <View style={styles.activityIcon}>
-                <Feather name={a.icon} size={18} color={COLORS.textPrimary} />
+              <View style={[styles.activityIcon, { backgroundColor: reaction.tint }]}>
+                <Text style={styles.activityEmoji}>{reaction.emoji}</Text>
               </View>
-              <Text style={styles.activityLabel}>{a.label}</Text>
+              <Text style={styles.activityLabel}>{labels[a.key] || a.key}</Text>
               {done ? (
-                <Feather name="check" size={18} color={COLORS.primary} />
+                <Feather name="check" size={18} color={reaction.accent} />
               ) : (
                 <Feather name="chevron-right" size={18} color={COLORS.textSecondary} />
               )}
@@ -243,33 +299,18 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
   },
-  headerSpacer: { width: 40 },
-  scroll: { paddingHorizontal: SPACING.lg, paddingBottom: SPACING.xxl },
   eyebrow: {
-    fontSize: 13,
-    fontWeight: '700',
-    color: COLORS.textSecondary,
-    marginBottom: SPACING.sm,
-  },
-  bowl: { alignItems: 'center', marginBottom: SPACING.md },
-  title: {
-    fontSize: 22,
+    fontSize: 14,
     fontWeight: '800',
     color: COLORS.textPrimary,
-    marginBottom: SPACING.sm,
-    lineHeight: 30,
   },
-  sub: {
-    fontSize: 15,
-    fontWeight: '600',
-    color: COLORS.textPrimary,
-    marginBottom: SPACING.sm,
-    lineHeight: 22,
-  },
+  headerSpacer: { width: 40 },
+  scroll: { paddingHorizontal: SPACING.lg, paddingBottom: SPACING.xxl },
+  bowl: { alignItems: 'center', marginBottom: SPACING.md },
   hint: {
     fontSize: 13,
     color: COLORS.textSecondary,
-    marginBottom: SPACING.lg,
+    marginBottom: SPACING.md,
     lineHeight: 20,
   },
   activity: {
@@ -280,21 +321,16 @@ const styles = StyleSheet.create({
     borderRadius: RADIUS.md,
     padding: SPACING.md,
     marginBottom: SPACING.sm,
-    borderWidth: 1.5,
-    borderColor: 'transparent',
-  },
-  activityDone: {
-    borderColor: COLORS.primary,
-    backgroundColor: COLORS.primaryLight,
+    borderWidth: 2,
   },
   activityIcon: {
-    width: 36,
-    height: 36,
+    width: 40,
+    height: 40,
     borderRadius: RADIUS.pill,
-    backgroundColor: COLORS.primaryLight,
     alignItems: 'center',
     justifyContent: 'center',
   },
+  activityEmoji: { fontSize: 20 },
   activityLabel: { flex: 1, fontSize: 15, fontWeight: '700', color: COLORS.textPrimary },
   skip: { alignItems: 'center', paddingVertical: SPACING.md, marginTop: SPACING.sm },
   skipText: { fontSize: 14, fontWeight: '700', color: COLORS.textSecondary },
