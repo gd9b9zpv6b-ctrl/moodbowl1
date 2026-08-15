@@ -198,7 +198,7 @@ const REGION_ADULT: Record<BodyRegionKey, string> = {
 export const WORDING: Record<WordingMode, WordingPack> = {
   lower: {
     soup_title: '今日想飲咩?',
-    soup_sub: '揀一種最似而家感覺嘅 · 唔係問你想慰勞自己',
+    soup_sub: '揀一種最似而家感覺嘅飲品 · 慢慢揀就得',
     body_title: '戳戳碗仔 · 邊度喺度嘈?',
     body_clarify: '碗仔係你嘅身體地圖 · 撳吓邊度有感覺',
     body_vessel: '由米堆戳到腳趾 · 最多揀 3 樣最嘈嘅',
