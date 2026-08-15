@@ -1,7 +1,10 @@
 import { create } from 'zustand';
 
 import type { BodyChipKey } from '@/src/constants/body-chips';
-import { MAX_BOWL_DECORS } from '@/src/constants/bowl-decorations';
+import {
+  MAX_BOWL_DECORS,
+  type PlacedDecoration,
+} from '@/src/constants/bowl-decorations';
 import type { BowlReleaseKey } from '@/src/constants/bowl-release';
 import type { SoupKey } from '@/src/constants/soups';
 
@@ -17,7 +20,7 @@ type RitualState = {
   selectedBowlKey: string | null;
   /** @deprecated kept for older entries · prefer decorations */
   colorTint: string | null;
-  decorations: string[];
+  decorations: PlacedDecoration[];
   bowlRelease: BowlReleaseKey | null;
   bowlSize: BowlSize;
   diaryText: string;
@@ -33,7 +36,8 @@ type RitualState = {
   toggleChip: (chip: BodyChipKey) => void;
   setBowl: (key: string) => void;
   setTint: (hex: string | null) => void;
-  toggleDecoration: (key: string) => void;
+  placeDecoration: (key: string, x: number, y: number) => void;
+  removeDecorationAt: (index: number) => void;
   clearDecorations: () => void;
   setBowlRelease: (key: BowlReleaseKey) => void;
   setSize: (size: BowlSize) => void;
@@ -56,7 +60,7 @@ const initialState = {
   bodyChips: [] as BodyChipKey[],
   selectedBowlKey: null as string | null,
   colorTint: null as string | null,
-  decorations: [] as string[],
+  decorations: [] as PlacedDecoration[],
   bowlRelease: null as BowlReleaseKey | null,
   bowlSize: 'M' as BowlSize,
   diaryText: '',
@@ -94,15 +98,20 @@ export const useRitualStore = create<RitualState>((set, get) => ({
   setBowl: (key) => set({ selectedBowlKey: key }),
   setTint: (hex) => set({ colorTint: hex }),
 
-  toggleDecoration: (key) => {
+  placeDecoration: (key, x, y) => {
     const current = get().decorations;
-    if (current.includes(key)) {
-      set({ decorations: current.filter((k) => k !== key), colorTint: null });
-      return;
-    }
-    const next = [...current, key];
+    const next = [...current, { key, x, y }];
     if (next.length > MAX_BOWL_DECORS) next.shift();
     set({ decorations: next, colorTint: null });
+  },
+
+  removeDecorationAt: (index) => {
+    const current = get().decorations;
+    if (index < 0 || index >= current.length) return;
+    set({
+      decorations: current.filter((_, i) => i !== index),
+      colorTint: null,
+    });
   },
 
   clearDecorations: () => set({ decorations: [], colorTint: null }),

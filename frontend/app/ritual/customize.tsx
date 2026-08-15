@@ -1,6 +1,7 @@
 import { Feather } from '@expo/vector-icons';
 import * as Haptics from 'expo-haptics';
 import { useRouter } from 'expo-router';
+import { useState } from 'react';
 import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
@@ -27,16 +28,32 @@ export default function RitualCustomizeScreen() {
   const selectedBowlKey = useRitualStore((s) => s.selectedBowlKey);
   const decorations = useRitualStore((s) => s.decorations);
   const bowlSize = useRitualStore((s) => s.bowlSize);
-  const toggleDecoration = useRitualStore((s) => s.toggleDecoration);
+  const placeDecoration = useRitualStore((s) => s.placeDecoration);
+  const removeDecorationAt = useRitualStore((s) => s.removeDecorationAt);
   const clearDecorations = useRitualStore((s) => s.clearDecorations);
   const setSize = useRitualStore((s) => s.setSize);
   const w = wordingFor(ageGroup);
 
+  const [pendingKey, setPendingKey] = useState<string | null>(null);
+
   const emotion = selectedBowlKey ? EMOTION_BY_KEY[selectedBowlKey] : null;
   const scale = SIZES.find((s) => s.key === bowlSize)?.scale ?? 1;
+  const pendingDecor = pendingKey ? BOWL_DECORATIONS.find((d) => d.key === pendingKey) : null;
 
-  const onToggleDecor = (key: string) => {
-    toggleDecoration(key);
+  const onPickDecor = (key: string) => {
+    setPendingKey((prev) => (prev === key ? null : key));
+    Haptics.selectionAsync().catch(() => {});
+  };
+
+  const onPlace = (x: number, y: number) => {
+    if (!pendingKey) return;
+    placeDecoration(pendingKey, x, y);
+    setPendingKey(null);
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light).catch(() => {});
+  };
+
+  const onRemoveAt = (index: number) => {
+    removeDecorationAt(index);
     Haptics.selectionAsync().catch(() => {});
   };
 
@@ -68,29 +85,28 @@ export default function RitualCustomizeScreen() {
 
         <View style={styles.previewWrap}>
           <View style={[styles.previewInner, { transform: [{ scale }] }]}>
-            {emotion ? (
-              <BowlWithDecor
-                emotion={emotion}
-                size={200}
-                radius={RADIUS.lg}
-                decorations={decorations}
-              />
-            ) : (
-              <View
-                testID="customize-empty-bowl"
-                style={[styles.emptyBowl, { width: 200, height: 200 }]}
-              />
-            )}
+            <BowlWithDecor
+              emotion={emotion}
+              empty={!emotion}
+              size={200}
+              radius={RADIUS.lg}
+              decorations={decorations}
+              onPlace={pendingKey ? onPlace : undefined}
+              onRemoveAt={onRemoveAt}
+              placing={!!pendingKey}
+            />
           </View>
           <Text style={styles.previewCaption} testID="customize-decor-label">
-            {decorations.length === 0
-              ? '未加裝飾'
-              : `已加 ${decorations.length} 件裝飾`}
+            {pendingDecor
+              ? `撳碗上面 · 放「${pendingDecor.label}」`
+              : decorations.length === 0
+                ? '先揀一件飾品 · 再撳碗上想放嘅位置'
+                : `已放 ${decorations.length} 件 · 撳飾品可移除`}
           </Text>
         </View>
 
         <View style={styles.sectionRow}>
-          <Text style={styles.section}>加裝飾 · 最多 {MAX_BOWL_DECORS} 件</Text>
+          <Text style={styles.section}>揀飾品 · 最多 {MAX_BOWL_DECORS} 件</Text>
           {decorations.length > 0 && (
             <Pressable testID="customize-clear-decor" onPress={clearDecorations} hitSlop={8}>
               <Text style={styles.clearText}>清晒</Text>
@@ -99,20 +115,32 @@ export default function RitualCustomizeScreen() {
         </View>
         <View style={styles.decorRow}>
           {BOWL_DECORATIONS.map((decor) => {
-            const active = decorations.includes(decor.key);
+            const pending = pendingKey === decor.key;
+            const usedCount = decorations.filter((d) => d.key === decor.key).length;
             return (
               <Pressable
                 key={decor.key}
                 testID={`customize-decor-${decor.key}`}
-                onPress={() => onToggleDecor(decor.key)}
+                onPress={() => onPickDecor(decor.key)}
                 style={styles.decorItem}
                 accessibilityLabel={decor.label}
-                accessibilityState={{ selected: active }}
+                accessibilityState={{ selected: pending }}
               >
-                <View style={[styles.decorChip, active && styles.decorChipActive]}>
+                <View
+                  style={[
+                    styles.decorChip,
+                    pending && styles.decorChipActive,
+                    usedCount > 0 && !pending && styles.decorChipUsed,
+                  ]}
+                >
                   <Text style={styles.decorEmoji}>{decor.emoji}</Text>
+                  {usedCount > 0 && (
+                    <View style={styles.usedBadge}>
+                      <Text style={styles.usedBadgeText}>{usedCount}</Text>
+                    </View>
+                  )}
                 </View>
-                <Text style={[styles.decorLabel, active && styles.decorLabelActive]}>
+                <Text style={[styles.decorLabel, pending && styles.decorLabelActive]}>
                   {decor.label}
                 </Text>
               </Pressable>
@@ -211,18 +239,13 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
   },
-  emptyBowl: {
-    borderRadius: RADIUS.lg,
-    backgroundColor: COLORS.bgCard,
-    borderWidth: 1.5,
-    borderColor: COLORS.borderLight,
-    borderStyle: 'dashed',
-  },
   previewCaption: {
     marginTop: SPACING.md,
     fontSize: 13,
     fontWeight: '700',
     color: COLORS.textPrimary,
+    textAlign: 'center',
+    paddingHorizontal: SPACING.md,
   },
   sectionRow: {
     flexDirection: 'row',
@@ -264,6 +287,22 @@ const styles = StyleSheet.create({
     borderWidth: 2.5,
     backgroundColor: COLORS.primaryLight,
   },
+  decorChipUsed: {
+    borderColor: COLORS.primary,
+  },
+  usedBadge: {
+    position: 'absolute',
+    top: -4,
+    right: -4,
+    minWidth: 16,
+    height: 16,
+    borderRadius: 8,
+    backgroundColor: COLORS.textPrimary,
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingHorizontal: 3,
+  },
+  usedBadgeText: { fontSize: 10, fontWeight: '800', color: COLORS.bgCard },
   decorEmoji: { fontSize: 26 },
   decorLabel: {
     fontSize: 11,
