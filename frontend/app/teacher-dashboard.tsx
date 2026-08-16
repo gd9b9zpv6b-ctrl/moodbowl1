@@ -30,7 +30,7 @@ const CLASS_DATA = [
   { name: '4C',       students: 26, high: 25, steady: 60, low: 15, alerts: 0 },
 ];
 
--- 需要關注嘅學生 (mock) — 負面 + 想點處理
+// 需要關注嘅學生 (mock) — 負面 + 想點處理
 const ALERTS = [
   { name: '陳 * 文', className: '6A', reason: '負面 · 用完仲未好 · 蓋住放低', severity: 'high' as const },
   { name: '李 * 美', className: '5B', reason: '負面感覺多咗 · 想話俾老師聽', severity: 'high' as const },
@@ -131,7 +131,9 @@ export default function TeacherDashboard() {
       <ScrollView contentContainerStyle={styles.scroll} showsVerticalScrollIndicator={false}>
         <View style={styles.hero}>
           <Text style={styles.heroGreet}>陳老師 · 早晨 ☀️</Text>
-          <Text style={styles.heroSub}>你有幾位學生嘅負面情緒值得留意 · 正面情緒唔使跟</Text>
+          <Text style={styles.heroSub}>
+            負面情緒 · 仲未好／多咗／少咗 · 同埋學生想點處理
+          </Text>
         </View>
 
         {/* Teacher self-care card */}
