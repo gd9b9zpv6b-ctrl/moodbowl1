@@ -6,6 +6,12 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { RoleHeader } from '@/src/components/role-header';
 import { RoleSelfCareCard } from '@/src/components/role-selfcare-card';
 import { api } from '@/src/lib/api';
+import {
+  COUNSELLOR_RULE_SUMMARY,
+  splitCounsellorCases,
+  triageApiAlert,
+  type CounsellorCase,
+} from '@/src/lib/counsellor-triage';
 import { SchoolPolicies } from '@/src/lib/school-policies';
 import { COLORS, RADIUS, SPACING } from '@/src/constants/theme';
 
@@ -25,24 +31,27 @@ type ApiAlert = {
   alert_type?: 'crisis_keyword' | 'blocked_crisis_post' | 'blocked_profanity_post';
 };
 
-const URGENT = [
-  { name: '陳 * 文', className: '6A', reason: '日記出現「唔想返學」等字詞', days: 1, sev: 'high' },
-  { name: '王 * 明', className: '5B', reason: '連續 5 日負面情緒 + 心口口痛', days: 2, sev: 'high' },
+// Mock pattern cases · priority comes from counsellor-triage rules (not hand-tagged)
+const MOCK_CASES = [
+  { id: 'u1', name: '陳 * 文', className: '6A', signal: 'crisis_keyword' as const, days: 1 },
+  { id: 'u2', name: '王 * 明', className: '5B', signal: 'safety_somatic' as const, days: 2 },
+  { id: 'f1', name: '李 * 美', className: '5B', signal: 'checkin_absent' as const, days: 3 },
+  { id: 'f2', name: '張 * 玲', className: '4C', signal: 'emotion_swing' as const, days: 4 },
+  { id: 'f3', name: '林 * 佳', className: '6B', signal: 'checkin_drop' as const, days: 5 },
+  { id: 'f4', name: '黃 * 晴', className: '6A', signal: 'bowl_watch' as const, days: 1 },
+  { id: 'f5', name: '周 * 樂', className: '5B', signal: 'teacher_notify' as const, days: 1 },
 ];
 
-const FOLLOW_UP = [
-  { name: '李 * 美', className: '5B', reason: '7 日冇打卡 · 之前每日都打', days: 3, sev: 'mid' },
-  { name: '張 * 玲', className: '4C', reason: '正面 → 負面情緒急轉', days: 4, sev: 'mid' },
-  { name: '林 * 佳', className: '6B', reason: '打卡頻率下降 40%', days: 5, sev: 'low' },
-];
+const { urgent: URGENT, followUp: FOLLOW_UP } = splitCounsellorCases(MOCK_CASES);
 
 function SEVColor(s: string) {
   return s === 'high' ? '#E86A6A' : s === 'mid' ? '#F0AE64' : '#DDB86A';
 }
 
-function CaseCard({ item }: { item: typeof URGENT[number] }) {
+function CaseCard({ item }: { item: CounsellorCase }) {
   return (
     <Pressable
+      testID={`counsellor-case-${item.id}`}
       onPress={() =>
         Alert.alert(
           `${item.name} · ${item.className}`,
@@ -58,7 +67,7 @@ function CaseCard({ item }: { item: typeof URGENT[number] }) {
           <Text style={styles.caseClass}>{item.className}</Text>
         </View>
         <Text style={styles.caseReason}>{item.reason}</Text>
-        <Text style={styles.caseTime}>{item.days} 日前觸發</Text>
+        <Text style={styles.caseTime}>{item.days ?? 0} 日前觸發</Text>
       </View>
       <View style={[styles.sevBadge, { backgroundColor: SEVColor(item.sev) + '30' }]}>
         <Text style={[styles.sevText, { color: SEVColor(item.sev) }]}>
@@ -87,6 +96,11 @@ export default function CounsellorPanel() {
       .then((p) => setCanRevealPolicy(p.counsellor_can_view_note_content))
       .catch(() => setCanRevealPolicy(false));
   }, []);
+
+  const alertUrgentCount = alerts.filter((a) => triageApiAlert(a) === 'urgent').length;
+  const alertFollowCount = alerts.filter((a) => triageApiAlert(a) === 'follow_up').length;
+  const urgentTotal = URGENT.length + alertUrgentCount;
+  const followTotal = FOLLOW_UP.length + alertFollowCount;
 
   const markReviewed = async (id: string) => {
     try {
@@ -163,8 +177,8 @@ export default function CounsellorPanel() {
           <Text style={styles.heroGreet}>李輔導 · 早晨</Text>
           <Text style={styles.heroSub}>
             {alerts.length > 0
-              ? `⚠️ ${alerts.length} 個新關鍵字警示 · ${URGENT.length + FOLLOW_UP.length} 個追蹤 case`
-              : `今日 ${URGENT.length + FOLLOW_UP.length} 個 case 等你 · 2 個緊急`}
+              ? `⚠️ ${alerts.length} 個關鍵字警示 · ${urgentTotal} 緊急 · ${followTotal} 要跟進`
+              : `今日 ${urgentTotal + followTotal} 個 case · ${urgentTotal} 個緊急`}
           </Text>
         </View>
 
@@ -185,6 +199,7 @@ export default function CounsellorPanel() {
             {alerts.map((a) => {
               const isBlockedCrisis = a.alert_type === 'blocked_crisis_post';
               const isBlockedProfanity = a.alert_type === 'blocked_profanity_post';
+              const priority = triageApiAlert(a);
               // Distinct visual cue so counsellor immediately knows what happened.
               const sourceLabel = isBlockedCrisis
                 ? '🚫 出 post 被攔截 · 含危機字眼'
@@ -198,9 +213,29 @@ export default function CounsellorPanel() {
                   : '#8A5F1F';
               return (
                 <View key={a.id} style={styles.alertCard}>
-                  <Text style={[styles.alertSource, { color: sourceColor }]}>
-                    {sourceLabel}
-                  </Text>
+                  <View style={styles.alertSourceRow}>
+                    <Text style={[styles.alertSource, { color: sourceColor, flex: 1 }]}>
+                      {sourceLabel}
+                    </Text>
+                    <View
+                      style={[
+                        styles.sevBadge,
+                        {
+                          backgroundColor:
+                            (priority === 'urgent' ? '#E86A6A' : '#F0AE64') + '30',
+                        },
+                      ]}
+                    >
+                      <Text
+                        style={[
+                          styles.sevText,
+                          { color: priority === 'urgent' ? '#E86A6A' : '#F0AE64' },
+                        ]}
+                      >
+                        {priority === 'urgent' ? '緊急' : '跟進'}
+                      </Text>
+                    </View>
+                  </View>
                   <View style={styles.alertHead}>
                     <Feather name="alert-octagon" size={16} color="#E86A6A" />
                     <Text style={styles.alertStudent}>
@@ -327,11 +362,11 @@ export default function CounsellorPanel() {
 
         <View style={styles.statsRow}>
           <View style={[styles.stat, { backgroundColor: '#FDE0E0' }]}>
-            <Text style={[styles.statV, { color: '#8A3F3F' }]}>{URGENT.length}</Text>
+            <Text style={[styles.statV, { color: '#8A3F3F' }]}>{urgentTotal}</Text>
             <Text style={styles.statL}>緊急</Text>
           </View>
           <View style={[styles.stat, { backgroundColor: '#FEE9CE' }]}>
-            <Text style={[styles.statV, { color: '#8A5F1F' }]}>{FOLLOW_UP.length}</Text>
+            <Text style={[styles.statV, { color: '#8A5F1F' }]}>{followTotal}</Text>
             <Text style={styles.statL}>要跟進</Text>
           </View>
           <View style={[styles.stat, { backgroundColor: '#E4F0E8' }]}>
@@ -340,11 +375,27 @@ export default function CounsellorPanel() {
           </View>
         </View>
 
+        <View style={styles.ruleCard} testID="counsellor-triage-rules">
+          <Text style={styles.ruleTitle}>點樣分緊急／跟進</Text>
+          <Text style={styles.ruleLine}>
+            <Text style={styles.ruleBold}>🔴 緊急：</Text>
+            {COUNSELLOR_RULE_SUMMARY.urgent}
+          </Text>
+          <Text style={styles.ruleLine}>
+            <Text style={styles.ruleBold}>🟡 跟進：</Text>
+            {COUNSELLOR_RULE_SUMMARY.follow_up}
+          </Text>
+        </View>
+
         <Text style={styles.sectionTitle}>🔴 緊急 · 建議即刻介入</Text>
-        {URGENT.map((c, i) => <CaseCard key={i} item={c} />)}
+        {URGENT.map((c) => (
+          <CaseCard key={c.id} item={c} />
+        ))}
 
         <Text style={styles.sectionTitle}>🟡 需要跟進</Text>
-        {FOLLOW_UP.map((c, i) => <CaseCard key={i} item={c} />)}
+        {FOLLOW_UP.map((c) => (
+          <CaseCard key={c.id} item={c} />
+        ))}
 
         <View style={styles.privacyCard}>
           <Feather name="shield" size={14} color="#5A7CB0" />
@@ -366,6 +417,18 @@ const styles = StyleSheet.create({
   hero: { marginBottom: SPACING.md },
   heroGreet: { fontSize: 22, fontWeight: '800', color: COLORS.textPrimary },
   heroSub: { fontSize: 13, color: COLORS.textSecondary, marginTop: 2 },
+  ruleCard: {
+    backgroundColor: COLORS.bgCard,
+    borderRadius: RADIUS.md,
+    padding: SPACING.md,
+    marginBottom: SPACING.md,
+    borderWidth: 1,
+    borderColor: '#B6CFEF',
+    gap: 6,
+  },
+  ruleTitle: { fontSize: 13, fontWeight: '800', color: COLORS.textPrimary, marginBottom: 2 },
+  ruleLine: { fontSize: 12, color: COLORS.textSecondary, lineHeight: 17 },
+  ruleBold: { fontWeight: '800', color: COLORS.textPrimary },
   statsRow: {
     flexDirection: 'row',
     gap: SPACING.sm,
@@ -416,10 +479,15 @@ const styles = StyleSheet.create({
     padding: SPACING.md,
     marginBottom: SPACING.sm,
   },
+  alertSourceRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+    marginBottom: 6,
+  },
   alertSource: {
     fontSize: 11,
     fontWeight: '800',
-    marginBottom: 6,
     letterSpacing: 0.3,
   },
   alertHead: {
