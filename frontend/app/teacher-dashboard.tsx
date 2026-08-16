@@ -10,7 +10,6 @@ import { ENERGY_META, EnergyLevel } from '@/src/constants/energy';
 import { RoleHeader } from '@/src/components/role-header';
 import { useSchoolEnergyMap } from '@/src/hooks/use-school-energy-map';
 import { api } from '@/src/lib/api';
-import { TEACHER_FOLLOW_UP_COPY } from '@/src/lib/teacher-follow-up';
 import { COLORS, RADIUS, SPACING } from '@/src/constants/theme';
 
 type ApiAlert = {
@@ -30,11 +29,9 @@ const CLASS_DATA = [
   { name: '4C',       students: 26, high: 25, steady: 60, low: 15, alerts: 0 },
 ];
 
-// 需要關注嘅學生 (mock) — 「想老師留意」只顯示可能要關注 · 冇其他資料
+// 需要點名跟進 (mock) — 主動通知／關鍵字；碗大細細節唔逐條列
 const ALERTS = [
   { name: '陳 * 文', className: '6A', reason: '可能要關注呢位學生', severity: 'high' as const, notifyOnly: true },
-  { name: '李 * 美', className: '5B', reason: '負面感覺多咗', severity: 'mid' as const, notifyOnly: false },
-  { name: '黃 * 晴', className: '6A', reason: '負面仲好強 · 暫時放低', severity: 'mid' as const, notifyOnly: false },
   { name: '王 * 明', className: '5B', reason: '日記出現關注字詞', severity: 'high' as const, notifyOnly: false },
 ];
 
@@ -45,15 +42,8 @@ const BEHAVIOR_FLAGS = [
   { icon: 'zap', text: '6A 情緒波幅比上周高 · 可能有壓力事件', tone: 'info' as const },
 ];
 
-// 負面情緒跟進摘要 (mock)
-const NEGATIVE_FOLLOW_UP = [
-  { cue: 'asks_help' as const, count: 2 },
-  { cue: 'got_stronger' as const, count: 2 },
-  { cue: 'still_strong' as const, count: 3 },
-  { cue: 'holding_on' as const, count: 2 },
-  { cue: 'parked' as const, count: 2 },
-  { cue: 'got_lighter' as const, count: 1 },
-];
+/** Mock · 今日負面情緒值得留意嘅總人數（一個概括 · 唔拆 cue） */
+const NEGATIVE_FOLLOW_UP_TOTAL = 8;
 
 // Fallback representative bowls (used before school config loads)
 const FALLBACK = {
@@ -131,9 +121,7 @@ export default function TeacherDashboard() {
       <ScrollView contentContainerStyle={styles.scroll} showsVerticalScrollIndicator={false}>
         <View style={styles.hero}>
           <Text style={styles.heroGreet}>陳老師 · 早晨 ☀️</Text>
-          <Text style={styles.heroSub}>
-            負面仲好強／多咗／少咗 · 同埋學生想點處理 · 「想老師留意」只係通知
-          </Text>
+          <Text style={styles.heroSub}>今日班氣氛同需要留意嘅同學 · 一睇就明</Text>
         </View>
 
         {/* Teacher self-care card */}
@@ -184,11 +172,28 @@ export default function TeacherDashboard() {
           </View>
         )}
 
-        {/* 需要關注嘅學生 */}
+        {/* 負面情緒 · 一個概括就夠 · 唔逐條拆強度／處理 */}
+        <View style={styles.sizeReportBox} testID="teacher-bowl-size-report">
+          <View style={styles.sizeReportHeader}>
+            <Feather name="heart" size={16} color="#B57D2A" />
+            <Text style={styles.sizeReportTitle}>負面情緒概況</Text>
+          </View>
+          <View style={styles.negativeSummaryRow} testID="teacher-follow-summary">
+            <Text style={styles.negativeSummaryCount}>{NEGATIVE_FOLLOW_UP_TOTAL}</Text>
+            <View style={{ flex: 1 }}>
+              <Text style={styles.negativeSummaryLead}>位同學今日值得留意一下</Text>
+              <Text style={styles.sizeReportHint}>
+                包含學生主動想你留意 · 同埋系統根據感覺強度／處理方式嘅提示。唔顯示日記原文同碗大細細節。
+              </Text>
+            </View>
+          </View>
+        </View>
+
+        {/* 需要點名跟進 · 主動通知／關鍵字 */}
         <View style={styles.alertBox}>
           <View style={styles.alertHeader}>
             <Feather name="alert-triangle" size={18} color="#E86A6A" />
-            <Text style={styles.alertTitle}>需要關注嘅學生</Text>
+            <Text style={styles.alertTitle}>需要點名跟進</Text>
             <View style={styles.alertCount}>
               <Text style={styles.alertCountText}>{ALERTS.length}</Text>
             </View>
@@ -216,40 +221,6 @@ export default function TeacherDashboard() {
           ))}
           <Text style={styles.alertHint}>
             🔒 「想老師留意」只顯示可能要關注 · 唔會有其他資料。每次查閱都會留底。
-          </Text>
-        </View>
-
-        {/* 負面情緒跟進 · 強度 + 處理方式（「想老師留意」另計 · 只通知） */}
-        <View style={styles.sizeReportBox} testID="teacher-bowl-size-report">
-          <View style={styles.sizeReportHeader}>
-            <Feather name="heart" size={16} color="#B57D2A" />
-            <Text style={styles.sizeReportTitle}>負面情緒 · 要唔要跟進</Text>
-          </View>
-          <Text style={styles.sizeReportHint}>
-            兩層提示：①「想老師留意」→ 只顯示「可能要關注」。② 系統用碗大細／處理方式推斷（主動放下唔計；放低／抱住唔再同「仲好強」雙計）。屋企留意稍後推出。
-          </Text>
-          <View style={styles.followCueList}>
-            {NEGATIVE_FOLLOW_UP.map((row) => {
-              const copy = TEACHER_FOLLOW_UP_COPY[row.cue];
-              return (
-                <View
-                  key={row.cue}
-                  style={styles.followCueRow}
-                  testID={`teacher-follow-${row.cue}`}
-                >
-                  <View style={{ flex: 1 }}>
-                    <Text style={styles.followCueTitle}>{copy.title}</Text>
-                    <Text style={styles.followCueHint}>{copy.hint}</Text>
-                  </View>
-                  <Text style={styles.followCueCount}>{row.count}</Text>
-                </View>
-              );
-            })}
-          </View>
-          <Text style={styles.sizeReportFooter}>
-            今日合共{' '}
-            {NEGATIVE_FOLLOW_UP.reduce((n, r) => n + r.count, 0)}{' '}
-            位同學仔嘅負面情緒值得你留意一下。
           </Text>
         </View>
 
@@ -406,7 +377,7 @@ const styles = StyleSheet.create({
     borderTopColor: 'rgba(0,0,0,0.05)',
   },
 
-  // 負面情緒跟進報告
+  // 負面情緒 · 單一概括
   sizeReportBox: {
     backgroundColor: '#FFF8EE',
     borderRadius: RADIUS.md,
@@ -419,33 +390,30 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     gap: 6,
-    marginBottom: 6,
+    marginBottom: 10,
   },
   sizeReportTitle: { flex: 1, fontSize: 15, fontWeight: '700', color: COLORS.textPrimary },
+  negativeSummaryRow: {
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    gap: SPACING.md,
+  },
+  negativeSummaryCount: {
+    fontSize: 40,
+    fontWeight: '800',
+    color: '#B57D2A',
+    lineHeight: 44,
+    minWidth: 48,
+  },
+  negativeSummaryLead: {
+    fontSize: 15,
+    fontWeight: '700',
+    color: COLORS.textPrimary,
+    marginBottom: 4,
+  },
   sizeReportHint: {
     fontSize: 12,
     color: COLORS.textSecondary,
-    lineHeight: 17,
-    marginBottom: SPACING.sm,
-  },
-  followCueList: { gap: 8 },
-  followCueRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: SPACING.sm,
-    backgroundColor: COLORS.bgCard,
-    borderRadius: RADIUS.sm,
-    paddingVertical: 10,
-    paddingHorizontal: 12,
-  },
-  followCueTitle: { fontSize: 14, fontWeight: '700', color: COLORS.textPrimary },
-  followCueHint: { fontSize: 11, color: COLORS.textSecondary, marginTop: 2, lineHeight: 15 },
-  followCueCount: { fontSize: 22, fontWeight: '800', color: '#B57D2A', minWidth: 28, textAlign: 'right' },
-  sizeReportFooter: {
-    fontSize: 12,
-    color: COLORS.textPrimary,
-    fontWeight: '600',
-    marginTop: SPACING.sm,
     lineHeight: 17,
   },
 

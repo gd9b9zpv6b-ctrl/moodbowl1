@@ -1030,9 +1030,9 @@ export default function SchoolAdmin() {
           <View style={styles.reportRow}>
             <Feather name="heart" size={18} color="#B57D2A" />
             <View style={{ flex: 1 }}>
-              <Text style={styles.reportTitle}>負面情緒跟進</Text>
+              <Text style={styles.reportTitle}>負面情緒概況</Text>
               <Text style={styles.reportSub}>
-                「想老師留意」只通知可能要關注 · 系統提示用碗大細／處理方式（主動放下唔計）· 屋企留意稍後
+                今日 8 位同學值得留意 · 詳情喺各班老師版面睇概括 · 唔拆情緒細節
               </Text>
             </View>
           </View>
