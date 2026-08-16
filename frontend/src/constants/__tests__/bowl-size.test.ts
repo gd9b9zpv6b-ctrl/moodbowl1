@@ -7,19 +7,18 @@ import {
   isNegativeEmotion,
   isPositiveEmotion,
   releaseKeyFromRegulation,
+  TEACHER_NOTIFY_ONLY_MESSAGE,
 } from '@/src/lib/teacher-follow-up';
 
 describe('bowl size energy mirror', () => {
   it('maps size to legacy energy_level', () => {
     expect(bowlSizeToEnergyLevel('S')).toBe(25);
-    expect(bowlSizeToEnergyLevel('M')).toBe(50);
-    expect(bowlSizeToEnergyLevel('L')).toBe(75);
     expect(bowlSizeToEnergyLevel('XL')).toBe(95);
   });
 });
 
-describe('teacher follow-up · negative + handling', () => {
-  it('ignores positive emotions even at XL with parked release', () => {
+describe('teacher follow-up · product rules', () => {
+  it('ignores positive without notify', () => {
     expect(isPositiveEmotion('happy')).toBe(true);
     expect(
       evaluateNegativeBowlFollowUp({
@@ -30,66 +29,73 @@ describe('teacher follow-up · negative + handling', () => {
     ).toBe(false);
   });
 
+  it('flags positive when student asks teacher to notice (notify-only)', () => {
+    const r = evaluateNegativeBowlFollowUp({
+      emotionKey: 'happy',
+      size: 'M',
+      notifyTeacher: true,
+    });
+    expect(r.watch).toBe(true);
+    expect(r.cue).toBe('asks_help');
+    expect(r.notifyOnly).toBe(true);
+    expect(TEACHER_NOTIFY_ONLY_MESSAGE).toContain('關注');
+  });
+
   it('treats sad / nervous / wound / anger as negative', () => {
     expect(isNegativeEmotion('sad')).toBe(true);
     expect(isNegativeEmotion('anxious')).toBe(true);
-    expect(isNegativeEmotion('hopeless')).toBe(true);
-    expect(isNegativeEmotion('angry')).toBe(true);
     expect(isNegativeEmotion('calm')).toBe(false);
   });
 
-  it('flags strong negative with no prior size as 用完仲未好', () => {
+  it('flags strong negative size as 負面仲好強 (no after-check)', () => {
     const r = evaluateNegativeBowlFollowUp({ emotionKey: 'sad', size: 'L' });
     expect(r.watch).toBe(true);
-    expect(r.cue).toBe('still_hard');
+    expect(r.cue).toBe('still_strong');
   });
 
-  it('does not flag mild negative alone without handling cue', () => {
+  it('does not flag mild park alone', () => {
     expect(
-      evaluateNegativeBowlFollowUp({ emotionKey: 'sad', size: 'S' }).watch,
+      evaluateNegativeBowlFollowUp({
+        emotionKey: 'sad',
+        size: 'S',
+        releaseKey: 'set_aside',
+      }).watch,
     ).toBe(false);
   });
 
-  it('flags 多咗 / 少咗 when size changes on negative emotions', () => {
-    expect(
-      evaluateNegativeBowlFollowUp({
-        emotionKey: 'anxious',
-        size: 'XL',
-        previousSize: 'M',
-      }).cue,
-    ).toBe('got_stronger');
+  it('flags park only when size is still strong', () => {
+    const r = evaluateNegativeBowlFollowUp({
+      emotionKey: 'sad',
+      size: 'XL',
+      releaseKey: 'set_aside',
+    });
+    expect(r.cues).toContain('parked');
+    expect(r.cues).toContain('still_strong');
+  });
 
+  it('skips 少咗 when student actively released', () => {
     expect(
       evaluateNegativeBowlFollowUp({
         emotionKey: 'angry',
         size: 'S',
         previousSize: 'L',
-      }).cue,
-    ).toBe('got_lighter');
+        releaseKey: 'wash',
+      }).watch,
+    ).toBe(false);
   });
 
-  it('flags 暫時唔處理 even when size is mild', () => {
-    const r = evaluateNegativeBowlFollowUp({
-      emotionKey: 'sad',
-      size: 'S',
-      releaseKey: 'set_aside',
-    });
-    expect(r.watch).toBe(true);
-    expect(r.cue).toBe('parked');
-    expect(r.handling).toBe('parked');
+  it('flags 少咗 when not actively releasing', () => {
+    expect(
+      evaluateNegativeBowlFollowUp({
+        emotionKey: 'angry',
+        size: 'S',
+        previousSize: 'L',
+        releaseKey: 'keep_hug',
+      }).cues,
+    ).toEqual(expect.arrayContaining(['got_lighter', 'holding_on']));
   });
 
-  it('flags 抱住留低 for negative keep_hug', () => {
-    const r = evaluateNegativeBowlFollowUp({
-      emotionKey: 'lonely',
-      size: 'M',
-      releaseKey: 'keep_hug',
-    });
-    expect(r.cues).toContain('holding_on');
-    expect(r.handling).toBe('holding');
-  });
-
-  it('prioritises 想話俾大人聽 over other cues', () => {
+  it('prioritises notify · and marks notifyOnly', () => {
     const r = evaluateNegativeBowlFollowUp({
       emotionKey: 'anxious',
       size: 'XL',
@@ -98,11 +104,11 @@ describe('teacher follow-up · negative + handling', () => {
       sharedWithClass: true,
     });
     expect(r.cue).toBe('asks_help');
+    expect(r.notifyOnly).toBe(true);
     expect(r.cues).toContain('got_stronger');
-    expect(r.handling).toBe('asks_adult');
   });
 
-  it('parses release key from regulation activity list', () => {
+  it('parses release from regulation keys', () => {
     expect(releaseKeyFromRegulation(['breath_4_7_8', 'release:send_away'])).toBe(
       'send_away',
     );

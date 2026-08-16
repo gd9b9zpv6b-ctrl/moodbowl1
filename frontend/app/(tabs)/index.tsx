@@ -594,8 +594,8 @@ export default function Home() {
                 <View style={styles.privacyBanner}>
                   <Feather name="eye-off" size={13} color="#7BA88C" />
                   <Text style={styles.privacyBannerText}>
-                    <Text style={styles.privacyBannerBold}>只有你自己睇到 · </Text>
-                    老師 · 家長 · 冇任何人可以偷睇你嘅日記
+                    <Text style={styles.privacyBannerBold}>日記原文只有你自己睇到 · </Text>
+                    老師最多收到「可能要關注」提示 · 唔會睇到你寫咩、揀咗咩碗
                   </Text>
                 </View>
 

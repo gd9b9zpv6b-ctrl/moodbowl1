@@ -30,12 +30,12 @@ const CLASS_DATA = [
   { name: '4C',       students: 26, high: 25, steady: 60, low: 15, alerts: 0 },
 ];
 
-// 需要關注嘅學生 (mock) — 負面 + 想點處理
+// 需要關注嘅學生 (mock) — 「想老師留意」只顯示可能要關注 · 冇其他資料
 const ALERTS = [
-  { name: '陳 * 文', className: '6A', reason: '負面 · 用完仲未好 · 蓋住放低', severity: 'high' as const },
-  { name: '李 * 美', className: '5B', reason: '負面感覺多咗 · 想話俾老師聽', severity: 'high' as const },
-  { name: '黃 * 晴', className: '6A', reason: '負面感覺少咗 · 抱住留低', severity: 'mid' as const },
-  { name: '王 * 明', className: '5B', reason: '日記出現關注字詞', severity: 'high' as const },
+  { name: '陳 * 文', className: '6A', reason: '可能要關注呢位學生', severity: 'high' as const, notifyOnly: true },
+  { name: '李 * 美', className: '5B', reason: '負面感覺多咗', severity: 'mid' as const, notifyOnly: false },
+  { name: '黃 * 晴', className: '6A', reason: '負面仲好強 · 暫時放低', severity: 'mid' as const, notifyOnly: false },
+  { name: '王 * 明', className: '5B', reason: '日記出現關注字詞', severity: 'high' as const, notifyOnly: false },
 ];
 
 // 行為異常偵測 (mock) — 呢啲比自報準
@@ -45,13 +45,13 @@ const BEHAVIOR_FLAGS = [
   { icon: 'zap', text: '6A 情緒波幅比上周高 · 可能有壓力事件', tone: 'info' as const },
 ];
 
-// 負面情緒跟進摘要 (mock) · 含「想點處理」
+// 負面情緒跟進摘要 (mock)
 const NEGATIVE_FOLLOW_UP = [
   { cue: 'asks_help' as const, count: 2 },
-  { cue: 'parked' as const, count: 3 },
-  { cue: 'holding_on' as const, count: 2 },
-  { cue: 'still_hard' as const, count: 3 },
   { cue: 'got_stronger' as const, count: 2 },
+  { cue: 'still_strong' as const, count: 3 },
+  { cue: 'holding_on' as const, count: 2 },
+  { cue: 'parked' as const, count: 2 },
   { cue: 'got_lighter' as const, count: 1 },
 ];
 
@@ -132,7 +132,7 @@ export default function TeacherDashboard() {
         <View style={styles.hero}>
           <Text style={styles.heroGreet}>陳老師 · 早晨 ☀️</Text>
           <Text style={styles.heroSub}>
-            負面情緒 · 仲未好／多咗／少咗 · 同埋學生想點處理
+            負面仲好強／多咗／少咗 · 同埋學生想點處理 · 「想老師留意」只係通知
           </Text>
         </View>
 
@@ -196,10 +196,14 @@ export default function TeacherDashboard() {
           {ALERTS.map((a, i) => (
             <Pressable
               key={i}
-              onPress={() => Alert.alert(
-                `${a.name} · ${a.className}`,
-                `原因：${a.reason}\n\n可以通知輔導老師跟進 · 或者自己安排單獨傾談。`,
-              )}
+              onPress={() =>
+                Alert.alert(
+                  `${a.name} · ${a.className}`,
+                  a.notifyOnly
+                    ? '學生想你留意吓 · 系統唔會顯示情緒、碗大細、或者日記內容。\n\n可以自己安排關心一下。'
+                    : `提示：${a.reason}\n\n日記原文仍然睇唔到 · 可以通知輔導老師跟進 · 或者自己安排單獨傾談。`,
+                )
+              }
               style={styles.alertItem}
             >
               <View style={[styles.alertDot, { backgroundColor: a.severity === 'high' ? '#E86A6A' : '#F0AE64' }]} />
@@ -211,18 +215,18 @@ export default function TeacherDashboard() {
             </Pressable>
           ))}
           <Text style={styles.alertHint}>
-            🔒 你只會見到姓氏 + 一個字 · 詳情要撳入去 · 每次查閱都會留底。
+            🔒 「想老師留意」只顯示可能要關注 · 唔會有其他資料。每次查閱都會留底。
           </Text>
         </View>
 
-        {/* 負面情緒跟進 — 正面唔計 · 睇用完仲未好 / 多咗 / 少咗 */}
+        {/* 負面情緒跟進 · 強度 + 處理方式（「想老師留意」另計 · 只通知） */}
         <View style={styles.sizeReportBox} testID="teacher-bowl-size-report">
           <View style={styles.sizeReportHeader}>
             <Feather name="heart" size={16} color="#B57D2A" />
             <Text style={styles.sizeReportTitle}>負面情緒 · 要唔要跟進</Text>
           </View>
           <Text style={styles.sizeReportHint}>
-            正面唔計。一齊睇：用完仲未好／多咗／少咗，同埋學生想點處理（暫時放低、抱住、想話俾大人聽）。
+            跟進用碗大細同處理方式推斷。「可能要關注」= 學生主動想你留意 · 唔顯示其他資料。日記原文永遠睇唔到。
           </Text>
           <View style={styles.followCueList}>
             {NEGATIVE_FOLLOW_UP.map((row) => {
@@ -271,8 +275,8 @@ export default function TeacherDashboard() {
           ))}
         </View>
 
-        {/* 能量圖例 · 三個代表飯團 */}
-        <Text style={styles.sectionTitle}>能量分類圖例</Text>
+        {/* 班氣氛圖 · 唔係跟進名單 */}
+        <Text style={styles.sectionTitle}>班氣氛圖例（唔係跟進名單）</Text>
         <View style={styles.legendCard}>
           <View style={styles.legendRow}>
             <View style={styles.legendBowl}>

@@ -158,7 +158,8 @@ export default function RitualReleaseScreen() {
           bowl_release: picked,
           diary_text: checkInType === 'hug_only' ? null : diaryText || null,
           check_in_type: checkInType === 'hug_only' ? 'hug_only' : 'full',
-          is_public: shareClass,
+          is_public: false,
+          // shared_with_class = 「想老師留意」notify only · never opens diary content
           shared_with_class: shareClass,
           shared_with_family: shareFamily,
           smile_completed: false,
@@ -350,6 +351,9 @@ export default function RitualReleaseScreen() {
 
         <Text testID="release-share-heading" style={styles.shareHeading}>
           {w.release_share_heading}
+        </Text>
+        <Text testID="release-share-privacy" style={styles.sharePrivacy}>
+          開咗都唔會俾人睇日記 · 淨係話可能要關心吓你
         </Text>
         <View style={styles.row}>
           <Text style={styles.rowLabel}>{w.bridge_share_family}</Text>

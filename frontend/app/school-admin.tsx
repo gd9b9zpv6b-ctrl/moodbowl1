@@ -1032,7 +1032,7 @@ export default function SchoolAdmin() {
             <View style={{ flex: 1 }}>
               <Text style={styles.reportTitle}>負面情緒跟進</Text>
               <Text style={styles.reportSub}>
-                正面唔計 · 今日有學生負面仲未好／多咗／少咗 · 或揀咗暫時唔處理／想話俾大人聽
+                「想老師留意」只通知可能要關注 · 其他跟進用碗大細／處理方式（唔顯示日記）
               </Text>
             </View>
           </View>
