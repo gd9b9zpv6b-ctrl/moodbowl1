@@ -113,7 +113,7 @@ export const EMOTIONS: Emotion[] = [
 
   // Self-worth wounds — muted purples/browns/greys
   { key: 'worthless', label: '冇價值', description: '覺得自己毫無價值', color: '#96A2C8', category: 'wound', image: EMOTION_IMAGES.worthless },
-  { key: 'insecure', label: '冇自信', description: '覺得自己唔夠好', color: '#B394CF', category: 'wound', image: EMOTION_IMAGES.insecure },
+  { key: 'insecure', label: '冇自信', description: '好驚會輸，唔敢行前步', color: '#DCC8E8', category: 'wound', image: EMOTION_IMAGES.insecure },
   { key: 'unloved', label: '唔被愛', description: '冇人真心錫我', color: '#E8988D', category: 'wound', image: EMOTION_IMAGES.unloved },
   { key: 'unappreciated', label: '被排擠', description: '好似被人剩落', color: '#C58AF0', category: 'wound', image: EMOTION_IMAGES.unappreciated },
   { key: 'disrespected', label: '唔被尊重', description: '好似被人睇小', color: '#E88F65', category: 'wound', image: EMOTION_IMAGES.disrespected },
