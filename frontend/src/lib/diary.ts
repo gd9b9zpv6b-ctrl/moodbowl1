@@ -13,7 +13,8 @@ import { supabase } from '@/src/lib/supabase-client';
  * when present, with bridge fallbacks onto ritual/quick-diary columns.
  *
  * Scheme B: bowl_size is intensity; bowl_release is handling choice.
- * shared_with_class = teacher-notify only (no diary content).
+ * notify_teacher = teacher-notify only (no diary content).
+ * shared_with_class is a deprecated DB mirror of notify_teacher.
  * energy_level is derived from bowl_size when size is set.
  */
 
@@ -31,6 +32,7 @@ type DiaryRow = {
   check_in_type: string;
   is_public: boolean;
   shared_with_class?: boolean;
+  notify_teacher?: boolean;
   shared_with_family?: boolean;
   smile_completed?: boolean;
   time_spent_sec: number | null;
@@ -166,7 +168,8 @@ export function diaryRowToEntry(row: DiaryRow, extras?: { hearted_by_me?: boolea
     bowl_color_tint: row.bowl_color_tint ?? null,
     bowl_size: row.bowl_size ?? null,
     bowl_release: row.bowl_release ?? null,
-    shared_with_class: !!row.shared_with_class,
+    shared_with_class: !!(row.notify_teacher ?? row.shared_with_class),
+    notify_teacher: !!(row.notify_teacher ?? row.shared_with_class),
     shared_with_family: !!row.shared_with_family,
   };
 }
@@ -275,13 +278,21 @@ export type RitualDiaryDraft = {
   diary_text: string | null;
   check_in_type: 'full' | 'hug_only' | 'quick_diary';
   is_public: boolean;
-  shared_with_class: boolean;
+  /** 「想老師留意」notify only */
+  notify_teacher?: boolean;
+  /** @deprecated mirror of notify_teacher */
+  shared_with_class?: boolean;
   shared_with_family: boolean;
   smile_completed?: boolean;
   time_spent_sec: number | null;
 };
 
+function draftNotifyTeacher(draft: RitualDiaryDraft): boolean {
+  return !!(draft.notify_teacher ?? draft.shared_with_class);
+}
+
 function ritualBridgePayload(userId: string, draft: RitualDiaryDraft) {
+  const notify = draftNotifyTeacher(draft);
   return {
     user_id: userId,
     soup: soupForDb(draft.soup),
@@ -293,7 +304,9 @@ function ritualBridgePayload(userId: string, draft: RitualDiaryDraft) {
     diary_text: draft.diary_text?.trim() || null,
     check_in_type: draft.check_in_type,
     is_public: !!draft.is_public,
-    shared_with_class: !!draft.shared_with_class,
+    // Write both · trigger / older DBs stay compatible
+    notify_teacher: notify,
+    shared_with_class: notify,
     shared_with_family: !!draft.shared_with_family,
     smile_completed: !!draft.smile_completed,
     time_spent_sec:
@@ -337,11 +350,11 @@ export async function createRitualDiaryEntry(draft: RitualDiaryDraft): Promise<E
   }
 
   if (isMissingColumnError(full.error)) {
-    const fallback = await supabase
-      .from('diaries')
-      .insert(ritualBridgePayload(userId, draft))
-      .select('*')
-      .single();
+    const bridge = ritualBridgePayload(userId, draft) as Record<string, unknown>;
+    // Older DBs may lack notify_teacher / bowl_release
+    delete bridge.notify_teacher;
+    delete bridge.bowl_release;
+    const fallback = await supabase.from('diaries').insert(bridge).select('*').single();
     if (fallback.error || !fallback.data) throw friendlyDiaryError(fallback.error);
     return diaryRowToEntry(fallback.data as DiaryRow);
   }
@@ -600,7 +613,7 @@ export async function saveRitualWithActivities(
       p_diary_text: draft.diary_text?.trim() || null,
       p_check_in_type: draft.check_in_type,
       p_is_public: !!draft.is_public,
-      p_shared_with_class: !!draft.shared_with_class,
+      p_shared_with_class: draftNotifyTeacher(draft),
       p_shared_with_family: !!draft.shared_with_family,
       p_smile_completed: !!draft.smile_completed,
       p_time_spent_sec:

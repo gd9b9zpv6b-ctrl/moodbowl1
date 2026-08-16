@@ -55,7 +55,7 @@ export default function RitualReleaseScreen() {
   const diaryText = useRitualStore((s) => s.diaryText);
   const checkInType = useRitualStore((s) => s.checkInType);
   const bowlRelease = useRitualStore((s) => s.bowlRelease);
-  const shareClass = useRitualStore((s) => s.shareClass);
+  const notifyTeacher = useRitualStore((s) => s.notifyTeacher);
   const startedAt = useRitualStore((s) => s.startedAt);
   const regulationUsed = useRitualStore((s) => s.regulationUsed);
   const setBowlRelease = useRitualStore((s) => s.setBowlRelease);
@@ -157,8 +157,8 @@ export default function RitualReleaseScreen() {
           diary_text: checkInType === 'hug_only' ? null : diaryText || null,
           check_in_type: checkInType === 'hug_only' ? 'hug_only' : 'full',
           is_public: false,
-          // shared_with_class = 「想老師留意」notify only · never opens diary content
-          shared_with_class: shareClass,
+          // notify_teacher = 「想老師留意」only · never opens diary content
+          notify_teacher: notifyTeacher,
           // Family notify UI hidden until parent inbox ships
           shared_with_family: false,
           smile_completed: false,
@@ -357,9 +357,9 @@ export default function RitualReleaseScreen() {
         <View style={styles.row}>
           <Text style={styles.rowLabel}>{w.bridge_share_class}</Text>
           <Switch
-            testID="release-share-class"
-            value={shareClass}
-            onValueChange={(v) => setShares({ shareClass: v })}
+            testID="release-notify-teacher"
+            value={notifyTeacher}
+            onValueChange={(v) => setShares({ notifyTeacher: v })}
             trackColor={{ true: COLORS.primary, false: COLORS.bgInput }}
             thumbColor={COLORS.bgCard}
           />

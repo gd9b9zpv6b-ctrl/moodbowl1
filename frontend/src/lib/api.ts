@@ -153,6 +153,8 @@ export type Entry = {
   bowl_size?: string | null;      // S|M|L|XL intensity
   bowl_release?: string | null;   // empty|set_aside|send_away|wash|keep_hug · 想點處理
   shared_with_class?: boolean;
+  /** 「想老師留意」notify only · preferred over shared_with_class */
+  notify_teacher?: boolean;
   shared_with_family?: boolean;
   community_scope?: string | null;
   author_role_label?: string | null;

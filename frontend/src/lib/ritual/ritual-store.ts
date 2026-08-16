@@ -26,7 +26,8 @@ type RitualState = {
   bowlSize: BowlSize;
   diaryText: string;
   checkInType: CheckInType;
-  shareClass: boolean;
+  /** 「想老師留意」notify only · not class-wide share */
+  notifyTeacher: boolean;
   shareFamily: boolean;
   shareTimeline: boolean;
   regulationUsed: string[];
@@ -45,6 +46,8 @@ type RitualState = {
   setDiaryText: (text: string) => void;
   setCheckInType: (type: CheckInType) => void;
   setShares: (shares: {
+    notifyTeacher?: boolean;
+    /** @deprecated alias of notifyTeacher */
     shareClass?: boolean;
     shareFamily?: boolean;
     shareTimeline?: boolean;
@@ -66,7 +69,7 @@ const initialState = {
   bowlSize: 'M' as BowlSize,
   diaryText: '',
   checkInType: 'full' as CheckInType,
-  shareClass: false,
+  notifyTeacher: false,
   shareFamily: false,
   shareTimeline: true,
   regulationUsed: [] as string[],
@@ -126,11 +129,15 @@ export const useRitualStore = create<RitualState>((set, get) => ({
   setCheckInType: (type) => set({ checkInType: type }),
 
   setShares: (shares) =>
-    set((state) => ({
-      shareClass: shares.shareClass ?? state.shareClass,
-      shareFamily: shares.shareFamily ?? state.shareFamily,
-      shareTimeline: shares.shareTimeline ?? state.shareTimeline,
-    })),
+    set((state) => {
+      const notify =
+        shares.notifyTeacher ?? shares.shareClass ?? state.notifyTeacher;
+      return {
+        notifyTeacher: notify,
+        shareFamily: shares.shareFamily ?? state.shareFamily,
+        shareTimeline: shares.shareTimeline ?? state.shareTimeline,
+      };
+    }),
 
   addRegulation: (key) => {
     const used = get().regulationUsed;
