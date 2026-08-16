@@ -26,7 +26,7 @@ export function typingTier(n: number): number {
 
 export function typingTierHint(n: number): string {
   if (n <= 0) return '慢慢講 · 一個字都得';
-  if (n <= 10) return '開始啦 · 精靈望住你';
+  if (n <= 10) return '開始啦 · 精靈陪住你';
   if (n <= 30) return '講多咗少少 · 好好';
   if (n <= 60) return '傾得幾深 · 彩虹嚟緊';
   if (n <= 100) return '火花閃緊 · 你好叻';
