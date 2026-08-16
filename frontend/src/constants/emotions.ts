@@ -119,7 +119,7 @@ export const EMOTIONS: Emotion[] = [
   { key: 'disrespected', label: '唔被尊重', description: '好似被人睇小', color: '#E88F65', category: 'wound', image: EMOTION_IMAGES.disrespected },
   { key: 'invisible', label: '被忽視', description: '好似冇人見到我', color: '#9AA5B2', category: 'wound', image: EMOTION_IMAGES.invisible },
   { key: 'rejected', label: '被拒絕', description: '唔被接納', color: '#EFB278', category: 'wound', image: EMOTION_IMAGES.rejected },
-  { key: 'abandoned', label: '被拋棄', description: '感覺被人丟低', color: '#93B9C7', category: 'wound', image: EMOTION_IMAGES.abandoned },
+  { key: 'abandoned', label: '被拋棄', description: '得返我一個', color: '#A89B90', category: 'wound', image: EMOTION_IMAGES.abandoned },
   { key: 'misunderstood', label: '唔被理解', description: '講極都冇人明', color: '#8877B4', category: 'wound', image: EMOTION_IMAGES.misunderstood },
   { key: 'unfair', label: '唔公平', description: '點解會咁對我?', color: '#58768E', category: 'wound', image: EMOTION_IMAGES.unfair },
   { key: 'guilty', label: '內疚', description: '覺得係自己嘅錯', color: '#DCC15E', category: 'wound', image: EMOTION_IMAGES.guilty },
