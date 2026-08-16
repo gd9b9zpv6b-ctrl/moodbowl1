@@ -94,7 +94,7 @@ export const EMOTIONS: Emotion[] = [
   { key: 'free', label: '自由', description: '無拘無束 · 好舒暢', color: '#B8D9F5', category: 'warm', image: EMOTION_IMAGES.free },
 
   // Sadness / low energy — spread across hues (藍/青/綠/米/灰/紫)
-  { key: 'sad', label: '傷心', description: '心受了傷', color: '#F0A8B0', category: 'sad', image: EMOTION_IMAGES.sad },
+  { key: 'sad', label: '傷心', description: '心受了傷', color: '#A2CCFF', category: 'sad', image: EMOTION_IMAGES.sad },
   { key: 'lonely', label: '寂寞', description: '好想有人喺身邊', color: '#A87FA5', category: 'sad', image: EMOTION_IMAGES.lonely },
   { key: 'unmotivated', label: '冇心機', description: '提唔起勁做嘢', color: '#A6C1A6', category: 'sad', image: EMOTION_IMAGES.unmotivated },
   { key: 'empty', label: '空虛', description: '而家好似乜都感受唔到', color: '#EDE7D6', category: 'sad', image: EMOTION_IMAGES.empty },
@@ -107,7 +107,7 @@ export const EMOTIONS: Emotion[] = [
   { key: 'anxious', label: '焦慮', description: '腦袋有隻倉鼠，跑個不停', color: '#F5C896', category: 'nervous', image: EMOTION_IMAGES.anxious },
   { key: 'scared', label: '驚', description: '心跳好快 · 好唔安', color: '#9A93C0', category: 'nervous', image: EMOTION_IMAGES.scared },
   { key: 'uneasy', label: '不安', description: '心裡總覺得有啲怪怪嘅', color: '#B0A08B', category: 'nervous', image: EMOTION_IMAGES.uneasy },
-  { key: 'worried', label: '擔心', description: '成日覺得，件事會變衰', color: '#C5D0B8', category: 'nervous', image: EMOTION_IMAGES.worried },
+  { key: 'worried', label: '擔心', description: '成日覺得，件事會變衰', color: '#D5DBA8', category: 'nervous', image: EMOTION_IMAGES.worried },
   { key: 'overwhelmed', label: '窒息感', description: '胸口好心悶，吸唔到氣', color: '#C4756E', category: 'nervous', image: EMOTION_IMAGES.overwhelmed },
   { key: 'trapped', label: '被困', description: '好似逃唔到出去', color: '#6BA8BF', category: 'nervous', image: EMOTION_IMAGES.trapped },
 
@@ -129,7 +129,7 @@ export const EMOTIONS: Emotion[] = [
   { key: 'suppressed', label: '被打壓', description: '俾人壓住 · 仲要撐住', color: '#8A7563', category: 'wound', image: EMOTION_IMAGES.suppressed },
 
   // Anger / intense — reds ordered by intensity
-  { key: 'frustrated', label: '沮喪', description: '頭頂有朵烏雲，落雨不停', color: '#B8D4E8', category: 'anger', image: EMOTION_IMAGES.frustrated },
+  { key: 'frustrated', label: '沮喪', description: '頭頂有朵烏雲，落雨不停', color: '#E4A3A0', category: 'anger', image: EMOTION_IMAGES.frustrated },
   { key: 'angry', label: '嬲', description: '心入面有把火', color: '#F17372', category: 'anger', image: EMOTION_IMAGES.angry },
   { key: 'offended', label: '被冒犯', description: '個心俾人踩咗一腳', color: '#C08360', category: 'anger', image: EMOTION_IMAGES.offended },
   { key: 'furious', label: '激嬲', description: '把火燒到頂', color: '#D34848', category: 'anger', image: EMOTION_IMAGES.furious },
