@@ -17,6 +17,8 @@ type Props = {
  * Renders an emotion's PNG mascot when one exists, otherwise falls back to a
  * Feather icon inside a coloured circle. Keeps every emotion visually usable
  * even before the rice-bowl mascot for it has been generated.
+ *
+ * Bowl art is never recolored — ritual “顏色” changes the backdrop behind it.
  */
 export function EmotionVisual({ emotion, size, radius, style }: Props) {
   if (!emotion) return null;
@@ -38,7 +40,11 @@ export function EmotionVisual({ emotion, size, radius, style }: Props) {
         style,
       ]}
     >
-      <Feather name={(emotion.icon as any) || 'circle'} size={iconSize} color={emotion.iconTint || COLORS.textPrimary} />
+      <Feather
+        name={(emotion.icon as any) || 'circle'}
+        size={iconSize}
+        color={emotion.iconTint || COLORS.textPrimary}
+      />
     </View>
   );
 }

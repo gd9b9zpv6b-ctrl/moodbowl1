@@ -27,7 +27,12 @@ export function DiaryPaper({
 }: Props) {
   return (
     <View style={[styles.wrap, style]}>
-      <Svg width="100%" height="100%" style={StyleSheet.absoluteFill}>
+      <Svg
+        width="100%"
+        height="100%"
+        style={StyleSheet.absoluteFill}
+        pointerEvents="none"
+      >
         <Defs>
           <Pattern
             id="paper-pattern"

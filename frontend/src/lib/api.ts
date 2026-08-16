@@ -37,6 +37,12 @@ export async function setToken(token: string | null) {
 }
 
 async function request<T>(path: string, options: RequestInit = {}): Promise<T> {
+  // FastAPI is optional during Supabase migration. An empty base URL must never
+  // become a relative fetch like `/api/...` — that hangs / fails login on device.
+  if (!BASE_URL) {
+    throw new Error('Backend offline');
+  }
+
   // Supabase owns normal sessions from Phase 1 onward. The stored legacy token
   // remains only for invite-code activation until that flow moves in Phase 4.
   const {
@@ -49,27 +55,37 @@ async function request<T>(path: string, options: RequestInit = {}): Promise<T> {
   };
   if (token) headers['Authorization'] = `Bearer ${token}`;
 
-  const res = await fetch(`${BASE_URL}/api${path}`, { ...options, headers });
-  // Notify auth-context that user is active — refreshes inactivity timer.
-  try { activityListener?.(); } catch { /* noop */ }
-  const text = await res.text();
-  let json: any = null;
+  const controller = typeof AbortController !== 'undefined' ? new AbortController() : null;
+  const timer = controller ? setTimeout(() => controller.abort(), 8000) : null;
   try {
-    json = text ? JSON.parse(text) : null;
-  } catch {
-    // ignore
-  }
-  if (!res.ok) {
-    if (res.status === 401) {
-      // Session invalid · immediately clear cached token + notify auth-context
-      cachedToken = null;
-      await storage.secureRemove(TOKEN_KEY);
-      try { authInvalidHandler?.(); } catch { /* noop */ }
+    const res = await fetch(`${BASE_URL}/api${path}`, {
+      ...options,
+      headers,
+      signal: controller?.signal,
+    });
+    // Notify auth-context that user is active — refreshes inactivity timer.
+    try { activityListener?.(); } catch { /* noop */ }
+    const text = await res.text();
+    let json: any = null;
+    try {
+      json = text ? JSON.parse(text) : null;
+    } catch {
+      // ignore
     }
-    const detail = json?.detail || `Request failed (${res.status})`;
-    throw new Error(typeof detail === 'string' ? detail : JSON.stringify(detail));
+    if (!res.ok) {
+      if (res.status === 401) {
+        // Session invalid · immediately clear cached token + notify auth-context
+        cachedToken = null;
+        await storage.secureRemove(TOKEN_KEY);
+        try { authInvalidHandler?.(); } catch { /* noop */ }
+      }
+      const detail = json?.detail || `Request failed (${res.status})`;
+      throw new Error(typeof detail === 'string' ? detail : JSON.stringify(detail));
+    }
+    return json as T;
+  } finally {
+    if (timer) clearTimeout(timer);
   }
-  return json as T;
 }
 
 export const api = {
@@ -82,6 +98,11 @@ export const api = {
     request<T>(p, { method: 'PATCH', body: body ? JSON.stringify(body) : undefined }),
   del: <T>(p: string) => request<T>(p, { method: 'DELETE' }),
 };
+
+/** FastAPI may be offline during Supabase migration · never iterate a null list. */
+export function asArray<T>(value: T[] | null | undefined): T[] {
+  return Array.isArray(value) ? value.filter((item): item is T => item != null) : [];
+}
 
 // Types
 export type DiaryStyle = {
@@ -128,6 +149,10 @@ export type Entry = {
   created_at: string;
   hearts: number;
   hearted_by_me: boolean;
+  bowl_color_tint?: string | null;
+  bowl_size?: string | null;
+  community_scope?: string | null;
+  author_role_label?: string | null;
 };
 
 export type Task = {

@@ -1,18 +1,21 @@
 import { Feather } from '@expo/vector-icons';
-import { useFocusEffect, useRouter } from 'expo-router';
-import { useCallback, useMemo, useState } from 'react';
+import { useFocusEffect, useLocalSearchParams, useRouter } from 'expo-router';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import { ActivityIndicator, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { Calendar, DateData } from 'react-native-calendars';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
+import { BowlWithDecor } from '@/src/components/bowl-with-decor';
 import { EmotionVisual } from '@/src/components/emotion-visual';
 import { EntryDetailModal } from '@/src/components/entry-detail-modal';
 import { EntryEditModal } from '@/src/components/entry-edit-modal';
 import { SupportCtaRow } from '@/src/components/support-cta-row';
+import { decodeDecorations, isLegacyTint } from '@/src/constants/bowl-decorations';
 import { EMOTION_BY_KEY } from '@/src/constants/emotions';
 import { COLORS, RADIUS, SPACING } from '@/src/constants/theme';
 import { api, Entry, User } from '@/src/lib/api';
 import { useAuth } from '@/src/lib/auth-context';
+import { listMyDiaryEntriesForMonth } from '@/src/lib/diary';
 
 function currentMonthKey(d = new Date()) {
   return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`;
@@ -25,9 +28,25 @@ function todayISO() {
 
 const NOTE_PREVIEW_LINES = 3;
 
+function albumSizeScale(size?: string | null) {
+  switch (size) {
+    case 'S':
+      return 0.85;
+    case 'L':
+      return 1.1;
+    case 'XL':
+      return 1.2;
+    default:
+      return 1;
+  }
+}
+
 export default function CalendarScreen() {
   const { user, setUser } = useAuth();
   const router = useRouter();
+  const params = useLocalSearchParams<{ mode?: string | string[] }>();
+  const modeParam = Array.isArray(params.mode) ? params.mode[0] : params.mode;
+  const [albumMode, setAlbumMode] = useState(modeParam === 'album');
   const [month, setMonth] = useState(currentMonthKey());
   const [entries, setEntries] = useState<Entry[]>([]);
   const [selectedDate, setSelectedDate] = useState<string>(todayISO());
@@ -36,15 +55,19 @@ export default function CalendarScreen() {
   const [detailEntry, setDetailEntry] = useState<Entry | null>(null);
   const [editingEntry, setEditingEntry] = useState<Entry | null>(null);
 
+  useEffect(() => {
+    if (modeParam === 'album') setAlbumMode(true);
+  }, [modeParam]);
+
   const featuredByDate = useMemo(() => user?.featured_by_date || {}, [user?.featured_by_date]);
 
   const load = useCallback(async (m: string) => {
     setLoading(true);
     try {
-      const res = await api.get<Entry[]>(`/entries/calendar?month=${m}`);
+      const res = await listMyDiaryEntriesForMonth(m);
       setEntries(res);
     } catch {
-      // ignore
+      setEntries([]);
     } finally {
       setLoading(false);
     }
@@ -59,7 +82,8 @@ export default function CalendarScreen() {
   // Group entries by date. Featured takes priority, else latest.
   const entriesGroupedByDate = useMemo(() => {
     const map: Record<string, Entry[]> = {};
-    for (const e of entries) {
+    for (const e of entries || []) {
+      if (!e?.entry_date) continue;
       if (!map[e.entry_date]) map[e.entry_date] = [];
       map[e.entry_date].push(e);
     }
@@ -95,10 +119,25 @@ export default function CalendarScreen() {
   return (
     <SafeAreaView style={styles.safe} edges={['top']}>
       <ScrollView contentContainerStyle={styles.scroll} showsVerticalScrollIndicator={false}>
-        <Text style={styles.title} testID="calendar-title">
-          你嘅心路
-        </Text>
-        <Text style={styles.subtitle}>每一個小小嘅感受,都值得記低。</Text>
+        <View style={styles.titleRow}>
+          <View style={{ flex: 1 }}>
+            <Text style={styles.title} testID="calendar-title">
+              {albumMode ? '心情圖鑑' : '你嘅心路'}
+            </Text>
+            <Text style={styles.subtitle}>
+              {albumMode ? '一格一碗 · 睇返呢個月嘅顏色。' : '每一個小小嘅感受,都值得記低。'}
+            </Text>
+          </View>
+          <Pressable
+            testID="calendar-album-toggle"
+            onPress={() => setAlbumMode((v) => !v)}
+            style={[styles.albumToggle, albumMode && styles.albumToggleActive]}
+            accessibilityLabel={albumMode ? '切換返日曆' : '切換圖鑑模式'}
+          >
+            <Feather name={albumMode ? 'calendar' : 'grid'} size={16} color={COLORS.textPrimary} />
+            <Text style={styles.albumToggleText}>{albumMode ? '日曆' : '圖鑑'}</Text>
+          </Pressable>
+        </View>
 
         <View style={styles.calendarWrap}>
           <Calendar
@@ -116,6 +155,13 @@ export default function CalendarScreen() {
               const isSelected = selectedDate === date.dateString;
               const isToday = todayISO() === date.dateString;
               const isDisabled = state === 'disabled';
+              const tint = featured?.bowl_color_tint;
+              const decors = decodeDecorations(tint);
+              const legacyBg = isLegacyTint(tint) ? tint : undefined;
+              const visualSize = Math.round(
+                38 * (albumMode ? albumSizeScale(featured?.bowl_size) : 1),
+              );
+              const showDecorated = decors.length > 0;
 
               return (
                 <Pressable
@@ -128,9 +174,19 @@ export default function CalendarScreen() {
                       style={[
                         styles.dayIconWrap,
                         isSelected && styles.dayIconWrapSelected,
+                        albumMode && legacyBg && { backgroundColor: legacyBg },
                       ]}
                     >
-                      <EmotionVisual emotion={em} size={38} radius={RADIUS.sm} />
+                      {showDecorated ? (
+                        <BowlWithDecor
+                          emotion={em}
+                          size={visualSize}
+                          radius={RADIUS.sm}
+                          decorations={decors}
+                        />
+                      ) : (
+                        <EmotionVisual emotion={em} size={visualSize} radius={RADIUS.sm} />
+                      )}
                     </View>
                   ) : (
                     <View
@@ -194,6 +250,7 @@ export default function CalendarScreen() {
                 const em = emList[0];
                 const active = featuredIdForSelected === entry.id;
                 const isLoading = featuring === entry.id;
+                const pickerDecors = decodeDecorations(entry.bowl_color_tint);
                 return (
                   <Pressable
                     key={entry.id}
@@ -206,7 +263,16 @@ export default function CalendarScreen() {
                       active && styles.pickerChipActive,
                     ]}
                   >
-                    <EmotionVisual emotion={em} size={44} radius={RADIUS.sm} />
+                    {pickerDecors.length > 0 ? (
+                      <BowlWithDecor
+                        emotion={em}
+                        size={44}
+                        radius={RADIUS.sm}
+                        decorations={pickerDecors}
+                      />
+                    ) : (
+                      <EmotionVisual emotion={em} size={44} radius={RADIUS.sm} />
+                    )}
                     <Text style={styles.pickerChipLabel} numberOfLines={1}>
                       {emList.map((e) => e.label).join('·')}
                     </Text>
@@ -240,6 +306,7 @@ export default function CalendarScreen() {
             const em = emList[0];
             const isFeatured = featuredIdForSelected === entry.id;
             const noteIsLong = (entry.note || '').length > 60;
+            const entryDecors = decodeDecorations(entry.bowl_color_tint);
             return (
               <Pressable
                 key={entry.id}
@@ -262,7 +329,16 @@ export default function CalendarScreen() {
                           { marginLeft: i === 0 ? 0 : -14, zIndex: 3 - i },
                         ]}
                       >
-                        <EmotionVisual emotion={e} size={40} radius={RADIUS.sm} />
+                        {i === 0 && entryDecors.length > 0 ? (
+                          <BowlWithDecor
+                            emotion={e}
+                            size={40}
+                            radius={RADIUS.sm}
+                            decorations={entryDecors}
+                          />
+                        ) : (
+                          <EmotionVisual emotion={e} size={40} radius={RADIUS.sm} />
+                        )}
                       </View>
                     ))}
                     {emList.length > 3 && (
@@ -346,8 +422,28 @@ export default function CalendarScreen() {
 const styles = StyleSheet.create({
   safe: { flex: 1, backgroundColor: COLORS.bgMain },
   scroll: { padding: SPACING.lg },
+  titleRow: {
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    gap: SPACING.sm,
+    marginBottom: SPACING.lg,
+  },
   title: { fontSize: 28, fontWeight: '700', color: COLORS.textPrimary },
-  subtitle: { fontSize: 15, color: COLORS.textSecondary, marginTop: 4, marginBottom: SPACING.lg },
+  subtitle: { fontSize: 15, color: COLORS.textSecondary, marginTop: 4 },
+  albumToggle: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    paddingHorizontal: SPACING.sm + 2,
+    paddingVertical: 8,
+    borderRadius: RADIUS.pill,
+    backgroundColor: COLORS.bgCard,
+    marginTop: 4,
+  },
+  albumToggleActive: {
+    backgroundColor: COLORS.primaryLight,
+  },
+  albumToggleText: { fontSize: 13, fontWeight: '700', color: COLORS.textPrimary },
   calendarWrap: {
     borderRadius: RADIUS.lg,
     overflow: 'hidden',
@@ -367,6 +463,7 @@ const styles = StyleSheet.create({
     borderRadius: RADIUS.pill,
     alignItems: 'center',
     justifyContent: 'center',
+    overflow: 'hidden',
   },
   dayIconWrapSelected: {
     borderWidth: 2,

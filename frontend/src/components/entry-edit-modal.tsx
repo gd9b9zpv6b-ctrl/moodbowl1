@@ -17,7 +17,8 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { EMOTIONS, EMOTION_BY_KEY } from '@/src/constants/emotions';
 import { COLORS, RADIUS, SPACING } from '@/src/constants/theme';
-import { api, Entry } from '@/src/lib/api';
+import { Entry } from '@/src/lib/api';
+import { deleteDiaryEntry, updateDiaryEntry } from '@/src/lib/diary';
 import { EmotionVisual } from './emotion-visual';
 
 type Props = {
@@ -42,6 +43,17 @@ export function EntryEditModal({ visible, entry, onClose, onSaved, onDeleted }: 
   const [emotionKeys, setEmotionKeys] = useState<string[]>([]);
   const [saving, setSaving] = useState(false);
   const [deleting, setDeleting] = useState(false);
+  const [cached, setCached] = useState<Entry | null>(entry);
+
+  useEffect(() => {
+    if (entry) setCached(entry);
+  }, [entry]);
+
+  useEffect(() => {
+    if (visible || !cached) return;
+    const t = setTimeout(() => setCached(null), 400);
+    return () => clearTimeout(t);
+  }, [visible, cached]);
 
   useEffect(() => {
     if (entry && visible) {
@@ -50,8 +62,9 @@ export function EntryEditModal({ visible, entry, onClose, onSaved, onDeleted }: 
     }
   }, [entry, visible]);
 
-  if (!entry) return null;
-  const primaryEmotion = EMOTION_BY_KEY[emotionKeys[0]] || EMOTION_BY_KEY[entry.emotion];
+  const display = entry ?? cached;
+  if (!display) return null;
+  const primaryEmotion = EMOTION_BY_KEY[emotionKeys[0]] || EMOTION_BY_KEY[display.emotion];
   const selectedEmotions = emotionKeys.map((k) => EMOTION_BY_KEY[k]).filter(Boolean);
   const bg = (primaryEmotion?.color || COLORS.primaryLight) + '25';
 
@@ -62,31 +75,31 @@ export function EntryEditModal({ visible, entry, onClose, onSaved, onDeleted }: 
   };
 
   const save = async () => {
-    if (!entry || emotionKeys.length === 0) return;
+    if (!display || emotionKeys.length === 0) return;
     setSaving(true);
     try {
-      const updated = await api.patch<Entry>(`/entries/${entry.id}`, {
+      const updated = await updateDiaryEntry(display.id, {
         note,
         emotions: emotionKeys,
       });
       onSaved(updated);
       onClose();
-    } catch {
-      Alert.alert('儲存唔到', '請稍後再試');
+    } catch (e: any) {
+      Alert.alert('儲存唔到', String(e?.message || '請稍後再試'));
     } finally {
       setSaving(false);
     }
   };
 
   const doDelete = async () => {
-    if (!entry) return;
+    if (!display) return;
     setDeleting(true);
     try {
-      await api.del(`/entries/${entry.id}`);
-      onDeleted(entry.id);
+      await deleteDiaryEntry(display.id);
+      onDeleted(display.id);
       onClose();
-    } catch {
-      Alert.alert('刪除唔到', '請稍後再試');
+    } catch (e: any) {
+      Alert.alert('刪除唔到', String(e?.message || '請稍後再試'));
     } finally {
       setDeleting(false);
     }
@@ -123,7 +136,7 @@ export function EntryEditModal({ visible, entry, onClose, onSaved, onDeleted }: 
             </Pressable>
             <View style={styles.headerCenter}>
               <Text style={styles.headerTitle}>編輯故事</Text>
-              <Text style={styles.headerDate}>{fmtDate(entry.entry_date)}</Text>
+              <Text style={styles.headerDate}>{fmtDate(display.entry_date)}</Text>
             </View>
             <Pressable
               testID="entry-edit-delete-header"

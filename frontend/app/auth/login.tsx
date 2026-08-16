@@ -16,32 +16,31 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { COLORS, RADIUS, SPACING } from '@/src/constants/theme';
 import { useAuth } from '@/src/lib/auth-context';
-
-const DEMO_ACCOUNTS: { role: string; email: string; label: string; emoji: string; color: string }[] = [
-  { role: 'student',      email: 'student@demo.moodful.app',    label: '學生 A',   emoji: '🎒', color: '#B9DBBC' },
-  { role: 'student',      email: 'student2@demo.moodful.app',   label: '學生 B',   emoji: '🎒', color: '#A2D2FF' },
-  { role: 'teacher',      email: 'teacher@demo.moodful.app',    label: '班主任',   emoji: '👩‍🏫', color: '#F0AE64' },
-  { role: 'counsellor',   email: 'counsellor@demo.moodful.app', label: '輔導老師', emoji: '💚', color: '#7DBEE8' },
-  { role: 'parent',       email: 'parent@demo.moodful.app',     label: '家長',     emoji: '👨‍👩‍👧', color: '#E499B4' },
-  { role: 'school_admin', email: 'school@demo.moodful.app',     label: '校方管理', emoji: '🏫', color: '#C7A6D1' },
-];
-const DEMO_PASSWORD = 'demo1234';
+import { DEMO_ACCOUNTS } from '@/src/lib/demo-accounts';
+import { routerHomeForRole } from '@/src/lib/experience-mode';
+import { FEATURE_FLAGS } from '@/src/lib/feature-flags';
+import { RoleStorage, type UserRole } from '@/src/lib/role-storage';
 
 export default function Login() {
   const router = useRouter();
-  const { login } = useAuth();
+  const { login, setUser } = useAuth();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
   const [demoLoading, setDemoLoading] = useState<string | null>(null);
 
+  const goHome = async (role: UserRole) => {
+    await RoleStorage.set(role);
+    router.replace(routerHomeForRole(role) as never);
+  };
+
   const submit = async () => {
     setError(null);
     setLoading(true);
     try {
-      await login(email.trim(), password);
-      router.replace('/(tabs)');
+      const next = await login(email.trim(), password);
+      await goHome((next.role || 'student') as UserRole);
     } catch (e: any) {
       setError(e?.message || '登入失敗');
     } finally {
@@ -53,18 +52,20 @@ export default function Login() {
     setError(null);
     setDemoLoading(acc.email);
     try {
-      await login(acc.email, DEMO_PASSWORD);
-      // Route to the correct home path per role
-      const routes: Record<string, string> = {
-        student:      '/(tabs)',
-        teacher:      '/teacher-dashboard',
-        counsellor:   '/counsellor-panel',
-        parent:       '/parent-home',
-        school_admin: '/school-admin',
-      };
-      router.replace((routes[acc.role] || '/(tabs)') as never);
+      const { signInDemoAccount } = await import('@/src/lib/demo-login');
+      const next = await signInDemoAccount(acc.email, acc.role);
+      setUser(next);
+      await goHome(acc.role);
     } catch (e: any) {
-      setError(e?.message || '示範帳戶登入失敗 · 請試下再啟動 backend');
+      const raw = e?.message || '登入失敗 · 再試一次';
+      // Keep message user-friendly · strip GoTrue jargon when possible.
+      if (/invalid login/i.test(raw)) {
+        setError('登入唔到 · 請再試一次');
+      } else if (/network|fetch|abort|逾時/i.test(raw)) {
+        setError('連線唔到 · 檢查網絡後再試');
+      } else {
+        setError(raw);
+      }
     } finally {
       setDemoLoading(null);
     }
@@ -122,8 +123,11 @@ export default function Login() {
 
           <Pressable
             testID="login-submit-btn"
-            disabled={loading || !email || !password}
-            style={[styles.primaryBtn, (loading || !email || !password) && { opacity: 0.6 }]}
+            disabled={loading || !!demoLoading || !email || !password}
+            style={[
+              styles.primaryBtn,
+              (loading || !!demoLoading || !email || !password) && { opacity: 0.6 },
+            ]}
             onPress={submit}
           >
             {loading ? (
@@ -161,39 +165,43 @@ export default function Login() {
             <Text style={styles.link}>忘記密碼？</Text>
           </Pressable>
 
-          {/* Demo account quick picker — 5 pre-seeded roles */}
-          <View style={styles.demoDivider}>
-            <View style={styles.demoDividerLine} />
-            <Text style={styles.demoDividerText}>示範帳戶 · 一撳體驗</Text>
-            <View style={styles.demoDividerLine} />
-          </View>
-
-          <Text style={styles.demoHint}>
-            密碼統一為 <Text style={{ fontWeight: '800' }}>demo1234</Text> · 撳角色直接進入相關版面
-          </Text>
-
-          <View style={styles.demoGrid}>
-            {DEMO_ACCOUNTS.map((acc) => {
-              const isLoading = demoLoading === acc.email;
-              return (
-                <Pressable
-                  key={acc.email}
-                  testID={`demo-login-${acc.email}`}
-                  onPress={() => quickDemoLogin(acc)}
-                  disabled={!!demoLoading}
-                  style={[
-                    styles.demoCard,
-                    { backgroundColor: acc.color + '25', borderColor: acc.color },
-                    demoLoading && demoLoading !== acc.email && { opacity: 0.4 },
-                  ]}
-                >
-                  <Text style={styles.demoEmoji}>{acc.emoji}</Text>
-                  <Text style={styles.demoLabel}>{acc.label}</Text>
-                  {isLoading && <ActivityIndicator size="small" color={COLORS.textPrimary} style={{ marginTop: 4 }} />}
-                </Pressable>
-              );
-            })}
-          </View>
+          {FEATURE_FLAGS.ROLE_DEMO_PREVIEW && (
+            <View style={styles.demoBlock} testID="demo-login-block">
+              <View style={styles.orRow}>
+                <View style={styles.orLine} />
+                <Text style={styles.orText}>或者揀一個身份</Text>
+                <View style={styles.orLine} />
+              </View>
+              <View style={styles.demoGrid}>
+                {DEMO_ACCOUNTS.map((acc) => {
+                  const isLoading = demoLoading === acc.email;
+                  return (
+                    <Pressable
+                      key={acc.email}
+                      testID={`demo-login-${acc.role === 'student' ? acc.email.split('@')[0] : acc.role}`}
+                      onPress={() => quickDemoLogin(acc)}
+                      disabled={!!demoLoading || loading}
+                      accessibilityLabel={`以${acc.label}身份登入`}
+                      style={[
+                        styles.demoCard,
+                        { backgroundColor: acc.color + '35', borderColor: acc.color },
+                        demoLoading && demoLoading !== acc.email && { opacity: 0.4 },
+                      ]}
+                    >
+                      {isLoading ? (
+                        <ActivityIndicator size="small" color={COLORS.textPrimary} />
+                      ) : (
+                        <>
+                          <Text style={styles.demoEmoji}>{acc.emoji}</Text>
+                          <Text style={styles.demoLabel}>{acc.label}</Text>
+                        </>
+                      )}
+                    </Pressable>
+                  );
+                })}
+              </View>
+            </View>
+          )}
         </ScrollView>
       </KeyboardAvoidingView>
     </SafeAreaView>
@@ -202,7 +210,7 @@ export default function Login() {
 
 const styles = StyleSheet.create({
   safe: { flex: 1, backgroundColor: COLORS.bgMain },
-  container: { padding: SPACING.lg, paddingTop: SPACING.md, flexGrow: 1 },
+  container: { padding: SPACING.lg, paddingTop: SPACING.md, flexGrow: 1, paddingBottom: SPACING.xl },
   backBtn: {
     width: 40,
     height: 40,
@@ -236,40 +244,33 @@ const styles = StyleSheet.create({
   primaryBtnText: { color: COLORS.textPrimary, fontSize: 17, fontWeight: '700' },
   link: { color: COLORS.textSecondary, fontSize: 15 },
 
-  demoDivider: {
+  demoBlock: {
+    marginTop: SPACING.xl,
+  },
+  orRow: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: SPACING.sm,
-    marginTop: SPACING.xl,
     marginBottom: SPACING.md,
   },
-  demoDividerLine: {
+  orLine: {
     flex: 1,
     height: 1,
     backgroundColor: COLORS.borderLight,
   },
-  demoDividerText: {
+  orText: {
     fontSize: 12,
-    fontWeight: '700',
+    fontWeight: '600',
     color: COLORS.textSecondary,
-    letterSpacing: 0.4,
-  },
-  demoHint: {
-    fontSize: 11,
-    color: COLORS.textSecondary,
-    textAlign: 'center',
-    marginBottom: SPACING.md,
-    lineHeight: 16,
   },
   demoGrid: {
     flexDirection: 'row',
     flexWrap: 'wrap',
     gap: SPACING.sm,
-    marginBottom: SPACING.lg,
   },
   demoCard: {
     width: '31%',
-    minHeight: 84,
+    minHeight: 76,
     borderRadius: RADIUS.md,
     borderWidth: 1.5,
     alignItems: 'center',

@@ -329,11 +329,11 @@ export default function Garden() {
         <View style={styles.demoCard}>
           <View style={styles.demoRow}>
             <View style={{ flex: 1 }}>
-              <Text style={styles.demoTitle}>⏩ Demo 加速模式</Text>
+              <Text style={styles.demoTitle}>加速生長</Text>
               <Text style={styles.demoSub}>
                 {demo
-                  ? '3 秒代替 3 日 · Pitch 順暢'
-                  : '真實模式 · 每階段要 24 小時'}
+                  ? '開咗會快啲見到收成'
+                  : '跟真實節奏慢慢長大'}
               </Text>
             </View>
             <Switch
@@ -352,7 +352,7 @@ export default function Garden() {
                 style={styles.demoBtn}
               >
                 <Feather name="plus" size={14} color={COLORS.textPrimary} />
-                <Text style={styles.demoBtnText}>+3 ❤️（模擬完成習慣）</Text>
+                <Text style={styles.demoBtnText}>+3 ❤️</Text>
               </Pressable>
               <Pressable
                 testID="reset-garden-btn"
