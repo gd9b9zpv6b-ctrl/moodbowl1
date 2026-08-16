@@ -107,7 +107,7 @@ export const EMOTIONS: Emotion[] = [
   { key: 'anxious', label: '焦慮', description: '腦袋有隻倉鼠，跑個不停', color: '#F5C896', category: 'nervous', image: EMOTION_IMAGES.anxious },
   { key: 'scared', label: '驚', description: '心跳好快 · 好唔安', color: '#9A93C0', category: 'nervous', image: EMOTION_IMAGES.scared },
   { key: 'uneasy', label: '不安', description: '心裡總覺得有啲怪怪嘅', color: '#B0A08B', category: 'nervous', image: EMOTION_IMAGES.uneasy },
-  { key: 'worried', label: '擔心', description: '諗嘢停唔到', color: '#D5DBA8', category: 'nervous', image: EMOTION_IMAGES.worried },
+  { key: 'worried', label: '擔心', description: '成日覺得，件事會變衰', color: '#C5D0B8', category: 'nervous', image: EMOTION_IMAGES.worried },
   { key: 'overwhelmed', label: '透唔到氣', description: '好多嘢一齊嚟', color: '#C4756E', category: 'nervous', image: EMOTION_IMAGES.overwhelmed },
   { key: 'trapped', label: '被困', description: '好似逃唔到出去', color: '#6BA8BF', category: 'nervous', image: EMOTION_IMAGES.trapped },
 
