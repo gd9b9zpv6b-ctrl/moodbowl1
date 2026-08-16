@@ -525,6 +525,13 @@ const styles = StyleSheet.create({
     color: COLORS.textSecondary,
     marginBottom: SPACING.sm,
   },
+  sharePrivacy: {
+    fontSize: 12,
+    color: COLORS.textSecondary,
+    lineHeight: 17,
+    marginBottom: SPACING.sm,
+    marginTop: -4,
+  },
   row: {
     flexDirection: 'row',
     alignItems: 'center',

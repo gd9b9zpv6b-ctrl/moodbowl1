@@ -12,7 +12,8 @@ import { supabase } from '@/src/lib/supabase-client';
  * Prefers legacy columns (entry_date, emotions, energy_level, is_secret, hearts)
  * when present, with bridge fallbacks onto ritual/quick-diary columns.
  *
- * Scheme B: bowl_size (S/M/L/XL) is the teacher follow-up intensity signal.
+ * Scheme B: bowl_size is intensity; bowl_release is handling choice.
+ * shared_with_class = teacher-notify only (no diary content).
  * energy_level is derived from bowl_size when size is set.
  */
 
