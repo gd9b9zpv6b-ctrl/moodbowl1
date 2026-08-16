@@ -722,7 +722,8 @@ export default function Home() {
                 <ActivityIndicator color={COLORS.primary} style={{ marginTop: SPACING.md }} />
               ) : todayEntries.length === 0 ? (
                 <Text style={styles.emptyText} testID="today-empty">
-                  今日仲未有故事 · 撳上面揀下你嘅感受 · 開始寫
+                  今日仲未有故事 · 撳上面揀下你嘅感受 · 開始寫{'\n'}
+                  舊日記喺下面「月曆」可以睇返
                 </Text>
               ) : (
                 todayEntries.map((entry) => {
