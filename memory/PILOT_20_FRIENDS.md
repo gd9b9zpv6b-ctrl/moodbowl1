@@ -42,7 +42,7 @@
 | 狀態 | 項目 | 邊個做 |
 |------|------|--------|
 | 🟡 | Live DB 跑 migrations（見下面「006／008／009」） | 你（或有 Supabase 權限嘅人）喺 Dashboard 跑 |
-| 🟡 | Preview 點開畀 20 人（見下面「Preview 安排」） | 開試當日安排 |
+| 🟡 | 穩定網頁 deploy 畀 20 人（見下面「Preview：網頁」；domain 可選） | 碗／動畫後 · 開試前 |
 | ✅ | 學生主路徑（寫→save→睇返→匯出） | 大致好 · 碗／動畫後再 regress |
 | ✅ | notify_teacher 語意 | 碼已改 · 最好配 009 |
 | 🟠 | 老師／輔導名單仍有 mock | 可帶住試 · 同朋友講明 |
@@ -88,31 +88,59 @@ App 碼已經假設／兼容呢啲改動；**如果 live DB 未跑，有機會�
 
 ---
 
-## Preview 要點安排？（開試當日）
+## Preview：用穩定網頁做 Phase A（已定方向）
 
-目標：20 人用 **同一條** 當時有效嘅 Expo web link（唔 keep 3 小時）。
+目標：20 人開 **同一條長開嘅網址**（Safari／Chrome 都得），唔再用 Expo tunnel／Cloudflare 臨時 link。
 
-### 建議流程
+### Domain 要唔要買？
 
-1. **開試前（你或 agent）**  
-   - 開 Expo + 新 tunnel  
+| 做法 | 適唔適合 Phase A | 要錢？ |
+|------|------------------|--------|
+| **先用託管免費網址**（例如 `moodbowl.vercel.app`） | ✅ 夠用 · **建議先咁做** | 託管通常免費額夠 |
+| **再買自己個 domain**（例如 `moodbowl.app`） | ✅ 品牌靚、易記；可稍後綁 | Domain 約 **US$10–15／年** |
+| Apple TestFlight | 唔使（呢輪用網頁） | Apple 年費另計 |
+
+**結論：** Phase A **唔使等買到 domain 先開試**。  
+想有正式品牌網址，可以而家買，之後指去同一個網站；或者試完再買都得。
+
+### 想買 domain · 你做咩
+
+1. **想好個名**（短、易拼、`.app`／`.com`／`.hk` 皆可）  
+2. **喺邊度買（任揀一個）**  
+   - [Cloudflare Registrar](https://www.cloudflare.com/products/registrar/)（通常最平、之後 DNS 方便）  
+   - [Namecheap](https://www.namecheap.com/)  
+   - [Porkbun](https://porkbun.com/)  
+3. **買完唔使急改 nameserver**；等網站 deploy 好先綁  
+4. **隱私：** 開 WHOIS privacy（多數註冊商預設有）
+
+### 網站託管 · 建議順序
+
+1. 用 **Vercel / Netlify / Cloudflare Pages** 其中一個（免費 plan）  
+2. 由 repo 出 **Expo web static build**（`npx expo export -p web`）再 deploy  
+3. 得到一條長開網址 → 先用呢條做 Phase A  
+4. （可選）Domain 買好 → 喺託管後台 **Add domain** → 跟指示改 DNS（A／CNAME）  
+5. **一定要改 Supabase：** Dashboard → Authentication → URL Configuration  
+   - Site URL = 你條正式網址  
+   - Redirect URLs 加：`https://你的網址/**`（同免費網址 `*.vercel.app` 等）
+
+### 開試當日流程
+
+1. **開試前**  
+   - Live DB 已跑 006 → 008 → 009  
    - 用 1 個學生帳：寫日記 → 月曆睇到 → 設定匯出得  
-   - 快速確認 teacher／parent／admin 入到版面  
+   - 快速確認 teacher／parent／admin／輔導入到版面  
 2. **一次過發畀 20 人**  
-   - Link  
+   - 網址（固定）  
    - 每人自己嘅 acc + 密碼  
-   - 一句：屋企推送未開；老師名單部分係示範數據  
-3. **Link 死咗點算**  
-   - 唔使特登 hang 住 VM  
-   - 死咗 → 再開新 tunnel → **群組更新一條新 link** 就得  
-4. **試用窗**  
-   - 約一個大家一齊試嘅時段（例如同一個晚）最省事  
-   - 或者接受「link 可能換」· 群組係更新渠道  
+   - 一句：屋企推送未開；老師／輔導名單部分仍係示範數據；請用手機瀏覽器全螢幕  
+3. **試用窗**  
+   - 網址長開，唔使大家同一晚擠；仍建議約一個回報截止日  
 
 ### 唔建議
 
-- 特登 keep 同一條 link 好多個鐘（貴、又唔保證 Cloudflare 唔斷）  
-- 20 人共用同一個 student 帳（會互相洗日記）
+- 再用臨時 tunnel 做 20 人試  
+- 20 人共用同一個 student 帳（會互相洗日記）  
+- 未改 Supabase Redirect URLs 就換 domain（登入／OAuth 會斷）
 
 ---
 
@@ -125,10 +153,12 @@ App 碼已經假設／兼容呢啲改動；**如果 live DB 未跑，有機會�
 - [ ] Live 已跑 006、008、009  
 - [ ] 你 5 角色 smoke 完成  
 - [ ] 碗／動畫後叫 agent 再 check 一次  
+- [ ] 穩定網頁 deploy（可用免費 `*.vercel.app`；domain 可選）  
+- [ ] Supabase Site URL／Redirect URLs 已對準該網址  
 
 ### A1 · 開 20 acc 試
 
-- [ ] 發 link + 各人 acc  
+- [ ] 發固定網址 + 各人 acc  
 - [ ] 講明已知限制  
 - [ ] 收 feedback  
 
