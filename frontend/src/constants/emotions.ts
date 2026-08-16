@@ -94,7 +94,7 @@ export const EMOTIONS: Emotion[] = [
   { key: 'free', label: '自由', description: '無拘無束 · 好舒暢', color: '#B8D9F5', category: 'warm', image: EMOTION_IMAGES.free },
 
   // Sadness / low energy — spread across hues (藍/青/綠/米/灰/紫)
-  { key: 'sad', label: '傷心', description: '心入面有種柔和嘅沉重', color: '#A2CCFF', category: 'sad', image: EMOTION_IMAGES.sad },
+  { key: 'sad', label: '傷心', description: '心受了傷', color: '#F0A8B0', category: 'sad', image: EMOTION_IMAGES.sad },
   { key: 'lonely', label: '寂寞', description: '好想有人喺身邊', color: '#A87FA5', category: 'sad', image: EMOTION_IMAGES.lonely },
   { key: 'unmotivated', label: '冇心機', description: '提唔起勁做嘢', color: '#A6C1A6', category: 'sad', image: EMOTION_IMAGES.unmotivated },
   { key: 'empty', label: '空虛', description: '而家好似乜都感受唔到', color: '#EDE7D6', category: 'sad', image: EMOTION_IMAGES.empty },
