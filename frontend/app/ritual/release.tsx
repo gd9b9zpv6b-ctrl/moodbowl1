@@ -56,7 +56,6 @@ export default function RitualReleaseScreen() {
   const checkInType = useRitualStore((s) => s.checkInType);
   const bowlRelease = useRitualStore((s) => s.bowlRelease);
   const shareClass = useRitualStore((s) => s.shareClass);
-  const shareFamily = useRitualStore((s) => s.shareFamily);
   const startedAt = useRitualStore((s) => s.startedAt);
   const regulationUsed = useRitualStore((s) => s.regulationUsed);
   const setBowlRelease = useRitualStore((s) => s.setBowlRelease);
@@ -160,7 +159,8 @@ export default function RitualReleaseScreen() {
           is_public: false,
           // shared_with_class = 「想老師留意」notify only · never opens diary content
           shared_with_class: shareClass,
-          shared_with_family: shareFamily,
+          // Family notify UI hidden until parent inbox ships
+          shared_with_family: false,
           smile_completed: false,
           time_spent_sec: timeSpent,
         },
@@ -352,18 +352,8 @@ export default function RitualReleaseScreen() {
           {w.release_share_heading}
         </Text>
         <Text testID="release-share-privacy" style={styles.sharePrivacy}>
-          日記原文永遠只有你睇到。開「留意」只會話可能要關心吓你 · 唔會俾人睇內容。
+          日記原文永遠只有你睇到。系統可能提示老師「值得關心」· 唔顯示你寫咩。如果你撳「想老師留意」· 老師只會見「可能要關注」。
         </Text>
-        <View style={styles.row}>
-          <Text style={styles.rowLabel}>{w.bridge_share_family}</Text>
-          <Switch
-            testID="release-share-family"
-            value={shareFamily}
-            onValueChange={(v) => setShares({ shareFamily: v })}
-            trackColor={{ true: COLORS.primary, false: COLORS.bgInput }}
-            thumbColor={COLORS.bgCard}
-          />
-        </View>
         <View style={styles.row}>
           <Text style={styles.rowLabel}>{w.bridge_share_class}</Text>
           <Switch
@@ -374,6 +364,9 @@ export default function RitualReleaseScreen() {
             thumbColor={COLORS.bgCard}
           />
         </View>
+        <Text testID="release-family-soon" style={styles.sharePrivacy}>
+          「想屋企人留意」稍後推出 · 而家未會通知屋企
+        </Text>
 
         <Text testID="release-lead" style={styles.title}>
           {releaseLead}

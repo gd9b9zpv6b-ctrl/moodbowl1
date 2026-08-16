@@ -91,14 +91,14 @@ describe('teacher follow-up · aligned rules', () => {
     ).toBe(false);
   });
 
-  it('flags park / hold only when still strong', () => {
+  it('flags park / hold only when still strong · without double-counting still_strong', () => {
     expect(
       evaluateNegativeBowlFollowUp({
         emotionKey: 'sad',
         size: 'XL',
         releaseKey: 'set_aside',
       }).cues,
-    ).toEqual(expect.arrayContaining(['parked', 'still_strong']));
+    ).toEqual(['parked']);
 
     expect(
       evaluateNegativeBowlFollowUp({
@@ -106,7 +106,7 @@ describe('teacher follow-up · aligned rules', () => {
         size: 'L',
         releaseKey: 'keep_hug',
       }).cues,
-    ).toEqual(expect.arrayContaining(['holding_on', 'still_strong']));
+    ).toEqual(['holding_on']);
   });
 
   it('flags 少咗 only when not actively releasing', () => {

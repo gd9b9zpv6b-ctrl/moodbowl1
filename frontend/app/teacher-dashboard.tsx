@@ -226,7 +226,7 @@ export default function TeacherDashboard() {
             <Text style={styles.sizeReportTitle}>負面情緒 · 要唔要跟進</Text>
           </View>
           <Text style={styles.sizeReportHint}>
-            兩層提示：① 學生撳「想老師留意」→ 只顯示「可能要關注」。② 系統用碗大細／處理方式推斷（主動放下唔計）· 一樣唔顯示日記原文。屋企留意唔會當成老師通知。
+            兩層提示：①「想老師留意」→ 只顯示「可能要關注」。② 系統用碗大細／處理方式推斷（主動放下唔計；放低／抱住唔再同「仲好強」雙計）。屋企留意稍後推出。
           </Text>
           <View style={styles.followCueList}>
             {NEGATIVE_FOLLOW_UP.map((row) => {

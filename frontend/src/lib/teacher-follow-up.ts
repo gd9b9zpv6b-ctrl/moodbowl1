@@ -199,10 +199,11 @@ export function evaluateNegativeBowlFollowUp(input: {
           cues.push('got_stronger');
         } else if (idx < prevIdx) {
           cues.push('got_lighter');
-        } else if (strong) {
+        } else if (strong && !isParked && !isHolding) {
+          // parked / holding already carry「仲好強」· avoid double-count
           cues.push('still_strong');
         }
-      } else if (strong) {
+      } else if (strong && !isParked && !isHolding) {
         cues.push('still_strong');
       }
 

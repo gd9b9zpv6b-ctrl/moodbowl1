@@ -1032,7 +1032,7 @@ export default function SchoolAdmin() {
             <View style={{ flex: 1 }}>
               <Text style={styles.reportTitle}>負面情緒跟進</Text>
               <Text style={styles.reportSub}>
-                「想老師留意」只通知可能要關注 · 系統提示用碗大細／處理方式（主動放下唔計）· 屋企留意分開
+                「想老師留意」只通知可能要關注 · 系統提示用碗大細／處理方式（主動放下唔計）· 屋企留意稍後
               </Text>
             </View>
           </View>
