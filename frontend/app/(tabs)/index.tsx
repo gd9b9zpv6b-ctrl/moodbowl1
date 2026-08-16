@@ -201,7 +201,19 @@ export default function Home() {
     setLoading(true);
     try {
       const rows = await listMyDiaryEntries();
-      setTodayEntries(rows.filter((e) => e.entry_date === today));
+      // Prefer entry_date; also accept created_at local day so UTC/local mismatch still shows
+      setTodayEntries(
+        rows.filter((e) => {
+          if (e.entry_date === today) return true;
+          try {
+            const d = new Date(e.created_at);
+            const key = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+            return key === today;
+          } catch {
+            return false;
+          }
+        }),
+      );
     } catch {
       setTodayEntries([]);
     } finally {

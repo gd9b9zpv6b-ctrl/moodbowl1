@@ -611,6 +611,8 @@ export async function saveRitualWithActivities(
       p_energy_level: bowlSizeToEnergyLevel(draft.bowl_size || 'M'),
       p_emotions: draft.bowl_emotion_key ? [draft.bowl_emotion_key] : [],
       p_regulation_keys: keys,
+      // Local calendar day · so 今日故事 / 月曆 match where the kid wrote
+      p_entry_date: localDateKey(),
     });
 
     if (!error && data) {
