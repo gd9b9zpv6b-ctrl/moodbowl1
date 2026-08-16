@@ -1032,7 +1032,7 @@ export default function SchoolAdmin() {
             <View style={{ flex: 1 }}>
               <Text style={styles.reportTitle}>負面情緒概況</Text>
               <Text style={styles.reportSub}>
-                今日 8 位同學值得留意 · 詳情喺各班老師版面睇概括 · 唔拆情緒細節
+                各班老師版面列出值得留意嘅同學 · 唔拆情緒細節
               </Text>
             </View>
           </View>
