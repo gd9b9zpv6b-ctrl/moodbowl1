@@ -29,11 +29,23 @@ const CLASS_DATA = [
   { name: '4C',       students: 26, high: 25, steady: 60, low: 15, alerts: 0 },
 ];
 
-// 需要點名跟進 (mock) — 主動通知／關鍵字；碗大細細節唔逐條列
-const ALERTS = [
-  { name: '陳 * 文', className: '6A', reason: '可能要關注呢位學生', severity: 'high' as const, notifyOnly: true },
-  { name: '王 * 明', className: '5B', reason: '日記出現關注字詞', severity: 'high' as const, notifyOnly: false },
+// 今日值得留意嘅同學 (mock) — 列出邊個 · 唔拆碗大細／處理細節
+const NEGATIVE_WATCH_LIST = [
+  { name: '陳 * 文', className: '6A', kind: 'notify' as const },
+  { name: '王 * 明', className: '5B', kind: 'keyword' as const },
+  { name: '李 * 美', className: '5B', kind: 'watch' as const },
+  { name: '黃 * 晴', className: '6A', kind: 'watch' as const },
+  { name: '張 * 豪', className: '6A', kind: 'watch' as const },
+  { name: '何 * 欣', className: '5B', kind: 'watch' as const },
+  { name: '林 * 俊', className: '4C', kind: 'watch' as const },
+  { name: '吳 * 婷', className: '6A', kind: 'watch' as const },
 ];
+
+const WATCH_KIND_LABEL = {
+  notify: '可能要關注',
+  keyword: '日記出現關注字詞',
+  watch: '值得留意',
+} as const;
 
 // 行為異常偵測 (mock) — 呢啲比自報準
 const BEHAVIOR_FLAGS = [
@@ -41,9 +53,6 @@ const BEHAVIOR_FLAGS = [
   { icon: 'moon', text: '3 位同學仔連續 3 晚凌晨 12 點後開 app', tone: 'warn' as const },
   { icon: 'zap', text: '6A 情緒波幅比上周高 · 可能有壓力事件', tone: 'info' as const },
 ];
-
-/** Mock · 今日負面情緒值得留意嘅總人數（一個概括 · 唔拆 cue） */
-const NEGATIVE_FOLLOW_UP_TOTAL = 8;
 
 // Fallback representative bowls (used before school config loads)
 const FALLBACK = {
@@ -172,55 +181,56 @@ export default function TeacherDashboard() {
           </View>
         )}
 
-        {/* 負面情緒 · 一個概括就夠 · 唔逐條拆強度／處理 */}
+        {/* 負面情緒概況 · 一個總數 + 邊幾個同學 · 唔拆 cue 細節 */}
         <View style={styles.sizeReportBox} testID="teacher-bowl-size-report">
           <View style={styles.sizeReportHeader}>
             <Feather name="heart" size={16} color="#B57D2A" />
             <Text style={styles.sizeReportTitle}>負面情緒概況</Text>
-          </View>
-          <View style={styles.negativeSummaryRow} testID="teacher-follow-summary">
-            <Text style={styles.negativeSummaryCount}>{NEGATIVE_FOLLOW_UP_TOTAL}</Text>
-            <View style={{ flex: 1 }}>
-              <Text style={styles.negativeSummaryLead}>位同學今日值得留意一下</Text>
-              <Text style={styles.sizeReportHint}>
-                包含學生主動想你留意 · 同埋系統根據感覺強度／處理方式嘅提示。唔顯示日記原文同碗大細細節。
-              </Text>
+            <View style={[styles.alertCount, { backgroundColor: '#B57D2A' }]}>
+              <Text style={styles.alertCountText}>{NEGATIVE_WATCH_LIST.length}</Text>
             </View>
           </View>
-        </View>
-
-        {/* 需要點名跟進 · 主動通知／關鍵字 */}
-        <View style={styles.alertBox}>
-          <View style={styles.alertHeader}>
-            <Feather name="alert-triangle" size={18} color="#E86A6A" />
-            <Text style={styles.alertTitle}>需要點名跟進</Text>
-            <View style={styles.alertCount}>
-              <Text style={styles.alertCountText}>{ALERTS.length}</Text>
-            </View>
+          <Text style={styles.sizeReportHint} testID="teacher-follow-summary">
+            今日 {NEGATIVE_WATCH_LIST.length} 位同學值得留意一下 · 唔顯示日記原文同碗大細細節。
+          </Text>
+          <View style={styles.watchList}>
+            {NEGATIVE_WATCH_LIST.map((s, i) => (
+              <Pressable
+                key={`${s.name}-${s.className}-${i}`}
+                testID={`teacher-watch-${i}`}
+                onPress={() =>
+                  Alert.alert(
+                    `${s.name} · ${s.className}`,
+                    s.kind === 'notify'
+                      ? '學生想你留意吓 · 系統唔會顯示情緒、碗大細、或者日記內容。\n\n可以自己安排關心一下。'
+                      : s.kind === 'keyword'
+                        ? '日記出現關注字詞 · 原文仍然睇唔到 · 建議通知輔導老師跟進 · 或者自己安排單獨傾談。'
+                        : '系統提示呢位同學今日值得留意 · 唔會顯示情緒細節同日記原文。\n\n可以用輕鬆方式關心一下。',
+                  )
+                }
+                style={styles.watchItem}
+              >
+                <View
+                  style={[
+                    styles.alertDot,
+                    {
+                      backgroundColor:
+                        s.kind === 'notify' || s.kind === 'keyword' ? '#E86A6A' : '#F0AE64',
+                    },
+                  ]}
+                />
+                <View style={{ flex: 1 }}>
+                  <Text style={styles.alertName}>
+                    {s.name} <Text style={styles.alertClass}>· {s.className}</Text>
+                  </Text>
+                  <Text style={styles.alertReason}>{WATCH_KIND_LABEL[s.kind]}</Text>
+                </View>
+                <Feather name="chevron-right" size={18} color={COLORS.textDisabled} />
+              </Pressable>
+            ))}
           </View>
-          {ALERTS.map((a, i) => (
-            <Pressable
-              key={i}
-              onPress={() =>
-                Alert.alert(
-                  `${a.name} · ${a.className}`,
-                  a.notifyOnly
-                    ? '學生想你留意吓 · 系統唔會顯示情緒、碗大細、或者日記內容。\n\n可以自己安排關心一下。'
-                    : `提示：${a.reason}\n\n日記原文仍然睇唔到 · 可以通知輔導老師跟進 · 或者自己安排單獨傾談。`,
-                )
-              }
-              style={styles.alertItem}
-            >
-              <View style={[styles.alertDot, { backgroundColor: a.severity === 'high' ? '#E86A6A' : '#F0AE64' }]} />
-              <View style={{ flex: 1 }}>
-                <Text style={styles.alertName}>{a.name} <Text style={styles.alertClass}>· {a.className}</Text></Text>
-                <Text style={styles.alertReason}>{a.reason}</Text>
-              </View>
-              <Feather name="chevron-right" size={18} color={COLORS.textDisabled} />
-            </Pressable>
-          ))}
           <Text style={styles.alertHint}>
-            🔒 「想老師留意」只顯示可能要關注 · 唔會有其他資料。每次查閱都會留底。
+            🔒 「想老師留意」只顯示可能要關注 · 其他只係概括提示。每次查閱都會留底。
           </Text>
         </View>
 
@@ -377,7 +387,7 @@ const styles = StyleSheet.create({
     borderTopColor: 'rgba(0,0,0,0.05)',
   },
 
-  // 負面情緒 · 單一概括
+  // 負面情緒概況 · 總數 + 名單
   sizeReportBox: {
     backgroundColor: '#FFF8EE',
     borderRadius: RADIUS.md,
@@ -390,31 +400,28 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     gap: 6,
-    marginBottom: 10,
+    marginBottom: 6,
   },
   sizeReportTitle: { flex: 1, fontSize: 15, fontWeight: '700', color: COLORS.textPrimary },
-  negativeSummaryRow: {
-    flexDirection: 'row',
-    alignItems: 'flex-start',
-    gap: SPACING.md,
-  },
-  negativeSummaryCount: {
-    fontSize: 40,
-    fontWeight: '800',
-    color: '#B57D2A',
-    lineHeight: 44,
-    minWidth: 48,
-  },
-  negativeSummaryLead: {
-    fontSize: 15,
-    fontWeight: '700',
-    color: COLORS.textPrimary,
-    marginBottom: 4,
-  },
   sizeReportHint: {
     fontSize: 12,
     color: COLORS.textSecondary,
     lineHeight: 17,
+    marginBottom: SPACING.sm,
+  },
+  watchList: {
+    backgroundColor: COLORS.bgCard,
+    borderRadius: RADIUS.sm,
+    overflow: 'hidden',
+  },
+  watchItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: SPACING.sm,
+    paddingVertical: SPACING.sm,
+    paddingHorizontal: 12,
+    borderTopWidth: 1,
+    borderTopColor: 'rgba(0,0,0,0.05)',
   },
 
   // 行為異常偵測
