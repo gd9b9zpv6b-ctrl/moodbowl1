@@ -102,7 +102,7 @@ export const EMOTIONS: Emotion[] = [
   { key: 'exhausted', label: '好攰', description: '身心都攰晒', color: '#C6A3E5', category: 'sad', image: EMOTION_IMAGES.exhausted },
 
   // Nervous / tense — spread across hues (黃/橙/粉/紫/綠/紅/青)
-  { key: 'restless', label: '不知所措', description: '唔知點算好', color: '#FFF199', category: 'nervous', image: EMOTION_IMAGES.restless },
+  { key: 'restless', label: '不知所措', description: '大腦當機，不知道怎麼辦', color: '#F5D0D8', category: 'nervous', image: EMOTION_IMAGES.restless },
   { key: 'irritable', label: '煩躁', description: '個火開始上湧', color: '#FF8264', category: 'nervous', image: EMOTION_IMAGES.irritable },
   { key: 'anxious', label: '焦慮', description: '心入面亂到停唔到', color: '#D48DB4', category: 'nervous', image: EMOTION_IMAGES.anxious },
   { key: 'scared', label: '驚', description: '心跳好快 · 好唔安', color: '#9A93C0', category: 'nervous', image: EMOTION_IMAGES.scared },
