@@ -10,7 +10,8 @@
     "ios": "expo start --ios",
     "web": "expo start --web",
     "lint": "expo lint",
-    "test": "vitest run"
+    "test": "vitest run",
+    "smoke:phase-a": "node scripts/phase-a-smoke.cjs"
   },
   "dependencies": {
     "@expo/metro-runtime": "6.1.2",

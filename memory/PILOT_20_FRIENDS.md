@@ -4,7 +4,8 @@
 唔估「幾多日」；用閘口慢慢打勾。
 
 **多校注意：** Phase A 維持 **一間試用校**（全部 acc 同一 `school_memberships`）。  
-大規模「一校一 set data」見 `memory/MULTI_SCHOOL_TENANCY.md`（migration **010**）。
+大規模「一校一 set data」見 `memory/MULTI_SCHOOL_TENANCY.md`（migration **010**）。  
+**開試前免費檢查：** `memory/FREE_PRE_PHASE_A_CHECKS.md`（`yarn test` + `yarn smoke:phase-a`）。
 
 ---
 
