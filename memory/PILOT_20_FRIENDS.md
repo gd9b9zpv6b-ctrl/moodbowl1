@@ -3,6 +3,10 @@
 **定義：** Phase A = 約 **20 個 acc**（學生／家長／admin／teacher／輔導都有），一次過試，之後先跟 feedback 改。  
 唔估「幾多日」；用閘口慢慢打勾。
 
+**多校注意：** Phase A 維持 **一間試用校**（全部 acc 同一 `school_memberships`）。  
+大規模「一校一 set data」見 `memory/MULTI_SCHOOL_TENANCY.md`（migration **010**）。  
+**開試前免費檢查：** `memory/FREE_PRE_PHASE_A_CHECKS.md`（`yarn test` + `yarn smoke:phase-a`）。
+
 ---
 
 ## 總順序（你講嘅優先）
@@ -64,6 +68,7 @@
 - `supabase/migrations/006_soup_drink_keys.sql`
 - `supabase/migrations/008_pdpo_delete_own_account.sql`
 - `supabase/migrations/009_notify_teacher.sql`
+- `supabase/migrations/010_multi_school_prep.sql`（多校隔離打底 · 單校 Phase A 亦建議跑）
 
 App 碼已經假設／兼容呢啲改動；**如果 live DB 未跑，有機會出現「App 新、庫舊」**。
 
@@ -71,7 +76,7 @@ App 碼已經假設／兼容呢啲改動；**如果 live DB 未跑，有機會�
 
 1. 開 [Supabase Dashboard](https://supabase.com/dashboard) → 你個 MoodBowl project  
 2. 左邊 **SQL Editor** → New query  
-3. 依次打開上面 3 個檔，**成段 copy → Run**（建議順序：006 → 008 → 009）  
+3. 依次打開上面檔，**成段 copy → Run**（建議順序：006 → 008 → 009 → **010**）  
 4. 跑完冇紅色 error 就得  
 
 （如果團隊用 CLI：`supabase db push` 亦可，效果一樣。）
@@ -83,8 +88,9 @@ App 碼已經假設／兼容呢啲改動；**如果 live DB 未跑，有機會�
 | **006** | 資料庫允許 App 用嘅「飲品」名稱（草莓奶、檸水等） | 有時 **儲存日記失敗**（soup check）；而家靠程式翻譯頂住，唔穩 | **可以**減低「寫完存唔到」 |
 | **008** | 用戶撳「刪除我嘅帳戶資料」時，連登入都可以清走 | 而家多數只清到日記；**登入帳可能仲喺** | **可以**令私隱刪除更完整 |
 | **009** | 正式欄位叫 `notify_teacher`（想老師留意），唔再誤解成「分享俾全班」 | App 仍可靠舊欄位；語意／報表易亂 | **可以**令「想老師留意」數據乾淨 |
+| **010** | 日記／profile stamp `school_id`；一人一間 primary 校；政策／家長／邀請 stub | 第二間校一入就易亂；而家唔跑都仲係單校腳手架 | **可以**趁 data 少打好多校底 |
 
-**結論：** 三條都建議 Phase A 前跑。最急係 **006**（關儲存穩唔穩）；**008／009** 關私隱同語意，試用亦有用。
+**結論：** 006→008→009→010 都建議 Phase A 前跑。最急係 **006**；**010** 為之後賣多間校預備，唔影響單校試用。
 
 ---
 
@@ -150,7 +156,7 @@ App 碼已經假設／兼容呢啲改動；**如果 live DB 未跑，有機會�
 
 - [ ] 碗 update 完成  
 - [ ] 動畫整好  
-- [ ] Live 已跑 006、008、009  
+- [ ] Live 已跑 006、008、009、**010**  
 - [ ] 你 5 角色 smoke 完成  
 - [ ] 碗／動畫後叫 agent 再 check 一次  
 - [ ] 穩定網頁 deploy（可用免費 `*.vercel.app`；domain 可選）  
