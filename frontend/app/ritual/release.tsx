@@ -155,6 +155,7 @@ export default function RitualReleaseScreen() {
           bowl_emotion_key: selectedBowlKey,
           bowl_color_tint: encodeDecorations(decorations),
           bowl_size: bowlSize,
+          bowl_release: picked,
           diary_text: checkInType === 'hug_only' ? null : diaryText || null,
           check_in_type: checkInType === 'hug_only' ? 'hug_only' : 'full',
           is_public: shareClass,

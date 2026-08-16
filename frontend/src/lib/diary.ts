@@ -25,6 +25,7 @@ type DiaryRow = {
   bowl_color_tint?: string | null;
   bowl_size?: string | null;
   bowl_steam: string | null;
+  bowl_release?: string | null;
   diary_text: string | null;
   check_in_type: string;
   is_public: boolean;
@@ -163,6 +164,9 @@ export function diaryRowToEntry(row: DiaryRow, extras?: { hearted_by_me?: boolea
     hearted_by_me: !!extras?.hearted_by_me,
     bowl_color_tint: row.bowl_color_tint ?? null,
     bowl_size: row.bowl_size ?? null,
+    bowl_release: row.bowl_release ?? null,
+    shared_with_class: !!row.shared_with_class,
+    shared_with_family: !!row.shared_with_family,
   };
 }
 
@@ -265,6 +269,8 @@ export type RitualDiaryDraft = {
   bowl_emotion_key: string | null;
   bowl_color_tint: string | null;
   bowl_size: 'S' | 'M' | 'L' | 'XL';
+  /** Symbolic 「想點處理」action */
+  bowl_release?: 'empty' | 'set_aside' | 'send_away' | 'wash' | 'keep_hug' | null;
   diary_text: string | null;
   check_in_type: 'full' | 'hug_only' | 'quick_diary';
   is_public: boolean;
@@ -282,6 +288,7 @@ function ritualBridgePayload(userId: string, draft: RitualDiaryDraft) {
     bowl_emotion_key: draft.bowl_emotion_key,
     bowl_color_tint: draft.bowl_color_tint,
     bowl_size: draft.bowl_size || 'M',
+    bowl_release: draft.bowl_release || null,
     diary_text: draft.diary_text?.trim() || null,
     check_in_type: draft.check_in_type,
     is_public: !!draft.is_public,
@@ -606,11 +613,30 @@ export async function saveRitualWithActivities(
     });
 
     if (!error && data) {
+      let row: DiaryRow | null = null;
       if (typeof data === 'object' && data !== null && 'id' in (data as object)) {
-        return diaryRowToEntry(data as DiaryRow);
+        row = data as DiaryRow;
+      } else if (Array.isArray(data) && data[0]) {
+        row = data[0] as DiaryRow;
       }
-      if (Array.isArray(data) && data[0]) {
-        return diaryRowToEntry(data[0] as DiaryRow);
+      if (row?.id) {
+        // RPC may predate bowl_release · best-effort patch for teacher follow-up
+        if (draft.bowl_release) {
+          try {
+            const patched = await supabase
+              .from('diaries')
+              .update({ bowl_release: draft.bowl_release })
+              .eq('id', row.id)
+              .select('*')
+              .single();
+            if (!patched.error && patched.data) {
+              return diaryRowToEntry(patched.data as DiaryRow);
+            }
+          } catch {
+            // Column may not exist yet · keep RPC row
+          }
+        }
+        return diaryRowToEntry({ ...row, bowl_release: draft.bowl_release || row.bowl_release });
       }
     }
   } catch {

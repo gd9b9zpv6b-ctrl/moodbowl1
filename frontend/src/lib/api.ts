@@ -150,7 +150,10 @@ export type Entry = {
   hearts: number;
   hearted_by_me: boolean;
   bowl_color_tint?: string | null;
-  bowl_size?: string | null;      // S|M|L|XL intensity · teacher follow-up signal
+  bowl_size?: string | null;      // S|M|L|XL intensity
+  bowl_release?: string | null;   // empty|set_aside|send_away|wash|keep_hug · 想點處理
+  shared_with_class?: boolean;
+  shared_with_family?: boolean;
   community_scope?: string | null;
   author_role_label?: string | null;
 };

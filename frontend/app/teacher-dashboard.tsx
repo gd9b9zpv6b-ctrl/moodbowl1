@@ -30,11 +30,11 @@ const CLASS_DATA = [
   { name: '4C',       students: 26, high: 25, steady: 60, low: 15, alerts: 0 },
 ];
 
-// 需要關注嘅學生 (mock) — 只睇負面情緒 · 正面唔計
+-- 需要關注嘅學生 (mock) — 負面 + 想點處理
 const ALERTS = [
-  { name: '陳 * 文', className: '6A', reason: '負面情緒 · 用完仲未好', severity: 'high' as const },
-  { name: '李 * 美', className: '5B', reason: '負面感覺多咗 · 碗大咗', severity: 'mid' as const },
-  { name: '黃 * 晴', className: '6A', reason: '負面感覺少咗 · 都可能要關心', severity: 'mid' as const },
+  { name: '陳 * 文', className: '6A', reason: '負面 · 用完仲未好 · 蓋住放低', severity: 'high' as const },
+  { name: '李 * 美', className: '5B', reason: '負面感覺多咗 · 想話俾老師聽', severity: 'high' as const },
+  { name: '黃 * 晴', className: '6A', reason: '負面感覺少咗 · 抱住留低', severity: 'mid' as const },
   { name: '王 * 明', className: '5B', reason: '日記出現關注字詞', severity: 'high' as const },
 ];
 
@@ -45,11 +45,14 @@ const BEHAVIOR_FLAGS = [
   { icon: 'zap', text: '6A 情緒波幅比上周高 · 可能有壓力事件', tone: 'info' as const },
 ];
 
-// 負面情緒跟進摘要 (mock) · 正面情緒唔計入
+// 負面情緒跟進摘要 (mock) · 含「想點處理」
 const NEGATIVE_FOLLOW_UP = [
-  { cue: 'still_hard' as const, count: 4 },
-  { cue: 'got_stronger' as const, count: 3 },
-  { cue: 'got_lighter' as const, count: 2 },
+  { cue: 'asks_help' as const, count: 2 },
+  { cue: 'parked' as const, count: 3 },
+  { cue: 'holding_on' as const, count: 2 },
+  { cue: 'still_hard' as const, count: 3 },
+  { cue: 'got_stronger' as const, count: 2 },
+  { cue: 'got_lighter' as const, count: 1 },
 ];
 
 // Fallback representative bowls (used before school config loads)
@@ -217,7 +220,7 @@ export default function TeacherDashboard() {
             <Text style={styles.sizeReportTitle}>負面情緒 · 要唔要跟進</Text>
           </View>
           <Text style={styles.sizeReportHint}>
-            正面情緒唔計。淨係睇負面：用完仲未好、感覺多咗、或者少咗 —— 都可能要關心一下（唔會睇到日記原文）。
+            正面唔計。一齊睇：用完仲未好／多咗／少咗，同埋學生想點處理（暫時放低、抱住、想話俾大人聽）。
           </Text>
           <View style={styles.followCueList}>
             {NEGATIVE_FOLLOW_UP.map((row) => {
