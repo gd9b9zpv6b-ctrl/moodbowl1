@@ -144,13 +144,13 @@ export type Entry = {
   note: string;
   is_public: boolean;
   is_secret?: boolean;
-  energy_level?: number | null;   // 0-100 battery slider
+  energy_level?: number | null;   // legacy 0-100 · derived from bowl_size (Scheme B)
   entry_date: string;
   created_at: string;
   hearts: number;
   hearted_by_me: boolean;
   bowl_color_tint?: string | null;
-  bowl_size?: string | null;
+  bowl_size?: string | null;      // S|M|L|XL intensity · teacher follow-up signal
   community_scope?: string | null;
   author_role_label?: string | null;
 };

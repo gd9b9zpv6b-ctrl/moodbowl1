@@ -5,6 +5,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { EmotionVisual } from '@/src/components/emotion-visual';
 import { RoleSelfCareCard } from '@/src/components/role-selfcare-card';
+import { bowlSizeMeta, type BowlSize } from '@/src/constants/bowl-size';
 import { EMOTIONS, EMOTION_BY_KEY } from '@/src/constants/emotions';
 import { ENERGY_META, EnergyLevel } from '@/src/constants/energy';
 import { RoleHeader } from '@/src/components/role-header';
@@ -29,10 +30,10 @@ const CLASS_DATA = [
   { name: '4C',       students: 26, high: 25, steady: 60, low: 15, alerts: 0 },
 ];
 
-// 需要關注嘅學生 (mock)
+// 需要關注嘅學生 (mock) — Scheme B · 碗大細係跟進訊號
 const ALERTS = [
-  { name: '陳 * 文', className: '6A', reason: '連續 5 日低能量情緒', severity: 'high' as const },
-  { name: '李 * 美', className: '5B', reason: '7 日冇打卡 · 突然停用', severity: 'mid' as const },
+  { name: '陳 * 文', className: '6A', reason: '今日碗大細 XL · 感覺好強烈', severity: 'high' as const },
+  { name: '李 * 美', className: '5B', reason: '連續 3 日 L / XL 碗 · 建議跟進', severity: 'mid' as const },
   { name: '王 * 明', className: '5B', reason: '日記出現關注字詞', severity: 'high' as const },
 ];
 
@@ -41,8 +42,16 @@ const BEHAVIOR_FLAGS = [
   { icon: 'trending-down', text: '5B 呢周 open app 少咗 40%', tone: 'warn' as const },
   { icon: 'moon', text: '3 位同學仔連續 3 晚凌晨 12 點後開 app', tone: 'warn' as const },
   { icon: 'zap', text: '6A 情緒波幅比上周高 · 可能有壓力事件', tone: 'info' as const },
-  // 情緒 vs 電量不一致 (dissonance) — student says one thing but battery says another
-  { icon: 'battery', text: '4 位同學仔今日揀咗高能量情緒 · 但電量只有 20% 以下', tone: 'warn' as const },
+  // Scheme B · 碗大細代替電量做 follow-up 訊號
+  { icon: 'maximize-2', text: '4 位同學仔今日揀咗 L / XL 碗 · 感覺好強烈 · 建議跟進', tone: 'warn' as const },
+];
+
+// 班內碗大細分佈 (mock) · 老師一眼知邊啲要跟
+const SIZE_REPORT: { size: BowlSize; count: number }[] = [
+  { size: 'S', count: 6 },
+  { size: 'M', count: 14 },
+  { size: 'L', count: 5 },
+  { size: 'XL', count: 3 },
 ];
 
 // Fallback representative bowls (used before school config loads)
@@ -203,6 +212,44 @@ export default function TeacherDashboard() {
           </Text>
         </View>
 
+        {/* Scheme B · 碗大細報告 — 老師跟進訊號 */}
+        <View style={styles.sizeReportBox} testID="teacher-bowl-size-report">
+          <View style={styles.sizeReportHeader}>
+            <Feather name="maximize-2" size={16} color="#B57D2A" />
+            <Text style={styles.sizeReportTitle}>今日碗大細 · 跟進訊號</Text>
+          </View>
+          <Text style={styles.sizeReportHint}>
+            學生喺儀式揀碗大細代表感覺有幾強 · L / XL 建議你跟進一下（唔會睇到日記原文）。
+          </Text>
+          <View style={styles.sizeBarRow}>
+            {SIZE_REPORT.map((row) => {
+              const meta = bowlSizeMeta(row.size);
+              const hot = meta.followUp !== 'none';
+              return (
+                <View
+                  key={row.size}
+                  style={[styles.sizeCell, hot && styles.sizeCellHot]}
+                  testID={`teacher-size-${row.size}`}
+                >
+                  <Text style={[styles.sizeCellLabel, hot && styles.sizeCellLabelHot]}>
+                    {meta.label}
+                  </Text>
+                  <Text style={styles.sizeCellCount}>{row.count}</Text>
+                  <Text style={styles.sizeCellHint}>{meta.hint}</Text>
+                </View>
+              );
+            })}
+          </View>
+          <Text style={styles.sizeReportFooter}>
+            今日有{' '}
+            {SIZE_REPORT.filter((r) => bowlSizeMeta(r.size).followUp !== 'none').reduce(
+              (n, r) => n + r.count,
+              0,
+            )}{' '}
+            位同學仔揀咗 L / XL · 可以排一排時間關心下。
+          </Text>
+        </View>
+
         {/* 行為異常偵測 — 用行為信號補自報唔準嘅盲點 */}
         <View style={styles.behaviorBox}>
           <View style={styles.behaviorHeader}>
@@ -354,6 +401,57 @@ const styles = StyleSheet.create({
     paddingTop: SPACING.sm,
     borderTopWidth: 1,
     borderTopColor: 'rgba(0,0,0,0.05)',
+  },
+
+  // Scheme B · 碗大細跟進報告
+  sizeReportBox: {
+    backgroundColor: '#FFF8EE',
+    borderRadius: RADIUS.md,
+    padding: SPACING.md,
+    marginBottom: SPACING.md,
+    borderWidth: 1,
+    borderColor: '#F0D8A8',
+  },
+  sizeReportHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    marginBottom: 6,
+  },
+  sizeReportTitle: { flex: 1, fontSize: 15, fontWeight: '700', color: COLORS.textPrimary },
+  sizeReportHint: {
+    fontSize: 12,
+    color: COLORS.textSecondary,
+    lineHeight: 17,
+    marginBottom: SPACING.sm,
+  },
+  sizeBarRow: {
+    flexDirection: 'row',
+    gap: 8,
+  },
+  sizeCell: {
+    flex: 1,
+    backgroundColor: COLORS.bgCard,
+    borderRadius: RADIUS.sm,
+    paddingVertical: 10,
+    paddingHorizontal: 4,
+    alignItems: 'center',
+  },
+  sizeCellHot: {
+    backgroundColor: '#FFF0E0',
+    borderWidth: 1.5,
+    borderColor: '#F0AE64',
+  },
+  sizeCellLabel: { fontSize: 14, fontWeight: '800', color: COLORS.textSecondary },
+  sizeCellLabelHot: { color: '#B57D2A' },
+  sizeCellCount: { fontSize: 20, fontWeight: '800', color: COLORS.textPrimary, marginTop: 2 },
+  sizeCellHint: { fontSize: 10, color: COLORS.textSecondary, marginTop: 2 },
+  sizeReportFooter: {
+    fontSize: 12,
+    color: COLORS.textPrimary,
+    fontWeight: '600',
+    marginTop: SPACING.sm,
+    lineHeight: 17,
   },
 
   // 行為異常偵測

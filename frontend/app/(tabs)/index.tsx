@@ -29,12 +29,13 @@ import { FEATURE_FLAGS } from '@/src/lib/feature-flags';
 import { resolveWordingMode, wordingFor, type WordingMode } from '@/src/lib/i18n/wording-mode';
 import { useRitualStore } from '@/src/lib/ritual/ritual-store';
 import { EmotionVisual } from '@/src/components/emotion-visual';
-import { EnergySlider } from '@/src/components/energy-slider';
+import { BowlSizeSlider } from '@/src/components/bowl-size-slider';
 import { PinUnlockModal } from '@/src/components/pin-unlock-modal';
 import { EntryEditModal } from '@/src/components/entry-edit-modal';
 import { SupportCtaRow } from '@/src/components/support-cta-row';
 import { useRecentEmotions } from '@/src/hooks/use-recent-emotions';
 import { useResponsiveLayout } from '@/src/hooks/use-responsive-layout';
+import type { BowlSize } from '@/src/constants/bowl-size';
 
 function todayISO() {
   const d = new Date();
@@ -68,7 +69,7 @@ export default function Home() {
   const [unlocked, setUnlocked] = useState(isDiaryUnlocked());
   const [pinModalVisible, setPinModalVisible] = useState(false);
   const [editingEntry, setEditingEntry] = useState<Entry | null>(null);
-  const [energy, setEnergy] = useState<number | null>(null);
+  const [bowlSize, setBowlSize] = useState<BowlSize>('M');
   const [communityOpen, setCommunityOpen] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
 
@@ -224,7 +225,7 @@ export default function Home() {
         note,
         is_public: share,
         is_secret: secret,
-        energy_level: energy,
+        bowl_size: bowlSize,
         entry_date: today,
       });
       // remember recent picks locally
@@ -233,7 +234,7 @@ export default function Home() {
       setNote('');
       setShare(false);
       setSecret(false);
-      setEnergy(null);
+      setBowlSize('M');
       setSaved(true);
       setTimeout(() => setSaved(false), 2500);
       await load();
@@ -586,8 +587,8 @@ export default function Home() {
                   </View>
                 )}
 
-                {/* Battery slider — energy dimension (independent of emotion label) */}
-                <EnergySlider value={energy} onChange={setEnergy} />
+                {/* Bowl size — intensity signal for teacher follow-up (Scheme B) */}
+                <BowlSizeSlider value={bowlSize} onChange={setBowlSize} />
 
                 {/* Privacy reassurance banner — always visible */}
                 <View style={styles.privacyBanner}>

@@ -1028,6 +1028,15 @@ export default function SchoolAdmin() {
             </View>
           </View>
           <View style={styles.reportRow}>
+            <Feather name="maximize-2" size={18} color="#B57D2A" />
+            <View style={{ flex: 1 }}>
+              <Text style={styles.reportTitle}>碗大細跟進訊號</Text>
+              <Text style={styles.reportSub}>
+                今日全校 18% 學生揀咗 L / XL 碗 · 感覺好強烈 · 班主任可跟進
+              </Text>
+            </View>
+          </View>
+          <View style={styles.reportRow}>
             <Feather name="users" size={18} color="#5A7CB0" />
             <View style={{ flex: 1 }}>
               <Text style={styles.reportTitle}>老師使用率</Text>

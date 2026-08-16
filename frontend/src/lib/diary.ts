@@ -1,4 +1,9 @@
 import { asArray, Entry } from '@/src/lib/api';
+import {
+  bowlSizeToEnergyLevel,
+  isBowlSize,
+  type BowlSize,
+} from '@/src/constants/bowl-size';
 import { soupForDb } from '@/src/lib/ritual/soup-persist';
 import { supabase } from '@/src/lib/supabase-client';
 
@@ -6,6 +11,9 @@ import { supabase } from '@/src/lib/supabase-client';
  * Phase 2 diary adapter.
  * Prefers legacy columns (entry_date, emotions, energy_level, is_secret, hearts)
  * when present, with bridge fallbacks onto ritual/quick-diary columns.
+ *
+ * Scheme B: bowl_size (S/M/L/XL) is the teacher follow-up intensity signal.
+ * energy_level is derived from bowl_size when size is set.
  */
 
 type DiaryRow = {
@@ -43,7 +51,10 @@ export type DiaryDraft = {
   note?: string;
   is_public?: boolean;
   is_secret?: boolean;
+  /** @deprecated Scheme B · prefer bowl_size; still accepted and mirrored from size */
   energy_level?: number | null;
+  /** Intensity signal for teacher follow-up · S/M/L/XL */
+  bowl_size?: 'S' | 'M' | 'L' | 'XL' | null;
   entry_date?: string;
 };
 
@@ -166,9 +177,28 @@ async function requireUserId(): Promise<string> {
   return session.user.id;
 }
 
+function resolveDraftEnergy(draft: Pick<DiaryDraft, 'bowl_size' | 'energy_level'>): number | null {
+  if (isBowlSize(draft.bowl_size)) {
+    return bowlSizeToEnergyLevel(draft.bowl_size);
+  }
+  if (typeof draft.energy_level === 'number' && Number.isFinite(draft.energy_level)) {
+    return Math.round(draft.energy_level);
+  }
+  return null;
+}
+
+function resolveDraftBowlSize(
+  draft: Pick<DiaryDraft, 'bowl_size' | 'energy_level'>,
+): BowlSize | null {
+  if (isBowlSize(draft.bowl_size)) return draft.bowl_size;
+  return null;
+}
+
 function toBridgePayload(userId: string, draft: DiaryDraft) {
   const emotions = (draft.emotions || []).filter(Boolean);
   const isSecret = !!draft.is_secret;
+  const energy = resolveDraftEnergy(draft);
+  const bowlSize = resolveDraftBowlSize(draft);
   return {
     user_id: userId,
     body_chips: emotions,
@@ -177,10 +207,8 @@ function toBridgePayload(userId: string, draft: DiaryDraft) {
     check_in_type: 'quick_diary' as const,
     is_public: !!draft.is_public && !isSecret,
     bowl_steam: isSecret ? 'secret' : null,
-    time_spent_sec:
-      typeof draft.energy_level === 'number' && Number.isFinite(draft.energy_level)
-        ? Math.round(draft.energy_level)
-        : null,
+    bowl_size: bowlSize || 'M',
+    time_spent_sec: energy,
     smile_completed: false,
     ritual_version: 'v1',
   };
@@ -190,14 +218,12 @@ function toLegacyAwarePayload(userId: string, draft: DiaryDraft) {
   const emotions = (draft.emotions || []).filter(Boolean);
   const isSecret = !!draft.is_secret;
   const bridge = toBridgePayload(userId, draft);
+  const energy = resolveDraftEnergy(draft);
   return {
     ...bridge,
     emotions,
     entry_date: draft.entry_date || localDateKey(),
-    energy_level:
-      typeof draft.energy_level === 'number' && Number.isFinite(draft.energy_level)
-        ? Math.round(draft.energy_level)
-        : null,
+    energy_level: energy,
     is_secret: isSecret,
   };
 }
@@ -272,11 +298,14 @@ function ritualBridgePayload(userId: string, draft: RitualDiaryDraft) {
 
 function ritualLegacyAwarePayload(userId: string, draft: RitualDiaryDraft) {
   const bowlKey = draft.bowl_emotion_key;
+  const size = draft.bowl_size || 'M';
   return {
     ...ritualBridgePayload(userId, draft),
     emotions: bowlKey ? [bowlKey] : [],
     entry_date: localDateKey(),
     is_secret: false,
+    // Scheme B · size drives legacy energy_level for teacher reports
+    energy_level: bowlSizeToEnergyLevel(size),
   };
 }
 
@@ -356,7 +385,9 @@ export async function listMyDiaryEntriesForMonth(month: string): Promise<Entry[]
 
 export async function updateDiaryEntry(
   id: string,
-  patch: Partial<Pick<DiaryDraft, 'emotions' | 'note' | 'is_public' | 'is_secret' | 'energy_level'>>,
+  patch: Partial<
+    Pick<DiaryDraft, 'emotions' | 'note' | 'is_public' | 'is_secret' | 'energy_level' | 'bowl_size'>
+  >,
 ): Promise<Entry> {
   await requireUserId();
   const bridge: Record<string, unknown> = {};
@@ -385,11 +416,13 @@ export async function updateDiaryEntry(
     bridge.is_public = nextPublic;
     legacy.is_public = nextPublic;
   }
-  if (patch.energy_level !== undefined) {
-    const energy =
-      typeof patch.energy_level === 'number' && Number.isFinite(patch.energy_level)
-        ? Math.round(patch.energy_level)
-        : null;
+  if (patch.bowl_size !== undefined || patch.energy_level !== undefined) {
+    const size = isBowlSize(patch.bowl_size) ? patch.bowl_size : null;
+    const energy = resolveDraftEnergy({
+      bowl_size: size,
+      energy_level: patch.energy_level,
+    });
+    if (size) bridge.bowl_size = size;
     bridge.time_spent_sec = energy;
     legacy.energy_level = energy;
   }
@@ -566,6 +599,9 @@ export async function saveRitualWithActivities(
         typeof draft.time_spent_sec === 'number' && Number.isFinite(draft.time_spent_sec)
           ? Math.max(0, Math.round(draft.time_spent_sec))
           : null,
+      // Scheme B · bowl size mirrors into energy_level for teacher follow-up tooling
+      p_energy_level: bowlSizeToEnergyLevel(draft.bowl_size || 'M'),
+      p_emotions: draft.bowl_emotion_key ? [draft.bowl_emotion_key] : [],
       p_regulation_keys: keys,
     });
 

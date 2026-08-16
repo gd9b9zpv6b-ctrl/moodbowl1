@@ -6,9 +6,10 @@ import {
   type PlacedDecoration,
 } from '@/src/constants/bowl-decorations';
 import type { BowlReleaseKey } from '@/src/constants/bowl-release';
+import type { BowlSize } from '@/src/constants/bowl-size';
 import type { SoupKey } from '@/src/constants/soups';
 
-export type BowlSize = 'S' | 'M' | 'L' | 'XL';
+export type { BowlSize } from '@/src/constants/bowl-size';
 export type CheckInType = 'full' | 'hug_only' | 'skipped' | 'quick_diary';
 export type AgeGroup = 'lower' | 'upper' | 'adult';
 

@@ -11,22 +11,15 @@ import {
   BOWL_DECORATIONS,
   MAX_BOWL_DECORS,
 } from '@/src/constants/bowl-decorations';
+import {
+  BOWL_SIZES,
+  bowlSizeIndex,
+  bowlSizeMeta,
+} from '@/src/constants/bowl-size';
 import { EMOTION_BY_KEY } from '@/src/constants/emotions';
 import { COLORS, RADIUS, SPACING } from '@/src/constants/theme';
 import { wordingFor } from '@/src/lib/i18n/wording-mode';
-import { useRitualStore, type BowlSize } from '@/src/lib/ritual/ritual-store';
-
-const SIZES: { key: BowlSize; label: string; hint: string; scale: number }[] = [
-  { key: 'S', label: 'S', hint: '淡淡地', scale: 0.75 },
-  { key: 'M', label: 'M', hint: '一般', scale: 1 },
-  { key: 'L', label: 'L', hint: '好強烈', scale: 1.25 },
-  { key: 'XL', label: 'XL', hint: '巨型', scale: 1.5 },
-];
-
-function sizeIndex(key: BowlSize): number {
-  const i = SIZES.findIndex((s) => s.key === key);
-  return i >= 0 ? i : 1;
-}
+import { useRitualStore } from '@/src/lib/ritual/ritual-store';
 
 export default function RitualCustomizeScreen() {
   const router = useRouter();
@@ -44,10 +37,7 @@ export default function RitualCustomizeScreen() {
 
   const emotion = selectedBowlKey ? EMOTION_BY_KEY[selectedBowlKey] : null;
   const hasBowl = !!emotion;
-  const sizeMeta = useMemo(
-    () => SIZES[sizeIndex(bowlSize)] ?? SIZES[1],
-    [bowlSize],
-  );
+  const sizeMeta = useMemo(() => bowlSizeMeta(bowlSize), [bowlSize]);
   const scale = sizeMeta.scale;
   const pendingDecor = pendingKey ? BOWL_DECORATIONS.find((d) => d.key === pendingKey) : null;
 
@@ -69,8 +59,8 @@ export default function RitualCustomizeScreen() {
   };
 
   const onSizeSlide = (raw: number) => {
-    const idx = Math.max(0, Math.min(SIZES.length - 1, Math.round(raw)));
-    const next = SIZES[idx].key;
+    const idx = Math.max(0, Math.min(BOWL_SIZES.length - 1, Math.round(raw)));
+    const next = BOWL_SIZES[idx].key;
     if (next === bowlSize) return;
     setSize(next);
     Haptics.selectionAsync().catch(() => {});
@@ -169,6 +159,9 @@ export default function RitualCustomizeScreen() {
         </View>
 
         <Text style={styles.section}>大細 · 感覺有幾強</Text>
+        <Text style={styles.sizeSub}>
+          拉大啲代表感覺好強烈 · 拉細啲代表淡淡地
+        </Text>
         <View style={styles.sizeBar}>
           <View style={styles.sizeBarHeader}>
             <Text style={styles.sizeBarLabel}>拉細</Text>
@@ -183,17 +176,17 @@ export default function RitualCustomizeScreen() {
             testID="customize-size-slider"
             style={styles.sizeSlider}
             minimumValue={0}
-            maximumValue={SIZES.length - 1}
+            maximumValue={BOWL_SIZES.length - 1}
             step={1}
-            value={sizeIndex(bowlSize)}
+            value={bowlSizeIndex(bowlSize)}
             onValueChange={onSizeSlide}
             minimumTrackTintColor={COLORS.primary}
             maximumTrackTintColor={COLORS.bgCard}
             thumbTintColor={COLORS.textPrimary}
-            accessibilityLabel="拉大拉細"
+            accessibilityLabel="拉大拉細 · 感覺有幾強"
           />
           <View style={styles.sizeTicks}>
-            {SIZES.map((s) => (
+            {BOWL_SIZES.map((s) => (
               <Text
                 key={s.key}
                 style={[styles.sizeTick, s.key === bowlSize && styles.sizeTickActive]}
@@ -294,6 +287,12 @@ const styles = StyleSheet.create({
     fontWeight: '700',
     color: COLORS.textSecondary,
     letterSpacing: 0.4,
+  },
+  sizeSub: {
+    fontSize: 12,
+    color: COLORS.textSecondary,
+    marginTop: 4,
+    marginBottom: SPACING.sm,
   },
   clearText: { fontSize: 13, fontWeight: '700', color: COLORS.primary },
   decorRow: {
