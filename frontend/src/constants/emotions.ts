@@ -129,7 +129,7 @@ export const EMOTIONS: Emotion[] = [
   { key: 'suppressed', label: '被打壓', description: '俾人壓住 · 仲要撐住', color: '#8A7563', category: 'wound', image: EMOTION_IMAGES.suppressed },
 
   // Anger / intense — reds ordered by intensity
-  { key: 'frustrated', label: '沮喪', description: '好似卡住咗', color: '#E4A3A0', category: 'anger', image: EMOTION_IMAGES.frustrated },
+  { key: 'frustrated', label: '沮喪', description: '頭頂有朵烏雲，落雨不停', color: '#B8D4E8', category: 'anger', image: EMOTION_IMAGES.frustrated },
   { key: 'angry', label: '嬲', description: '心入面有把火', color: '#F17372', category: 'anger', image: EMOTION_IMAGES.angry },
   { key: 'offended', label: '被冒犯', description: '個心俾人踩咗一腳', color: '#C08360', category: 'anger', image: EMOTION_IMAGES.offended },
   { key: 'furious', label: '激嬲', description: '把火燒到頂', color: '#D34848', category: 'anger', image: EMOTION_IMAGES.furious },
