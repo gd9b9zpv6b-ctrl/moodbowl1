@@ -3,6 +3,7 @@ import { useFocusEffect, useLocalSearchParams, useRouter } from 'expo-router';
 import { useCallback, useState } from 'react';
 import {
   ActivityIndicator,
+  Alert,
   KeyboardAvoidingView,
   Platform,
   Pressable,
@@ -17,6 +18,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { PROMPT_BY_KEY, STAGE_COLOR, STAGE_TITLE } from '@/src/constants/explore-prompts';
 import { COLORS, RADIUS, SPACING } from '@/src/constants/theme';
 import { api, Memory } from '@/src/lib/api';
+import { isLegacyBackendConfigured, legacyBackendOfflineMessage } from '@/src/lib/legacy-backend';
 
 export default function ExploreWrite() {
   const router = useRouter();
@@ -29,6 +31,11 @@ export default function ExploreWrite() {
   const [loading, setLoading] = useState(true);
 
   const load = useCallback(async () => {
+    if (!isLegacyBackendConfigured()) {
+      setExisting([]);
+      setLoading(false);
+      return;
+    }
     try {
       const all = await api.get<Memory[] | null>('/memories');
       const rows = Array.isArray(all) ? all : [];
@@ -49,6 +56,10 @@ export default function ExploreWrite() {
 
   const save = async () => {
     if (!prompt || !note.trim()) return;
+    if (!isLegacyBackendConfigured()) {
+      Alert.alert('暫未開放', legacyBackendOfflineMessage('探索回憶儲存'));
+      return;
+    }
     setSaving(true);
     try {
       const created = await api.post<Memory>('/memories', {
@@ -59,8 +70,8 @@ export default function ExploreWrite() {
       });
       setExisting((prev) => [created, ...prev]);
       setNote('');
-    } catch {
-      // ignore
+    } catch (e: any) {
+      Alert.alert('儲存唔到', e?.message || '請再試');
     } finally {
       setSaving(false);
     }

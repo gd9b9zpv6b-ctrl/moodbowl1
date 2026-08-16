@@ -16,7 +16,7 @@ import { experienceModeForRole, type MinorAgeBand } from '@/src/lib/experience-m
 import { MinorAgeBandStorage } from '@/src/lib/minor-age-band';
 import { GardenStorage } from '@/src/lib/garden-storage';
 import { useAuth } from '@/src/lib/auth-context';
-import { api } from '@/src/lib/api';
+import { deliverExportFile, eraseMyData, exportMyData } from '@/src/lib/privacy-rights';
 import { storage } from '@/src/utils/storage';
 
 const REMINDER_KEY = 'moodful_reminder_enabled';
@@ -462,22 +462,45 @@ export default function Profile() {
           <Text style={styles.logoutText}>登出</Text>
         </Pressable>
 
-        {/* PDPO / GDPR compliance — right to data + right to be forgotten */}
+        {/* PDPO · 查閱／改正／刪除 · must work without FastAPI */}
         <Text style={styles.sectionTitle}>🔒 私隱權利</Text>
+        <Text style={styles.privacySectionHint}>
+          根據《個人資料（私隱）條例》· 你有權查閱、改正同要求刪除自己嘅資料。
+        </Text>
+
+        <Pressable
+          testID="data-access-calendar-btn"
+          style={styles.privacyBtn}
+          onPress={() => router.push({ pathname: '/(tabs)/calendar', params: { mode: 'album' } })}
+        >
+          <View style={[styles.privacyIcon, { backgroundColor: '#E8F5EE' }]}>
+            <Feather name="book-open" size={18} color="#3F6B54" />
+          </View>
+          <View style={{ flex: 1 }}>
+            <Text style={styles.privacyTitle}>睇返我嘅日記</Text>
+            <Text style={styles.privacySub}>月曆／相簿 · 查閱同改正你寫過嘅內容</Text>
+          </View>
+          <Feather name="chevron-right" size={18} color={COLORS.textDisabled} />
+        </Pressable>
 
         <Pressable
           testID="data-export-btn"
           style={styles.privacyBtn}
           onPress={async () => {
             try {
-              const data = await api.get<any>('/me/export');
-              const entriesCount = data?.entries?.length ?? 0;
-              const alertsCount = data?.alerts_about_me?.length ?? 0;
+              const data = await exportMyData();
+              const mode = await deliverExportFile(data);
+              const entriesCount = data.entries.length;
+              const alertsCount = data.alerts_about_me.length;
               Alert.alert(
-                '📥 你嘅資料已匯出',
-                `包含：${entriesCount} 條日記 · ${alertsCount} 條警報記錄\n\n` +
-                '如需檔案副本 · 可以聯絡學校管理員協助下載。\n\n' +
-                '呢個係《個人資料（私隱）條例》你嘅法定權利。',
+                '📥 你嘅資料已準備好',
+                `包含：${entriesCount} 條日記 · ${data.tasks.length} 項任務 · ${alertsCount} 條警報摘要\n\n` +
+                  (mode === 'downloaded'
+                    ? '已下載 JSON 檔到你嘅裝置。'
+                    : mode === 'shared'
+                      ? '可用系統分享保存副本。'
+                      : '已產生資料副本。') +
+                  '\n\n呢個係《個人資料（私隱）條例》你嘅查閱／可攜權利。',
               );
             } catch (e: any) {
               Alert.alert('匯出失敗', e?.message || '請再試');
@@ -489,7 +512,7 @@ export default function Profile() {
           </View>
           <View style={{ flex: 1 }}>
             <Text style={styles.privacyTitle}>匯出我嘅資料</Text>
-            <Text style={styles.privacySub}>下載你喺 App 度所有嘅資料副本</Text>
+            <Text style={styles.privacySub}>下載你喺 App 度嘅資料副本（JSON）</Text>
           </View>
           <Feather name="chevron-right" size={18} color={COLORS.textDisabled} />
         </Pressable>
@@ -501,11 +524,11 @@ export default function Profile() {
             Alert.alert(
               '⚠️ 刪除全部資料',
               '你將永久刪除：\n' +
-              '• 全部日記記錄\n' +
-              '• 所有 reaction / 打卡\n' +
-              '• 你嘅帳戶本身\n\n' +
-              '⚠️ 出於安全考慮 · 你嘅警報 metadata 會保留 7 年（PDPO 要求）· 但會匿名化 · 老師唔會知道係邊個。\n\n' +
-              '呢個動作無法還原。真係要刪嗎？',
+                '• 全部日記記錄\n' +
+                '• 任務／打卡相關資料\n' +
+                '• 個人顯示名稱\n\n' +
+                '安全警示嘅匿名紀錄可能由校方保留作法定／安全用途 · 但唔會再顯示你嘅身分同日記原文。\n\n' +
+                '呢個動作無法還原。真係要刪嗎？',
               [
                 { text: '取消', style: 'cancel' },
                 {
@@ -513,10 +536,12 @@ export default function Profile() {
                   style: 'destructive',
                   onPress: async () => {
                     try {
-                      await api.del<any>('/me');
-                      Alert.alert('已刪除', '你嘅資料已完全刪除。多謝你曾經信任呢個 App 🙏', [
-                        { text: '好', onPress: () => logout() },
-                      ]);
+                      const wiped = await eraseMyData();
+                      Alert.alert(
+                        '已刪除',
+                        `已清除 ${wiped.diaries} 條日記同相關個人資料。多謝你曾經信任呢個 App。`,
+                        [{ text: '好', onPress: () => logout() }],
+                      );
                     } catch (e: any) {
                       Alert.alert('刪除失敗', e?.message || '請再試');
                     }
@@ -530,8 +555,8 @@ export default function Profile() {
             <Feather name="user-x" size={18} color="#8A3F3F" />
           </View>
           <View style={{ flex: 1 }}>
-            <Text style={[styles.privacyTitle, { color: '#8A3F3F' }]}>刪除我嘅帳戶</Text>
-            <Text style={styles.privacySub}>永久刪除全部個人資料（Right to be forgotten）</Text>
+            <Text style={[styles.privacyTitle, { color: '#8A3F3F' }]}>刪除我嘅帳戶資料</Text>
+            <Text style={styles.privacySub}>永久刪除日記等個人資料（被遺忘權）</Text>
           </View>
           <Feather name="chevron-right" size={18} color={COLORS.textDisabled} />
         </Pressable>
@@ -636,6 +661,12 @@ const styles = StyleSheet.create({
     color: COLORS.textSecondary,
     letterSpacing: 0.6,
     marginTop: SPACING.md,
+    marginBottom: SPACING.sm,
+  },
+  privacySectionHint: {
+    fontSize: 12,
+    color: COLORS.textSecondary,
+    lineHeight: 17,
     marginBottom: SPACING.sm,
   },
   linkRow: {

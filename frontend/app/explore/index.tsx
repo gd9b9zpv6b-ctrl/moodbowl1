@@ -20,6 +20,7 @@ import {
 } from '@/src/constants/explore-prompts';
 import { COLORS, RADIUS, SPACING } from '@/src/constants/theme';
 import { api, asArray, Memory } from '@/src/lib/api';
+import { isLegacyBackendConfigured, legacyBackendOfflineMessage } from '@/src/lib/legacy-backend';
 
 const STAGES: ExploreStage[] = ['childhood', 'teen', 'young-adult', 'adult', 'reflection'];
 
@@ -30,6 +31,11 @@ export default function Explore() {
   const [loading, setLoading] = useState(true);
 
   const load = useCallback(async () => {
+    if (!isLegacyBackendConfigured()) {
+      setMemories([]);
+      setLoading(false);
+      return;
+    }
     try {
       const list = await api.get<Memory[] | null>('/memories');
       setMemories(asArray(list));
@@ -91,6 +97,11 @@ export default function Explore() {
           <Text style={styles.intro}>
             寫俾自己聽 · 每一段記憶{'\n'}都會幫你認識自己多啲
           </Text>
+          {!isLegacyBackendConfigured() && (
+            <Text testID="explore-offline-hint" style={styles.offlineHint}>
+              {legacyBackendOfflineMessage('探索回憶儲存')}
+            </Text>
+          )}
           {memories.length > 0 && (
             <View style={styles.savedBadge}>
               <Feather name="book-open" size={14} color={COLORS.primary} />
@@ -194,6 +205,12 @@ const styles = StyleSheet.create({
   },
   introWrap: { paddingHorizontal: SPACING.lg, paddingTop: SPACING.sm, paddingBottom: SPACING.md },
   intro: { fontSize: 16, color: COLORS.textSecondary, lineHeight: 24 },
+  offlineHint: {
+    marginTop: SPACING.sm,
+    fontSize: 13,
+    color: COLORS.textSecondary,
+    lineHeight: 18,
+  },
   savedBadge: {
     flexDirection: 'row',
     alignItems: 'center',

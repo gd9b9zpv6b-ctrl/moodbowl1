@@ -29,20 +29,29 @@ const CLASS_DATA = [
   { name: '4C',       students: 26, high: 25, steady: 60, low: 15, alerts: 0 },
 ];
 
-// 需要關注嘅學生 (mock)
-const ALERTS = [
-  { name: '陳 * 文', className: '6A', reason: '連續 5 日低能量情緒', severity: 'high' as const },
-  { name: '李 * 美', className: '5B', reason: '7 日冇打卡 · 突然停用', severity: 'mid' as const },
-  { name: '王 * 明', className: '5B', reason: '日記出現關注字詞', severity: 'high' as const },
+// 今日值得留意嘅同學 (mock) — 列出邊個 · 唔拆碗大細／處理細節
+const NEGATIVE_WATCH_LIST = [
+  { name: '陳 * 文', className: '6A', kind: 'notify' as const },
+  { name: '王 * 明', className: '5B', kind: 'keyword' as const },
+  { name: '李 * 美', className: '5B', kind: 'watch' as const },
+  { name: '黃 * 晴', className: '6A', kind: 'watch' as const },
+  { name: '張 * 豪', className: '6A', kind: 'watch' as const },
+  { name: '何 * 欣', className: '5B', kind: 'watch' as const },
+  { name: '林 * 俊', className: '4C', kind: 'watch' as const },
+  { name: '吳 * 婷', className: '6A', kind: 'watch' as const },
 ];
+
+const WATCH_KIND_LABEL = {
+  notify: '可能要關注',
+  keyword: '日記出現關注字詞',
+  watch: '值得留意',
+} as const;
 
 // 行為異常偵測 (mock) — 呢啲比自報準
 const BEHAVIOR_FLAGS = [
   { icon: 'trending-down', text: '5B 呢周 open app 少咗 40%', tone: 'warn' as const },
   { icon: 'moon', text: '3 位同學仔連續 3 晚凌晨 12 點後開 app', tone: 'warn' as const },
   { icon: 'zap', text: '6A 情緒波幅比上周高 · 可能有壓力事件', tone: 'info' as const },
-  // 情緒 vs 電量不一致 (dissonance) — student says one thing but battery says another
-  { icon: 'battery', text: '4 位同學仔今日揀咗高能量情緒 · 但電量只有 20% 以下', tone: 'warn' as const },
 ];
 
 // Fallback representative bowls (used before school config loads)
@@ -121,7 +130,7 @@ export default function TeacherDashboard() {
       <ScrollView contentContainerStyle={styles.scroll} showsVerticalScrollIndicator={false}>
         <View style={styles.hero}>
           <Text style={styles.heroGreet}>陳老師 · 早晨 ☀️</Text>
-          <Text style={styles.heroSub}>你有 3 位學生需要關注 · 揀返嚟先睇下</Text>
+          <Text style={styles.heroSub}>今日班氣氛同需要留意嘅同學 · 一睇就明</Text>
         </View>
 
         {/* Teacher self-care card */}
@@ -172,34 +181,56 @@ export default function TeacherDashboard() {
           </View>
         )}
 
-        {/* 需要關注嘅學生 */}
-        <View style={styles.alertBox}>
-          <View style={styles.alertHeader}>
-            <Feather name="alert-triangle" size={18} color="#E86A6A" />
-            <Text style={styles.alertTitle}>需要關注嘅學生</Text>
-            <View style={styles.alertCount}>
-              <Text style={styles.alertCountText}>{ALERTS.length}</Text>
+        {/* 負面情緒概況 · 一個總數 + 邊幾個同學 · 唔拆 cue 細節 */}
+        <View style={styles.sizeReportBox} testID="teacher-bowl-size-report">
+          <View style={styles.sizeReportHeader}>
+            <Feather name="heart" size={16} color="#B57D2A" />
+            <Text style={styles.sizeReportTitle}>負面情緒概況</Text>
+            <View style={[styles.alertCount, { backgroundColor: '#B57D2A' }]}>
+              <Text style={styles.alertCountText}>{NEGATIVE_WATCH_LIST.length}</Text>
             </View>
           </View>
-          {ALERTS.map((a, i) => (
-            <Pressable
-              key={i}
-              onPress={() => Alert.alert(
-                `${a.name} · ${a.className}`,
-                `原因：${a.reason}\n\n可以通知輔導老師跟進 · 或者自己安排單獨傾談。`,
-              )}
-              style={styles.alertItem}
-            >
-              <View style={[styles.alertDot, { backgroundColor: a.severity === 'high' ? '#E86A6A' : '#F0AE64' }]} />
-              <View style={{ flex: 1 }}>
-                <Text style={styles.alertName}>{a.name} <Text style={styles.alertClass}>· {a.className}</Text></Text>
-                <Text style={styles.alertReason}>{a.reason}</Text>
-              </View>
-              <Feather name="chevron-right" size={18} color={COLORS.textDisabled} />
-            </Pressable>
-          ))}
+          <Text style={styles.sizeReportHint} testID="teacher-follow-summary">
+            今日 {NEGATIVE_WATCH_LIST.length} 位同學值得留意一下 · 唔顯示日記原文同碗大細細節。
+          </Text>
+          <View style={styles.watchList}>
+            {NEGATIVE_WATCH_LIST.map((s, i) => (
+              <Pressable
+                key={`${s.name}-${s.className}-${i}`}
+                testID={`teacher-watch-${i}`}
+                onPress={() =>
+                  Alert.alert(
+                    `${s.name} · ${s.className}`,
+                    s.kind === 'notify'
+                      ? '學生想你留意吓 · 系統唔會顯示情緒、碗大細、或者日記內容。\n\n可以自己安排關心一下。'
+                      : s.kind === 'keyword'
+                        ? '日記出現關注字詞 · 原文仍然睇唔到 · 建議通知輔導老師跟進 · 或者自己安排單獨傾談。'
+                        : '系統提示呢位同學今日值得留意 · 唔會顯示情緒細節同日記原文。\n\n可以用輕鬆方式關心一下。',
+                  )
+                }
+                style={styles.watchItem}
+              >
+                <View
+                  style={[
+                    styles.alertDot,
+                    {
+                      backgroundColor:
+                        s.kind === 'notify' || s.kind === 'keyword' ? '#E86A6A' : '#F0AE64',
+                    },
+                  ]}
+                />
+                <View style={{ flex: 1 }}>
+                  <Text style={styles.alertName}>
+                    {s.name} <Text style={styles.alertClass}>· {s.className}</Text>
+                  </Text>
+                  <Text style={styles.alertReason}>{WATCH_KIND_LABEL[s.kind]}</Text>
+                </View>
+                <Feather name="chevron-right" size={18} color={COLORS.textDisabled} />
+              </Pressable>
+            ))}
+          </View>
           <Text style={styles.alertHint}>
-            🔒 你只會見到姓氏 + 一個字 · 詳情要撳入去 · 每次查閱都會留底。
+            🔒 「想老師留意」只顯示可能要關注 · 其他只係概括提示。每次查閱都會留底。
           </Text>
         </View>
 
@@ -225,8 +256,8 @@ export default function TeacherDashboard() {
           ))}
         </View>
 
-        {/* 能量圖例 · 三個代表飯團 */}
-        <Text style={styles.sectionTitle}>能量分類圖例</Text>
+        {/* 班氣氛圖 · 唔係跟進名單 */}
+        <Text style={styles.sectionTitle}>班氣氛圖例（唔係跟進名單）</Text>
         <View style={styles.legendCard}>
           <View style={styles.legendRow}>
             <View style={styles.legendBowl}>
@@ -352,6 +383,43 @@ const styles = StyleSheet.create({
     fontStyle: 'italic',
     marginTop: SPACING.sm,
     paddingTop: SPACING.sm,
+    borderTopWidth: 1,
+    borderTopColor: 'rgba(0,0,0,0.05)',
+  },
+
+  // 負面情緒概況 · 總數 + 名單
+  sizeReportBox: {
+    backgroundColor: '#FFF8EE',
+    borderRadius: RADIUS.md,
+    padding: SPACING.md,
+    marginBottom: SPACING.md,
+    borderWidth: 1,
+    borderColor: '#F0D8A8',
+  },
+  sizeReportHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    marginBottom: 6,
+  },
+  sizeReportTitle: { flex: 1, fontSize: 15, fontWeight: '700', color: COLORS.textPrimary },
+  sizeReportHint: {
+    fontSize: 12,
+    color: COLORS.textSecondary,
+    lineHeight: 17,
+    marginBottom: SPACING.sm,
+  },
+  watchList: {
+    backgroundColor: COLORS.bgCard,
+    borderRadius: RADIUS.sm,
+    overflow: 'hidden',
+  },
+  watchItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: SPACING.sm,
+    paddingVertical: SPACING.sm,
+    paddingHorizontal: 12,
     borderTopWidth: 1,
     borderTopColor: 'rgba(0,0,0,0.05)',
   },

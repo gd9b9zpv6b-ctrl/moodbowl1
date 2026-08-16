@@ -55,9 +55,7 @@ export default function RitualReleaseScreen() {
   const diaryText = useRitualStore((s) => s.diaryText);
   const checkInType = useRitualStore((s) => s.checkInType);
   const bowlRelease = useRitualStore((s) => s.bowlRelease);
-  const shareClass = useRitualStore((s) => s.shareClass);
-  const shareFamily = useRitualStore((s) => s.shareFamily);
-  const shareTimeline = useRitualStore((s) => s.shareTimeline);
+  const notifyTeacher = useRitualStore((s) => s.notifyTeacher);
   const startedAt = useRitualStore((s) => s.startedAt);
   const regulationUsed = useRitualStore((s) => s.regulationUsed);
   const setBowlRelease = useRitualStore((s) => s.setBowlRelease);
@@ -155,11 +153,14 @@ export default function RitualReleaseScreen() {
           bowl_emotion_key: selectedBowlKey,
           bowl_color_tint: encodeDecorations(decorations),
           bowl_size: bowlSize,
+          bowl_release: picked,
           diary_text: checkInType === 'hug_only' ? null : diaryText || null,
           check_in_type: checkInType === 'hug_only' ? 'hug_only' : 'full',
-          is_public: shareClass,
-          shared_with_class: shareClass,
-          shared_with_family: shareFamily,
+          is_public: false,
+          // notify_teacher = 「想老師留意」only · never opens diary content
+          notify_teacher: notifyTeacher,
+          // Family notify UI hidden until parent inbox ships
+          shared_with_family: false,
           smile_completed: false,
           time_spent_sec: timeSpent,
         },
@@ -350,36 +351,22 @@ export default function RitualReleaseScreen() {
         <Text testID="release-share-heading" style={styles.shareHeading}>
           {w.release_share_heading}
         </Text>
-        <View style={styles.row}>
-          <Text style={styles.rowLabel}>{w.bridge_share_family}</Text>
-          <Switch
-            testID="release-share-family"
-            value={shareFamily}
-            onValueChange={(v) => setShares({ shareFamily: v })}
-            trackColor={{ true: COLORS.primary, false: COLORS.bgInput }}
-            thumbColor={COLORS.bgCard}
-          />
-        </View>
+        <Text testID="release-share-privacy" style={styles.sharePrivacy}>
+          日記原文永遠只有你睇到。系統可能提示老師「值得關心」· 唔顯示你寫咩。如果你撳「想老師留意」· 老師只會見「可能要關注」。
+        </Text>
         <View style={styles.row}>
           <Text style={styles.rowLabel}>{w.bridge_share_class}</Text>
           <Switch
-            testID="release-share-class"
-            value={shareClass}
-            onValueChange={(v) => setShares({ shareClass: v })}
+            testID="release-notify-teacher"
+            value={notifyTeacher}
+            onValueChange={(v) => setShares({ notifyTeacher: v })}
             trackColor={{ true: COLORS.primary, false: COLORS.bgInput }}
             thumbColor={COLORS.bgCard}
           />
         </View>
-        <View style={styles.row}>
-          <Text style={styles.rowLabel}>{w.bridge_share_timeline}</Text>
-          <Switch
-            testID="release-share-timeline"
-            value={shareTimeline}
-            onValueChange={(v) => setShares({ shareTimeline: v })}
-            trackColor={{ true: COLORS.primary, false: COLORS.bgInput }}
-            thumbColor={COLORS.bgCard}
-          />
-        </View>
+        <Text testID="release-family-soon" style={styles.sharePrivacy}>
+          「想屋企人留意」稍後推出 · 而家未會通知屋企
+        </Text>
 
         <Text testID="release-lead" style={styles.title}>
           {releaseLead}
@@ -519,6 +506,13 @@ const styles = StyleSheet.create({
     fontWeight: '700',
     color: COLORS.textSecondary,
     marginBottom: SPACING.sm,
+  },
+  sharePrivacy: {
+    fontSize: 12,
+    color: COLORS.textSecondary,
+    lineHeight: 17,
+    marginBottom: SPACING.sm,
+    marginTop: -4,
   },
   row: {
     flexDirection: 'row',

@@ -1,4 +1,9 @@
 import { asArray, Entry } from '@/src/lib/api';
+import {
+  bowlSizeToEnergyLevel,
+  isBowlSize,
+  type BowlSize,
+} from '@/src/constants/bowl-size';
 import { soupForDb } from '@/src/lib/ritual/soup-persist';
 import { supabase } from '@/src/lib/supabase-client';
 
@@ -6,6 +11,11 @@ import { supabase } from '@/src/lib/supabase-client';
  * Phase 2 diary adapter.
  * Prefers legacy columns (entry_date, emotions, energy_level, is_secret, hearts)
  * when present, with bridge fallbacks onto ritual/quick-diary columns.
+ *
+ * Scheme B: bowl_size is intensity; bowl_release is handling choice.
+ * notify_teacher = teacher-notify only (no diary content).
+ * shared_with_class is a deprecated DB mirror of notify_teacher.
+ * energy_level is derived from bowl_size when size is set.
  */
 
 type DiaryRow = {
@@ -17,10 +27,12 @@ type DiaryRow = {
   bowl_color_tint?: string | null;
   bowl_size?: string | null;
   bowl_steam: string | null;
+  bowl_release?: string | null;
   diary_text: string | null;
   check_in_type: string;
   is_public: boolean;
   shared_with_class?: boolean;
+  notify_teacher?: boolean;
   shared_with_family?: boolean;
   smile_completed?: boolean;
   time_spent_sec: number | null;
@@ -43,7 +55,10 @@ export type DiaryDraft = {
   note?: string;
   is_public?: boolean;
   is_secret?: boolean;
+  /** @deprecated Scheme B · prefer bowl_size; still accepted and mirrored from size */
   energy_level?: number | null;
+  /** Intensity signal for teacher follow-up · S/M/L/XL */
+  bowl_size?: 'S' | 'M' | 'L' | 'XL' | null;
   entry_date?: string;
 };
 
@@ -152,6 +167,10 @@ export function diaryRowToEntry(row: DiaryRow, extras?: { hearted_by_me?: boolea
     hearted_by_me: !!extras?.hearted_by_me,
     bowl_color_tint: row.bowl_color_tint ?? null,
     bowl_size: row.bowl_size ?? null,
+    bowl_release: row.bowl_release ?? null,
+    shared_with_class: !!(row.notify_teacher ?? row.shared_with_class),
+    notify_teacher: !!(row.notify_teacher ?? row.shared_with_class),
+    shared_with_family: !!row.shared_with_family,
   };
 }
 
@@ -166,9 +185,28 @@ async function requireUserId(): Promise<string> {
   return session.user.id;
 }
 
+function resolveDraftEnergy(draft: Pick<DiaryDraft, 'bowl_size' | 'energy_level'>): number | null {
+  if (isBowlSize(draft.bowl_size)) {
+    return bowlSizeToEnergyLevel(draft.bowl_size);
+  }
+  if (typeof draft.energy_level === 'number' && Number.isFinite(draft.energy_level)) {
+    return Math.round(draft.energy_level);
+  }
+  return null;
+}
+
+function resolveDraftBowlSize(
+  draft: Pick<DiaryDraft, 'bowl_size' | 'energy_level'>,
+): BowlSize | null {
+  if (isBowlSize(draft.bowl_size)) return draft.bowl_size;
+  return null;
+}
+
 function toBridgePayload(userId: string, draft: DiaryDraft) {
   const emotions = (draft.emotions || []).filter(Boolean);
   const isSecret = !!draft.is_secret;
+  const energy = resolveDraftEnergy(draft);
+  const bowlSize = resolveDraftBowlSize(draft);
   return {
     user_id: userId,
     body_chips: emotions,
@@ -177,10 +215,8 @@ function toBridgePayload(userId: string, draft: DiaryDraft) {
     check_in_type: 'quick_diary' as const,
     is_public: !!draft.is_public && !isSecret,
     bowl_steam: isSecret ? 'secret' : null,
-    time_spent_sec:
-      typeof draft.energy_level === 'number' && Number.isFinite(draft.energy_level)
-        ? Math.round(draft.energy_level)
-        : null,
+    bowl_size: bowlSize || 'M',
+    time_spent_sec: energy,
     smile_completed: false,
     ritual_version: 'v1',
   };
@@ -190,14 +226,12 @@ function toLegacyAwarePayload(userId: string, draft: DiaryDraft) {
   const emotions = (draft.emotions || []).filter(Boolean);
   const isSecret = !!draft.is_secret;
   const bridge = toBridgePayload(userId, draft);
+  const energy = resolveDraftEnergy(draft);
   return {
     ...bridge,
     emotions,
     entry_date: draft.entry_date || localDateKey(),
-    energy_level:
-      typeof draft.energy_level === 'number' && Number.isFinite(draft.energy_level)
-        ? Math.round(draft.energy_level)
-        : null,
+    energy_level: energy,
     is_secret: isSecret,
   };
 }
@@ -239,16 +273,26 @@ export type RitualDiaryDraft = {
   bowl_emotion_key: string | null;
   bowl_color_tint: string | null;
   bowl_size: 'S' | 'M' | 'L' | 'XL';
+  /** Symbolic 「想點處理」action */
+  bowl_release?: 'empty' | 'set_aside' | 'send_away' | 'wash' | 'keep_hug' | null;
   diary_text: string | null;
   check_in_type: 'full' | 'hug_only' | 'quick_diary';
   is_public: boolean;
-  shared_with_class: boolean;
+  /** 「想老師留意」notify only */
+  notify_teacher?: boolean;
+  /** @deprecated mirror of notify_teacher */
+  shared_with_class?: boolean;
   shared_with_family: boolean;
   smile_completed?: boolean;
   time_spent_sec: number | null;
 };
 
+function draftNotifyTeacher(draft: RitualDiaryDraft): boolean {
+  return !!(draft.notify_teacher ?? draft.shared_with_class);
+}
+
 function ritualBridgePayload(userId: string, draft: RitualDiaryDraft) {
+  const notify = draftNotifyTeacher(draft);
   return {
     user_id: userId,
     soup: soupForDb(draft.soup),
@@ -256,10 +300,13 @@ function ritualBridgePayload(userId: string, draft: RitualDiaryDraft) {
     bowl_emotion_key: draft.bowl_emotion_key,
     bowl_color_tint: draft.bowl_color_tint,
     bowl_size: draft.bowl_size || 'M',
+    bowl_release: draft.bowl_release || null,
     diary_text: draft.diary_text?.trim() || null,
     check_in_type: draft.check_in_type,
     is_public: !!draft.is_public,
-    shared_with_class: !!draft.shared_with_class,
+    // Write both · trigger / older DBs stay compatible
+    notify_teacher: notify,
+    shared_with_class: notify,
     shared_with_family: !!draft.shared_with_family,
     smile_completed: !!draft.smile_completed,
     time_spent_sec:
@@ -272,11 +319,14 @@ function ritualBridgePayload(userId: string, draft: RitualDiaryDraft) {
 
 function ritualLegacyAwarePayload(userId: string, draft: RitualDiaryDraft) {
   const bowlKey = draft.bowl_emotion_key;
+  const size = draft.bowl_size || 'M';
   return {
     ...ritualBridgePayload(userId, draft),
     emotions: bowlKey ? [bowlKey] : [],
     entry_date: localDateKey(),
     is_secret: false,
+    // Scheme B · size drives legacy energy_level for teacher reports
+    energy_level: bowlSizeToEnergyLevel(size),
   };
 }
 
@@ -300,11 +350,11 @@ export async function createRitualDiaryEntry(draft: RitualDiaryDraft): Promise<E
   }
 
   if (isMissingColumnError(full.error)) {
-    const fallback = await supabase
-      .from('diaries')
-      .insert(ritualBridgePayload(userId, draft))
-      .select('*')
-      .single();
+    const bridge = ritualBridgePayload(userId, draft) as Record<string, unknown>;
+    // Older DBs may lack notify_teacher / bowl_release
+    delete bridge.notify_teacher;
+    delete bridge.bowl_release;
+    const fallback = await supabase.from('diaries').insert(bridge).select('*').single();
     if (fallback.error || !fallback.data) throw friendlyDiaryError(fallback.error);
     return diaryRowToEntry(fallback.data as DiaryRow);
   }
@@ -356,7 +406,9 @@ export async function listMyDiaryEntriesForMonth(month: string): Promise<Entry[]
 
 export async function updateDiaryEntry(
   id: string,
-  patch: Partial<Pick<DiaryDraft, 'emotions' | 'note' | 'is_public' | 'is_secret' | 'energy_level'>>,
+  patch: Partial<
+    Pick<DiaryDraft, 'emotions' | 'note' | 'is_public' | 'is_secret' | 'energy_level' | 'bowl_size'>
+  >,
 ): Promise<Entry> {
   await requireUserId();
   const bridge: Record<string, unknown> = {};
@@ -385,11 +437,13 @@ export async function updateDiaryEntry(
     bridge.is_public = nextPublic;
     legacy.is_public = nextPublic;
   }
-  if (patch.energy_level !== undefined) {
-    const energy =
-      typeof patch.energy_level === 'number' && Number.isFinite(patch.energy_level)
-        ? Math.round(patch.energy_level)
-        : null;
+  if (patch.bowl_size !== undefined || patch.energy_level !== undefined) {
+    const size = isBowlSize(patch.bowl_size) ? patch.bowl_size : null;
+    const energy = resolveDraftEnergy({
+      bowl_size: size,
+      energy_level: patch.energy_level,
+    });
+    if (size) bridge.bowl_size = size;
     bridge.time_spent_sec = energy;
     legacy.energy_level = energy;
   }
@@ -559,22 +613,46 @@ export async function saveRitualWithActivities(
       p_diary_text: draft.diary_text?.trim() || null,
       p_check_in_type: draft.check_in_type,
       p_is_public: !!draft.is_public,
-      p_shared_with_class: !!draft.shared_with_class,
+      p_shared_with_class: draftNotifyTeacher(draft),
       p_shared_with_family: !!draft.shared_with_family,
       p_smile_completed: !!draft.smile_completed,
       p_time_spent_sec:
         typeof draft.time_spent_sec === 'number' && Number.isFinite(draft.time_spent_sec)
           ? Math.max(0, Math.round(draft.time_spent_sec))
           : null,
+      // Scheme B · bowl size mirrors into energy_level for teacher follow-up tooling
+      p_energy_level: bowlSizeToEnergyLevel(draft.bowl_size || 'M'),
+      p_emotions: draft.bowl_emotion_key ? [draft.bowl_emotion_key] : [],
       p_regulation_keys: keys,
+      // Local calendar day · so 今日故事 / 月曆 match where the kid wrote
+      p_entry_date: localDateKey(),
     });
 
     if (!error && data) {
+      let row: DiaryRow | null = null;
       if (typeof data === 'object' && data !== null && 'id' in (data as object)) {
-        return diaryRowToEntry(data as DiaryRow);
+        row = data as DiaryRow;
+      } else if (Array.isArray(data) && data[0]) {
+        row = data[0] as DiaryRow;
       }
-      if (Array.isArray(data) && data[0]) {
-        return diaryRowToEntry(data[0] as DiaryRow);
+      if (row?.id) {
+        // RPC may predate bowl_release · best-effort patch for teacher follow-up
+        if (draft.bowl_release) {
+          try {
+            const patched = await supabase
+              .from('diaries')
+              .update({ bowl_release: draft.bowl_release })
+              .eq('id', row.id)
+              .select('*')
+              .single();
+            if (!patched.error && patched.data) {
+              return diaryRowToEntry(patched.data as DiaryRow);
+            }
+          } catch {
+            // Column may not exist yet · keep RPC row
+          }
+        }
+        return diaryRowToEntry({ ...row, bowl_release: draft.bowl_release || row.bowl_release });
       }
     }
   } catch {

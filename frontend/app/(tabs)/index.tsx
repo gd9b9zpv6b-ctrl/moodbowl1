@@ -29,12 +29,13 @@ import { FEATURE_FLAGS } from '@/src/lib/feature-flags';
 import { resolveWordingMode, wordingFor, type WordingMode } from '@/src/lib/i18n/wording-mode';
 import { useRitualStore } from '@/src/lib/ritual/ritual-store';
 import { EmotionVisual } from '@/src/components/emotion-visual';
-import { EnergySlider } from '@/src/components/energy-slider';
+import { BowlSizeSlider } from '@/src/components/bowl-size-slider';
 import { PinUnlockModal } from '@/src/components/pin-unlock-modal';
 import { EntryEditModal } from '@/src/components/entry-edit-modal';
 import { SupportCtaRow } from '@/src/components/support-cta-row';
 import { useRecentEmotions } from '@/src/hooks/use-recent-emotions';
 import { useResponsiveLayout } from '@/src/hooks/use-responsive-layout';
+import type { BowlSize } from '@/src/constants/bowl-size';
 
 function todayISO() {
   const d = new Date();
@@ -68,7 +69,8 @@ export default function Home() {
   const [unlocked, setUnlocked] = useState(isDiaryUnlocked());
   const [pinModalVisible, setPinModalVisible] = useState(false);
   const [editingEntry, setEditingEntry] = useState<Entry | null>(null);
-  const [energy, setEnergy] = useState<number | null>(null);
+  const [bowlSize, setBowlSize] = useState<BowlSize>('M');
+  const [lockScroll, setLockScroll] = useState(false);
   const [communityOpen, setCommunityOpen] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
 
@@ -199,7 +201,19 @@ export default function Home() {
     setLoading(true);
     try {
       const rows = await listMyDiaryEntries();
-      setTodayEntries(rows.filter((e) => e.entry_date === today));
+      // Prefer entry_date; also accept created_at local day so UTC/local mismatch still shows
+      setTodayEntries(
+        rows.filter((e) => {
+          if (e.entry_date === today) return true;
+          try {
+            const d = new Date(e.created_at);
+            const key = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+            return key === today;
+          } catch {
+            return false;
+          }
+        }),
+      );
     } catch {
       setTodayEntries([]);
     } finally {
@@ -224,7 +238,7 @@ export default function Home() {
         note,
         is_public: share,
         is_secret: secret,
-        energy_level: energy,
+        bowl_size: bowlSize,
         entry_date: today,
       });
       // remember recent picks locally
@@ -233,7 +247,7 @@ export default function Home() {
       setNote('');
       setShare(false);
       setSecret(false);
-      setEnergy(null);
+      setBowlSize('M');
       setSaved(true);
       setTimeout(() => setSaved(false), 2500);
       await load();
@@ -271,6 +285,7 @@ export default function Home() {
             ]}
             showsVerticalScrollIndicator={false}
             keyboardShouldPersistTaps="handled"
+            scrollEnabled={!lockScroll}
           >
             <View
               style={[
@@ -586,15 +601,19 @@ export default function Home() {
                   </View>
                 )}
 
-                {/* Battery slider — energy dimension (independent of emotion label) */}
-                <EnergySlider value={energy} onChange={setEnergy} />
+                {/* Bowl size — intensity signal for teacher follow-up (Scheme B) */}
+                <BowlSizeSlider
+                  value={bowlSize}
+                  onChange={setBowlSize}
+                  onDragChange={setLockScroll}
+                />
 
                 {/* Privacy reassurance banner — always visible */}
                 <View style={styles.privacyBanner}>
                   <Feather name="eye-off" size={13} color="#7BA88C" />
                   <Text style={styles.privacyBannerText}>
-                    <Text style={styles.privacyBannerBold}>只有你自己睇到 · </Text>
-                    老師 · 家長 · 冇任何人可以偷睇你嘅日記
+                    <Text style={styles.privacyBannerBold}>日記原文只有你睇到。 </Text>
+                    系統可能提示老師「呢位同學值得關心」· 唔會顯示你寫咩。如果你撳「想老師留意」· 老師只會見「可能要關注」。
                   </Text>
                 </View>
 
@@ -703,7 +722,8 @@ export default function Home() {
                 <ActivityIndicator color={COLORS.primary} style={{ marginTop: SPACING.md }} />
               ) : todayEntries.length === 0 ? (
                 <Text style={styles.emptyText} testID="today-empty">
-                  今日仲未有故事 · 撳上面揀下你嘅感受 · 開始寫
+                  今日仲未有故事 · 撳上面揀下你嘅感受 · 開始寫{'\n'}
+                  舊日記喺下面「月曆」可以睇返
                 </Text>
               ) : (
                 todayEntries.map((entry) => {

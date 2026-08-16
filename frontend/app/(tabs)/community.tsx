@@ -43,7 +43,7 @@ export default function Community() {
       const fromSupabase = await listCommunityDiaries();
       if (fromSupabase.length > 0) {
         setEntries(fromSupabase);
-      } else {
+      } else if ((process.env.EXPO_PUBLIC_BACKEND_URL || '').trim()) {
         try {
           const q = c.postTtlDays > 0 ? `?ttl_days=${c.postTtlDays}` : '?ttl_days=0';
           const res = await api.get<Entry[] | null>(`/entries/community${q}`);
@@ -51,6 +51,8 @@ export default function Community() {
         } catch {
           setEntries(fromSupabase);
         }
+      } else {
+        setEntries(fromSupabase);
       }
     } catch {
       setEntries([]);
@@ -140,23 +142,27 @@ export default function Community() {
           : e,
       ),
     );
-    try {
-      const reacted = await toggleDiaryReaction(id);
-      setEntries((prev) =>
-        prev.map((e) =>
-          e.id === id
-            ? { ...e, hearts: reacted.hearts, hearted_by_me: reacted.hearted_by_me }
-            : e,
-        ),
-      );
-    } catch {
       try {
-        const updated = await api.post<Entry>(`/entries/${id}/react`);
-        setEntries((prev) => prev.map((e) => (e.id === id ? updated : e)));
+        const reacted = await toggleDiaryReaction(id);
+        setEntries((prev) =>
+          prev.map((e) =>
+            e.id === id
+              ? { ...e, hearts: reacted.hearts, hearted_by_me: reacted.hearted_by_me }
+              : e,
+          ),
+        );
       } catch {
+        if ((process.env.EXPO_PUBLIC_BACKEND_URL || '').trim()) {
+          try {
+            const updated = await api.post<Entry>(`/entries/${id}/react`);
+            setEntries((prev) => prev.map((e) => (e.id === id ? updated : e)));
+            return;
+          } catch {
+            /* fall through */
+          }
+        }
         load();
       }
-    }
   };
 
   // Roles that can moderate — delete other users' public posts

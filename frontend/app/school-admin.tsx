@@ -1028,6 +1028,15 @@ export default function SchoolAdmin() {
             </View>
           </View>
           <View style={styles.reportRow}>
+            <Feather name="heart" size={18} color="#B57D2A" />
+            <View style={{ flex: 1 }}>
+              <Text style={styles.reportTitle}>負面情緒概況</Text>
+              <Text style={styles.reportSub}>
+                各班老師版面列出值得留意嘅同學 · 唔拆情緒細節
+              </Text>
+            </View>
+          </View>
+          <View style={styles.reportRow}>
             <Feather name="users" size={18} color="#5A7CB0" />
             <View style={{ flex: 1 }}>
               <Text style={styles.reportTitle}>老師使用率</Text>

@@ -28,13 +28,14 @@ describe('wording packs', () => {
     expect(wordingFor('lower').soup_title).not.toBe(wordingFor('upper').soup_title);
   });
 
-  it('keeps bridge wording aligned with RITUAL_SPEC age × state table', () => {
+  it('keeps bridge wording on 留意 tone (notify · not share content)', () => {
     expect(wordingFor('lower').bridge_by_state.sympathetic_fire).toBe(
-      '返返靜咗未呀? 想搵人講嗎?',
+      '返返靜咗未呀? 想唔想有人留意吓你?',
     );
     expect(wordingFor('upper').bridge_by_state.dorsal_sad).toBe(
-      '而家 feel 冇咁重嗎? 想搵個朋友唞唞氣嗎?',
+      '而家冇咁重未? 想唔想有人留意吓你?',
     );
+    expect(wordingFor('lower').bridge_eyebrow).toContain('留意');
     expect(wordingFor('lower').regulate_by_state.sympathetic_fire).toBe('同碗一齊發洩');
     expect(wordingFor('upper').regulate_by_state.dorsal_freeze).toBe('碗想搞醒你');
     expect(wordingFor('lower').release_done_title).toBe('你搞掂啦');

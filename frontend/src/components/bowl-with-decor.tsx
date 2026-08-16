@@ -1,5 +1,12 @@
-import React from 'react';
-import { Pressable, StyleSheet, Text, View, ViewStyle } from 'react-native';
+import React, { useRef } from 'react';
+import {
+  Pressable,
+  StyleSheet,
+  Text,
+  View,
+  type GestureResponderEvent,
+  type ViewStyle,
+} from 'react-native';
 
 import { EmotionVisual } from '@/src/components/emotion-visual';
 import {
@@ -25,6 +32,11 @@ type Props = {
   placing?: boolean;
 };
 
+function clampPct(n: number): number {
+  if (!Number.isFinite(n)) return 50;
+  return Math.max(5, Math.min(95, n));
+}
+
 /**
  * Bowl mascot with decoration stickers at user-chosen positions.
  */
@@ -42,27 +54,49 @@ export function BowlWithDecor({
   const r = radius ?? RADIUS.sm;
   const emojiSize = Math.max(18, Math.round(size * 0.18));
   const interactive = !!(onPlace || onRemoveAt);
-  const Wrap = interactive ? Pressable : View;
+  const boxRef = useRef<View>(null);
 
-  const handlePlace = (locationX: number, locationY: number) => {
+  const handlePlaceEvent = (e: GestureResponderEvent) => {
     if (!onPlace) return;
-    const xPct = (locationX / size) * 100;
-    const yPct = (locationY / size) * 100;
-    onPlace(xPct, yPct);
+    const { locationX, locationY, pageX, pageY } = e.nativeEvent;
+
+    const finish = (lx: number, ly: number, w: number, h: number) => {
+      const width = w > 0 ? w : size;
+      const height = h > 0 ? h : size;
+      onPlace(clampPct((lx / width) * 100), clampPct((ly / height) * 100));
+    };
+
+    // Prefer page coords + measure — CSS scale / Safari often report locationX/Y as 0
+    boxRef.current?.measureInWindow((wx, wy, w, h) => {
+      const hasPage =
+        typeof pageX === 'number' &&
+        typeof pageY === 'number' &&
+        Number.isFinite(pageX) &&
+        Number.isFinite(pageY);
+      if (hasPage && w > 0 && h > 0) {
+        finish(pageX - wx, pageY - wy, w, h);
+        return;
+      }
+      const locOk =
+        typeof locationX === 'number' &&
+        typeof locationY === 'number' &&
+        Number.isFinite(locationX) &&
+        Number.isFinite(locationY);
+      if (locOk) {
+        finish(locationX, locationY, w || size, h || size);
+        return;
+      }
+      // Fallback · center
+      finish(size / 2, size / 2, size, size);
+    });
   };
 
   return (
-    <Wrap
-      {...(interactive
-        ? {
-            onPress: (e: { nativeEvent: { locationX: number; locationY: number } }) => {
-              if (!onPlace) return;
-              handlePlace(e.nativeEvent.locationX, e.nativeEvent.locationY);
-            },
-            accessibilityLabel: placing ? '撳呢度放飾品' : '碗',
-          }
-        : { accessibilityLabel: '碗' })}
+    <View
+      ref={boxRef}
+      collapsable={false}
       style={[
+        styles.box,
         { width: size, height: size },
         placing && styles.placingRing,
         style,
@@ -78,6 +112,7 @@ export function BowlWithDecor({
           ]}
         />
       )}
+
       {decorations.map((placed, i) => {
         const decor = BOWL_DECOR_BY_KEY[placed.key];
         if (!decor) return null;
@@ -92,14 +127,13 @@ export function BowlWithDecor({
             {decor.emoji}
           </Text>
         );
-        if (onRemoveAt) {
+        // While placing a new sticker, ignore taps on existing ones
+        if (onRemoveAt && !placing) {
           return (
             <Pressable
               key={`${placed.key}-${i}-${placed.x}-${placed.y}`}
               testID={`decor-sticker-${i}`}
-              onPress={(e) => {
-                onRemoveAt(i);
-              }}
+              onPress={() => onRemoveAt(i)}
               hitSlop={8}
               style={[
                 styles.sticker,
@@ -134,11 +168,24 @@ export function BowlWithDecor({
           </View>
         );
       })}
-    </Wrap>
+
+      {interactive && onPlace ? (
+        <Pressable
+          testID="bowl-decor-place-surface"
+          onPress={handlePlaceEvent}
+          style={StyleSheet.absoluteFill}
+          accessibilityLabel={placing ? '撳呢度放飾品' : '碗'}
+        />
+      ) : null}
+    </View>
   );
 }
 
 const styles = StyleSheet.create({
+  box: {
+    position: 'relative',
+    overflow: 'visible',
+  },
   sticker: {
     position: 'absolute',
     zIndex: 2,

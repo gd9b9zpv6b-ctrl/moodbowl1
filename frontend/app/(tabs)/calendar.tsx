@@ -16,6 +16,7 @@ import { COLORS, RADIUS, SPACING } from '@/src/constants/theme';
 import { api, Entry, User } from '@/src/lib/api';
 import { useAuth } from '@/src/lib/auth-context';
 import { listMyDiaryEntriesForMonth } from '@/src/lib/diary';
+import { isLegacyBackendConfigured } from '@/src/lib/legacy-backend';
 
 function currentMonthKey(d = new Date()) {
   return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`;
@@ -105,6 +106,7 @@ export default function CalendarScreen() {
   const featuredIdForSelected = featuredByDate[selectedDate] || entriesForDay[0]?.id;
 
   const setFeatured = async (entryId: string) => {
+    if (!isLegacyBackendConfigured()) return;
     setFeaturing(entryId);
     try {
       const updated = await api.post<User>(`/entries/${entryId}/feature`);

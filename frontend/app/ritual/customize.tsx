@@ -7,26 +7,20 @@ import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { BowlWithDecor } from '@/src/components/bowl-with-decor';
+import { SliderScrollLock } from '@/src/components/slider-scroll-lock';
 import {
   BOWL_DECORATIONS,
   MAX_BOWL_DECORS,
 } from '@/src/constants/bowl-decorations';
+import {
+  BOWL_SIZES,
+  bowlSizeIndex,
+  bowlSizeMeta,
+} from '@/src/constants/bowl-size';
 import { EMOTION_BY_KEY } from '@/src/constants/emotions';
 import { COLORS, RADIUS, SPACING } from '@/src/constants/theme';
 import { wordingFor } from '@/src/lib/i18n/wording-mode';
-import { useRitualStore, type BowlSize } from '@/src/lib/ritual/ritual-store';
-
-const SIZES: { key: BowlSize; label: string; hint: string; scale: number }[] = [
-  { key: 'S', label: 'S', hint: '淡淡地', scale: 0.75 },
-  { key: 'M', label: 'M', hint: '一般', scale: 1 },
-  { key: 'L', label: 'L', hint: '好強烈', scale: 1.25 },
-  { key: 'XL', label: 'XL', hint: '巨型', scale: 1.5 },
-];
-
-function sizeIndex(key: BowlSize): number {
-  const i = SIZES.findIndex((s) => s.key === key);
-  return i >= 0 ? i : 1;
-}
+import { useRitualStore } from '@/src/lib/ritual/ritual-store';
 
 export default function RitualCustomizeScreen() {
   const router = useRouter();
@@ -41,14 +35,13 @@ export default function RitualCustomizeScreen() {
   const w = wordingFor(ageGroup);
 
   const [pendingKey, setPendingKey] = useState<string | null>(null);
+  const [lockScroll, setLockScroll] = useState(false);
 
   const emotion = selectedBowlKey ? EMOTION_BY_KEY[selectedBowlKey] : null;
   const hasBowl = !!emotion;
-  const sizeMeta = useMemo(
-    () => SIZES[sizeIndex(bowlSize)] ?? SIZES[1],
-    [bowlSize],
-  );
+  const sizeMeta = useMemo(() => bowlSizeMeta(bowlSize), [bowlSize]);
   const scale = sizeMeta.scale;
+  const previewSize = Math.round(200 * scale);
   const pendingDecor = pendingKey ? BOWL_DECORATIONS.find((d) => d.key === pendingKey) : null;
 
   const onPickDecor = (key: string) => {
@@ -69,8 +62,8 @@ export default function RitualCustomizeScreen() {
   };
 
   const onSizeSlide = (raw: number) => {
-    const idx = Math.max(0, Math.min(SIZES.length - 1, Math.round(raw)));
-    const next = SIZES[idx].key;
+    const idx = Math.max(0, Math.min(BOWL_SIZES.length - 1, Math.round(raw)));
+    const next = BOWL_SIZES[idx].key;
     if (next === bowlSize) return;
     setSize(next);
     Haptics.selectionAsync().catch(() => {});
@@ -90,7 +83,11 @@ export default function RitualCustomizeScreen() {
         <View style={styles.headerSpacer} />
       </View>
 
-      <ScrollView contentContainerStyle={styles.scroll} showsVerticalScrollIndicator={false}>
+      <ScrollView
+        contentContainerStyle={styles.scroll}
+        showsVerticalScrollIndicator={false}
+        scrollEnabled={!lockScroll}
+      >
         <Text style={styles.gotBowl} testID="customize-got-bowl">
           {hasBowl ? w.customize_got_bowl(emotion!.label) : w.customize_solo_got}
         </Text>
@@ -100,11 +97,12 @@ export default function RitualCustomizeScreen() {
         <Text style={styles.sub}>{hasBowl ? w.customize_sub : w.customize_solo_sub}</Text>
 
         <View style={styles.previewWrap}>
-          <View style={[styles.previewInner, { transform: [{ scale }] }]}>
+          {/* Size via layout (not CSS transform) so tap coords match visual on web */}
+          <View style={[styles.previewInner, { width: previewSize, height: previewSize }]}>
             <BowlWithDecor
               emotion={emotion}
               empty={!emotion}
-              size={200}
+              size={previewSize}
               radius={RADIUS.lg}
               decorations={decorations}
               onPlace={pendingKey ? onPlace : undefined}
@@ -169,6 +167,9 @@ export default function RitualCustomizeScreen() {
         </View>
 
         <Text style={styles.section}>大細 · 感覺有幾強</Text>
+        <Text style={styles.sizeSub}>
+          拉大啲代表感覺好強烈 · 拉細啲代表淡淡地
+        </Text>
         <View style={styles.sizeBar}>
           <View style={styles.sizeBarHeader}>
             <Text style={styles.sizeBarLabel}>拉細</Text>
@@ -179,21 +180,23 @@ export default function RitualCustomizeScreen() {
             </View>
             <Text style={styles.sizeBarLabel}>拉大</Text>
           </View>
-          <Slider
-            testID="customize-size-slider"
-            style={styles.sizeSlider}
-            minimumValue={0}
-            maximumValue={SIZES.length - 1}
-            step={1}
-            value={sizeIndex(bowlSize)}
-            onValueChange={onSizeSlide}
-            minimumTrackTintColor={COLORS.primary}
-            maximumTrackTintColor={COLORS.bgCard}
-            thumbTintColor={COLORS.textPrimary}
-            accessibilityLabel="拉大拉細"
-          />
+          <SliderScrollLock onDragChange={setLockScroll}>
+            <Slider
+              testID="customize-size-slider"
+              style={styles.sizeSlider}
+              minimumValue={0}
+              maximumValue={BOWL_SIZES.length - 1}
+              step={1}
+              value={bowlSizeIndex(bowlSize)}
+              onValueChange={onSizeSlide}
+              minimumTrackTintColor={COLORS.primary}
+              maximumTrackTintColor={COLORS.bgCard}
+              thumbTintColor={COLORS.textPrimary}
+              accessibilityLabel="拉大拉細 · 感覺有幾強"
+            />
+          </SliderScrollLock>
           <View style={styles.sizeTicks}>
-            {SIZES.map((s) => (
+            {BOWL_SIZES.map((s) => (
               <Text
                 key={s.key}
                 style={[styles.sizeTick, s.key === bowlSize && styles.sizeTickActive]}
@@ -261,7 +264,7 @@ const styles = StyleSheet.create({
     marginBottom: SPACING.md,
   },
   previewWrap: {
-    minHeight: 280,
+    minHeight: 320,
     alignItems: 'center',
     justifyContent: 'center',
     marginBottom: SPACING.lg,
@@ -270,8 +273,6 @@ const styles = StyleSheet.create({
     paddingVertical: SPACING.lg,
   },
   previewInner: {
-    width: 200,
-    height: 200,
     alignItems: 'center',
     justifyContent: 'center',
   },
@@ -294,6 +295,12 @@ const styles = StyleSheet.create({
     fontWeight: '700',
     color: COLORS.textSecondary,
     letterSpacing: 0.4,
+  },
+  sizeSub: {
+    fontSize: 12,
+    color: COLORS.textSecondary,
+    marginTop: 4,
+    marginBottom: SPACING.sm,
   },
   clearText: { fontSize: 13, fontWeight: '700', color: COLORS.primary },
   decorRow: {
@@ -382,7 +389,7 @@ const styles = StyleSheet.create({
   },
   sizeSlider: {
     width: '100%',
-    height: 40,
+    height: 44,
   },
   sizeTicks: {
     flexDirection: 'row',

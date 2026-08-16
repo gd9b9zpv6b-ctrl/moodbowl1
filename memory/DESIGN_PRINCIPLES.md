@@ -730,6 +730,31 @@ Sister app 開發時 · agent 必須：
 
 ---
 
-**Version** 1.0 · 2026-07-04
+## 18 · Agent Preview 原則（Cloud / Coding Agent）
+
+> 呢啲規則係俾 coding agent / cloud agent 跟 · 唔係視覺 token。
+
+### ❌ NEVER · 截圖 / Screenshot
+
+- **永遠唔好**用 headless Chrome、Playwright、computer-use、`RecordScreen`、或任何方式截圖 / 錄屏做 preview
+- **永遠唔好**生成「假 UI mock HTML」代替真 app 預覽（除非用戶明確要求靜態稿）
+- 用戶要睇畫面時 · **只用 Expo 真機 / Expo Go preview**
+
+### ✅ DO · Expo Preview
+
+- 用 `expo start`（優先 `--tunnel` 方便手機 Expo Go）
+- 回覆時提供：
+  - `exp://…` 或 tunnel URL
+  - 如有 QR 頁 · 只俾連結 · **唔好**再截 QR 圖
+- Preview 路徑要對應而家改動（例如老師版 `/teacher-dashboard` · 儀式 release `/ritual/release`）
+- 需要登入時 · 用 `memory/test_credentials.md` 示範帳 · 唔好喺公開地方貼密碼以外嘅敏感資料
+
+### 點解
+
+截圖易過期、唔係真 runtime、又浪費時間；Expo preview 先係真實交互同 layout。
+
+---
+
+**Version** 1.1 · 2026-08-16
 **Author** MoodBowl main design system
 **Sister app 開發者** · 讀完呢份 doc 之後，如果有任何情況冇覆蓋，**永遠選擇更溫柔嗰個做法**。

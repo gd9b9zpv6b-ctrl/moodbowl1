@@ -6,9 +6,10 @@ import {
   type PlacedDecoration,
 } from '@/src/constants/bowl-decorations';
 import type { BowlReleaseKey } from '@/src/constants/bowl-release';
+import type { BowlSize } from '@/src/constants/bowl-size';
 import type { SoupKey } from '@/src/constants/soups';
 
-export type BowlSize = 'S' | 'M' | 'L' | 'XL';
+export type { BowlSize } from '@/src/constants/bowl-size';
 export type CheckInType = 'full' | 'hug_only' | 'skipped' | 'quick_diary';
 export type AgeGroup = 'lower' | 'upper' | 'adult';
 
@@ -25,7 +26,8 @@ type RitualState = {
   bowlSize: BowlSize;
   diaryText: string;
   checkInType: CheckInType;
-  shareClass: boolean;
+  /** 「想老師留意」notify only · not class-wide share */
+  notifyTeacher: boolean;
   shareFamily: boolean;
   shareTimeline: boolean;
   regulationUsed: string[];
@@ -44,6 +46,8 @@ type RitualState = {
   setDiaryText: (text: string) => void;
   setCheckInType: (type: CheckInType) => void;
   setShares: (shares: {
+    notifyTeacher?: boolean;
+    /** @deprecated alias of notifyTeacher */
     shareClass?: boolean;
     shareFamily?: boolean;
     shareTimeline?: boolean;
@@ -65,7 +69,7 @@ const initialState = {
   bowlSize: 'M' as BowlSize,
   diaryText: '',
   checkInType: 'full' as CheckInType,
-  shareClass: false,
+  notifyTeacher: false,
   shareFamily: false,
   shareTimeline: true,
   regulationUsed: [] as string[],
@@ -100,7 +104,9 @@ export const useRitualStore = create<RitualState>((set, get) => ({
 
   placeDecoration: (key, x, y) => {
     const current = get().decorations;
-    const next = [...current, { key, x, y }];
+    const clampedX = Math.max(5, Math.min(95, Number.isFinite(x) ? x : 50));
+    const clampedY = Math.max(5, Math.min(95, Number.isFinite(y) ? y : 50));
+    const next = [...current, { key, x: clampedX, y: clampedY }];
     if (next.length > MAX_BOWL_DECORS) next.shift();
     set({ decorations: next, colorTint: null });
   },
@@ -123,11 +129,15 @@ export const useRitualStore = create<RitualState>((set, get) => ({
   setCheckInType: (type) => set({ checkInType: type }),
 
   setShares: (shares) =>
-    set((state) => ({
-      shareClass: shares.shareClass ?? state.shareClass,
-      shareFamily: shares.shareFamily ?? state.shareFamily,
-      shareTimeline: shares.shareTimeline ?? state.shareTimeline,
-    })),
+    set((state) => {
+      const notify =
+        shares.notifyTeacher ?? shares.shareClass ?? state.notifyTeacher;
+      return {
+        notifyTeacher: notify,
+        shareFamily: shares.shareFamily ?? state.shareFamily,
+        shareTimeline: shares.shareTimeline ?? state.shareTimeline,
+      };
+    }),
 
   addRegulation: (key) => {
     const used = get().regulationUsed;
