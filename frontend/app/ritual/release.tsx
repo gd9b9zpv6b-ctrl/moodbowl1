@@ -57,7 +57,6 @@ export default function RitualReleaseScreen() {
   const bowlRelease = useRitualStore((s) => s.bowlRelease);
   const shareClass = useRitualStore((s) => s.shareClass);
   const shareFamily = useRitualStore((s) => s.shareFamily);
-  const shareTimeline = useRitualStore((s) => s.shareTimeline);
   const startedAt = useRitualStore((s) => s.startedAt);
   const regulationUsed = useRitualStore((s) => s.regulationUsed);
   const setBowlRelease = useRitualStore((s) => s.setBowlRelease);
@@ -353,7 +352,7 @@ export default function RitualReleaseScreen() {
           {w.release_share_heading}
         </Text>
         <Text testID="release-share-privacy" style={styles.sharePrivacy}>
-          開咗都唔會俾人睇日記 · 淨係話可能要關心吓你
+          日記原文永遠只有你睇到。開「留意」只會話可能要關心吓你 · 唔會俾人睇內容。
         </Text>
         <View style={styles.row}>
           <Text style={styles.rowLabel}>{w.bridge_share_family}</Text>
@@ -371,16 +370,6 @@ export default function RitualReleaseScreen() {
             testID="release-share-class"
             value={shareClass}
             onValueChange={(v) => setShares({ shareClass: v })}
-            trackColor={{ true: COLORS.primary, false: COLORS.bgInput }}
-            thumbColor={COLORS.bgCard}
-          />
-        </View>
-        <View style={styles.row}>
-          <Text style={styles.rowLabel}>{w.bridge_share_timeline}</Text>
-          <Switch
-            testID="release-share-timeline"
-            value={shareTimeline}
-            onValueChange={(v) => setShares({ shareTimeline: v })}
             trackColor={{ true: COLORS.primary, false: COLORS.bgInput }}
             thumbColor={COLORS.bgCard}
           />

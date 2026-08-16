@@ -594,8 +594,8 @@ export default function Home() {
                 <View style={styles.privacyBanner}>
                   <Feather name="eye-off" size={13} color="#7BA88C" />
                   <Text style={styles.privacyBannerText}>
-                    <Text style={styles.privacyBannerBold}>日記原文只有你自己睇到 · </Text>
-                    老師最多收到「可能要關注」提示 · 唔會睇到你寫咩、揀咗咩碗
+                    <Text style={styles.privacyBannerBold}>日記原文只有你睇到。 </Text>
+                    系統可能提示老師「呢位同學值得關心」· 唔會顯示你寫咩。如果你撳「想老師留意」· 老師只會見「可能要關注」。
                   </Text>
                 </View>
 
