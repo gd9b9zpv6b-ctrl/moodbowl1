@@ -87,6 +87,18 @@ Quick functional checks:
 4. As counsellor/teacher/school_admin in the same school membership, alerts for that school’s students are visible.
 5. `select public.save_ritual_entry(p_diary_text := 'hello', p_regulation_keys := array['breath_4_7_8']);` returns the diary JSON and creates a `relax_games_history` row.
 
+## Multi-school prep (010)
+
+After Phase 2 migrations (and 006–009 if using those branches), run:
+
+5. `migrations/005_tasks.sql` … through `009_notify_teacher.sql` (when present)
+6. `migrations/010_multi_school_prep.sql`
+
+This stamps `diaries.school_id`, enforces one primary membership per user, syncs `profiles.school_id`, and adds stub tables `school_policies` / `family_links` / `invite_codes`.
+
+Optional isolation smoke: create two Auth users then run `seed_two_schools_isolation.sql`.  
+Product notes: `memory/MULTI_SCHOOL_TENANCY.md`.
+
 ## Demo accounts
 
 See `memory/test_credentials.md` for creating Auth users and assigning roles via SQL (never from the client).
@@ -94,6 +106,7 @@ See `memory/test_credentials.md` for creating Auth users and assigning roles via
 ## Related docs
 
 - Root `SPEC.md` — migration standard and phase gates
+- `memory/MULTI_SCHOOL_TENANCY.md` — multi-school isolation roadmap
 - `memory/DESIGN_PRINCIPLES.md`
 - `memory/RITUAL_SPEC.md`
 - `memory/RITUAL_PSYCH_THEORY.md`
