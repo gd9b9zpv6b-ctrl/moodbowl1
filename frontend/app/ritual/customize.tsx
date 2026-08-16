@@ -41,6 +41,7 @@ export default function RitualCustomizeScreen() {
   const hasBowl = !!emotion;
   const sizeMeta = useMemo(() => bowlSizeMeta(bowlSize), [bowlSize]);
   const scale = sizeMeta.scale;
+  const previewSize = Math.round(200 * scale);
   const pendingDecor = pendingKey ? BOWL_DECORATIONS.find((d) => d.key === pendingKey) : null;
 
   const onPickDecor = (key: string) => {
@@ -96,11 +97,12 @@ export default function RitualCustomizeScreen() {
         <Text style={styles.sub}>{hasBowl ? w.customize_sub : w.customize_solo_sub}</Text>
 
         <View style={styles.previewWrap}>
-          <View style={[styles.previewInner, { transform: [{ scale }] }]}>
+          {/* Size via layout (not CSS transform) so tap coords match visual on web */}
+          <View style={[styles.previewInner, { width: previewSize, height: previewSize }]}>
             <BowlWithDecor
               emotion={emotion}
               empty={!emotion}
-              size={200}
+              size={previewSize}
               radius={RADIUS.lg}
               decorations={decorations}
               onPlace={pendingKey ? onPlace : undefined}
@@ -262,7 +264,7 @@ const styles = StyleSheet.create({
     marginBottom: SPACING.md,
   },
   previewWrap: {
-    minHeight: 280,
+    minHeight: 320,
     alignItems: 'center',
     justifyContent: 'center',
     marginBottom: SPACING.lg,
@@ -271,8 +273,6 @@ const styles = StyleSheet.create({
     paddingVertical: SPACING.lg,
   },
   previewInner: {
-    width: 200,
-    height: 200,
     alignItems: 'center',
     justifyContent: 'center',
   },

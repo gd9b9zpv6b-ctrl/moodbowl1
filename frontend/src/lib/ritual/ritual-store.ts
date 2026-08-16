@@ -101,7 +101,9 @@ export const useRitualStore = create<RitualState>((set, get) => ({
 
   placeDecoration: (key, x, y) => {
     const current = get().decorations;
-    const next = [...current, { key, x, y }];
+    const clampedX = Math.max(5, Math.min(95, Number.isFinite(x) ? x : 50));
+    const clampedY = Math.max(5, Math.min(95, Number.isFinite(y) ? y : 50));
+    const next = [...current, { key, x: clampedX, y: clampedY }];
     if (next.length > MAX_BOWL_DECORS) next.shift();
     set({ decorations: next, colorTint: null });
   },
