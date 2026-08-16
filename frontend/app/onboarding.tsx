@@ -16,6 +16,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { EmotionVisual } from '@/src/components/emotion-visual';
 import { EMOTION_BY_KEY } from '@/src/constants/emotions';
 import { COLORS, RADIUS, SPACING } from '@/src/constants/theme';
+import { useAuth } from '@/src/lib/auth-context';
 
 export const ONBOARDING_KEY = '@onboarding/completed/v1';
 
@@ -69,6 +70,7 @@ function RiceHero() {
 
 export default function Onboarding() {
   const router = useRouter();
+  const { user } = useAuth();
   const [index, setIndex] = useState(0);
   const fade = useRef(new Animated.Value(1)).current;
 
@@ -146,7 +148,8 @@ export default function Onboarding() {
 
   const finish = async () => {
     await AsyncStorage.setItem(ONBOARDING_KEY, '1');
-    router.replace('/(tabs)');
+    // Pre-login tutorial → welcome / login. Profile「重看」while logged in → home.
+    router.replace(user ? '/(tabs)' : '/auth/welcome');
   };
 
   return (
@@ -192,7 +195,9 @@ export default function Onboarding() {
             pressed && { opacity: 0.85 },
           ]}
         >
-          <Text style={styles.nextText}>{isLast ? '開始我嘅旅程' : '下一頁'}</Text>
+          <Text style={styles.nextText}>
+            {isLast ? (user ? '開始我嘅旅程' : '去開始／登入') : '下一頁'}
+          </Text>
           <Feather
             name={isLast ? 'heart' : 'arrow-right'}
             size={18}
