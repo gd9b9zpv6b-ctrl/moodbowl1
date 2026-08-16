@@ -5,12 +5,12 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { EmotionVisual } from '@/src/components/emotion-visual';
 import { RoleSelfCareCard } from '@/src/components/role-selfcare-card';
-import { bowlSizeMeta, type BowlSize } from '@/src/constants/bowl-size';
 import { EMOTIONS, EMOTION_BY_KEY } from '@/src/constants/emotions';
 import { ENERGY_META, EnergyLevel } from '@/src/constants/energy';
 import { RoleHeader } from '@/src/components/role-header';
 import { useSchoolEnergyMap } from '@/src/hooks/use-school-energy-map';
 import { api } from '@/src/lib/api';
+import { TEACHER_FOLLOW_UP_COPY } from '@/src/lib/teacher-follow-up';
 import { COLORS, RADIUS, SPACING } from '@/src/constants/theme';
 
 type ApiAlert = {
@@ -30,10 +30,11 @@ const CLASS_DATA = [
   { name: '4C',       students: 26, high: 25, steady: 60, low: 15, alerts: 0 },
 ];
 
-// 需要關注嘅學生 (mock) — Scheme B · 碗大細係跟進訊號
+// 需要關注嘅學生 (mock) — 只睇負面情緒 · 正面唔計
 const ALERTS = [
-  { name: '陳 * 文', className: '6A', reason: '今日碗大細 XL · 感覺好強烈', severity: 'high' as const },
-  { name: '李 * 美', className: '5B', reason: '連續 3 日 L / XL 碗 · 建議跟進', severity: 'mid' as const },
+  { name: '陳 * 文', className: '6A', reason: '負面情緒 · 用完仲未好', severity: 'high' as const },
+  { name: '李 * 美', className: '5B', reason: '負面感覺多咗 · 碗大咗', severity: 'mid' as const },
+  { name: '黃 * 晴', className: '6A', reason: '負面感覺少咗 · 都可能要關心', severity: 'mid' as const },
   { name: '王 * 明', className: '5B', reason: '日記出現關注字詞', severity: 'high' as const },
 ];
 
@@ -42,16 +43,13 @@ const BEHAVIOR_FLAGS = [
   { icon: 'trending-down', text: '5B 呢周 open app 少咗 40%', tone: 'warn' as const },
   { icon: 'moon', text: '3 位同學仔連續 3 晚凌晨 12 點後開 app', tone: 'warn' as const },
   { icon: 'zap', text: '6A 情緒波幅比上周高 · 可能有壓力事件', tone: 'info' as const },
-  // Scheme B · 碗大細代替電量做 follow-up 訊號
-  { icon: 'maximize-2', text: '4 位同學仔今日揀咗 L / XL 碗 · 感覺好強烈 · 建議跟進', tone: 'warn' as const },
 ];
 
-// 班內碗大細分佈 (mock) · 老師一眼知邊啲要跟
-const SIZE_REPORT: { size: BowlSize; count: number }[] = [
-  { size: 'S', count: 6 },
-  { size: 'M', count: 14 },
-  { size: 'L', count: 5 },
-  { size: 'XL', count: 3 },
+// 負面情緒跟進摘要 (mock) · 正面情緒唔計入
+const NEGATIVE_FOLLOW_UP = [
+  { cue: 'still_hard' as const, count: 4 },
+  { cue: 'got_stronger' as const, count: 3 },
+  { cue: 'got_lighter' as const, count: 2 },
 ];
 
 // Fallback representative bowls (used before school config loads)
@@ -130,7 +128,7 @@ export default function TeacherDashboard() {
       <ScrollView contentContainerStyle={styles.scroll} showsVerticalScrollIndicator={false}>
         <View style={styles.hero}>
           <Text style={styles.heroGreet}>陳老師 · 早晨 ☀️</Text>
-          <Text style={styles.heroSub}>你有 3 位學生需要關注 · 揀返嚟先睇下</Text>
+          <Text style={styles.heroSub}>你有幾位學生嘅負面情緒值得留意 · 正面情緒唔使跟</Text>
         </View>
 
         {/* Teacher self-care card */}
@@ -212,41 +210,37 @@ export default function TeacherDashboard() {
           </Text>
         </View>
 
-        {/* Scheme B · 碗大細報告 — 老師跟進訊號 */}
+        {/* 負面情緒跟進 — 正面唔計 · 睇用完仲未好 / 多咗 / 少咗 */}
         <View style={styles.sizeReportBox} testID="teacher-bowl-size-report">
           <View style={styles.sizeReportHeader}>
-            <Feather name="maximize-2" size={16} color="#B57D2A" />
-            <Text style={styles.sizeReportTitle}>今日碗大細 · 跟進訊號</Text>
+            <Feather name="heart" size={16} color="#B57D2A" />
+            <Text style={styles.sizeReportTitle}>負面情緒 · 要唔要跟進</Text>
           </View>
           <Text style={styles.sizeReportHint}>
-            學生喺儀式揀碗大細代表感覺有幾強 · L / XL 建議你跟進一下（唔會睇到日記原文）。
+            正面情緒唔計。淨係睇負面：用完仲未好、感覺多咗、或者少咗 —— 都可能要關心一下（唔會睇到日記原文）。
           </Text>
-          <View style={styles.sizeBarRow}>
-            {SIZE_REPORT.map((row) => {
-              const meta = bowlSizeMeta(row.size);
-              const hot = meta.followUp !== 'none';
+          <View style={styles.followCueList}>
+            {NEGATIVE_FOLLOW_UP.map((row) => {
+              const copy = TEACHER_FOLLOW_UP_COPY[row.cue];
               return (
                 <View
-                  key={row.size}
-                  style={[styles.sizeCell, hot && styles.sizeCellHot]}
-                  testID={`teacher-size-${row.size}`}
+                  key={row.cue}
+                  style={styles.followCueRow}
+                  testID={`teacher-follow-${row.cue}`}
                 >
-                  <Text style={[styles.sizeCellLabel, hot && styles.sizeCellLabelHot]}>
-                    {meta.label}
-                  </Text>
-                  <Text style={styles.sizeCellCount}>{row.count}</Text>
-                  <Text style={styles.sizeCellHint}>{meta.hint}</Text>
+                  <View style={{ flex: 1 }}>
+                    <Text style={styles.followCueTitle}>{copy.title}</Text>
+                    <Text style={styles.followCueHint}>{copy.hint}</Text>
+                  </View>
+                  <Text style={styles.followCueCount}>{row.count}</Text>
                 </View>
               );
             })}
           </View>
           <Text style={styles.sizeReportFooter}>
-            今日有{' '}
-            {SIZE_REPORT.filter((r) => bowlSizeMeta(r.size).followUp !== 'none').reduce(
-              (n, r) => n + r.count,
-              0,
-            )}{' '}
-            位同學仔揀咗 L / XL · 可以排一排時間關心下。
+            今日合共{' '}
+            {NEGATIVE_FOLLOW_UP.reduce((n, r) => n + r.count, 0)}{' '}
+            位同學仔嘅負面情緒值得你留意一下。
           </Text>
         </View>
 
@@ -403,7 +397,7 @@ const styles = StyleSheet.create({
     borderTopColor: 'rgba(0,0,0,0.05)',
   },
 
-  // Scheme B · 碗大細跟進報告
+  // 負面情緒跟進報告
   sizeReportBox: {
     backgroundColor: '#FFF8EE',
     borderRadius: RADIUS.md,
@@ -425,27 +419,19 @@ const styles = StyleSheet.create({
     lineHeight: 17,
     marginBottom: SPACING.sm,
   },
-  sizeBarRow: {
+  followCueList: { gap: 8 },
+  followCueRow: {
     flexDirection: 'row',
-    gap: 8,
-  },
-  sizeCell: {
-    flex: 1,
+    alignItems: 'center',
+    gap: SPACING.sm,
     backgroundColor: COLORS.bgCard,
     borderRadius: RADIUS.sm,
     paddingVertical: 10,
-    paddingHorizontal: 4,
-    alignItems: 'center',
+    paddingHorizontal: 12,
   },
-  sizeCellHot: {
-    backgroundColor: '#FFF0E0',
-    borderWidth: 1.5,
-    borderColor: '#F0AE64',
-  },
-  sizeCellLabel: { fontSize: 14, fontWeight: '800', color: COLORS.textSecondary },
-  sizeCellLabelHot: { color: '#B57D2A' },
-  sizeCellCount: { fontSize: 20, fontWeight: '800', color: COLORS.textPrimary, marginTop: 2 },
-  sizeCellHint: { fontSize: 10, color: COLORS.textSecondary, marginTop: 2 },
+  followCueTitle: { fontSize: 14, fontWeight: '700', color: COLORS.textPrimary },
+  followCueHint: { fontSize: 11, color: COLORS.textSecondary, marginTop: 2, lineHeight: 15 },
+  followCueCount: { fontSize: 22, fontWeight: '800', color: '#B57D2A', minWidth: 28, textAlign: 'right' },
   sizeReportFooter: {
     fontSize: 12,
     color: COLORS.textPrimary,

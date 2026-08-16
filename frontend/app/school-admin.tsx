@@ -1028,11 +1028,11 @@ export default function SchoolAdmin() {
             </View>
           </View>
           <View style={styles.reportRow}>
-            <Feather name="maximize-2" size={18} color="#B57D2A" />
+            <Feather name="heart" size={18} color="#B57D2A" />
             <View style={{ flex: 1 }}>
-              <Text style={styles.reportTitle}>碗大細跟進訊號</Text>
+              <Text style={styles.reportTitle}>負面情緒跟進</Text>
               <Text style={styles.reportSub}>
-                今日全校 18% 學生揀咗 L / XL 碗 · 感覺好強烈 · 班主任可跟進
+                正面唔計 · 今日 9 位學生負面情緒仲未好／多咗／少咗 · 建議班主任關心
               </Text>
             </View>
           </View>
