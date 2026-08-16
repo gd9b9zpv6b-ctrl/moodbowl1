@@ -108,7 +108,7 @@ export const EMOTIONS: Emotion[] = [
   { key: 'scared', label: '驚', description: '心跳好快 · 好唔安', color: '#9A93C0', category: 'nervous', image: EMOTION_IMAGES.scared },
   { key: 'uneasy', label: '不安', description: '心裡總覺得有啲怪怪嘅', color: '#B0A08B', category: 'nervous', image: EMOTION_IMAGES.uneasy },
   { key: 'worried', label: '擔心', description: '成日覺得，件事會變衰', color: '#C5D0B8', category: 'nervous', image: EMOTION_IMAGES.worried },
-  { key: 'overwhelmed', label: '窒息感', description: '胸口好心悶，吸唔到氣', color: '#C9B8D9', category: 'nervous', image: EMOTION_IMAGES.overwhelmed },
+  { key: 'overwhelmed', label: '窒息感', description: '胸口好心悶，吸唔到氣', color: '#C4756E', category: 'nervous', image: EMOTION_IMAGES.overwhelmed },
   { key: 'trapped', label: '被困', description: '好似逃唔到出去', color: '#6BA8BF', category: 'nervous', image: EMOTION_IMAGES.trapped },
 
   // Self-worth wounds — muted purples/browns/greys
