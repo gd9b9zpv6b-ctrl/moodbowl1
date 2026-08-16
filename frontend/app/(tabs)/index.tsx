@@ -70,6 +70,7 @@ export default function Home() {
   const [pinModalVisible, setPinModalVisible] = useState(false);
   const [editingEntry, setEditingEntry] = useState<Entry | null>(null);
   const [bowlSize, setBowlSize] = useState<BowlSize>('M');
+  const [lockScroll, setLockScroll] = useState(false);
   const [communityOpen, setCommunityOpen] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
 
@@ -272,6 +273,7 @@ export default function Home() {
             ]}
             showsVerticalScrollIndicator={false}
             keyboardShouldPersistTaps="handled"
+            scrollEnabled={!lockScroll}
           >
             <View
               style={[
@@ -588,7 +590,11 @@ export default function Home() {
                 )}
 
                 {/* Bowl size — intensity signal for teacher follow-up (Scheme B) */}
-                <BowlSizeSlider value={bowlSize} onChange={setBowlSize} />
+                <BowlSizeSlider
+                  value={bowlSize}
+                  onChange={setBowlSize}
+                  onDragChange={setLockScroll}
+                />
 
                 {/* Privacy reassurance banner — always visible */}
                 <View style={styles.privacyBanner}>

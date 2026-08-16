@@ -7,6 +7,7 @@ import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { BowlWithDecor } from '@/src/components/bowl-with-decor';
+import { SliderScrollLock } from '@/src/components/slider-scroll-lock';
 import {
   BOWL_DECORATIONS,
   MAX_BOWL_DECORS,
@@ -34,6 +35,7 @@ export default function RitualCustomizeScreen() {
   const w = wordingFor(ageGroup);
 
   const [pendingKey, setPendingKey] = useState<string | null>(null);
+  const [lockScroll, setLockScroll] = useState(false);
 
   const emotion = selectedBowlKey ? EMOTION_BY_KEY[selectedBowlKey] : null;
   const hasBowl = !!emotion;
@@ -80,7 +82,11 @@ export default function RitualCustomizeScreen() {
         <View style={styles.headerSpacer} />
       </View>
 
-      <ScrollView contentContainerStyle={styles.scroll} showsVerticalScrollIndicator={false}>
+      <ScrollView
+        contentContainerStyle={styles.scroll}
+        showsVerticalScrollIndicator={false}
+        scrollEnabled={!lockScroll}
+      >
         <Text style={styles.gotBowl} testID="customize-got-bowl">
           {hasBowl ? w.customize_got_bowl(emotion!.label) : w.customize_solo_got}
         </Text>
@@ -172,19 +178,21 @@ export default function RitualCustomizeScreen() {
             </View>
             <Text style={styles.sizeBarLabel}>拉大</Text>
           </View>
-          <Slider
-            testID="customize-size-slider"
-            style={styles.sizeSlider}
-            minimumValue={0}
-            maximumValue={BOWL_SIZES.length - 1}
-            step={1}
-            value={bowlSizeIndex(bowlSize)}
-            onValueChange={onSizeSlide}
-            minimumTrackTintColor={COLORS.primary}
-            maximumTrackTintColor={COLORS.bgCard}
-            thumbTintColor={COLORS.textPrimary}
-            accessibilityLabel="拉大拉細 · 感覺有幾強"
-          />
+          <SliderScrollLock onDragChange={setLockScroll}>
+            <Slider
+              testID="customize-size-slider"
+              style={styles.sizeSlider}
+              minimumValue={0}
+              maximumValue={BOWL_SIZES.length - 1}
+              step={1}
+              value={bowlSizeIndex(bowlSize)}
+              onValueChange={onSizeSlide}
+              minimumTrackTintColor={COLORS.primary}
+              maximumTrackTintColor={COLORS.bgCard}
+              thumbTintColor={COLORS.textPrimary}
+              accessibilityLabel="拉大拉細 · 感覺有幾強"
+            />
+          </SliderScrollLock>
           <View style={styles.sizeTicks}>
             {BOWL_SIZES.map((s) => (
               <Text
@@ -381,7 +389,7 @@ const styles = StyleSheet.create({
   },
   sizeSlider: {
     width: '100%',
-    height: 40,
+    height: 44,
   },
   sizeTicks: {
     flexDirection: 'row',

@@ -6,6 +6,7 @@ import { Feather } from '@expo/vector-icons';
 import Slider from '@react-native-community/slider';
 import { StyleSheet, Text, View } from 'react-native';
 
+import { SliderScrollLock } from '@/src/components/slider-scroll-lock';
 import {
   BOWL_SIZES,
   bowlSizeIndex,
@@ -18,9 +19,11 @@ type Props = {
   value: BowlSize;
   onChange: (size: BowlSize) => void;
   testID?: string;
+  /** When true, parent ScrollView should set scrollEnabled={!dragging}. */
+  onDragChange?: (dragging: boolean) => void;
 };
 
-export function BowlSizeSlider({ value, onChange, testID }: Props) {
+export function BowlSizeSlider({ value, onChange, testID, onDragChange }: Props) {
   const meta = bowlSizeMeta(value);
 
   return (
@@ -37,23 +40,25 @@ export function BowlSizeSlider({ value, onChange, testID }: Props) {
         </View>
       </View>
 
-      <Slider
-        testID="bowl-size-slider-control"
-        style={styles.slider}
-        minimumValue={0}
-        maximumValue={BOWL_SIZES.length - 1}
-        step={1}
-        value={bowlSizeIndex(value)}
-        onValueChange={(raw) => {
-          const idx = Math.max(0, Math.min(BOWL_SIZES.length - 1, Math.round(raw)));
-          const next = BOWL_SIZES[idx].key;
-          if (next !== value) onChange(next);
-        }}
-        minimumTrackTintColor={COLORS.primary}
-        maximumTrackTintColor={COLORS.bgCard}
-        thumbTintColor={COLORS.textPrimary}
-        accessibilityLabel="碗大細 · 感覺有幾強"
-      />
+      <SliderScrollLock style={styles.sliderLock} onDragChange={onDragChange}>
+        <Slider
+          testID="bowl-size-slider-control"
+          style={styles.slider}
+          minimumValue={0}
+          maximumValue={BOWL_SIZES.length - 1}
+          step={1}
+          value={bowlSizeIndex(value)}
+          onValueChange={(raw) => {
+            const idx = Math.max(0, Math.min(BOWL_SIZES.length - 1, Math.round(raw)));
+            const next = BOWL_SIZES[idx].key;
+            if (next !== value) onChange(next);
+          }}
+          minimumTrackTintColor={COLORS.primary}
+          maximumTrackTintColor={COLORS.bgCard}
+          thumbTintColor={COLORS.textPrimary}
+          accessibilityLabel="碗大細 · 感覺有幾強"
+        />
+      </SliderScrollLock>
 
       <View style={styles.ticks}>
         {BOWL_SIZES.map((s) => (
@@ -99,9 +104,13 @@ const styles = StyleSheet.create({
     backgroundColor: COLORS.bgCard,
   },
   pillText: { fontSize: 11, fontWeight: '700', color: COLORS.textPrimary },
+  sliderLock: {
+    marginHorizontal: -4,
+    paddingVertical: 6,
+  },
   slider: {
     width: '100%',
-    height: 32,
+    height: 44,
   },
   ticks: {
     flexDirection: 'row',
