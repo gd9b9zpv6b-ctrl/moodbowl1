@@ -6,7 +6,7 @@ describe('ritual food offering', () => {
   it('shows the kid-facing food set on stable keys', () => {
     expect(SOUPS.map((s) => [s.key, s.label])).toEqual([
       ['strawberry_milk', '雪糕'],
-      ['marble_soda', '蝦片'],
+      ['marble_soda', '天婦羅'],
       ['lemon_juice', '檸檬'],
       ['spicy_ginger', '辣椒'],
       ['bitter_tea', '苦瓜'],

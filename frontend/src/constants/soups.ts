@@ -33,7 +33,7 @@ export const SOUPS: SoupDef[] = [
   {
     key: 'marble_soda',
     emoji: '🍤',
-    label: '蝦片',
+    label: '天婦羅',
     subLower: '想跳跳紮',
     subUpper: '好興奮 · 成個人都想郁',
   },
