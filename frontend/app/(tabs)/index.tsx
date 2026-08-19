@@ -45,13 +45,6 @@ function todayISO() {
   return `${y}-${m}-${day}`;
 }
 
-// Session-scoped flag: reset when app fully closes & reopens.
-// This means onboarding shows once per app launch, not every navigation.
-let onboardingShownThisSession = false;
-export const resetOnboardingSession = () => {
-  onboardingShownThisSession = false;
-};
-
 export default function Home() {
   const { user } = useAuth();
   const router = useRouter();
@@ -107,33 +100,15 @@ export default function Home() {
     }, [user?.role]),
   );
 
-  // Show onboarding once per launch for students · but only if they have not
-  // completed it before. This avoids a bounce that feels like login failed.
+  // Non-students land on their dashboard unless they opted into student mode.
   useEffect(() => {
     (async () => {
       const { RoleStorage, ROLE_META } = await import('@/src/lib/role-storage');
-      const { ONBOARDING_KEY } = await import('@/app/onboarding');
-      const AsyncStorage = (await import('@react-native-async-storage/async-storage')).default;
       const localRole = await RoleStorage.get();
       const realRole = (user?.role || 'student') as typeof localRole;
 
-      // If non-student user hasn't opted into student mode (RoleStorage still their role),
-      // redirect them to their dashboard.
       if (realRole !== 'student' && localRole === realRole) {
         router.replace(ROLE_META[realRole].homePath as never);
-        return;
-      }
-
-      // Skip onboarding entirely for non-students (even if they're temporarily in student mode)
-      if (realRole !== 'student') return;
-
-      const done = await AsyncStorage.getItem(ONBOARDING_KEY);
-      if (done) return;
-
-      // Student: show onboarding once per session until completed
-      if (!onboardingShownThisSession) {
-        onboardingShownThisSession = true;
-        router.replace('/onboarding');
       }
     })();
   }, [router, user?.role]);
@@ -1133,7 +1108,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     borderRadius: RADIUS.md,
-    overflow: 'hidden',
+    overflow: 'visible',
   },
   emotionLabel: {
     marginTop: SPACING.xs,

@@ -73,13 +73,19 @@ export async function signInDemoAccount(email: string, roleHint?: UserRole): Pro
     throw new Error('登入未完成 · 請再試一次');
   }
 
-  const { error: sessionError } = await supabase.auth.setSession({
+  const { data: sessionData, error: sessionError } = await supabase.auth.setSession({
     access_token: payload.access_token,
     refresh_token: payload.refresh_token,
   });
   if (sessionError) {
-    // Session seed failed · still return a usable in-memory user for preview routing.
-    console.warn('[demo-login] setSession failed', sessionError.message);
+    // Never route with only an in-memory user: Supabase RLS would treat diary
+    // reads/writes as anonymous, making saved data look missing.
+    throw new Error('登入未完成 · 請再試一次');
+  }
+
+  const sessionUser = sessionData.session?.user;
+  if (!sessionUser || sessionUser.id !== payload.user.id) {
+    throw new Error('登入未完成 · 請再試一次');
   }
 
   const role =
@@ -87,7 +93,7 @@ export async function signInDemoAccount(email: string, roleHint?: UserRole): Pro
     demoRoleForEmail(payload.user.email || email) ||
     'student';
 
-  return userFromSession(payload.user as SupabaseUser, role);
+  return userFromSession(sessionUser, role);
 }
 
 export type { Session };
