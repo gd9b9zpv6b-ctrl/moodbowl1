@@ -397,7 +397,7 @@ const styles = StyleSheet.create({
     overflow: 'hidden',
   },
   bowlClip: {
-    overflow: 'hidden',
+    overflow: 'visible',
     alignItems: 'center',
     justifyContent: 'center',
   },

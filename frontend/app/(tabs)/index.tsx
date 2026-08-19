@@ -1108,7 +1108,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     borderRadius: RADIUS.md,
-    overflow: 'hidden',
+    overflow: 'visible',
   },
   emotionLabel: {
     marginTop: SPACING.xs,
