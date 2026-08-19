@@ -137,7 +137,7 @@ export default function RitualBodyScreen() {
             <Text style={styles.drinkEmoji}>{drink.emoji}</Text>
             <View style={{ flex: 1 }}>
               <Text style={styles.drinkLabel}>
-                呢杯「{drink.label}」入面 · 戳碗仔睇反應
+                呢樣「{drink.label}」· 戳碗仔睇反應
               </Text>
               <Text style={styles.drinkHint}>{w.body_vessel}</Text>
             </View>

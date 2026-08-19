@@ -197,7 +197,7 @@ export default function RitualSoupScreen() {
             </Text>
           )}
           {!offering && (
-            <Text style={styles.spiritHint}>碗星靈等緊你請杯嘢飲</Text>
+            <Text style={styles.spiritHint}>碗星靈等緊你請嘢食</Text>
           )}
         </Animated.View>
 

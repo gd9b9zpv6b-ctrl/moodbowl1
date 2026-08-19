@@ -19,11 +19,14 @@ describe('resolveWordingMode', () => {
 });
 
 describe('wording packs', () => {
-  it('exposes bowl-spirit drink invitation titles', () => {
+  it('exposes bowl-spirit food invitation titles', () => {
     expect(wordingFor('lower').soup_title).toContain('碗星靈');
     expect(wordingFor('upper').soup_title).toContain('碗星靈');
     expect(wordingFor('adult').soup_title).toContain('碗星靈');
-    expect(wordingFor('lower').soup_offer_done('草莓牛奶')).toContain('草莓牛奶');
+    expect(wordingFor('lower').soup_title).toContain('食');
+    expect(wordingFor('upper').soup_title).toContain('食');
+    expect(wordingFor('adult').soup_title).toContain('食');
+    expect(wordingFor('lower').soup_offer_done('雪糕')).toContain('雪糕');
     expect(wordingFor('adult').soup_title).not.toBe(wordingFor('lower').soup_title);
     expect(wordingFor('lower').soup_title).not.toBe(wordingFor('upper').soup_title);
   });

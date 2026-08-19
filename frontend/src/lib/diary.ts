@@ -80,7 +80,7 @@ function friendlyDiaryError(error: { message?: string } | null): Error {
     return new Error('而家未有權限寫日記 · 請確認已登入');
   }
   if (message.includes('diaries_soup_check') || message.includes('soup_check')) {
-    return new Error('飲品資料未更新 · 請重新揀一次飲品');
+    return new Error('食物資料未更新 · 請重新揀一次食物');
   }
   if (error?.message) {
     return new Error(`日記儲存唔到 · ${error.message}`);

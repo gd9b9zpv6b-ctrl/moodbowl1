@@ -49,8 +49,8 @@ const JOY_CHIPS: BodyChipKey[] = [
 ];
 
 /**
- * Body chips clarify ambiguous drink choices (e.g. sweet drink while sad).
- * Interoceptive signals are checked before drink priors.
+ * Body chips clarify ambiguous food choices (e.g. ice cream while sad).
+ * Interoceptive signals are checked before food priors.
  */
 export function detectState(soup: SoupKey | null, chips: BodyChipKey[]): NSState {
   const has = (key: BodyChipKey) => chips.includes(key);

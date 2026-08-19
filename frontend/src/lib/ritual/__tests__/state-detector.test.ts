@@ -3,7 +3,7 @@ import { describe, expect, it } from 'vitest';
 import { detectState } from '../state-detector';
 
 describe('detectState', () => {
-  it('lets body chips clarify a sweet-drink craving as sadness', () => {
+  it('lets body chips clarify a sweet-food craving as sadness', () => {
     expect(detectState('strawberry_milk', ['teary'])).toBe('dorsal_sad');
     expect(detectState('strawberry_milk', ['curled_up'])).toBe('dorsal_sad');
   });

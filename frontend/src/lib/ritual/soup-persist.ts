@@ -4,8 +4,8 @@ import type { SoupKey } from '@/src/constants/soups';
  * Live DB still enforces the original soup check constraint:
  * hot_milk_tea | cold_lemon_tea | curry | plain_congee | sweet_soup | no_appetite
  *
- * App drinks are newer keys · map them so ritual saves succeed until
- * migration 006 widens the constraint.
+ * App food keys (same ids as the drink set) · map them so ritual saves
+ * succeed until migration 006 widens the constraint.
  */
 const SOUP_TO_DB: Record<SoupKey, string> = {
   strawberry_milk: 'sweet_soup',
