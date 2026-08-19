@@ -4,6 +4,7 @@ import {
   isBowlSize,
   type BowlSize,
 } from '@/src/constants/bowl-size';
+import { resolvedBowlKey } from '@/src/constants/emotions';
 import { soupForDb } from '@/src/lib/ritual/soup-persist';
 import { supabase } from '@/src/lib/supabase-client';
 
@@ -297,7 +298,7 @@ function ritualBridgePayload(userId: string, draft: RitualDiaryDraft) {
     user_id: userId,
     soup: soupForDb(draft.soup),
     body_chips: draft.body_chips || [],
-    bowl_emotion_key: draft.bowl_emotion_key,
+    bowl_emotion_key: resolvedBowlKey(draft.bowl_emotion_key), // skip-pick → 樹洞
     bowl_color_tint: draft.bowl_color_tint,
     bowl_size: draft.bowl_size || 'M',
     bowl_release: draft.bowl_release || null,
@@ -318,7 +319,7 @@ function ritualBridgePayload(userId: string, draft: RitualDiaryDraft) {
 }
 
 function ritualLegacyAwarePayload(userId: string, draft: RitualDiaryDraft) {
-  const bowlKey = draft.bowl_emotion_key;
+  const bowlKey = resolvedBowlKey(draft.bowl_emotion_key);
   const size = draft.bowl_size || 'M';
   return {
     ...ritualBridgePayload(userId, draft),
@@ -333,11 +334,6 @@ function ritualLegacyAwarePayload(userId: string, draft: RitualDiaryDraft) {
 /** Full ritual check-in · writes ritual + Phase 2 columns when available. */
 export async function createRitualDiaryEntry(draft: RitualDiaryDraft): Promise<Entry> {
   const userId = await requireUserId();
-  const hasDiary = !!(draft.diary_text || '').trim();
-  // Full ritual usually picks a bowl; empty-bowl path (直接寫日記) may save without one.
-  if (!draft.bowl_emotion_key && draft.check_in_type !== 'hug_only' && !hasDiary) {
-    throw new Error('未揀好碗 · 返去再試');
-  }
 
   const full = await supabase
     .from('diaries')
@@ -607,7 +603,7 @@ export async function saveRitualWithActivities(
     const { data, error } = await supabase.rpc('save_ritual_entry', {
       p_soup: soupForDb(draft.soup),
       p_body_chips: draft.body_chips || [],
-      p_bowl_emotion_key: draft.bowl_emotion_key,
+      p_bowl_emotion_key: resolvedBowlKey(draft.bowl_emotion_key),
       p_bowl_color_tint: draft.bowl_color_tint,
       p_bowl_size: draft.bowl_size || 'M',
       p_diary_text: draft.diary_text?.trim() || null,
@@ -622,7 +618,7 @@ export async function saveRitualWithActivities(
           : null,
       // Scheme B · bowl size mirrors into energy_level for teacher follow-up tooling
       p_energy_level: bowlSizeToEnergyLevel(draft.bowl_size || 'M'),
-      p_emotions: draft.bowl_emotion_key ? [draft.bowl_emotion_key] : [],
+      p_emotions: [resolvedBowlKey(draft.bowl_emotion_key)],
       p_regulation_keys: keys,
       // Local calendar day · so 今日故事 / 月曆 match where the kid wrote
       p_entry_date: localDateKey(),

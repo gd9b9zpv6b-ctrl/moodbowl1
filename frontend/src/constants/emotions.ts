@@ -149,3 +149,15 @@ export const EMOTION_BY_KEY: Record<string, Emotion> = EMOTIONS.reduce(
   (acc, e) => ({ ...acc, [e.key]: e }),
   {},
 );
+
+/** Skip-pick / 直接寫日記 still get a bowl — 樹洞 — so diary + decorate never go empty. */
+export const UNPICKED_BOWL_KEY = 'hollow';
+
+export function resolvedBowlKey(key?: string | null): string {
+  if (key && EMOTION_BY_KEY[key]) return key;
+  return UNPICKED_BOWL_KEY;
+}
+
+export function emotionForBowlKey(key?: string | null): Emotion {
+  return EMOTION_BY_KEY[resolvedBowlKey(key)];
+}

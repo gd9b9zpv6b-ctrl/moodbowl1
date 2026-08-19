@@ -1,5 +1,6 @@
 import { Feather } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
+import { useEffect } from 'react';
 import {
   KeyboardAvoidingView,
   Platform,
@@ -16,7 +17,7 @@ import {
   TypingRainbowBowl,
   TypingRainbowProgress,
 } from '@/src/components/typing-rainbow-bowl';
-import { EMOTION_BY_KEY } from '@/src/constants/emotions';
+import { emotionForBowlKey } from '@/src/constants/emotions';
 import { COLORS, RADIUS, SPACING } from '@/src/constants/theme';
 import { wordingFor } from '@/src/lib/i18n/wording-mode';
 import { useRitualStore } from '@/src/lib/ritual/ritual-store';
@@ -28,12 +29,20 @@ export default function RitualTalkScreen() {
   const diaryText = useRitualStore((s) => s.diaryText);
   const setDiaryText = useRitualStore((s) => s.setDiaryText);
   const setCheckInType = useRitualStore((s) => s.setCheckInType);
+  const ensureBowl = useRitualStore((s) => s.ensureBowl);
   const w = wordingFor(ageGroup);
 
-  const emotion = selectedBowlKey ? EMOTION_BY_KEY[selectedBowlKey] : null;
+  const emotion = emotionForBowlKey(selectedBowlKey);
   const count = diaryText.trim().length;
 
-  const goCustomize = () => router.push('/ritual/customize');
+  useEffect(() => {
+    ensureBowl();
+  }, [ensureBowl]);
+
+  const goCustomize = () => {
+    ensureBowl();
+    router.push('/ritual/customize');
+  };
 
   return (
     <SafeAreaView style={styles.safe} edges={['top', 'bottom']}>

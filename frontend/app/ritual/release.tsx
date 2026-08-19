@@ -1,7 +1,7 @@
 import { Feather } from '@expo/vector-icons';
 import * as Haptics from 'expo-haptics';
 import { useRouter } from 'expo-router';
-import { useCallback, useMemo, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
   ActivityIndicator,
   Alert,
@@ -23,7 +23,7 @@ import {
   BOWL_RELEASE_ACTIONS,
   type BowlReleaseKey,
 } from '@/src/constants/bowl-release';
-import { EMOTION_BY_KEY } from '@/src/constants/emotions';
+import { emotionForBowlKey, resolvedBowlKey } from '@/src/constants/emotions';
 import { COLORS, RADIUS, SPACING } from '@/src/constants/theme';
 import {
   listMyDiaryEntries,
@@ -62,14 +62,20 @@ export default function RitualReleaseScreen() {
   const addRegulation = useRitualStore((s) => s.addRegulation);
   const setShares = useRitualStore((s) => s.setShares);
   const reset = useRitualStore((s) => s.reset);
+  const ensureBowl = useRitualStore((s) => s.ensureBowl);
   const w = wordingFor(ageGroup);
+
+  useEffect(() => {
+    ensureBowl();
+  }, [ensureBowl]);
 
   const nsState = useMemo(() => detectState(soup, bodyChips), [soup, bodyChips]);
   const bridgeLine = w.bridge_by_state[nsState];
   const releaseLead = w.release_lead_by_state[nsState];
   const reaction = STATE_REACTION[nsState];
 
-  const emotion = selectedBowlKey ? EMOTION_BY_KEY[selectedBowlKey] : null;
+  const emotion = emotionForBowlKey(selectedBowlKey);
+  const bowlKey = resolvedBowlKey(selectedBowlKey);
   const hasBowl = !!emotion;
   const wroteDiary = checkInType !== 'hug_only' && diaryText.trim().length > 0;
   const releaseSub = hasBowl ? w.release_sub : w.release_diary_sub;
@@ -150,7 +156,7 @@ export default function RitualReleaseScreen() {
         {
           soup,
           body_chips: bodyChips,
-          bowl_emotion_key: selectedBowlKey,
+          bowl_emotion_key: bowlKey,
           bowl_color_tint: encodeDecorations(decorations),
           bowl_size: bowlSize,
           bowl_release: picked,
@@ -168,7 +174,7 @@ export default function RitualReleaseScreen() {
       );
       setEntryId(entry.id);
       setMinutes(Math.max(1, Math.round((timeSpent || 60) / 60)));
-      await buildPraise(selectedBowlKey);
+      await buildPraise(bowlKey);
       setPhase('done');
       Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success).catch(() => {});
     } catch (e: unknown) {
@@ -226,16 +232,12 @@ export default function RitualReleaseScreen() {
       <SafeAreaView style={styles.safe} edges={['top', 'bottom']}>
         <View style={styles.doneWrap}>
           <View style={styles.bowl}>
-            {emotion ? (
-              <BowlWithDecor
-                emotion={emotion}
-                size={160}
-                radius={RADIUS.lg}
-                decorations={decorations}
-              />
-            ) : (
-              <View style={[styles.emptyBowl, { width: 160, height: 160 }]} />
-            )}
+            <BowlWithDecor
+              emotion={emotion}
+              size={160}
+              radius={RADIUS.lg}
+              decorations={decorations}
+            />
           </View>
 
           <Text style={styles.doneTitle}>{w.release_done_title}</Text>
@@ -318,19 +320,12 @@ export default function RitualReleaseScreen() {
 
       <ScrollView contentContainerStyle={styles.scroll} showsVerticalScrollIndicator={false}>
         <View style={styles.bowl}>
-          {emotion ? (
-            <BowlWithDecor
-              emotion={emotion}
-              size={140}
-              radius={RADIUS.lg}
-              decorations={decorations}
-            />
-          ) : (
-            <View
-              testID="release-empty-bowl"
-              style={[styles.emptyBowl, { width: 140, height: 140 }]}
-            />
-          )}
+          <BowlWithDecor
+            emotion={emotion}
+            size={140}
+            radius={RADIUS.lg}
+            decorations={decorations}
+          />
         </View>
 
         {/* Optional share invite · state × age tone · first */}
@@ -437,13 +432,6 @@ const styles = StyleSheet.create({
   headerSpacer: { width: 40 },
   scroll: { paddingHorizontal: SPACING.lg, paddingBottom: SPACING.xxl },
   bowl: { alignItems: 'center', marginBottom: SPACING.md },
-  emptyBowl: {
-    borderRadius: RADIUS.lg,
-    backgroundColor: COLORS.bgInput,
-    borderWidth: 1.5,
-    borderColor: COLORS.borderLight,
-    borderStyle: 'dashed',
-  },
   title: {
     fontSize: 22,
     fontWeight: '800',

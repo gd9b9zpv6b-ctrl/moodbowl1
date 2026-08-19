@@ -7,6 +7,7 @@ import {
 } from '@/src/constants/bowl-decorations';
 import type { BowlReleaseKey } from '@/src/constants/bowl-release';
 import type { BowlSize } from '@/src/constants/bowl-size';
+import { UNPICKED_BOWL_KEY } from '@/src/constants/emotions';
 import type { SoupKey } from '@/src/constants/soups';
 
 export type { BowlSize } from '@/src/constants/bowl-size';
@@ -37,6 +38,8 @@ type RitualState = {
   setSoup: (soup: SoupKey) => void;
   toggleChip: (chip: BodyChipKey) => void;
   setBowl: (key: string) => void;
+  /** If nothing was picked, assign 樹洞 so later steps still have a bowl. */
+  ensureBowl: () => void;
   setTint: (hex: string | null) => void;
   placeDecoration: (key: string, x: number, y: number) => void;
   removeDecorationAt: (index: number) => void;
@@ -100,6 +103,9 @@ export const useRitualStore = create<RitualState>((set, get) => ({
   },
 
   setBowl: (key) => set({ selectedBowlKey: key }),
+  ensureBowl: () => {
+    if (!get().selectedBowlKey) set({ selectedBowlKey: UNPICKED_BOWL_KEY });
+  },
   setTint: (hex) => set({ colorTint: hex }),
 
   placeDecoration: (key, x, y) => {
