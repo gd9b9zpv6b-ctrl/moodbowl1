@@ -3,6 +3,7 @@ import * as Haptics from 'expo-haptics';
 import { useRouter } from 'expo-router';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 
+import { UNPICKED_BOWL_KEY } from '@/src/constants/emotions';
 import { COLORS, RADIUS, SPACING } from '@/src/constants/theme';
 import { wordingFor } from '@/src/lib/i18n/wording-mode';
 import { useRitualStore } from '@/src/lib/ritual/ritual-store';
@@ -20,11 +21,15 @@ export function RitualDiaryEscape({ variant = 'block' }: Props) {
   const router = useRouter();
   const ageGroup = useRitualStore((s) => s.ageGroup);
   const reset = useRitualStore((s) => s.reset);
+  const setBowl = useRitualStore((s) => s.setBowl);
+  const selectedBowlKey = useRitualStore((s) => s.selectedBowlKey);
   const w = wordingFor(ageGroup);
 
   const goDiary = () => {
     Haptics.selectionAsync().catch(() => {});
+    const keep = selectedBowlKey;
     reset();
+    setBowl(keep || UNPICKED_BOWL_KEY);
     router.replace('/quick-diary');
   };
 

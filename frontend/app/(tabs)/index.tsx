@@ -17,7 +17,7 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { randomAdjective, randomAffirmation } from '@/src/constants/affirmations';
-import { EMOTIONS, Emotion, EMOTION_BY_KEY, EMOTION_CATEGORIES, EmotionCategory } from '@/src/constants/emotions';
+import { EMOTIONS, Emotion, EMOTION_BY_KEY, EMOTION_CATEGORIES, EmotionCategory, UNPICKED_BOWL_KEY } from '@/src/constants/emotions';
 import { ENERGY_BY_KEY, EnergyLevel } from '@/src/constants/energy';
 import { COLORS, RADIUS, SPACING } from '@/src/constants/theme';
 import { SchoolCommunityConfig } from '@/src/lib/school-community-config';
@@ -81,6 +81,7 @@ export default function Home() {
   const [homeWordingMode, setHomeWordingMode] = useState<WordingMode>('upper');
   const ritualReset = useRitualStore((s) => s.reset);
   const setAgeGroup = useRitualStore((s) => s.setAgeGroup);
+  const setBowl = useRitualStore((s) => s.setBowl);
   const { recent, track } = useRecentEmotions();
   const ritualEnabled = FEATURE_FLAGS.RITUAL_V1;
   const homeWording = wordingFor(homeWordingMode);
@@ -329,6 +330,7 @@ export default function Home() {
                     ritualReset();
                     setAgeGroup(mode);
                     setHomeWordingMode(mode);
+                    setBowl(UNPICKED_BOWL_KEY);
                     router.push('/quick-diary');
                   }}
                   style={styles.ritualLinkBtn}

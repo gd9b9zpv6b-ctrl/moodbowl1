@@ -2,7 +2,7 @@ import { Feather } from '@expo/vector-icons';
 import Slider from '@react-native-community/slider';
 import * as Haptics from 'expo-haptics';
 import { useRouter } from 'expo-router';
-import { useMemo, useState } from 'react';
+import { useMemo, useState, useEffect } from 'react';
 import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
@@ -17,7 +17,7 @@ import {
   bowlSizeIndex,
   bowlSizeMeta,
 } from '@/src/constants/bowl-size';
-import { EMOTION_BY_KEY } from '@/src/constants/emotions';
+import { emotionForBowlKey } from '@/src/constants/emotions';
 import { COLORS, RADIUS, SPACING } from '@/src/constants/theme';
 import { wordingFor } from '@/src/lib/i18n/wording-mode';
 import { useRitualStore } from '@/src/lib/ritual/ritual-store';
@@ -32,12 +32,17 @@ export default function RitualCustomizeScreen() {
   const removeDecorationAt = useRitualStore((s) => s.removeDecorationAt);
   const clearDecorations = useRitualStore((s) => s.clearDecorations);
   const setSize = useRitualStore((s) => s.setSize);
+  const ensureBowl = useRitualStore((s) => s.ensureBowl);
   const w = wordingFor(ageGroup);
 
   const [pendingKey, setPendingKey] = useState<string | null>(null);
   const [lockScroll, setLockScroll] = useState(false);
 
-  const emotion = selectedBowlKey ? EMOTION_BY_KEY[selectedBowlKey] : null;
+  useEffect(() => {
+    ensureBowl();
+  }, [ensureBowl]);
+
+  const emotion = emotionForBowlKey(selectedBowlKey);
   const hasBowl = !!emotion;
   const sizeMeta = useMemo(() => bowlSizeMeta(bowlSize), [bowlSize]);
   const scale = sizeMeta.scale;
@@ -101,7 +106,6 @@ export default function RitualCustomizeScreen() {
           <View style={[styles.previewInner, { width: previewSize, height: previewSize }]}>
             <BowlWithDecor
               emotion={emotion}
-              empty={!emotion}
               size={previewSize}
               radius={RADIUS.lg}
               decorations={decorations}

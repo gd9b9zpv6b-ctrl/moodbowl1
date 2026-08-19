@@ -1,5 +1,6 @@
 import { Feather } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
+import { useEffect } from 'react';
 import {
   KeyboardAvoidingView,
   Platform,
@@ -16,26 +17,35 @@ import {
   TypingRainbowBowl,
   TypingRainbowProgress,
 } from '@/src/components/typing-rainbow-bowl';
+import { emotionForBowlKey } from '@/src/constants/emotions';
 import { COLORS, RADIUS, SPACING } from '@/src/constants/theme';
 import { wordingFor } from '@/src/lib/i18n/wording-mode';
 import { useRitualStore } from '@/src/lib/ritual/ritual-store';
 
 /**
- * Same as ritual talk · empty bowl (no pick). Continues to customize → regulate → release.
+ * Same as ritual talk · skipped pick uses 樹洞 so write + decorate still have a bowl.
  */
 export default function QuickDiaryScreen() {
   const router = useRouter();
   const ageGroup = useRitualStore((s) => s.ageGroup);
   const diaryText = useRitualStore((s) => s.diaryText);
+  const selectedBowlKey = useRitualStore((s) => s.selectedBowlKey);
   const setDiaryText = useRitualStore((s) => s.setDiaryText);
   const setCheckInType = useRitualStore((s) => s.setCheckInType);
   const ensureStarted = useRitualStore((s) => s.ensureStarted);
+  const ensureBowl = useRitualStore((s) => s.ensureBowl);
   const w = wordingFor(ageGroup);
 
   const count = diaryText.trim().length;
+  const emotion = emotionForBowlKey(selectedBowlKey);
+
+  useEffect(() => {
+    ensureBowl();
+  }, [ensureBowl]);
 
   const goCustomize = () => {
     ensureStarted();
+    ensureBowl();
     router.push('/ritual/customize');
   };
 
@@ -63,8 +73,8 @@ export default function QuickDiaryScreen() {
           showsVerticalScrollIndicator={false}
         >
           <View style={styles.bowlBlock}>
-            <View testID="quick-diary-empty-bowl">
-              <TypingRainbowBowl charCount={count} size={140} emptyLabel="日記" />
+            <View testID="quick-diary-bowl">
+              <TypingRainbowBowl emotion={emotion} charCount={count} size={140} />
             </View>
             <View style={styles.speech}>
               <Text style={styles.speechText}>{w.talk_solo_speech}</Text>

@@ -1,6 +1,6 @@
 import { Feather } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
-import { useMemo, useState } from 'react';
+import { useMemo, useState, useEffect } from 'react';
 import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
@@ -17,7 +17,7 @@ import { Grounding54321 } from '@/src/components/regulation/grounding-5-4-3-2-1'
 import { PunchBag } from '@/src/components/regulation/punch-bag';
 import { Savor3Things } from '@/src/components/regulation/savor-3-things';
 import { SoftScenes } from '@/src/components/regulation/soft-scenes';
-import { EMOTION_BY_KEY } from '@/src/constants/emotions';
+import { emotionForBowlKey } from '@/src/constants/emotions';
 import { COLORS, RADIUS, SPACING } from '@/src/constants/theme';
 import { wordingFor } from '@/src/lib/i18n/wording-mode';
 import { detectState, type NSState } from '@/src/lib/ritual/state-detector';
@@ -128,13 +128,18 @@ export default function RitualRegulateScreen() {
   const selectedBowlKey = useRitualStore((s) => s.selectedBowlKey);
   const regulationUsed = useRitualStore((s) => s.regulationUsed);
   const addRegulation = useRitualStore((s) => s.addRegulation);
+  const ensureBowl = useRitualStore((s) => s.ensureBowl);
   const w = wordingFor(ageGroup);
+
+  useEffect(() => {
+    ensureBowl();
+  }, [ensureBowl]);
 
   const state = useMemo(() => detectState(soup, bodyChips), [soup, bodyChips]);
   const reaction = STATE_REACTION[state];
   const activityDefs = ACTIVITY_KEYS[state];
   const labels = ACTIVITY_LABELS[ageGroup] || ACTIVITY_LABELS.upper;
-  const emotion = selectedBowlKey ? EMOTION_BY_KEY[selectedBowlKey] : null;
+  const emotion = emotionForBowlKey(selectedBowlKey);
   const didCompanion = useMemo(
     () => activityDefs.some((a) => regulationUsed.includes(a.key)),
     [activityDefs, regulationUsed],
