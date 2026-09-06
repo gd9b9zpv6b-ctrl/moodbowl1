@@ -42,7 +42,7 @@ const DISCOVERIES: DiscoveryConfig[] = [
     key: 'nervous',
     label: '緊張',
     title: '慢慢撥開啲沙',
-    instruction: '用手指來回捽 · 唔使急',
+    instruction: '用手指來回捽 · 或者輕觸三下',
     emotionKey: 'anxious',
     tint: '#FFF7E9',
     accent: '#D9B46E',
@@ -52,7 +52,7 @@ const DISCOVERIES: DiscoveryConfig[] = [
     key: 'sad',
     label: '傷心',
     title: '抹走窗上嘅雨',
-    instruction: '左右掃一掃 · 睇清楚入面嘅感受',
+    instruction: '左右掃一掃 · 或者輕觸三下',
     emotionKey: 'sad',
     tint: '#EEF7FF',
     accent: '#82B9D8',
@@ -72,7 +72,7 @@ const DISCOVERIES: DiscoveryConfig[] = [
     key: 'unspoken',
     label: '講唔出',
     title: '撥開眼前嘅霧',
-    instruction: '來回掃一掃 · 未識形容都冇問題',
+    instruction: '來回掃一掃 · 或者輕觸三下',
     emotionKey: 'foggy',
     tint: '#F1F3F6',
     accent: '#9AA8B6',
@@ -96,6 +96,7 @@ export function DiscoveryPreview() {
   const [activeKey, setActiveKey] = useState<DiscoveryKey>('anger');
   const [revealed, setRevealed] = useState(false);
   const [waterCount, setWaterCount] = useState(0);
+  const [assistTaps, setAssistTaps] = useState(0);
   const reveal = useRef(new Animated.Value(0)).current;
   const overlay = useRef(new Animated.Value(1)).current;
   const gestureDistance = useRef(0);
@@ -108,6 +109,7 @@ export function DiscoveryPreview() {
     if (nextKey) setActiveKey(nextKey);
     setRevealed(false);
     setWaterCount(0);
+    setAssistTaps(0);
     gestureDistance.current = 0;
     reveal.setValue(0);
     overlay.setValue(1);
@@ -174,6 +176,27 @@ export function DiscoveryPreview() {
   const handleTap = () => {
     if (activeKey === 'anger' || activeKey === 'wound') {
       finishReveal();
+      return;
+    }
+    if (activeKey === 'nervous' || activeKey === 'sad' || activeKey === 'unspoken') {
+      const next = assistTaps + 1;
+      const nextProgress = Math.min(next / 3, 1);
+      setAssistTaps(next);
+      Animated.parallel([
+        Animated.timing(overlay, {
+          toValue: 1 - nextProgress * 0.9,
+          duration: 240,
+          easing: SOFT_EASING,
+          useNativeDriver: true,
+        }),
+        Animated.timing(reveal, {
+          toValue: nextProgress,
+          duration: 260,
+          easing: SOFT_EASING,
+          useNativeDriver: true,
+        }),
+      ]).start();
+      if (next >= 3) finishReveal();
       return;
     }
     if (activeKey === 'warm') {
