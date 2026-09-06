@@ -102,6 +102,7 @@ export function DiscoveryPreview() {
   const overlay = useRef(new Animated.Value(1)).current;
   const balloonFloat = useRef(new Animated.Value(0)).current;
   const fishSwim = useRef(new Animated.Value(0)).current;
+  const scoopMove = useRef(new Animated.Value(0)).current;
   const waterPour = useRef(new Animated.Value(0)).current;
   const assistTaps = useRef(0);
   const gestureDistance = useRef(0);
@@ -120,6 +121,8 @@ export function DiscoveryPreview() {
     gestureDistance.current = 0;
     reveal.setValue(0);
     overlay.setValue(1);
+    scoopMove.setValue(0);
+    waterPour.setValue(0);
   };
 
   const finishReveal = () => {
@@ -233,8 +236,19 @@ export function DiscoveryPreview() {
   );
 
   const handleTap = () => {
-    if (activeKey === 'anger' || activeKey === 'wound') {
+    if (activeKey === 'anger') {
       finishReveal();
+      return;
+    }
+    if (activeKey === 'wound') {
+      Animated.timing(scoopMove, {
+        toValue: 1,
+        duration: 400,
+        easing: SOFT_EASING,
+        useNativeDriver: true,
+      }).start(({ finished }) => {
+        if (finished) finishReveal();
+      });
       return;
     }
     if (activeKey === 'nervous' || activeKey === 'sad' || activeKey === 'unspoken') {
@@ -271,7 +285,7 @@ export function DiscoveryPreview() {
         }),
         Animated.timing(waterPour, {
           toValue: 1,
-          duration: 400,
+          duration: 900,
           easing: Easing.in(Easing.quad),
           useNativeDriver: true,
         }),
@@ -479,13 +493,39 @@ export function DiscoveryPreview() {
               >
                 🐠
               </Animated.Text>
-              <View style={styles.scoopNet}>
+              <Animated.View
+                style={[
+                  styles.scoopNet,
+                  {
+                    transform: [
+                      {
+                        translateX: scoopMove.interpolate({
+                          inputRange: [0, 1],
+                          outputRange: [0, -46],
+                        }),
+                      },
+                      {
+                        translateY: scoopMove.interpolate({
+                          inputRange: [0, 1],
+                          outputRange: [0, 48],
+                        }),
+                      },
+                      {
+                        rotate: scoopMove.interpolate({
+                          inputRange: [0, 1],
+                          outputRange: ['-24deg', '-8deg'],
+                        }),
+                      },
+                    ],
+                  },
+                ]}
+              >
                 <View style={styles.scoopRing}>
                   <View style={styles.scoopMeshVertical} />
                   <View style={styles.scoopMeshHorizontal} />
                 </View>
                 <View style={styles.scoopHandle} />
-              </View>
+              </Animated.View>
               <Text style={styles.pondPrompt}>撳一下紙網 · 輕輕撈起</Text>
             </Animated.View>
           )}
@@ -819,7 +859,6 @@ const styles = StyleSheet.create({
     position: 'absolute',
     right: 52,
     top: 40,
-    transform: [{ rotate: '-24deg' }],
   },
   scoopRing: {
     alignItems: 'center',
