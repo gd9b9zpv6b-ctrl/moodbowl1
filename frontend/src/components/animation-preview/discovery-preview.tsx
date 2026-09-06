@@ -143,8 +143,9 @@ export function DiscoveryPreview() {
   const panResponder = useMemo(
     () =>
       PanResponder.create({
-        onStartShouldSetPanResponder: () =>
-          activeKey === 'nervous' || activeKey === 'sad' || activeKey === 'unspoken',
+        // Let a stationary touch reach Pressable's accessible tap fallback.
+        // A moving touch is claimed below for the intended rub/swipe interaction.
+        onStartShouldSetPanResponder: () => false,
         onMoveShouldSetPanResponder: (_, gesture) =>
           (activeKey === 'nervous' || activeKey === 'sad' || activeKey === 'unspoken') &&
           Math.abs(gesture.dx) + Math.abs(gesture.dy) > 4,
