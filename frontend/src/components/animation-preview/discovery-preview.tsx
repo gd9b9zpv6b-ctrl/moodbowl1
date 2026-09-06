@@ -243,8 +243,8 @@ export function DiscoveryPreview() {
     if (activeKey === 'wound') {
       Animated.timing(scoopMove, {
         toValue: 1,
-        duration: 400,
-        easing: SOFT_EASING,
+        duration: 760,
+        easing: Easing.inOut(Easing.quad),
         useNativeDriver: true,
       }).start(({ finished }) => {
         if (finished) finishReveal();
@@ -500,20 +500,20 @@ export function DiscoveryPreview() {
                     transform: [
                       {
                         translateX: scoopMove.interpolate({
-                          inputRange: [0, 1],
-                          outputRange: [0, -46],
+                          inputRange: [0, 0.62, 1],
+                          outputRange: [0, -46, -20],
                         }),
                       },
                       {
                         translateY: scoopMove.interpolate({
-                          inputRange: [0, 1],
-                          outputRange: [0, 48],
+                          inputRange: [0, 0.62, 1],
+                          outputRange: [0, 48, -22],
                         }),
                       },
                       {
                         rotate: scoopMove.interpolate({
-                          inputRange: [0, 1],
-                          outputRange: ['-24deg', '-8deg'],
+                          inputRange: [0, 0.62, 1],
+                          outputRange: ['-24deg', '-8deg', '-17deg'],
                         }),
                       },
                     ],
