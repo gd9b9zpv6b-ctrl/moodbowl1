@@ -154,10 +154,16 @@ export function DiscoveryPreview() {
           const dy = gesture.moveY - lastGesture.current.y;
           gestureDistance.current += Math.sqrt(dx * dx + dy * dy);
           lastGesture.current = { x: gesture.moveX, y: gesture.moveY };
-          const progress = Math.min(gestureDistance.current / 520, 1);
+          const progress = Math.min(gestureDistance.current / 240, 1);
           overlay.setValue(1 - progress * 0.9);
           reveal.setValue(progress);
           if (progress >= 0.92) finishReveal();
+        },
+        onPanResponderRelease: () => {
+          if (gestureDistance.current >= 90) finishReveal();
+        },
+        onPanResponderTerminate: () => {
+          if (gestureDistance.current >= 90) finishReveal();
         },
       }),
     // Rebuild responders as the interaction style changes.
