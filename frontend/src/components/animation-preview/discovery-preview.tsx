@@ -5,13 +5,14 @@ import {
   Easing,
   PanResponder,
   Pressable,
+  ScrollView,
   StyleSheet,
   Text,
   View,
 } from 'react-native';
 
 import { EmotionVisual } from '@/src/components/emotion-visual';
-import { EMOTION_BY_KEY, EmotionCategory } from '@/src/constants/emotions';
+import { EMOTION_BY_KEY, EMOTIONS, EmotionCategory } from '@/src/constants/emotions';
 import { COLORS, RADIUS, SPACING } from '@/src/constants/theme';
 
 type DiscoveryKey = EmotionCategory;
@@ -61,12 +62,12 @@ const DISCOVERIES: DiscoveryConfig[] = [
   {
     key: 'wound',
     label: '自我懷疑',
-    title: '打開一封俾自己嘅信',
-    instruction: '撳信封 · 入面可能有一隻明白你嘅飯碗',
+    title: '輕輕撈起一尾小金魚',
+    instruction: '睇準小金魚 · 撳一下紙網慢慢撈起',
     emotionKey: 'insecure',
-    tint: '#F7F0FF',
-    accent: '#AE91C5',
-    icon: 'mail',
+    tint: '#F0F8FF',
+    accent: '#6FA8C4',
+    icon: 'circle',
   },
   {
     key: 'unspoken',
@@ -96,19 +97,25 @@ export function DiscoveryPreview() {
   const [activeKey, setActiveKey] = useState<DiscoveryKey>('anger');
   const [revealed, setRevealed] = useState(false);
   const [waterCount, setWaterCount] = useState(0);
+  const [selectedEmotionKey, setSelectedEmotionKey] = useState<string | null>(null);
   const reveal = useRef(new Animated.Value(0)).current;
   const overlay = useRef(new Animated.Value(1)).current;
+  const balloonFloat = useRef(new Animated.Value(0)).current;
+  const fishSwim = useRef(new Animated.Value(0)).current;
+  const waterPour = useRef(new Animated.Value(0)).current;
   const assistTaps = useRef(0);
   const gestureDistance = useRef(0);
   const lastGesture = useRef({ x: 0, y: 0 });
 
   const active = DISCOVERIES.find((item) => item.key === activeKey) ?? DISCOVERIES[0];
-  const emotion = EMOTION_BY_KEY[active.emotionKey];
+  const categoryEmotions = EMOTIONS.filter((item) => item.category === activeKey);
+  const emotion = EMOTION_BY_KEY[selectedEmotionKey ?? active.emotionKey];
 
   const reset = (nextKey?: DiscoveryKey) => {
     if (nextKey) setActiveKey(nextKey);
     setRevealed(false);
     setWaterCount(0);
+    setSelectedEmotionKey(null);
     assistTaps.current = 0;
     gestureDistance.current = 0;
     reveal.setValue(0);
@@ -118,6 +125,7 @@ export function DiscoveryPreview() {
   const finishReveal = () => {
     if (revealed) return;
     setRevealed(true);
+    setSelectedEmotionKey(active.emotionKey);
     Animated.parallel([
       Animated.timing(overlay, {
         toValue: 0,
@@ -139,6 +147,56 @@ export function DiscoveryPreview() {
     // Animated values are stable refs; activeKey intentionally resets the scene.
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [activeKey]);
+
+  useEffect(() => {
+    if (activeKey !== 'anger' || revealed) {
+      balloonFloat.setValue(0);
+      return;
+    }
+    const movement = Animated.loop(
+      Animated.sequence([
+        Animated.timing(balloonFloat, {
+          toValue: 1,
+          duration: 1100,
+          easing: Easing.inOut(Easing.quad),
+          useNativeDriver: true,
+        }),
+        Animated.timing(balloonFloat, {
+          toValue: 0,
+          duration: 1100,
+          easing: Easing.inOut(Easing.quad),
+          useNativeDriver: true,
+        }),
+      ]),
+    );
+    movement.start();
+    return () => movement.stop();
+  }, [activeKey, balloonFloat, revealed]);
+
+  useEffect(() => {
+    if (activeKey !== 'wound' || revealed) {
+      fishSwim.setValue(0);
+      return;
+    }
+    const movement = Animated.loop(
+      Animated.sequence([
+        Animated.timing(fishSwim, {
+          toValue: 1,
+          duration: 1400,
+          easing: Easing.inOut(Easing.quad),
+          useNativeDriver: true,
+        }),
+        Animated.timing(fishSwim, {
+          toValue: 0,
+          duration: 1400,
+          easing: Easing.inOut(Easing.quad),
+          useNativeDriver: true,
+        }),
+      ]),
+    );
+    movement.start();
+    return () => movement.stop();
+  }, [activeKey, fishSwim, revealed]);
 
   const panResponder = useMemo(
     () =>
@@ -203,12 +261,21 @@ export function DiscoveryPreview() {
     if (activeKey === 'warm') {
       const next = waterCount + 1;
       setWaterCount(next);
-      Animated.timing(reveal, {
-        toValue: next / 3,
-        duration: 260,
-        easing: SOFT_EASING,
-        useNativeDriver: true,
-      }).start();
+      waterPour.setValue(0);
+      Animated.parallel([
+        Animated.timing(reveal, {
+          toValue: next / 3,
+          duration: 260,
+          easing: SOFT_EASING,
+          useNativeDriver: true,
+        }),
+        Animated.timing(waterPour, {
+          toValue: 1,
+          duration: 400,
+          easing: Easing.in(Easing.quad),
+          useNativeDriver: true,
+        }),
+      ]).start();
       if (next >= 3) finishReveal();
     }
   };
@@ -298,6 +365,24 @@ export function DiscoveryPreview() {
                   opacity: overlay,
                   transform: [
                     {
+                      translateX: balloonFloat.interpolate({
+                        inputRange: [0, 1],
+                        outputRange: [-5, 6],
+                      }),
+                    },
+                    {
+                      translateY: balloonFloat.interpolate({
+                        inputRange: [0, 1],
+                        outputRange: [6, -9],
+                      }),
+                    },
+                    {
+                      rotate: balloonFloat.interpolate({
+                        inputRange: [0, 1],
+                        outputRange: ['-2deg', '3deg'],
+                      }),
+                    },
+                    {
                       scale: overlay.interpolate({
                         inputRange: [0, 1],
                         outputRange: [1.14, 1],
@@ -354,12 +439,54 @@ export function DiscoveryPreview() {
           )}
 
           {activeKey === 'wound' && (
-            <Animated.View style={[styles.envelopeWrap, { opacity: overlay }]}>
-              <View style={styles.letterEnvelope}>
-                <View style={styles.envelopeFlap} />
-                <Feather name="heart" size={25} color={active.accent} />
-                <Text style={styles.envelopeText}>俾而家嘅你</Text>
+            <Animated.View style={[styles.fishPond, { opacity: overlay }]}>
+              <View style={styles.pondRippleLarge} />
+              <View style={styles.pondRippleSmall} />
+              <Animated.Text
+                style={[
+                  styles.goldfish,
+                  styles.goldfishOne,
+                  {
+                    transform: [
+                      {
+                        translateX: fishSwim.interpolate({
+                          inputRange: [0, 1],
+                          outputRange: [-30, 35],
+                        }),
+                      },
+                    ],
+                  },
+                ]}
+              >
+                🐠
+              </Animated.Text>
+              <Animated.Text
+                style={[
+                  styles.goldfish,
+                  styles.goldfishTwo,
+                  {
+                    transform: [
+                      {
+                        translateX: fishSwim.interpolate({
+                          inputRange: [0, 1],
+                          outputRange: [28, -24],
+                        }),
+                      },
+                      { rotateY: '180deg' },
+                    ],
+                  },
+                ]}
+              >
+                🐠
+              </Animated.Text>
+              <View style={styles.scoopNet}>
+                <View style={styles.scoopRing}>
+                  <View style={styles.scoopMeshVertical} />
+                  <View style={styles.scoopMeshHorizontal} />
+                </View>
+                <View style={styles.scoopHandle} />
               </View>
+              <Text style={styles.pondPrompt}>撳一下紙網 · 輕輕撈起</Text>
             </Animated.View>
           )}
 
@@ -375,8 +502,40 @@ export function DiscoveryPreview() {
           {activeKey === 'warm' && (
             <View style={styles.gardenScene}>
               <View style={styles.wateringCan}>
-                <Feather name="cloud-drizzle" size={34} color={active.accent} />
+                <View style={styles.canDrawing}>
+                  <View style={[styles.canHandle, { borderColor: active.accent }]} />
+                  <View style={[styles.canBody, { backgroundColor: active.accent }]}>
+                    <View style={styles.canHighlight} />
+                  </View>
+                  <View style={[styles.canSpout, { backgroundColor: active.accent }]} />
+                  <View style={[styles.canRose, { backgroundColor: active.accent }]} />
+                </View>
                 <Text style={styles.waterCount}>{Math.min(waterCount, 3)} / 3</Text>
+                <View style={styles.waterStream}>
+                  {[0, 1, 2].map((index) => (
+                    <Animated.View
+                      key={index}
+                      style={[
+                        styles.waterDrop,
+                        {
+                          left: index * 12,
+                          opacity: waterPour.interpolate({
+                            inputRange: [0, 0.08 + index * 0.08, 0.72, 1],
+                            outputRange: [0, 0, 1, 0],
+                          }),
+                          transform: [
+                            {
+                              translateY: waterPour.interpolate({
+                                inputRange: [0, 1],
+                                outputRange: [0, 72 + index * 7],
+                              }),
+                            },
+                          ],
+                        },
+                      ]}
+                    />
+                  ))}
+                </View>
               </View>
               <Animated.View
                 style={[
@@ -419,23 +578,66 @@ export function DiscoveryPreview() {
           )}
 
         {revealed ? (
-          <Animated.View style={[styles.resultCard, { opacity: reveal }]}>
-            <View style={styles.resultCopy}>
-              <Text style={styles.resultLabel}>可能似你嘅飯碗</Text>
-              <Text style={styles.resultName}>{emotion.label}</Text>
-              <Text style={styles.resultDescription}>{emotion.description}</Text>
+          <Animated.View style={[styles.results, { opacity: reveal }]}>
+            <View style={styles.resultsHeader}>
+              <View>
+                <Text style={styles.resultLabel}>呢一組全部飯碗</Text>
+                <Text style={styles.resultsCount}>
+                  {categoryEmotions.length} 隻 · 左右掃嚟比較
+                </Text>
+              </View>
+              <Feather name="arrow-right" size={17} color={COLORS.textSecondary} />
             </View>
-            <Pressable
-              testID="discovery-choose"
-              onPress={() => {}}
-              style={({ pressed }) => [
-                styles.chooseButton,
-                { backgroundColor: active.accent },
-                pressed && styles.pressed,
-              ]}
+            <ScrollView
+              horizontal
+              nestedScrollEnabled
+              showsHorizontalScrollIndicator={false}
+              contentContainerStyle={styles.bowlRail}
             >
-              <Text style={styles.chooseButtonText}>似我而家</Text>
-            </Pressable>
+              {categoryEmotions.map((item) => {
+                const selected = item.key === emotion.key;
+                return (
+                  <Pressable
+                    key={item.key}
+                    testID={`discovery-bowl-${item.key}`}
+                    accessibilityRole="button"
+                    accessibilityState={{ selected }}
+                    onPress={() => setSelectedEmotionKey(item.key)}
+                    style={({ pressed }) => [
+                      styles.bowlOption,
+                      selected && {
+                        backgroundColor: item.color + '55',
+                        borderColor: active.accent,
+                      },
+                      pressed && styles.pressed,
+                    ]}
+                  >
+                    <EmotionVisual emotion={item} size={66} radius={RADIUS.md} />
+                    <Text numberOfLines={1} style={styles.bowlOptionLabel}>
+                      {item.label}
+                    </Text>
+                  </Pressable>
+                );
+              })}
+            </ScrollView>
+            <View style={styles.resultCard}>
+              <View style={styles.resultCopy}>
+                <Text style={styles.resultLabel}>你而家揀緊</Text>
+                <Text style={styles.resultName}>{emotion.label}</Text>
+                <Text style={styles.resultDescription}>{emotion.description}</Text>
+              </View>
+              <Pressable
+                testID="discovery-choose"
+                onPress={() => {}}
+                style={({ pressed }) => [
+                  styles.chooseButton,
+                  { backgroundColor: active.accent },
+                  pressed && styles.pressed,
+                ]}
+              >
+                <Text style={styles.chooseButtonText}>似我而家</Text>
+              </Pressable>
+            </View>
           </Animated.View>
         ) : (
           <Text style={styles.safetyHint}>可以隨時停低 · 冇分數 · 冇答錯</Text>
@@ -586,32 +788,79 @@ const styles = StyleSheet.create({
     paddingHorizontal: 14,
     paddingVertical: 8,
   },
-  envelopeWrap: { alignItems: 'center', position: 'absolute' },
-  letterEnvelope: {
+  fishPond: {
+    ...StyleSheet.absoluteFillObject,
     alignItems: 'center',
-    backgroundColor: '#FFFDF9',
-    borderColor: '#E6D7E9',
-    borderRadius: RADIUS.sm,
-    borderWidth: 2,
-    height: 135,
+    backgroundColor: '#CDEBF3',
     justifyContent: 'center',
     overflow: 'hidden',
-    width: 190,
   },
-  envelopeFlap: {
-    backgroundColor: '#F0E2F2',
-    height: 100,
-    left: 20,
+  pondRippleLarge: {
+    borderColor: '#FFFFFF88',
+    borderRadius: RADIUS.pill,
+    borderWidth: 2,
+    height: 150,
     position: 'absolute',
-    top: -67,
-    transform: [{ rotate: '45deg' }],
-    width: 100,
+    width: 260,
   },
-  envelopeText: {
+  pondRippleSmall: {
+    borderColor: '#FFFFFFAA',
+    borderRadius: RADIUS.pill,
+    borderWidth: 2,
+    height: 92,
+    position: 'absolute',
+    width: 175,
+  },
+  goldfish: { fontSize: 38, position: 'absolute' },
+  goldfishOne: { left: '24%', top: 48 },
+  goldfishTwo: { right: '22%', top: 134 },
+  scoopNet: {
+    alignItems: 'center',
+    position: 'absolute',
+    right: 52,
+    top: 40,
+    transform: [{ rotate: '-24deg' }],
+  },
+  scoopRing: {
+    alignItems: 'center',
+    backgroundColor: '#FFF9E899',
+    borderColor: '#E8D9B7',
+    borderRadius: RADIUS.pill,
+    borderWidth: 4,
+    height: 72,
+    justifyContent: 'center',
+    overflow: 'hidden',
+    width: 72,
+  },
+  scoopMeshVertical: {
+    backgroundColor: '#D8C79D99',
+    height: 68,
+    position: 'absolute',
+    width: 1,
+  },
+  scoopMeshHorizontal: {
+    backgroundColor: '#D8C79D99',
+    height: 1,
+    position: 'absolute',
+    width: 68,
+  },
+  scoopHandle: {
+    backgroundColor: '#B69063',
+    borderRadius: RADIUS.pill,
+    height: 82,
+    width: 7,
+  },
+  pondPrompt: {
+    backgroundColor: '#FFFFFFCC',
+    borderRadius: RADIUS.pill,
+    bottom: 20,
     color: COLORS.textSecondary,
     fontSize: 12,
     fontWeight: '700',
-    marginTop: SPACING.sm,
+    overflow: 'hidden',
+    paddingHorizontal: 14,
+    paddingVertical: 8,
+    position: 'absolute',
   },
   fogCover: { backgroundColor: '#E3E6E9EE' },
   fogBand: {
@@ -628,7 +877,73 @@ const styles = StyleSheet.create({
     paddingBottom: 24,
     paddingTop: 30,
   },
-  wateringCan: { alignItems: 'center' },
+  wateringCan: { alignItems: 'center', height: 105, position: 'relative' },
+  canDrawing: { height: 54, position: 'relative', width: 100 },
+  canBody: {
+    borderBottomLeftRadius: 12,
+    borderBottomRightRadius: 12,
+    borderTopLeftRadius: 8,
+    borderTopRightRadius: 8,
+    height: 42,
+    position: 'absolute',
+    right: 7,
+    top: 8,
+    width: 52,
+  },
+  canHighlight: {
+    backgroundColor: '#FFFFFF55',
+    borderRadius: RADIUS.pill,
+    height: 27,
+    left: 9,
+    position: 'absolute',
+    top: 7,
+    width: 7,
+  },
+  canHandle: {
+    borderRadius: RADIUS.pill,
+    borderWidth: 6,
+    height: 40,
+    position: 'absolute',
+    right: -5,
+    top: 2,
+    width: 35,
+  },
+  canSpout: {
+    borderRadius: RADIUS.pill,
+    height: 10,
+    left: 9,
+    position: 'absolute',
+    top: 23,
+    transform: [{ rotate: '-18deg' }],
+    width: 48,
+  },
+  canRose: {
+    borderRadius: RADIUS.pill,
+    height: 23,
+    left: 0,
+    position: 'absolute',
+    top: 15,
+    transform: [{ rotate: '-18deg' }],
+    width: 13,
+  },
+  waterStream: {
+    height: 82,
+    left: 2,
+    position: 'absolute',
+    top: 33,
+    width: 42,
+  },
+  waterDrop: {
+    backgroundColor: '#74BDE0',
+    borderBottomLeftRadius: 8,
+    borderBottomRightRadius: 8,
+    borderTopLeftRadius: 8,
+    height: 12,
+    position: 'absolute',
+    top: 0,
+    transform: [{ rotate: '45deg' }],
+    width: 8,
+  },
   waterCount: {
     color: COLORS.textSecondary,
     fontSize: 12,
@@ -637,14 +952,54 @@ const styles = StyleSheet.create({
   },
   flowerRow: { flexDirection: 'row', gap: 26 },
   flower: { fontSize: 34 },
-  resultCard: {
+  results: {
+    backgroundColor: '#FFFFFF99',
+    borderRadius: RADIUS.md,
+    marginTop: SPACING.md,
+    overflow: 'hidden',
+    paddingVertical: SPACING.md,
+  },
+  resultsHeader: {
+    alignItems: 'center',
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    paddingHorizontal: SPACING.md,
+  },
+  resultsCount: {
+    color: COLORS.textSecondary,
+    fontSize: 11,
+    marginTop: 2,
+  },
+  bowlRail: {
+    gap: SPACING.sm,
+    paddingHorizontal: SPACING.md,
+    paddingVertical: 12,
+  },
+  bowlOption: {
     alignItems: 'center',
     backgroundColor: '#FFFFFFCC',
+    borderColor: 'transparent',
     borderRadius: RADIUS.md,
+    borderWidth: 2,
+    padding: 7,
+    width: 86,
+  },
+  bowlOptionLabel: {
+    color: COLORS.textPrimary,
+    fontSize: 11,
+    fontWeight: '700',
+    marginTop: 5,
+    textAlign: 'center',
+    width: '100%',
+  },
+  resultCard: {
+    alignItems: 'center',
+    borderTopColor: COLORS.borderLight,
+    borderTopWidth: 1,
     flexDirection: 'row',
     gap: SPACING.sm,
-    marginTop: SPACING.md,
-    padding: SPACING.md,
+    paddingHorizontal: SPACING.md,
+    paddingTop: SPACING.md,
   },
   resultCopy: { flex: 1 },
   resultLabel: { color: COLORS.textSecondary, fontSize: 11, fontWeight: '700' },
