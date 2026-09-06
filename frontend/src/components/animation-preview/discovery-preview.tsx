@@ -402,6 +402,22 @@ export function DiscoveryPreview() {
           )}
         </Pressable>
 
+        {!revealed &&
+          (activeKey === 'nervous' || activeKey === 'sad' || activeKey === 'unspoken') && (
+            <Pressable
+              testID="discovery-reveal-fallback"
+              accessibilityRole="button"
+              onPress={finishReveal}
+              style={({ pressed }) => [
+                styles.fallbackButton,
+                pressed && styles.pressed,
+              ]}
+            >
+              <Feather name="eye" size={14} color={COLORS.textSecondary} />
+              <Text style={styles.fallbackButtonText}>用唔到手勢？撳呢度揭曉</Text>
+            </Pressable>
+          )}
+
         {revealed ? (
           <Animated.View style={[styles.resultCard, { opacity: reveal }]}>
             <View style={styles.resultCopy}>
@@ -650,5 +666,21 @@ const styles = StyleSheet.create({
     fontSize: 12,
     marginTop: SPACING.md,
     textAlign: 'center',
+  },
+  fallbackButton: {
+    alignItems: 'center',
+    alignSelf: 'center',
+    backgroundColor: '#FFFFFFAA',
+    borderRadius: RADIUS.pill,
+    flexDirection: 'row',
+    gap: 6,
+    marginTop: SPACING.md,
+    paddingHorizontal: 13,
+    paddingVertical: 8,
+  },
+  fallbackButtonText: {
+    color: COLORS.textSecondary,
+    fontSize: 11,
+    fontWeight: '700',
   },
 });
