@@ -96,9 +96,9 @@ export function DiscoveryPreview() {
   const [activeKey, setActiveKey] = useState<DiscoveryKey>('anger');
   const [revealed, setRevealed] = useState(false);
   const [waterCount, setWaterCount] = useState(0);
-  const [assistTaps, setAssistTaps] = useState(0);
   const reveal = useRef(new Animated.Value(0)).current;
   const overlay = useRef(new Animated.Value(1)).current;
+  const assistTaps = useRef(0);
   const gestureDistance = useRef(0);
   const lastGesture = useRef({ x: 0, y: 0 });
 
@@ -109,7 +109,7 @@ export function DiscoveryPreview() {
     if (nextKey) setActiveKey(nextKey);
     setRevealed(false);
     setWaterCount(0);
-    setAssistTaps(0);
+    assistTaps.current = 0;
     gestureDistance.current = 0;
     reveal.setValue(0);
     overlay.setValue(1);
@@ -179,9 +179,9 @@ export function DiscoveryPreview() {
       return;
     }
     if (activeKey === 'nervous' || activeKey === 'sad' || activeKey === 'unspoken') {
-      const next = assistTaps + 1;
+      const next = assistTaps.current + 1;
       const nextProgress = Math.min(next / 3, 1);
-      setAssistTaps(next);
+      assistTaps.current = next;
       Animated.parallel([
         Animated.timing(overlay, {
           toValue: 1 - nextProgress * 0.9,
