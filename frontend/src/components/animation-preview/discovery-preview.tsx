@@ -5,7 +5,6 @@ import {
   Easing,
   PanResponder,
   Pressable,
-  ScrollView,
   StyleSheet,
   Text,
   View,
@@ -98,6 +97,7 @@ export function DiscoveryPreview() {
   const [revealed, setRevealed] = useState(false);
   const [waterCount, setWaterCount] = useState(0);
   const [selectedEmotionKey, setSelectedEmotionKey] = useState<string | null>(null);
+  const [poppedBalloonKeys, setPoppedBalloonKeys] = useState<string[]>([]);
   const reveal = useRef(new Animated.Value(0)).current;
   const overlay = useRef(new Animated.Value(1)).current;
   const balloonFloat = useRef(new Animated.Value(0)).current;
@@ -117,6 +117,7 @@ export function DiscoveryPreview() {
     setRevealed(false);
     setWaterCount(0);
     setSelectedEmotionKey(null);
+    setPoppedBalloonKeys([]);
     assistTaps.current = 0;
     gestureDistance.current = 0;
     reveal.setValue(0);
@@ -152,7 +153,7 @@ export function DiscoveryPreview() {
   }, [activeKey]);
 
   useEffect(() => {
-    if (activeKey !== 'anger' || revealed) {
+    if (activeKey !== 'anger') {
       balloonFloat.setValue(0);
       return;
     }
@@ -174,7 +175,7 @@ export function DiscoveryPreview() {
     );
     movement.start();
     return () => movement.stop();
-  }, [activeKey, balloonFloat, revealed]);
+  }, [activeKey, balloonFloat]);
 
   useEffect(() => {
     if (activeKey !== 'wound' || revealed) {
@@ -236,10 +237,6 @@ export function DiscoveryPreview() {
   );
 
   const handleTap = () => {
-    if (activeKey === 'anger') {
-      finishReveal();
-      return;
-    }
     if (activeKey === 'wound') {
       Animated.timing(scoopMove, {
         toValue: 1,
@@ -292,6 +289,15 @@ export function DiscoveryPreview() {
       ]).start();
       if (next >= 3) finishReveal();
     }
+  };
+
+  const popBalloon = (emotionKey: string) => {
+    setPoppedBalloonKeys((current) =>
+      current.includes(emotionKey) ? current : [...current, emotionKey],
+    );
+    setSelectedEmotionKey(emotionKey);
+    setRevealed(true);
+    reveal.setValue(1);
   };
 
   const bowlScale = reveal.interpolate({
@@ -354,106 +360,195 @@ export function DiscoveryPreview() {
           </Pressable>
         </View>
 
-        <Pressable
+        <View
           testID={`discovery-stage-${activeKey}`}
-          accessibilityRole="button"
-          accessibilityLabel={active.instruction}
-          onPress={handleTap}
           style={styles.scene}
           {...panResponder.panHandlers}
         >
-          <Animated.View
-            style={[
-              styles.bowlReveal,
-              { opacity: bowlOpacity, transform: [{ scale: bowlScale }] },
-            ]}
-          >
-            <EmotionVisual emotion={emotion} size={138} radius={RADIUS.lg} />
-          </Animated.View>
-
-          {activeKey === 'anger' && (
+          {activeKey !== 'anger' && (
             <Animated.View
+              pointerEvents={revealed ? 'auto' : 'none'}
               style={[
-                styles.balloonWrap,
+                styles.sceneBowlField,
+                activeKey === 'warm' && styles.warmBowlField,
                 {
-                  opacity: overlay,
-                  transform: [
-                    {
-                      translateX: balloonFloat.interpolate({
-                        inputRange: [0, 1],
-                        outputRange: [-5, 6],
-                      }),
-                    },
-                    {
-                      translateY: balloonFloat.interpolate({
-                        inputRange: [0, 1],
-                        outputRange: [6, -9],
-                      }),
-                    },
-                    {
-                      rotate: balloonFloat.interpolate({
-                        inputRange: [0, 1],
-                        outputRange: ['-2deg', '3deg'],
-                      }),
-                    },
-                    {
-                      scale: overlay.interpolate({
-                        inputRange: [0, 1],
-                        outputRange: [1.14, 1],
-                      }),
-                    },
-                  ],
+                  opacity: bowlOpacity,
+                  transform: [{ scale: bowlScale }],
                 },
               ]}
             >
-              <View style={[styles.balloon, { backgroundColor: active.accent }]}>
-                <View style={styles.balloonShine} />
-              </View>
-              <View style={[styles.balloonKnot, { borderTopColor: active.accent }]} />
-              <View style={styles.balloonString} />
+              {categoryEmotions.map((item) => {
+                const dense = categoryEmotions.length > 12;
+                const compact = categoryEmotions.length > 8;
+                const selected = item.key === emotion.key;
+                return (
+                  <Pressable
+                    key={item.key}
+                    testID={`scene-bowl-${item.key}`}
+                    accessibilityRole="button"
+                    accessibilityState={{ selected }}
+                    onPress={() => setSelectedEmotionKey(item.key)}
+                    style={({ pressed }) => [
+                      styles.sceneBowl,
+                      {
+                        width: dense ? '19%' : compact ? '24%' : '31%',
+                      },
+                      selected && {
+                        backgroundColor: item.color + '66',
+                        borderColor: active.accent,
+                      },
+                      pressed && styles.pressed,
+                    ]}
+                  >
+                    <EmotionVisual
+                      emotion={item}
+                      size={dense ? 38 : compact ? 43 : 51}
+                      radius={RADIUS.sm}
+                    />
+                    <Text numberOfLines={1} style={styles.sceneBowlLabel}>
+                      {item.label}
+                    </Text>
+                  </Pressable>
+                );
+              })}
             </Animated.View>
+          )}
+
+          {activeKey === 'anger' && (
+            <View style={styles.balloonField}>
+              {categoryEmotions.map((item, index) => {
+                const popped = poppedBalloonKeys.includes(item.key);
+                const selected = item.key === selectedEmotionKey;
+                return (
+                  <Animated.View
+                    key={item.key}
+                    style={[
+                      styles.balloonSlot,
+                      {
+                        transform: [
+                          {
+                            translateX: balloonFloat.interpolate({
+                              inputRange: [0, 1],
+                              outputRange:
+                                index % 3 === 0
+                                  ? [-4, 5]
+                                  : index % 3 === 1
+                                    ? [4, -3]
+                                    : [-2, 4],
+                            }),
+                          },
+                          {
+                            translateY: balloonFloat.interpolate({
+                              inputRange: [0, 1],
+                              outputRange:
+                                index % 2 === 0 ? [7, -8] : [-6, 8],
+                            }),
+                          },
+                        ],
+                      },
+                    ]}
+                  >
+                    <Pressable
+                      testID={`anger-balloon-${item.key}`}
+                      accessibilityRole="button"
+                      accessibilityLabel={`${item.label}氣球`}
+                      onPress={() => popBalloon(item.key)}
+                      style={({ pressed }) => [
+                        styles.miniBalloonPressable,
+                        pressed && styles.pressed,
+                      ]}
+                    >
+                      <View
+                        style={[
+                          styles.miniBalloon,
+                          { backgroundColor: item.color + 'E8' },
+                          popped && styles.miniBalloonPopped,
+                          selected && { borderColor: active.accent },
+                        ]}
+                      >
+                        {!popped && <View style={styles.miniBalloonShine} />}
+                        <EmotionVisual emotion={item} size={43} radius={RADIUS.sm} />
+                      </View>
+                      {!popped ? (
+                        <>
+                          <View style={[styles.miniBalloonKnot, { borderTopColor: item.color }]} />
+                          <View style={styles.miniBalloonString} />
+                        </>
+                      ) : (
+                        <Text numberOfLines={1} style={styles.poppedBalloonLabel}>
+                          {item.label}
+                        </Text>
+                      )}
+                    </Pressable>
+                  </Animated.View>
+                );
+              })}
+            </View>
           )}
 
           {activeKey === 'nervous' && (
-            <Animated.View style={[styles.coverLayer, styles.sandCover, { opacity: overlay }]}>
-              {Array.from({ length: 34 }).map((_, index) => (
-                <View
-                  key={index}
-                  style={[
-                    styles.sandDot,
-                    {
-                      left: `${(index * 29) % 96}%`,
-                      top: `${(index * 47) % 90}%`,
-                      transform: [{ scale: 0.65 + (index % 4) * 0.16 }],
-                    },
-                  ]}
-                />
-              ))}
-              <Text style={styles.coverPrompt}>用手指慢慢捽開</Text>
-            </Animated.View>
+            <Pressable
+              pointerEvents={revealed ? 'none' : 'auto'}
+              accessibilityRole="button"
+              accessibilityLabel={active.instruction}
+              onPress={handleTap}
+              style={styles.interactionLayer}
+            >
+              <Animated.View style={[styles.coverLayer, styles.sandCover, { opacity: overlay }]}>
+                {Array.from({ length: 34 }).map((_, index) => (
+                  <View
+                    key={index}
+                    style={[
+                      styles.sandDot,
+                      {
+                        left: `${(index * 29) % 96}%`,
+                        top: `${(index * 47) % 90}%`,
+                        transform: [{ scale: 0.65 + (index % 4) * 0.16 }],
+                      },
+                    ]}
+                  />
+                ))}
+                <Text style={styles.coverPrompt}>8 隻飯碗收埋喺沙下面</Text>
+              </Animated.View>
+            </Pressable>
           )}
 
           {activeKey === 'sad' && (
-            <Animated.View style={[styles.coverLayer, styles.rainWindow, { opacity: overlay }]}>
-              {Array.from({ length: 18 }).map((_, index) => (
-                <View
-                  key={index}
-                  style={[
-                    styles.rainDrop,
-                    {
-                      left: `${8 + ((index * 23) % 84)}%`,
-                      top: `${5 + ((index * 37) % 78)}%`,
-                      height: 18 + (index % 3) * 9,
-                    },
-                  ]}
-                />
-              ))}
-              <Text style={styles.coverPrompt}>左右掃走啲雨水</Text>
-            </Animated.View>
+            <Pressable
+              pointerEvents={revealed ? 'none' : 'auto'}
+              accessibilityRole="button"
+              accessibilityLabel={active.instruction}
+              onPress={handleTap}
+              style={styles.interactionLayer}
+            >
+              <Animated.View style={[styles.coverLayer, styles.rainWindow, { opacity: overlay }]}>
+                {Array.from({ length: 18 }).map((_, index) => (
+                  <View
+                    key={index}
+                    style={[
+                      styles.rainDrop,
+                      {
+                        left: `${8 + ((index * 23) % 84)}%`,
+                        top: `${5 + ((index * 37) % 78)}%`,
+                        height: 18 + (index % 3) * 9,
+                      },
+                    ]}
+                  />
+                ))}
+                <Text style={styles.coverPrompt}>6 隻飯碗喺雨窗後面</Text>
+              </Animated.View>
+            </Pressable>
           )}
 
           {activeKey === 'wound' && (
-            <Animated.View style={[styles.fishPond, { opacity: overlay }]}>
+            <Pressable
+              pointerEvents={revealed ? 'none' : 'auto'}
+              accessibilityRole="button"
+              accessibilityLabel={active.instruction}
+              onPress={handleTap}
+              style={styles.interactionLayer}
+            >
+              <Animated.View style={[styles.fishPond, { opacity: overlay }]}>
               <View style={styles.pondRippleLarge} />
               <View style={styles.pondRippleSmall} />
               <Animated.Text
@@ -526,21 +621,37 @@ export function DiscoveryPreview() {
                 </View>
                 <View style={styles.scoopHandle} />
               </Animated.View>
-              <Text style={styles.pondPrompt}>撳一下紙網 · 輕輕撈起</Text>
-            </Animated.View>
+                <Text style={styles.pondPrompt}>撈起紙網 · 發現 15 隻飯碗</Text>
+              </Animated.View>
+            </Pressable>
           )}
 
           {activeKey === 'unspoken' && (
-            <Animated.View style={[styles.coverLayer, styles.fogCover, { opacity: overlay }]}>
-              <View style={[styles.fogBand, { top: 50, left: -20 }]} />
-              <View style={[styles.fogBand, { top: 112, right: -30, width: '82%' }]} />
-              <View style={[styles.fogBand, { top: 168, left: 6, width: '92%' }]} />
-              <Text style={styles.coverPrompt}>未講得出 · 都可以慢慢搵</Text>
-            </Animated.View>
+            <Pressable
+              pointerEvents={revealed ? 'none' : 'auto'}
+              accessibilityRole="button"
+              accessibilityLabel={active.instruction}
+              onPress={handleTap}
+              style={styles.interactionLayer}
+            >
+              <Animated.View style={[styles.coverLayer, styles.fogCover, { opacity: overlay }]}>
+                <View style={[styles.fogBand, { top: 50, left: -20 }]} />
+                <View style={[styles.fogBand, { top: 112, right: -30, width: '82%' }]} />
+                <View style={[styles.fogBand, { top: 168, left: 6, width: '92%' }]} />
+                <Text style={styles.coverPrompt}>4 隻飯碗收埋喺霧入面</Text>
+              </Animated.View>
+            </Pressable>
           )}
 
           {activeKey === 'warm' && (
-            <View style={styles.gardenScene}>
+            <Pressable
+              pointerEvents={revealed ? 'none' : 'auto'}
+              accessibilityRole="button"
+              accessibilityLabel={active.instruction}
+              onPress={handleTap}
+              style={styles.interactionLayer}
+            >
+              <View style={styles.gardenScene}>
               <View style={styles.wateringCan}>
                 <View style={styles.canDrawing}>
                   <View style={[styles.canHandle, { borderColor: active.accent }]} />
@@ -597,9 +708,10 @@ export function DiscoveryPreview() {
                 <Text style={styles.flower}>🌼</Text>
                 <Text style={styles.flower}>🌱</Text>
               </Animated.View>
-            </View>
+              </View>
+            </Pressable>
           )}
-        </Pressable>
+        </View>
 
         {!revealed &&
           (activeKey === 'nervous' || activeKey === 'sad' || activeKey === 'unspoken') && (
@@ -619,47 +731,9 @@ export function DiscoveryPreview() {
 
         {revealed ? (
           <Animated.View style={[styles.results, { opacity: reveal }]}>
-            <View style={styles.resultsHeader}>
-              <View>
-                <Text style={styles.resultLabel}>呢一組全部飯碗</Text>
-                <Text style={styles.resultsCount}>
-                  {categoryEmotions.length} 隻 · 左右掃嚟比較
-                </Text>
-              </View>
-              <Feather name="arrow-right" size={17} color={COLORS.textSecondary} />
-            </View>
-            <ScrollView
-              horizontal
-              nestedScrollEnabled
-              showsHorizontalScrollIndicator={false}
-              contentContainerStyle={styles.bowlRail}
-            >
-              {categoryEmotions.map((item) => {
-                const selected = item.key === emotion.key;
-                return (
-                  <Pressable
-                    key={item.key}
-                    testID={`discovery-bowl-${item.key}`}
-                    accessibilityRole="button"
-                    accessibilityState={{ selected }}
-                    onPress={() => setSelectedEmotionKey(item.key)}
-                    style={({ pressed }) => [
-                      styles.bowlOption,
-                      selected && {
-                        backgroundColor: item.color + '55',
-                        borderColor: active.accent,
-                      },
-                      pressed && styles.pressed,
-                    ]}
-                  >
-                    <EmotionVisual emotion={item} size={66} radius={RADIUS.md} />
-                    <Text numberOfLines={1} style={styles.bowlOptionLabel}>
-                      {item.label}
-                    </Text>
-                  </Pressable>
-                );
-              })}
-            </ScrollView>
+            <Text style={styles.inSceneCount}>
+              {categoryEmotions.length} 隻飯碗全部喺遊戲畫面入面
+            </Text>
             <View style={styles.resultCard}>
               <View style={styles.resultCopy}>
                 <Text style={styles.resultLabel}>你而家揀緊</Text>
@@ -757,44 +831,109 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     backgroundColor: '#FFFFFF88',
     borderRadius: RADIUS.md,
-    height: 260,
+    height: 340,
     justifyContent: 'center',
     marginTop: SPACING.md,
     overflow: 'hidden',
     position: 'relative',
   },
-  bowlReveal: { alignItems: 'center', justifyContent: 'center' },
-  balloonWrap: { alignItems: 'center', position: 'absolute', top: 35 },
-  balloon: {
-    alignItems: 'flex-start',
-    borderRadius: 65,
-    height: 142,
-    justifyContent: 'flex-start',
-    padding: 24,
-    width: 122,
+  interactionLayer: {
+    ...StyleSheet.absoluteFillObject,
+    zIndex: 2,
   },
-  balloonShine: {
+  sceneBowlField: {
+    ...StyleSheet.absoluteFillObject,
+    alignContent: 'center',
+    alignItems: 'center',
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    justifyContent: 'space-evenly',
+    padding: SPACING.sm,
+    zIndex: 1,
+  },
+  warmBowlField: { paddingTop: 96 },
+  sceneBowl: {
+    alignItems: 'center',
+    borderColor: 'transparent',
+    borderRadius: RADIUS.sm,
+    borderWidth: 2,
+    justifyContent: 'center',
+    marginVertical: 2,
+    minHeight: 58,
+    padding: 3,
+  },
+  sceneBowlLabel: {
+    color: COLORS.textPrimary,
+    fontSize: 9,
+    fontWeight: '700',
+    marginTop: 2,
+    textAlign: 'center',
+    width: '100%',
+  },
+  balloonField: {
+    ...StyleSheet.absoluteFillObject,
+    alignContent: 'center',
+    alignItems: 'center',
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    justifyContent: 'space-evenly',
+    paddingHorizontal: 4,
+    paddingVertical: 10,
+  },
+  balloonSlot: {
+    alignItems: 'center',
+    height: 152,
+    justifyContent: 'center',
+    width: '32%',
+  },
+  miniBalloonPressable: { alignItems: 'center', justifyContent: 'flex-start' },
+  miniBalloon: {
+    alignItems: 'center',
+    borderColor: 'transparent',
+    borderRadius: 44,
+    borderWidth: 3,
+    height: 84,
+    justifyContent: 'center',
+    overflow: 'hidden',
+    width: 76,
+  },
+  miniBalloonPopped: {
+    backgroundColor: '#FFFFFFCC',
+    borderRadius: RADIUS.md,
+  },
+  miniBalloonShine: {
     backgroundColor: '#FFFFFF88',
     borderRadius: RADIUS.pill,
-    height: 34,
+    height: 22,
+    left: 13,
+    position: 'absolute',
+    top: 11,
     transform: [{ rotate: '20deg' }],
-    width: 12,
+    width: 7,
   },
-  balloonKnot: {
+  miniBalloonKnot: {
     borderLeftColor: 'transparent',
-    borderLeftWidth: 8,
+    borderLeftWidth: 6,
     borderRightColor: 'transparent',
-    borderRightWidth: 8,
-    borderTopWidth: 13,
+    borderRightWidth: 6,
+    borderTopWidth: 9,
     height: 0,
     marginTop: -2,
     width: 0,
   },
-  balloonString: {
+  miniBalloonString: {
     backgroundColor: '#9A8D86',
-    height: 48,
+    height: 30,
     opacity: 0.5,
     width: 1,
+  },
+  poppedBalloonLabel: {
+    color: COLORS.textPrimary,
+    fontSize: 10,
+    fontWeight: '800',
+    marginTop: 5,
+    maxWidth: 86,
+    textAlign: 'center',
   },
   coverLayer: {
     ...StyleSheet.absoluteFillObject,
@@ -998,38 +1137,13 @@ const styles = StyleSheet.create({
     overflow: 'hidden',
     paddingVertical: SPACING.md,
   },
-  resultsHeader: {
-    alignItems: 'center',
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    paddingHorizontal: SPACING.md,
-  },
-  resultsCount: {
+  inSceneCount: {
     color: COLORS.textSecondary,
     fontSize: 11,
-    marginTop: 2,
-  },
-  bowlRail: {
-    gap: SPACING.sm,
-    paddingHorizontal: SPACING.md,
-    paddingVertical: 12,
-  },
-  bowlOption: {
-    alignItems: 'center',
-    backgroundColor: '#FFFFFFCC',
-    borderColor: 'transparent',
-    borderRadius: RADIUS.md,
-    borderWidth: 2,
-    padding: 7,
-    width: 86,
-  },
-  bowlOptionLabel: {
-    color: COLORS.textPrimary,
-    fontSize: 11,
     fontWeight: '700',
-    marginTop: 5,
+    paddingBottom: SPACING.sm,
+    paddingHorizontal: SPACING.md,
     textAlign: 'center',
-    width: '100%',
   },
   resultCard: {
     alignItems: 'center',
