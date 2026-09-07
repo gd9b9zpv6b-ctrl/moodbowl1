@@ -451,7 +451,9 @@ export function DiscoveryPreview() {
                     <Pressable
                       testID={`anger-balloon-${item.key}`}
                       accessibilityRole="button"
-                      accessibilityLabel={`${item.label}氣球`}
+                      accessibilityLabel={
+                        popped ? `${item.label}飯碗` : `第 ${index + 1} 個氣球`
+                      }
                       onPress={() => popBalloon(item.key)}
                       style={({ pressed }) => [
                         styles.miniBalloonPressable,
@@ -466,8 +468,11 @@ export function DiscoveryPreview() {
                           selected && { borderColor: active.accent },
                         ]}
                       >
-                        {!popped && <View style={styles.miniBalloonShine} />}
-                        <EmotionVisual emotion={item} size={43} radius={RADIUS.sm} />
+                        {popped ? (
+                          <EmotionVisual emotion={item} size={58} radius={RADIUS.sm} />
+                        ) : (
+                          <View style={styles.miniBalloonShine} />
+                        )}
                       </View>
                       {!popped ? (
                         <>
