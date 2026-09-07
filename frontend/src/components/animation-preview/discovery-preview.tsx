@@ -3,13 +3,11 @@ import React, { useEffect, useMemo, useRef, useState } from 'react';
 import {
   Animated,
   Easing,
-  NativeSyntheticEvent,
   PanResponder,
   Platform,
   Pressable,
   StyleSheet,
   Text,
-  NativeTouchEvent,
   View,
 } from 'react-native';
 import Svg, { Defs, Mask, Path, Rect } from 'react-native-svg';
@@ -108,6 +106,7 @@ export function DiscoveryPreview() {
   const fishSwim = useRef(new Animated.Value(0)).current;
   const scoopMove = useRef(new Animated.Value(0)).current;
   const waterPour = useRef(new Animated.Value(0)).current;
+  const sceneRef = useRef<View>(null);
   const sceneSize = useRef({ width: 320, height: 340 });
   const lastScratchPoint = useRef({ x: 0, y: 0 });
 
@@ -229,31 +228,35 @@ export function DiscoveryPreview() {
     if (!start) discoverAtPoint(x, y);
   };
 
-  const recordWebTouch = (
-    event: NativeSyntheticEvent<NativeTouchEvent>,
-    start = false,
-  ) => {
-    if (Platform.OS !== 'web') return;
-    const nativeEvent = event.nativeEvent;
-    const touch = nativeEvent.touches?.[0] ?? nativeEvent;
-    const browserTouch = touch as NativeTouchEvent & {
-      clientX?: number;
-      clientY?: number;
+  useEffect(() => {
+    if (
+      Platform.OS !== 'web' ||
+      (activeKey !== 'nervous' && activeKey !== 'sad' && activeKey !== 'unspoken')
+    ) {
+      return;
+    }
+
+    const node = sceneRef.current as unknown as HTMLElement | null;
+    if (!node) return;
+    const trackTouch = (event: TouchEvent, start = false) => {
+      const touch = event.touches[0];
+      if (!touch) return;
+      event.preventDefault();
+      const rect = node.getBoundingClientRect();
+      recordScratchPoint(touch.clientX - rect.left, touch.clientY - rect.top, start);
     };
-    const target = event.currentTarget as unknown as {
-      getBoundingClientRect?: () => { left: number; top: number };
+    const handleTouchStart = (event: TouchEvent) => trackTouch(event, true);
+    const handleTouchMove = (event: TouchEvent) => trackTouch(event);
+
+    node.addEventListener('touchstart', handleTouchStart, { passive: false });
+    node.addEventListener('touchmove', handleTouchMove, { passive: false });
+    return () => {
+      node.removeEventListener('touchstart', handleTouchStart);
+      node.removeEventListener('touchmove', handleTouchMove);
     };
-    const rect = target.getBoundingClientRect?.();
-    const x =
-      rect && Number.isFinite(browserTouch.clientX)
-        ? (browserTouch.clientX as number) - rect.left
-        : touch.locationX;
-    const y =
-      rect && Number.isFinite(browserTouch.clientY)
-        ? (browserTouch.clientY as number) - rect.top
-        : touch.locationY;
-    recordScratchPoint(x, y, start);
-  };
+    // Rebind when the category changes so hit-testing uses its emotion set.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [activeKey]);
 
   const panResponder = useMemo(
     () =>
@@ -360,14 +363,13 @@ export function DiscoveryPreview() {
         </View>
 
         <View
+          ref={sceneRef}
           testID={`discovery-stage-${activeKey}`}
           style={styles.scene}
           onLayout={(event) => {
             const { width, height } = event.nativeEvent.layout;
             sceneSize.current = { width, height };
           }}
-          onTouchStart={(event) => recordWebTouch(event, true)}
-          onTouchMove={(event) => recordWebTouch(event)}
           {...panResponder.panHandlers}
         >
           {(activeKey === 'nervous' || activeKey === 'sad' || activeKey === 'unspoken') && (
