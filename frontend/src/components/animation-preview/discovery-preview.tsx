@@ -10,7 +10,6 @@ import {
   Text,
   View,
 } from 'react-native';
-import Svg, { Defs, Mask, Path, Rect } from 'react-native-svg';
 
 import { EmotionVisual } from '@/src/components/emotion-visual';
 import { EMOTION_BY_KEY, EMOTIONS, EmotionCategory } from '@/src/constants/emotions';
@@ -93,6 +92,8 @@ const DISCOVERIES: DiscoveryConfig[] = [
 ];
 
 const SOFT_EASING = Easing.out(Easing.quad);
+const COVER_COLUMNS = 7;
+const COVER_ROWS = 9;
 
 export function DiscoveryPreview() {
   const [activeKey, setActiveKey] = useState<DiscoveryKey>('anger');
@@ -100,7 +101,7 @@ export function DiscoveryPreview() {
   const [selectedEmotionKey, setSelectedEmotionKey] = useState<string | null>(null);
   const [discoveredKeys, setDiscoveredKeys] = useState<string[]>([]);
   const [poppedBalloonKeys, setPoppedBalloonKeys] = useState<string[]>([]);
-  const [scratchPath, setScratchPath] = useState('');
+  const [clearedCoverCells, setClearedCoverCells] = useState<number[]>([]);
   const reveal = useRef(new Animated.Value(0)).current;
   const balloonFloat = useRef(new Animated.Value(0)).current;
   const fishSwim = useRef(new Animated.Value(0)).current;
@@ -109,6 +110,7 @@ export function DiscoveryPreview() {
   const sceneRef = useRef<View>(null);
   const sceneSize = useRef({ width: 320, height: 340 });
   const lastScratchPoint = useRef({ x: 0, y: 0 });
+  const scratchHits = useRef<Record<string, number>>({});
 
   const active = DISCOVERIES.find((item) => item.key === activeKey) ?? DISCOVERIES[0];
   const categoryEmotions = EMOTIONS.filter((item) => item.category === activeKey);
@@ -120,7 +122,8 @@ export function DiscoveryPreview() {
     setSelectedEmotionKey(null);
     setDiscoveredKeys([]);
     setPoppedBalloonKeys([]);
-    setScratchPath('');
+    setClearedCoverCells([]);
+    scratchHits.current = {};
     reveal.setValue(0);
     scoopMove.setValue(0);
     waterPour.setValue(0);
@@ -211,7 +214,10 @@ export function DiscoveryPreview() {
       Math.min(rows - 1, Math.floor(y / (sceneSize.current.height / rows))),
     );
     const item = categoryEmotions[row * columns + column];
-    if (item) discoverEmotion(item.key);
+    if (!item) return;
+    const hits = (scratchHits.current[item.key] ?? 0) + 1;
+    scratchHits.current[item.key] = hits;
+    if (hits >= 4) discoverEmotion(item.key);
   };
 
   const recordScratchPoint = (x: number, y: number, start = false) => {
@@ -222,8 +228,23 @@ export function DiscoveryPreview() {
       if (Math.sqrt(dx * dx + dy * dy) < 7) return;
     }
     lastScratchPoint.current = { x, y };
-    setScratchPath((current) =>
-      `${current} ${start ? 'M' : 'L'} ${x.toFixed(1)} ${y.toFixed(1)}`,
+    const coverColumn = Math.max(
+      0,
+      Math.min(
+        COVER_COLUMNS - 1,
+        Math.floor(x / (sceneSize.current.width / COVER_COLUMNS)),
+      ),
+    );
+    const coverRow = Math.max(
+      0,
+      Math.min(
+        COVER_ROWS - 1,
+        Math.floor(y / (sceneSize.current.height / COVER_ROWS)),
+      ),
+    );
+    const coverCell = coverRow * COVER_COLUMNS + coverColumn;
+    setClearedCoverCells((current) =>
+      current.includes(coverCell) ? current : [...current, coverCell],
     );
     if (!start) discoverAtPoint(x, y);
   };
@@ -499,38 +520,25 @@ export function DiscoveryPreview() {
 
           {activeKey === 'nervous' && (
             <View pointerEvents="none" style={styles.interactionLayer}>
-              <ScratchCover
-                id="sand-search-mask"
-                path={scratchPath}
-                color="#E7CF9A"
+              <SearchCover
+                kind="nervous"
+                clearedCells={clearedCoverCells}
               />
-              <Text style={styles.coverPrompt}>用手指捽開啲沙 · 逐隻慢慢搵</Text>
+              {clearedCoverCells.length === 0 && (
+                <Text style={styles.coverPrompt}>用手指捽開啲沙 · 逐隻慢慢搵</Text>
+              )}
             </View>
           )}
 
           {activeKey === 'sad' && (
             <View pointerEvents="none" style={styles.interactionLayer}>
-              <ScratchCover
-                id="rain-search-mask"
-                path={scratchPath}
-                color="#D9EAF4"
+              <SearchCover
+                kind="sad"
+                clearedCells={clearedCoverCells}
               />
-              <View style={styles.rainDecoration}>
-                {Array.from({ length: 18 }).map((_, index) => (
-                  <View
-                    key={index}
-                    style={[
-                      styles.rainDrop,
-                      {
-                        left: `${8 + ((index * 23) % 84)}%`,
-                        top: `${5 + ((index * 37) % 78)}%`,
-                        height: 18 + (index % 3) * 9,
-                      },
-                    ]}
-                  />
-                ))}
-              </View>
-              <Text style={styles.coverPrompt}>用手指抹開雨水 · 逐隻慢慢搵</Text>
+              {clearedCoverCells.length === 0 && (
+                <Text style={styles.coverPrompt}>用手指抹開雨水 · 逐隻慢慢搵</Text>
+              )}
             </View>
           )}
 
@@ -628,15 +636,13 @@ export function DiscoveryPreview() {
 
           {activeKey === 'unspoken' && (
             <View pointerEvents="none" style={styles.interactionLayer}>
-              <ScratchCover
-                id="fog-search-mask"
-                path={scratchPath}
-                color="#E3E6E9"
+              <SearchCover
+                kind="unspoken"
+                clearedCells={clearedCoverCells}
               />
-              <View style={[styles.fogBand, { top: 50, left: -20 }]} />
-              <View style={[styles.fogBand, { top: 112, right: -30, width: '82%' }]} />
-              <View style={[styles.fogBand, { top: 168, left: 6, width: '92%' }]} />
-              <Text style={styles.coverPrompt}>用手指撥開啲霧 · 逐隻慢慢搵</Text>
+              {clearedCoverCells.length === 0 && (
+                <Text style={styles.coverPrompt}>用手指撥開啲霧 · 逐隻慢慢搵</Text>
+              )}
             </View>
           )}
 
@@ -744,37 +750,66 @@ export function DiscoveryPreview() {
   );
 }
 
-function ScratchCover({
-  id,
-  path,
-  color,
+function SearchCover({
+  kind,
+  clearedCells,
 }: {
-  id: string;
-  path: string;
-  color: string;
+  kind: 'nervous' | 'sad' | 'unspoken';
+  clearedCells: number[];
 }) {
   return (
-    <Svg pointerEvents="none" style={StyleSheet.absoluteFill}>
-      <Defs>
-        <Mask id={id}>
-          <Rect width="100%" height="100%" fill="#FFF" />
-          <Path
-            d={path || 'M -10 -10'}
-            fill="none"
-            stroke="#000"
-            strokeLinecap="round"
-            strokeLinejoin="round"
-            strokeWidth={58}
-          />
-        </Mask>
-      </Defs>
-      <Rect
-        width="100%"
-        height="100%"
-        fill={color}
-        mask={`url(#${id})`}
-      />
-    </Svg>
+    <View pointerEvents="none" style={styles.coverGrid}>
+      {Array.from({ length: COVER_COLUMNS * COVER_ROWS }).map((_, index) => {
+        if (clearedCells.includes(index)) return null;
+        const column = index % COVER_COLUMNS;
+        const row = Math.floor(index / COVER_COLUMNS);
+        return (
+          <View
+            key={index}
+            testID={`cover-cell-${index}`}
+            style={[
+              styles.coverCell,
+              {
+                backgroundColor:
+                  kind === 'nervous'
+                    ? index % 3 === 0
+                      ? '#DDBF7F'
+                      : index % 3 === 1
+                        ? '#E7CF9A'
+                        : '#D4B470'
+                    : kind === 'sad'
+                      ? index % 2 === 0
+                        ? '#D7E9F3'
+                        : '#C9E0EE'
+                      : index % 2 === 0
+                        ? '#E4E7EA'
+                        : '#D9DEE2',
+                height: `${100 / COVER_ROWS + 0.7}%`,
+                left: `${(column * 100) / COVER_COLUMNS}%`,
+                top: `${(row * 100) / COVER_ROWS}%`,
+                width: `${100 / COVER_COLUMNS + 0.7}%`,
+              },
+            ]}
+          >
+            {kind === 'nervous' && (
+              <>
+                <View style={[styles.sandGrain, { left: '24%', top: '28%' }]} />
+                <View style={[styles.sandGrain, { left: '68%', top: '62%' }]} />
+              </>
+            )}
+            {kind === 'sad' && (
+              <View
+                style={[
+                  styles.coverRainStreak,
+                  { left: `${28 + ((index * 17) % 42)}%` },
+                ]}
+              />
+            )}
+            {kind === 'unspoken' && <View style={styles.coverFogWisp} />}
+          </View>
+        );
+      })}
+    </View>
   );
 }
 
@@ -858,6 +893,40 @@ const styles = StyleSheet.create({
   interactionLayer: {
     ...StyleSheet.absoluteFillObject,
     zIndex: 2,
+  },
+  coverGrid: {
+    ...StyleSheet.absoluteFillObject,
+    overflow: 'hidden',
+  },
+  coverCell: {
+    overflow: 'hidden',
+    position: 'absolute',
+  },
+  sandGrain: {
+    backgroundColor: '#A98A55',
+    borderRadius: RADIUS.pill,
+    height: 3,
+    opacity: 0.45,
+    position: 'absolute',
+    width: 3,
+  },
+  coverRainStreak: {
+    backgroundColor: '#FFFFFFB8',
+    borderRadius: RADIUS.pill,
+    height: '72%',
+    position: 'absolute',
+    top: '-8%',
+    transform: [{ rotate: '11deg' }],
+    width: 3,
+  },
+  coverFogWisp: {
+    backgroundColor: '#F7F8F9AA',
+    borderRadius: RADIUS.pill,
+    height: '72%',
+    left: '-18%',
+    position: 'absolute',
+    top: '14%',
+    width: '136%',
   },
   sceneBowlField: {
     ...StyleSheet.absoluteFillObject,
