@@ -248,11 +248,17 @@ export function DiscoveryPreview() {
     const handleTouchStart = (event: TouchEvent) => trackTouch(event, true);
     const handleTouchMove = (event: TouchEvent) => trackTouch(event);
 
-    node.addEventListener('touchstart', handleTouchStart, { passive: false });
-    node.addEventListener('touchmove', handleTouchMove, { passive: false });
+    node.addEventListener('touchstart', handleTouchStart, {
+      capture: true,
+      passive: false,
+    });
+    node.addEventListener('touchmove', handleTouchMove, {
+      capture: true,
+      passive: false,
+    });
     return () => {
-      node.removeEventListener('touchstart', handleTouchStart);
-      node.removeEventListener('touchmove', handleTouchMove);
+      node.removeEventListener('touchstart', handleTouchStart, true);
+      node.removeEventListener('touchmove', handleTouchMove, true);
     };
     // Rebind when the category changes so hit-testing uses its emotion set.
     // eslint-disable-next-line react-hooks/exhaustive-deps
