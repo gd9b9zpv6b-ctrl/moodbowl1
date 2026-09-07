@@ -102,6 +102,10 @@ export function DiscoveryPreview() {
   const [discoveredKeys, setDiscoveredKeys] = useState<string[]>([]);
   const [poppedBalloonKeys, setPoppedBalloonKeys] = useState<string[]>([]);
   const [clearedCoverCells, setClearedCoverCells] = useState<number[]>([]);
+  const [scoopingFishKey, setScoopingFishKey] = useState<string | null>(null);
+  const [scoopTarget, setScoopTarget] = useState({ x: 0, y: 0 });
+  const [wateringEmotionKey, setWateringEmotionKey] = useState<string | null>(null);
+  const [waterTarget, setWaterTarget] = useState({ fromRight: false, x: 0 });
   const reveal = useRef(new Animated.Value(0)).current;
   const balloonFloat = useRef(new Animated.Value(0)).current;
   const fishSwim = useRef(new Animated.Value(0)).current;
@@ -123,9 +127,15 @@ export function DiscoveryPreview() {
     setDiscoveredKeys([]);
     setPoppedBalloonKeys([]);
     setClearedCoverCells([]);
+    setScoopingFishKey(null);
+    setScoopTarget({ x: 0, y: 0 });
+    setWateringEmotionKey(null);
+    setWaterTarget({ fromRight: false, x: 0 });
     scratchHits.current = {};
     reveal.setValue(0);
+    scoopMove.stopAnimation();
     scoopMove.setValue(0);
+    waterPour.stopAnimation();
     waterPour.setValue(0);
   };
 
@@ -314,27 +324,56 @@ export function DiscoveryPreview() {
     discoverEmotion(emotionKey);
   };
 
-  const catchFish = (emotionKey: string) => {
+  const catchFish = (emotionKey: string, index: number) => {
+    if (scoopingFishKey || discoveredKeys.includes(emotionKey)) return;
+    const column = index % 5;
+    const row = Math.floor(index / 5);
+    const fishX = ((column + 0.5) * sceneSize.current.width) / 5;
+    const fishY = 50 + row * 74;
+    const netRingCenter = {
+      x: sceneSize.current.width - 88,
+      y: 76,
+    };
+    setScoopingFishKey(emotionKey);
+    setScoopTarget({
+      x: fishX - netRingCenter.x,
+      y: fishY - netRingCenter.y,
+    });
     scoopMove.setValue(0);
-    Animated.timing(scoopMove, {
-      toValue: 1,
-      duration: 760,
-      easing: Easing.inOut(Easing.quad),
-      useNativeDriver: true,
-    }).start(({ finished }) => {
-      if (finished) discoverEmotion(emotionKey);
+    requestAnimationFrame(() => {
+      Animated.timing(scoopMove, {
+        toValue: 1,
+        duration: 1250,
+        easing: Easing.inOut(Easing.quad),
+        useNativeDriver: true,
+      }).start(({ finished }) => {
+        if (finished) discoverEmotion(emotionKey);
+        setScoopingFishKey(null);
+        scoopMove.setValue(0);
+      });
     });
   };
 
-  const waterEmotion = (emotionKey: string) => {
+  const waterEmotion = (emotionKey: string, index: number) => {
+    if (wateringEmotionKey || discoveredKeys.includes(emotionKey)) return;
+    const column = index % 4;
+    const patchX = ((column + 0.5) * sceneSize.current.width) / 4;
+    const fromRight = column >= 2;
+    const streamOrigin = sceneSize.current.width / 2 + (fromRight ? 48 : -48);
+    setWateringEmotionKey(emotionKey);
+    setWaterTarget({ fromRight, x: patchX - streamOrigin });
     waterPour.setValue(0);
-    Animated.timing(waterPour, {
-      toValue: 1,
-      duration: 900,
-      easing: Easing.in(Easing.quad),
-      useNativeDriver: true,
-    }).start(({ finished }) => {
-      if (finished) discoverEmotion(emotionKey);
+    requestAnimationFrame(() => {
+      Animated.timing(waterPour, {
+        toValue: 1,
+        duration: 1450,
+        easing: Easing.inOut(Easing.quad),
+        useNativeDriver: true,
+      }).start(({ finished }) => {
+        if (finished) discoverEmotion(emotionKey);
+        setWateringEmotionKey(null);
+        waterPour.setValue(0);
+      });
     });
   };
 
@@ -572,12 +611,19 @@ export function DiscoveryPreview() {
                             },
                           ],
                         },
+                        scoopingFishKey === item.key && {
+                          opacity: scoopMove.interpolate({
+                            inputRange: [0, 0.46, 0.56, 1],
+                            outputRange: [1, 1, 0, 0],
+                          }),
+                        },
                       ]}
                     >
                       <Pressable
                         testID={`goldfish-${item.key}`}
                         accessibilityLabel={found ? `${item.label}飯碗` : '游緊嘅小金魚'}
-                        onPress={() => catchFish(item.key)}
+                        disabled={Boolean(scoopingFishKey)}
+                        onPress={() => catchFish(item.key, index)}
                         style={({ pressed }) => [
                           styles.fishButton,
                           found && { borderColor: active.accent },
@@ -595,6 +641,7 @@ export function DiscoveryPreview() {
                 })}
               </View>
               <Animated.View
+                testID="scoop-net"
                 pointerEvents="none"
                 style={[
                   styles.scoopNet,
@@ -602,20 +649,20 @@ export function DiscoveryPreview() {
                     transform: [
                       {
                         translateX: scoopMove.interpolate({
-                          inputRange: [0, 0.62, 1],
-                          outputRange: [0, -46, -20],
+                          inputRange: [0, 0.52, 1],
+                          outputRange: [0, scoopTarget.x, scoopTarget.x * 0.55],
                         }),
                       },
                       {
                         translateY: scoopMove.interpolate({
-                          inputRange: [0, 0.62, 1],
-                          outputRange: [0, 48, -22],
+                          inputRange: [0, 0.52, 1],
+                          outputRange: [0, scoopTarget.y, scoopTarget.y - 88],
                         }),
                       },
                       {
                         rotate: scoopMove.interpolate({
-                          inputRange: [0, 0.62, 1],
-                          outputRange: ['-24deg', '-8deg', '-17deg'],
+                          inputRange: [0, 0.52, 1],
+                          outputRange: ['-24deg', '-5deg', '-18deg'],
                         }),
                       },
                     ],
@@ -623,6 +670,20 @@ export function DiscoveryPreview() {
                 ]}
               >
                 <View style={styles.scoopRing}>
+                  <Animated.Text
+                    testID="netted-goldfish"
+                    style={[
+                      styles.nettedGoldfish,
+                      {
+                        opacity: scoopMove.interpolate({
+                          inputRange: [0, 0.5, 0.58, 1],
+                          outputRange: [0, 0, 1, 1],
+                        }),
+                      },
+                    ]}
+                  >
+                    🐠
+                  </Animated.Text>
                   <View style={styles.scoopMeshVertical} />
                   <View style={styles.scoopMeshHorizontal} />
                 </View>
@@ -648,35 +709,80 @@ export function DiscoveryPreview() {
 
           {activeKey === 'warm' && (
             <View style={styles.gardenScene}>
-              <View pointerEvents="none" style={styles.wateringCan}>
-                <View style={styles.canDrawing}>
+              <Animated.View
+                testID="watering-can"
+                pointerEvents="none"
+                style={[
+                  styles.wateringCan,
+                  {
+                    transform: [
+                      {
+                        translateX: waterPour.interpolate({
+                          inputRange: [0, 0.26, 0.86, 1],
+                          outputRange: [0, waterTarget.x, waterTarget.x, 0],
+                        }),
+                      },
+                      {
+                        translateY: waterPour.interpolate({
+                          inputRange: [0, 0.26, 0.86, 1],
+                          outputRange: [0, 5, 5, 0],
+                        }),
+                      },
+                    ],
+                  },
+                ]}
+              >
+                <Animated.View
+                  style={[
+                    styles.canDrawing,
+                    {
+                      transform: [
+                        { scaleX: waterTarget.fromRight ? -1 : 1 },
+                        {
+                          rotate: waterPour.interpolate({
+                            inputRange: [0, 0.3, 0.42, 0.86, 1],
+                            outputRange: waterTarget.fromRight
+                              ? ['0deg', '0deg', '14deg', '14deg', '0deg']
+                              : ['0deg', '0deg', '-14deg', '-14deg', '0deg'],
+                          }),
+                        },
+                      ],
+                    },
+                  ]}
+                >
                   <View style={[styles.canHandle, { borderColor: active.accent }]} />
                   <View style={[styles.canBody, { backgroundColor: active.accent }]}>
                     <View style={styles.canHighlight} />
                   </View>
                   <View style={[styles.canSpout, { backgroundColor: active.accent }]} />
                   <View style={[styles.canRose, { backgroundColor: active.accent }]} />
-                </View>
+                </Animated.View>
                 <Text style={styles.waterCount}>
                   {discoveredKeys.length} / {categoryEmotions.length}
                 </Text>
-                <View style={styles.waterStream}>
+                <View
+                  style={[
+                    styles.waterStream,
+                    waterTarget.fromRight && styles.waterStreamFromRight,
+                  ]}
+                >
                   {[0, 1, 2].map((index) => (
                     <Animated.View
                       key={index}
+                      testID={`water-drop-${index}`}
                       style={[
                         styles.waterDrop,
                         {
                           left: index * 12,
                           opacity: waterPour.interpolate({
-                            inputRange: [0, 0.08 + index * 0.08, 0.72, 1],
-                            outputRange: [0, 0, 1, 0],
+                            inputRange: [0, 0.4 + index * 0.04, 0.82, 0.92, 1],
+                            outputRange: [0, 0, 1, 0, 0],
                           }),
                           transform: [
                             {
                               translateY: waterPour.interpolate({
-                                inputRange: [0, 1],
-                                outputRange: [0, 72 + index * 7],
+                                inputRange: [0, 0.4, 0.9, 1],
+                                outputRange: [0, 0, 74 + index * 7, 82 + index * 7],
                               }),
                             },
                           ],
@@ -685,16 +791,17 @@ export function DiscoveryPreview() {
                     />
                   ))}
                 </View>
-              </View>
+              </Animated.View>
               <View style={styles.gardenSearchField}>
-                {categoryEmotions.map((item) => {
+                {categoryEmotions.map((item, index) => {
                   const found = discoveredKeys.includes(item.key);
                   return (
                     <Pressable
                       key={item.key}
                       testID={`garden-patch-${item.key}`}
                       accessibilityLabel={found ? `${item.label}飯碗` : '等緊淋水嘅泥土'}
-                      onPress={() => waterEmotion(item.key)}
+                      disabled={Boolean(wateringEmotionKey)}
+                      onPress={() => waterEmotion(item.key, index)}
                       style={({ pressed }) => [
                         styles.gardenPatch,
                         found && { borderColor: active.accent },
@@ -1126,6 +1233,11 @@ const styles = StyleSheet.create({
     position: 'absolute',
     width: 68,
   },
+  nettedGoldfish: {
+    fontSize: 28,
+    position: 'absolute',
+    zIndex: 1,
+  },
   scoopHandle: {
     backgroundColor: '#B69063',
     borderRadius: RADIUS.pill,
@@ -1220,6 +1332,10 @@ const styles = StyleSheet.create({
     position: 'absolute',
     top: 33,
     width: 42,
+  },
+  waterStreamFromRight: {
+    left: 'auto',
+    right: 2,
   },
   waterDrop: {
     backgroundColor: '#74BDE0',
