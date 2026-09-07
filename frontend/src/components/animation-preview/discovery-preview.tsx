@@ -806,6 +806,7 @@ const styles = StyleSheet.create({
     marginTop: SPACING.md,
     overflow: 'hidden',
     position: 'relative',
+    touchAction: 'none',
   },
   interactionLayer: {
     ...StyleSheet.absoluteFillObject,
