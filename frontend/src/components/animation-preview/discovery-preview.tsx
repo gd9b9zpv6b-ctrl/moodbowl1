@@ -3,10 +3,13 @@ import React, { useEffect, useMemo, useRef, useState } from 'react';
 import {
   Animated,
   Easing,
+  NativeSyntheticEvent,
   PanResponder,
+  Platform,
   Pressable,
   StyleSheet,
   Text,
+  NativeTouchEvent,
   View,
 } from 'react-native';
 import Svg, { Defs, Mask, Path, Rect } from 'react-native-svg';
@@ -212,6 +215,46 @@ export function DiscoveryPreview() {
     if (item) discoverEmotion(item.key);
   };
 
+  const recordScratchPoint = (x: number, y: number, start = false) => {
+    if (!Number.isFinite(x) || !Number.isFinite(y)) return;
+    if (!start) {
+      const dx = x - lastScratchPoint.current.x;
+      const dy = y - lastScratchPoint.current.y;
+      if (Math.sqrt(dx * dx + dy * dy) < 7) return;
+    }
+    lastScratchPoint.current = { x, y };
+    setScratchPath((current) =>
+      `${current} ${start ? 'M' : 'L'} ${x.toFixed(1)} ${y.toFixed(1)}`,
+    );
+    if (!start) discoverAtPoint(x, y);
+  };
+
+  const recordWebTouch = (
+    event: NativeSyntheticEvent<NativeTouchEvent>,
+    start = false,
+  ) => {
+    if (Platform.OS !== 'web') return;
+    const nativeEvent = event.nativeEvent;
+    const touch = nativeEvent.touches?.[0] ?? nativeEvent;
+    const browserTouch = touch as NativeTouchEvent & {
+      clientX?: number;
+      clientY?: number;
+    };
+    const target = event.currentTarget as unknown as {
+      getBoundingClientRect?: () => { left: number; top: number };
+    };
+    const rect = target.getBoundingClientRect?.();
+    const x =
+      rect && Number.isFinite(browserTouch.clientX)
+        ? (browserTouch.clientX as number) - rect.left
+        : touch.locationX;
+    const y =
+      rect && Number.isFinite(browserTouch.clientY)
+        ? (browserTouch.clientY as number) - rect.top
+        : touch.locationY;
+    recordScratchPoint(x, y, start);
+  };
+
   const panResponder = useMemo(
     () =>
       PanResponder.create({
@@ -222,17 +265,11 @@ export function DiscoveryPreview() {
           Math.abs(gesture.dx) + Math.abs(gesture.dy) > 4,
         onPanResponderGrant: (event) => {
           const { locationX: x, locationY: y } = event.nativeEvent;
-          lastScratchPoint.current = { x, y };
-          setScratchPath((current) => `${current} M ${x.toFixed(1)} ${y.toFixed(1)}`);
+          recordScratchPoint(x, y, true);
         },
         onPanResponderMove: (event) => {
           const { locationX: x, locationY: y } = event.nativeEvent;
-          const dx = x - lastScratchPoint.current.x;
-          const dy = y - lastScratchPoint.current.y;
-          if (Math.sqrt(dx * dx + dy * dy) < 7) return;
-          lastScratchPoint.current = { x, y };
-          setScratchPath((current) => `${current} L ${x.toFixed(1)} ${y.toFixed(1)}`);
-          discoverAtPoint(x, y);
+          recordScratchPoint(x, y);
         },
       }),
     // Rebuild when the category changes so hit-testing uses the correct bowl set.
@@ -329,6 +366,8 @@ export function DiscoveryPreview() {
             const { width, height } = event.nativeEvent.layout;
             sceneSize.current = { width, height };
           }}
+          onTouchStart={(event) => recordWebTouch(event, true)}
+          onTouchMove={(event) => recordWebTouch(event)}
           {...panResponder.panHandlers}
         >
           {(activeKey === 'nervous' || activeKey === 'sad' || activeKey === 'unspoken') && (
