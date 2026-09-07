@@ -9,6 +9,7 @@ import {
   Text,
   View,
 } from 'react-native';
+import Svg, { Defs, Mask, Path, Rect } from 'react-native-svg';
 
 import { EmotionVisual } from '@/src/components/emotion-visual';
 import { EMOTION_BY_KEY, EMOTIONS, EmotionCategory } from '@/src/constants/emotions';
@@ -42,7 +43,7 @@ const DISCOVERIES: DiscoveryConfig[] = [
     key: 'nervous',
     label: '緊張',
     title: '慢慢撥開啲沙',
-    instruction: '用手指來回捽 · 或者輕觸三下',
+    instruction: '用手指來回捽開沙面 · 逐隻搵',
     emotionKey: 'anxious',
     tint: '#FFF7E9',
     accent: '#D9B46E',
@@ -52,7 +53,7 @@ const DISCOVERIES: DiscoveryConfig[] = [
     key: 'sad',
     label: '傷心',
     title: '抹走窗上嘅雨',
-    instruction: '左右掃一掃 · 或者輕觸三下',
+    instruction: '用手指抹走雨水 · 睇下邊隻似你',
     emotionKey: 'sad',
     tint: '#EEF7FF',
     accent: '#82B9D8',
@@ -72,7 +73,7 @@ const DISCOVERIES: DiscoveryConfig[] = [
     key: 'unspoken',
     label: '講唔出',
     title: '撥開眼前嘅霧',
-    instruction: '來回掃一掃 · 或者輕觸三下',
+    instruction: '用手指逐處撥開霧 · 慢慢搵',
     emotionKey: 'foggy',
     tint: '#F1F3F6',
     accent: '#9AA8B6',
@@ -82,7 +83,7 @@ const DISCOVERIES: DiscoveryConfig[] = [
     key: 'warm',
     label: '溫暖',
     title: '淋水俾小花',
-    instruction: '撳三下水滴 · 睇下邊份力量正在生長',
+    instruction: '揀一塊泥土淋水 · 每次發現一隻',
     emotionKey: 'grateful',
     tint: '#F0F8EF',
     accent: '#7FA889',
@@ -95,18 +96,17 @@ const SOFT_EASING = Easing.out(Easing.quad);
 export function DiscoveryPreview() {
   const [activeKey, setActiveKey] = useState<DiscoveryKey>('anger');
   const [revealed, setRevealed] = useState(false);
-  const [waterCount, setWaterCount] = useState(0);
   const [selectedEmotionKey, setSelectedEmotionKey] = useState<string | null>(null);
+  const [discoveredKeys, setDiscoveredKeys] = useState<string[]>([]);
   const [poppedBalloonKeys, setPoppedBalloonKeys] = useState<string[]>([]);
+  const [scratchPath, setScratchPath] = useState('');
   const reveal = useRef(new Animated.Value(0)).current;
-  const overlay = useRef(new Animated.Value(1)).current;
   const balloonFloat = useRef(new Animated.Value(0)).current;
   const fishSwim = useRef(new Animated.Value(0)).current;
   const scoopMove = useRef(new Animated.Value(0)).current;
   const waterPour = useRef(new Animated.Value(0)).current;
-  const assistTaps = useRef(0);
-  const gestureDistance = useRef(0);
-  const lastGesture = useRef({ x: 0, y: 0 });
+  const sceneSize = useRef({ width: 320, height: 340 });
+  const lastScratchPoint = useRef({ x: 0, y: 0 });
 
   const active = DISCOVERIES.find((item) => item.key === activeKey) ?? DISCOVERIES[0];
   const categoryEmotions = EMOTIONS.filter((item) => item.category === activeKey);
@@ -115,35 +115,29 @@ export function DiscoveryPreview() {
   const reset = (nextKey?: DiscoveryKey) => {
     if (nextKey) setActiveKey(nextKey);
     setRevealed(false);
-    setWaterCount(0);
     setSelectedEmotionKey(null);
+    setDiscoveredKeys([]);
     setPoppedBalloonKeys([]);
-    assistTaps.current = 0;
-    gestureDistance.current = 0;
+    setScratchPath('');
     reveal.setValue(0);
-    overlay.setValue(1);
     scoopMove.setValue(0);
     waterPour.setValue(0);
   };
 
-  const finishReveal = () => {
-    if (revealed) return;
-    setRevealed(true);
-    setSelectedEmotionKey(active.emotionKey);
-    Animated.parallel([
-      Animated.timing(overlay, {
-        toValue: 0,
+  const discoverEmotion = (emotionKey: string) => {
+    setDiscoveredKeys((current) =>
+      current.includes(emotionKey) ? current : [...current, emotionKey],
+    );
+    setSelectedEmotionKey(emotionKey);
+    if (!revealed) {
+      setRevealed(true);
+      Animated.timing(reveal, {
+        toValue: 1,
         duration: 280,
         easing: SOFT_EASING,
         useNativeDriver: true,
-      }),
-      Animated.timing(reveal, {
-        toValue: 1,
-        duration: 320,
-        easing: SOFT_EASING,
-        useNativeDriver: true,
-      }),
-    ]).start();
+      }).start();
+    }
   };
 
   useEffect(() => {
@@ -178,7 +172,7 @@ export function DiscoveryPreview() {
   }, [activeKey, balloonFloat]);
 
   useEffect(() => {
-    if (activeKey !== 'wound' || revealed) {
+    if (activeKey !== 'wound') {
       fishSwim.setValue(0);
       return;
     }
@@ -200,114 +194,82 @@ export function DiscoveryPreview() {
     );
     movement.start();
     return () => movement.stop();
-  }, [activeKey, fishSwim, revealed]);
+  }, [activeKey, fishSwim]);
+
+  const discoverAtPoint = (x: number, y: number) => {
+    const count = categoryEmotions.length;
+    const columns = count > 12 ? 5 : count > 6 ? 4 : count > 4 ? 3 : 2;
+    const rows = Math.ceil(count / columns);
+    const column = Math.max(
+      0,
+      Math.min(columns - 1, Math.floor(x / (sceneSize.current.width / columns))),
+    );
+    const row = Math.max(
+      0,
+      Math.min(rows - 1, Math.floor(y / (sceneSize.current.height / rows))),
+    );
+    const item = categoryEmotions[row * columns + column];
+    if (item) discoverEmotion(item.key);
+  };
 
   const panResponder = useMemo(
     () =>
       PanResponder.create({
-        // Let a stationary touch reach Pressable's accessible tap fallback.
-        // A moving touch is claimed below for the intended rub/swipe interaction.
-        onStartShouldSetPanResponder: () => false,
+        onStartShouldSetPanResponder: () =>
+          activeKey === 'nervous' || activeKey === 'sad' || activeKey === 'unspoken',
         onMoveShouldSetPanResponder: (_, gesture) =>
           (activeKey === 'nervous' || activeKey === 'sad' || activeKey === 'unspoken') &&
           Math.abs(gesture.dx) + Math.abs(gesture.dy) > 4,
-        onPanResponderGrant: (_, gesture) => {
-          lastGesture.current = { x: gesture.moveX, y: gesture.moveY };
+        onPanResponderGrant: (event) => {
+          const { locationX: x, locationY: y } = event.nativeEvent;
+          lastScratchPoint.current = { x, y };
+          setScratchPath((current) => `${current} M ${x.toFixed(1)} ${y.toFixed(1)}`);
         },
-        onPanResponderMove: (_, gesture) => {
-          const dx = gesture.moveX - lastGesture.current.x;
-          const dy = gesture.moveY - lastGesture.current.y;
-          gestureDistance.current += Math.sqrt(dx * dx + dy * dy);
-          lastGesture.current = { x: gesture.moveX, y: gesture.moveY };
-          const progress = Math.min(gestureDistance.current / 240, 1);
-          overlay.setValue(1 - progress * 0.9);
-          reveal.setValue(progress);
-          if (progress >= 0.92) finishReveal();
-        },
-        onPanResponderRelease: () => {
-          if (gestureDistance.current >= 90) finishReveal();
-        },
-        onPanResponderTerminate: () => {
-          if (gestureDistance.current >= 90) finishReveal();
+        onPanResponderMove: (event) => {
+          const { locationX: x, locationY: y } = event.nativeEvent;
+          const dx = x - lastScratchPoint.current.x;
+          const dy = y - lastScratchPoint.current.y;
+          if (Math.sqrt(dx * dx + dy * dy) < 7) return;
+          lastScratchPoint.current = { x, y };
+          setScratchPath((current) => `${current} L ${x.toFixed(1)} ${y.toFixed(1)}`);
+          discoverAtPoint(x, y);
         },
       }),
-    // Rebuild responders as the interaction style changes.
+    // Rebuild when the category changes so hit-testing uses the correct bowl set.
     // eslint-disable-next-line react-hooks/exhaustive-deps
-    [activeKey, revealed],
+    [activeKey],
   );
-
-  const handleTap = () => {
-    if (activeKey === 'wound') {
-      Animated.timing(scoopMove, {
-        toValue: 1,
-        duration: 760,
-        easing: Easing.inOut(Easing.quad),
-        useNativeDriver: true,
-      }).start(({ finished }) => {
-        if (finished) finishReveal();
-      });
-      return;
-    }
-    if (activeKey === 'nervous' || activeKey === 'sad' || activeKey === 'unspoken') {
-      const next = assistTaps.current + 1;
-      const nextProgress = Math.min(next / 3, 1);
-      assistTaps.current = next;
-      Animated.parallel([
-        Animated.timing(overlay, {
-          toValue: 1 - nextProgress * 0.9,
-          duration: 240,
-          easing: SOFT_EASING,
-          useNativeDriver: true,
-        }),
-        Animated.timing(reveal, {
-          toValue: nextProgress,
-          duration: 260,
-          easing: SOFT_EASING,
-          useNativeDriver: true,
-        }),
-      ]).start();
-      if (next >= 3) finishReveal();
-      return;
-    }
-    if (activeKey === 'warm') {
-      const next = waterCount + 1;
-      setWaterCount(next);
-      waterPour.setValue(0);
-      Animated.parallel([
-        Animated.timing(reveal, {
-          toValue: next / 3,
-          duration: 260,
-          easing: SOFT_EASING,
-          useNativeDriver: true,
-        }),
-        Animated.timing(waterPour, {
-          toValue: 1,
-          duration: 900,
-          easing: Easing.in(Easing.quad),
-          useNativeDriver: true,
-        }),
-      ]).start();
-      if (next >= 3) finishReveal();
-    }
-  };
 
   const popBalloon = (emotionKey: string) => {
     setPoppedBalloonKeys((current) =>
       current.includes(emotionKey) ? current : [...current, emotionKey],
     );
-    setSelectedEmotionKey(emotionKey);
-    setRevealed(true);
-    reveal.setValue(1);
+    discoverEmotion(emotionKey);
   };
 
-  const bowlScale = reveal.interpolate({
-    inputRange: [0, 1],
-    outputRange: [0.82, 1],
-  });
-  const bowlOpacity = reveal.interpolate({
-    inputRange: [0, 0.25, 1],
-    outputRange: [0.08, 0.35, 1],
-  });
+  const catchFish = (emotionKey: string) => {
+    scoopMove.setValue(0);
+    Animated.timing(scoopMove, {
+      toValue: 1,
+      duration: 760,
+      easing: Easing.inOut(Easing.quad),
+      useNativeDriver: true,
+    }).start(({ finished }) => {
+      if (finished) discoverEmotion(emotionKey);
+    });
+  };
+
+  const waterEmotion = (emotionKey: string) => {
+    waterPour.setValue(0);
+    Animated.timing(waterPour, {
+      toValue: 1,
+      duration: 900,
+      easing: Easing.in(Easing.quad),
+      useNativeDriver: true,
+    }).start(({ finished }) => {
+      if (finished) discoverEmotion(emotionKey);
+    });
+  };
 
   return (
     <View>
@@ -363,19 +325,16 @@ export function DiscoveryPreview() {
         <View
           testID={`discovery-stage-${activeKey}`}
           style={styles.scene}
+          onLayout={(event) => {
+            const { width, height } = event.nativeEvent.layout;
+            sceneSize.current = { width, height };
+          }}
           {...panResponder.panHandlers}
         >
-          {activeKey !== 'anger' && (
+          {(activeKey === 'nervous' || activeKey === 'sad' || activeKey === 'unspoken') && (
             <Animated.View
-              pointerEvents={revealed ? 'auto' : 'none'}
-              style={[
-                styles.sceneBowlField,
-                activeKey === 'warm' && styles.warmBowlField,
-                {
-                  opacity: bowlOpacity,
-                  transform: [{ scale: bowlScale }],
-                },
-              ]}
+              pointerEvents="none"
+              style={styles.sceneBowlField}
             >
               {categoryEmotions.map((item) => {
                 const dense = categoryEmotions.length > 12;
@@ -387,7 +346,6 @@ export function DiscoveryPreview() {
                     testID={`scene-bowl-${item.key}`}
                     accessibilityRole="button"
                     accessibilityState={{ selected }}
-                    onPress={() => setSelectedEmotionKey(item.key)}
                     style={({ pressed }) => [
                       styles.sceneBowl,
                       {
@@ -397,6 +355,7 @@ export function DiscoveryPreview() {
                         backgroundColor: item.color + '66',
                         borderColor: active.accent,
                       },
+                      discoveredKeys.includes(item.key) && styles.discoveredSceneBowl,
                       pressed && styles.pressed,
                     ]}
                   >
@@ -492,41 +451,24 @@ export function DiscoveryPreview() {
           )}
 
           {activeKey === 'nervous' && (
-            <Pressable
-              pointerEvents={revealed ? 'none' : 'auto'}
-              accessibilityRole="button"
-              accessibilityLabel={active.instruction}
-              onPress={handleTap}
-              style={styles.interactionLayer}
-            >
-              <Animated.View style={[styles.coverLayer, styles.sandCover, { opacity: overlay }]}>
-                {Array.from({ length: 34 }).map((_, index) => (
-                  <View
-                    key={index}
-                    style={[
-                      styles.sandDot,
-                      {
-                        left: `${(index * 29) % 96}%`,
-                        top: `${(index * 47) % 90}%`,
-                        transform: [{ scale: 0.65 + (index % 4) * 0.16 }],
-                      },
-                    ]}
-                  />
-                ))}
-                <Text style={styles.coverPrompt}>8 隻飯碗收埋喺沙下面</Text>
-              </Animated.View>
-            </Pressable>
+            <View pointerEvents="none" style={styles.interactionLayer}>
+              <ScratchCover
+                id="sand-search-mask"
+                path={scratchPath}
+                color="#E7CF9A"
+              />
+              <Text style={styles.coverPrompt}>用手指捽開啲沙 · 逐隻慢慢搵</Text>
+            </View>
           )}
 
           {activeKey === 'sad' && (
-            <Pressable
-              pointerEvents={revealed ? 'none' : 'auto'}
-              accessibilityRole="button"
-              accessibilityLabel={active.instruction}
-              onPress={handleTap}
-              style={styles.interactionLayer}
-            >
-              <Animated.View style={[styles.coverLayer, styles.rainWindow, { opacity: overlay }]}>
+            <View pointerEvents="none" style={styles.interactionLayer}>
+              <ScratchCover
+                id="rain-search-mask"
+                path={scratchPath}
+                color="#D9EAF4"
+              />
+              <View style={styles.rainDecoration}>
                 {Array.from({ length: 18 }).map((_, index) => (
                   <View
                     key={index}
@@ -540,60 +482,65 @@ export function DiscoveryPreview() {
                     ]}
                   />
                 ))}
-                <Text style={styles.coverPrompt}>6 隻飯碗喺雨窗後面</Text>
-              </Animated.View>
-            </Pressable>
+              </View>
+              <Text style={styles.coverPrompt}>用手指抹開雨水 · 逐隻慢慢搵</Text>
+            </View>
           )}
 
           {activeKey === 'wound' && (
-            <Pressable
-              pointerEvents={revealed ? 'none' : 'auto'}
-              accessibilityRole="button"
-              accessibilityLabel={active.instruction}
-              onPress={handleTap}
-              style={styles.interactionLayer}
-            >
-              <Animated.View style={[styles.fishPond, { opacity: overlay }]}>
+            <View style={styles.fishPond}>
               <View style={styles.pondRippleLarge} />
               <View style={styles.pondRippleSmall} />
-              <Animated.Text
-                style={[
-                  styles.goldfish,
-                  styles.goldfishOne,
-                  {
-                    transform: [
-                      {
-                        translateX: fishSwim.interpolate({
-                          inputRange: [0, 1],
-                          outputRange: [-30, 35],
-                        }),
-                      },
-                    ],
-                  },
-                ]}
-              >
-                🐠
-              </Animated.Text>
-              <Animated.Text
-                style={[
-                  styles.goldfish,
-                  styles.goldfishTwo,
-                  {
-                    transform: [
-                      {
-                        translateX: fishSwim.interpolate({
-                          inputRange: [0, 1],
-                          outputRange: [28, -24],
-                        }),
-                      },
-                      { rotateY: '180deg' },
-                    ],
-                  },
-                ]}
-              >
-                🐠
-              </Animated.Text>
+              <View style={styles.fishSearchField}>
+                {categoryEmotions.map((item, index) => {
+                  const found = discoveredKeys.includes(item.key);
+                  return (
+                    <Animated.View
+                      key={item.key}
+                      style={[
+                        styles.fishSlot,
+                        {
+                          transform: [
+                            {
+                              translateX: fishSwim.interpolate({
+                                inputRange: [0, 1],
+                                outputRange:
+                                  index % 2 === 0 ? [-5, 7] : [6, -5],
+                              }),
+                            },
+                            {
+                              translateY: fishSwim.interpolate({
+                                inputRange: [0, 1],
+                                outputRange:
+                                  index % 3 === 0 ? [4, -5] : [-3, 4],
+                              }),
+                            },
+                          ],
+                        },
+                      ]}
+                    >
+                      <Pressable
+                        testID={`goldfish-${item.key}`}
+                        accessibilityLabel={found ? `${item.label}飯碗` : '游緊嘅小金魚'}
+                        onPress={() => catchFish(item.key)}
+                        style={({ pressed }) => [
+                          styles.fishButton,
+                          found && { borderColor: active.accent },
+                          pressed && styles.pressed,
+                        ]}
+                      >
+                        {found ? (
+                          <EmotionVisual emotion={item} size={36} radius={RADIUS.sm} />
+                        ) : (
+                          <Text style={styles.smallGoldfish}>🐠</Text>
+                        )}
+                      </Pressable>
+                    </Animated.View>
+                  );
+                })}
+              </View>
               <Animated.View
+                pointerEvents="none"
                 style={[
                   styles.scoopNet,
                   {
@@ -626,38 +573,29 @@ export function DiscoveryPreview() {
                 </View>
                 <View style={styles.scoopHandle} />
               </Animated.View>
-                <Text style={styles.pondPrompt}>撈起紙網 · 發現 15 隻飯碗</Text>
-              </Animated.View>
-            </Pressable>
+              <Text pointerEvents="none" style={styles.pondPrompt}>
+                追住小金魚 · 用紙網逐條撈
+              </Text>
+            </View>
           )}
 
           {activeKey === 'unspoken' && (
-            <Pressable
-              pointerEvents={revealed ? 'none' : 'auto'}
-              accessibilityRole="button"
-              accessibilityLabel={active.instruction}
-              onPress={handleTap}
-              style={styles.interactionLayer}
-            >
-              <Animated.View style={[styles.coverLayer, styles.fogCover, { opacity: overlay }]}>
-                <View style={[styles.fogBand, { top: 50, left: -20 }]} />
-                <View style={[styles.fogBand, { top: 112, right: -30, width: '82%' }]} />
-                <View style={[styles.fogBand, { top: 168, left: 6, width: '92%' }]} />
-                <Text style={styles.coverPrompt}>4 隻飯碗收埋喺霧入面</Text>
-              </Animated.View>
-            </Pressable>
+            <View pointerEvents="none" style={styles.interactionLayer}>
+              <ScratchCover
+                id="fog-search-mask"
+                path={scratchPath}
+                color="#E3E6E9"
+              />
+              <View style={[styles.fogBand, { top: 50, left: -20 }]} />
+              <View style={[styles.fogBand, { top: 112, right: -30, width: '82%' }]} />
+              <View style={[styles.fogBand, { top: 168, left: 6, width: '92%' }]} />
+              <Text style={styles.coverPrompt}>用手指撥開啲霧 · 逐隻慢慢搵</Text>
+            </View>
           )}
 
           {activeKey === 'warm' && (
-            <Pressable
-              pointerEvents={revealed ? 'none' : 'auto'}
-              accessibilityRole="button"
-              accessibilityLabel={active.instruction}
-              onPress={handleTap}
-              style={styles.interactionLayer}
-            >
-              <View style={styles.gardenScene}>
-              <View style={styles.wateringCan}>
+            <View style={styles.gardenScene}>
+              <View pointerEvents="none" style={styles.wateringCan}>
                 <View style={styles.canDrawing}>
                   <View style={[styles.canHandle, { borderColor: active.accent }]} />
                   <View style={[styles.canBody, { backgroundColor: active.accent }]}>
@@ -666,7 +604,9 @@ export function DiscoveryPreview() {
                   <View style={[styles.canSpout, { backgroundColor: active.accent }]} />
                   <View style={[styles.canRose, { backgroundColor: active.accent }]} />
                 </View>
-                <Text style={styles.waterCount}>{Math.min(waterCount, 3)} / 3</Text>
+                <Text style={styles.waterCount}>
+                  {discoveredKeys.length} / {categoryEmotions.length}
+                </Text>
                 <View style={styles.waterStream}>
                   {[0, 1, 2].map((index) => (
                     <Animated.View
@@ -693,51 +633,42 @@ export function DiscoveryPreview() {
                   ))}
                 </View>
               </View>
-              <Animated.View
-                style={[
-                  styles.flowerRow,
-                  {
-                    opacity: reveal,
-                    transform: [
-                      {
-                        scale: reveal.interpolate({
-                          inputRange: [0, 1],
-                          outputRange: [0.5, 1],
-                        }),
-                      },
-                    ],
-                  },
-                ]}
-              >
-                <Text style={styles.flower}>🌱</Text>
-                <Text style={styles.flower}>🌼</Text>
-                <Text style={styles.flower}>🌱</Text>
-              </Animated.View>
+              <View style={styles.gardenSearchField}>
+                {categoryEmotions.map((item) => {
+                  const found = discoveredKeys.includes(item.key);
+                  return (
+                    <Pressable
+                      key={item.key}
+                      testID={`garden-patch-${item.key}`}
+                      accessibilityLabel={found ? `${item.label}飯碗` : '等緊淋水嘅泥土'}
+                      onPress={() => waterEmotion(item.key)}
+                      style={({ pressed }) => [
+                        styles.gardenPatch,
+                        found && { borderColor: active.accent },
+                        pressed && styles.pressed,
+                      ]}
+                    >
+                      {found ? (
+                        <EmotionVisual emotion={item} size={39} radius={RADIUS.sm} />
+                      ) : (
+                        <>
+                          <Text style={styles.seedling}>🌱</Text>
+                          <View style={styles.gardenSoil} />
+                        </>
+                      )}
+                    </Pressable>
+                  );
+                })}
               </View>
-            </Pressable>
+            </View>
           )}
         </View>
 
-        {!revealed &&
-          (activeKey === 'nervous' || activeKey === 'sad' || activeKey === 'unspoken') && (
-            <Pressable
-              testID="discovery-reveal-fallback"
-              accessibilityRole="button"
-              onPress={finishReveal}
-              style={({ pressed }) => [
-                styles.fallbackButton,
-                pressed && styles.pressed,
-              ]}
-            >
-              <Feather name="eye" size={14} color={COLORS.textSecondary} />
-              <Text style={styles.fallbackButtonText}>用唔到手勢？撳呢度揭曉</Text>
-            </Pressable>
-          )}
 
         {revealed ? (
           <Animated.View style={[styles.results, { opacity: reveal }]}>
             <Text style={styles.inSceneCount}>
-              {categoryEmotions.length} 隻飯碗全部喺遊戲畫面入面
+              已經搵到 {discoveredKeys.length} / {categoryEmotions.length} 隻飯碗
             </Text>
             <View style={styles.resultCard}>
               <View style={styles.resultCopy}>
@@ -763,6 +694,40 @@ export function DiscoveryPreview() {
         )}
       </View>
     </View>
+  );
+}
+
+function ScratchCover({
+  id,
+  path,
+  color,
+}: {
+  id: string;
+  path: string;
+  color: string;
+}) {
+  return (
+    <Svg pointerEvents="none" style={StyleSheet.absoluteFill}>
+      <Defs>
+        <Mask id={id}>
+          <Rect width="100%" height="100%" fill="#FFF" />
+          <Path
+            d={path || 'M -10 -10'}
+            fill="none"
+            stroke="#000"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            strokeWidth={58}
+          />
+        </Mask>
+      </Defs>
+      <Rect
+        width="100%"
+        height="100%"
+        fill={color}
+        mask={`url(#${id})`}
+      />
+    </Svg>
   );
 }
 
@@ -867,6 +832,7 @@ const styles = StyleSheet.create({
     minHeight: 58,
     padding: 3,
   },
+  discoveredSceneBowl: { backgroundColor: '#FFFFFFCC' },
   sceneBowlLabel: {
     color: COLORS.textPrimary,
     fontSize: 9,
@@ -940,21 +906,7 @@ const styles = StyleSheet.create({
     maxWidth: 86,
     textAlign: 'center',
   },
-  coverLayer: {
-    ...StyleSheet.absoluteFillObject,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  sandCover: { backgroundColor: '#E7CF9A' },
-  sandDot: {
-    backgroundColor: '#C9A866',
-    borderRadius: RADIUS.pill,
-    height: 7,
-    opacity: 0.48,
-    position: 'absolute',
-    width: 7,
-  },
-  rainWindow: { backgroundColor: '#D9EAF4F2' },
+  rainDecoration: { ...StyleSheet.absoluteFillObject },
   rainDrop: {
     backgroundColor: '#FFFFFFAA',
     borderRadius: RADIUS.pill,
@@ -963,7 +915,9 @@ const styles = StyleSheet.create({
     width: 4,
   },
   coverPrompt: {
+    alignSelf: 'center',
     backgroundColor: '#FFFFFFCC',
+    bottom: 20,
     borderRadius: RADIUS.pill,
     color: COLORS.textSecondary,
     fontSize: 12,
@@ -971,6 +925,7 @@ const styles = StyleSheet.create({
     overflow: 'hidden',
     paddingHorizontal: 14,
     paddingVertical: 8,
+    position: 'absolute',
   },
   fishPond: {
     ...StyleSheet.absoluteFillObject,
@@ -995,14 +950,41 @@ const styles = StyleSheet.create({
     position: 'absolute',
     width: 175,
   },
-  goldfish: { fontSize: 38, position: 'absolute' },
-  goldfishOne: { left: '24%', top: 48 },
-  goldfishTwo: { right: '22%', top: 134 },
+  fishSearchField: {
+    alignContent: 'center',
+    alignItems: 'center',
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    height: '100%',
+    justifyContent: 'space-evenly',
+    paddingBottom: 52,
+    paddingHorizontal: 6,
+    paddingTop: 8,
+    width: '100%',
+  },
+  fishSlot: {
+    alignItems: 'center',
+    height: 74,
+    justifyContent: 'center',
+    width: '19%',
+  },
+  fishButton: {
+    alignItems: 'center',
+    backgroundColor: '#FFFFFF66',
+    borderColor: 'transparent',
+    borderRadius: RADIUS.pill,
+    borderWidth: 2,
+    height: 49,
+    justifyContent: 'center',
+    width: 49,
+  },
+  smallGoldfish: { fontSize: 27 },
   scoopNet: {
     alignItems: 'center',
     position: 'absolute',
     right: 52,
     top: 40,
+    zIndex: 3,
   },
   scoopRing: {
     alignItems: 'center',
@@ -1044,23 +1026,29 @@ const styles = StyleSheet.create({
     paddingHorizontal: 14,
     paddingVertical: 8,
     position: 'absolute',
+    zIndex: 4,
   },
   fogCover: { backgroundColor: '#E3E6E9EE' },
   fogBand: {
     backgroundColor: '#F9FAFBCC',
     borderRadius: RADIUS.pill,
     height: 46,
+    opacity: 0.38,
     position: 'absolute',
     width: '88%',
   },
   gardenScene: {
     ...StyleSheet.absoluteFillObject,
     alignItems: 'center',
-    justifyContent: 'space-between',
-    paddingBottom: 24,
-    paddingTop: 30,
+    paddingTop: 12,
   },
-  wateringCan: { alignItems: 'center', height: 105, position: 'relative' },
+  wateringCan: {
+    alignItems: 'center',
+    height: 105,
+    position: 'absolute',
+    top: 8,
+    zIndex: 3,
+  },
   canDrawing: { height: 54, position: 'relative', width: 100 },
   canBody: {
     borderBottomLeftRadius: 12,
@@ -1133,8 +1121,35 @@ const styles = StyleSheet.create({
     fontWeight: '800',
     marginTop: 3,
   },
-  flowerRow: { flexDirection: 'row', gap: 26 },
-  flower: { fontSize: 34 },
+  gardenSearchField: {
+    alignContent: 'center',
+    alignItems: 'center',
+    bottom: 6,
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    height: 225,
+    justifyContent: 'space-evenly',
+    paddingHorizontal: 6,
+    position: 'absolute',
+    width: '100%',
+  },
+  gardenPatch: {
+    alignItems: 'center',
+    borderColor: 'transparent',
+    borderRadius: RADIUS.sm,
+    borderWidth: 2,
+    height: 68,
+    justifyContent: 'center',
+    position: 'relative',
+    width: '23%',
+  },
+  seedling: { fontSize: 24, marginBottom: -5, zIndex: 2 },
+  gardenSoil: {
+    backgroundColor: '#BFA17D',
+    borderRadius: RADIUS.pill,
+    height: 13,
+    width: 44,
+  },
   results: {
     backgroundColor: '#FFFFFF99',
     borderRadius: RADIUS.md,
