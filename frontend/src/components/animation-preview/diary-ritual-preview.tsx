@@ -182,7 +182,7 @@ export function DiaryRitualPreview() {
           />
 
           <Animated.View
-            testID="ritual-envelope-flap"
+            testID="ritual-diary-page"
             style={[
               styles.diaryPage,
               {
@@ -557,7 +557,7 @@ function RitualDestination({
           <View style={[styles.envelopeInner, { backgroundColor: accent + '16' }]} />
           <Feather name="heart" size={22} color={accent} />
           <Animated.View
-            testID="ritual-grown-sapling"
+            testID="ritual-envelope-flap"
             style={[
               styles.bigEnvelopeFlap,
               { borderTopColor: accent + '55' },
@@ -584,7 +584,7 @@ function RitualDestination({
       <View testID="ritual-sapling" style={styles.destinationBottom}>
         <View style={styles.soil}>
           <Animated.View
-            testID="ritual-box-lid"
+            testID="ritual-soil-cover"
             style={[
               styles.soilCover,
               {
@@ -596,6 +596,7 @@ function RitualDestination({
             ]}
           />
           <Animated.View
+            testID="ritual-grown-sapling"
             style={[
               styles.sapling,
               {
@@ -636,6 +637,7 @@ function RitualDestination({
       <View testID="ritual-lock-box" style={styles.destinationBottom}>
         <View style={[styles.lockBox, { borderColor: accent, backgroundColor: accent + '22' }]}>
           <Animated.View
+            testID="ritual-box-lid"
             style={[
               styles.lockBoxLid,
               { backgroundColor: accent + '55', borderColor: accent },
