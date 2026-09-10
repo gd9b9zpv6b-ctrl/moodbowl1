@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 
-import { scoreBowls } from '../bowl-scorer';
+import { discoveryBowlsForCategory, scoreBowls } from '../bowl-scorer';
 
 describe('scoreBowls', () => {
   it('returns 6 default candidates including hollow', () => {
@@ -33,5 +33,24 @@ describe('scoreBowls', () => {
     expect(bodySad).toBeGreaterThanOrEqual(2);
     expect(bodySad).toBeGreaterThan(bodyWarm);
     expect(onlyWarm).toBeGreaterThanOrEqual(2);
+  });
+
+  it('still returns 6 bowls for toilet + butterflies + curl-up', () => {
+    const { default: candidates } = scoreBowls('plain_water', [
+      'need_toilet',
+      'belly_full',
+      'curled_up',
+    ]);
+    expect(candidates).toHaveLength(6);
+    expect(candidates.filter((b) => b.key !== 'hollow')).toHaveLength(5);
+    const nervous = candidates.filter((b) => b.category === 'nervous');
+    expect(nervous.length).toBeGreaterThanOrEqual(2);
+  });
+
+  it('fills a discovery scene from the scored shortlist so a combo is never empty', () => {
+    const scored = scoreBowls('plain_water', ['need_toilet', 'belly_full', 'curled_up']);
+    const bowls = discoveryBowlsForCategory('nervous', scored);
+    expect(bowls.length).toBeGreaterThan(0);
+    expect(bowls.every((b) => b.category === 'nervous')).toBe(true);
   });
 });

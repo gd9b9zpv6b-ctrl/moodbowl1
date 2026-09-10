@@ -1,10 +1,8 @@
 import { Feather } from '@expo/vector-icons';
-import React, { useEffect, useMemo, useRef, useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import {
   Animated,
   Easing,
-  PanResponder,
-  Platform,
   Pressable,
   StyleSheet,
   Text,
@@ -43,7 +41,7 @@ export const DISCOVERIES: DiscoveryConfig[] = [
     key: 'nervous',
     label: '緊張',
     title: '慢慢撥開啲沙',
-    instruction: '用手指來回捽開沙面 · 逐隻搵',
+    instruction: '撳一下沙堆 · 睇下藏住邊隻飯碗',
     emotionKey: 'anxious',
     tint: '#FFF7E9',
     accent: '#D9B46E',
@@ -53,7 +51,7 @@ export const DISCOVERIES: DiscoveryConfig[] = [
     key: 'sad',
     label: '傷心',
     title: '抹走窗上嘅雨',
-    instruction: '用手指抹走雨水 · 睇下邊隻似你',
+    instruction: '撳一下雨點 · 睇下邊隻似你',
     emotionKey: 'sad',
     tint: '#EEF7FF',
     accent: '#82B9D8',
@@ -73,7 +71,7 @@ export const DISCOVERIES: DiscoveryConfig[] = [
     key: 'unspoken',
     label: '講唔出',
     title: '撥開眼前嘅霧',
-    instruction: '用手指逐處撥開霧 · 慢慢搵',
+    instruction: '撳一下霧團 · 慢慢搵',
     emotionKey: 'foggy',
     tint: '#F1F3F6',
     accent: '#9AA8B6',
@@ -92,8 +90,6 @@ export const DISCOVERIES: DiscoveryConfig[] = [
 ];
 
 const SOFT_EASING = Easing.out(Easing.quad);
-const COVER_COLUMNS = 7;
-const COVER_ROWS = 9;
 
 export function BowlDiscoveryScene({
   category,
@@ -109,7 +105,6 @@ export function BowlDiscoveryScene({
   const [selectedEmotionKey, setSelectedEmotionKey] = useState<string | null>(null);
   const [discoveredKeys, setDiscoveredKeys] = useState<string[]>([]);
   const [poppedBalloonKeys, setPoppedBalloonKeys] = useState<string[]>([]);
-  const [clearedCoverCells, setClearedCoverCells] = useState<number[]>([]);
   const [scoopingFishKey, setScoopingFishKey] = useState<string | null>(null);
   const [scoopTarget, setScoopTarget] = useState({ x: 0, y: 0 });
   const [wateringEmotionKey, setWateringEmotionKey] = useState<string | null>(null);
@@ -121,8 +116,6 @@ export function BowlDiscoveryScene({
   const waterPour = useRef(new Animated.Value(0)).current;
   const sceneRef = useRef<View>(null);
   const sceneSize = useRef({ width: 320, height: 340 });
-  const lastScratchPoint = useRef({ x: 0, y: 0 });
-  const scratchHits = useRef<Record<string, number>>({});
 
   const active = DISCOVERIES.find((item) => item.key === activeKey) ?? DISCOVERIES[0];
   const categoryEmotions =
@@ -135,12 +128,10 @@ export function BowlDiscoveryScene({
     setSelectedEmotionKey(null);
     setDiscoveredKeys([]);
     setPoppedBalloonKeys([]);
-    setClearedCoverCells([]);
     setScoopingFishKey(null);
     setScoopTarget({ x: 0, y: 0 });
     setWateringEmotionKey(null);
     setWaterTarget({ fromRight: false, x: 0 });
-    scratchHits.current = {};
     reveal.setValue(0);
     scoopMove.stopAnimation();
     scoopMove.setValue(0);
@@ -219,112 +210,6 @@ export function BowlDiscoveryScene({
     movement.start();
     return () => movement.stop();
   }, [activeKey, fishSwim]);
-
-  const discoverAtPoint = (x: number, y: number) => {
-    const count = categoryEmotions.length;
-    const columns = count > 12 ? 5 : count > 6 ? 4 : count > 4 ? 3 : 2;
-    const rows = Math.ceil(count / columns);
-    const column = Math.max(
-      0,
-      Math.min(columns - 1, Math.floor(x / (sceneSize.current.width / columns))),
-    );
-    const row = Math.max(
-      0,
-      Math.min(rows - 1, Math.floor(y / (sceneSize.current.height / rows))),
-    );
-    const item = categoryEmotions[row * columns + column];
-    if (!item) return;
-    const hits = (scratchHits.current[item.key] ?? 0) + 1;
-    scratchHits.current[item.key] = hits;
-    if (hits >= 4) discoverEmotion(item.key);
-  };
-
-  const recordScratchPoint = (x: number, y: number, start = false) => {
-    if (!Number.isFinite(x) || !Number.isFinite(y)) return;
-    if (!start) {
-      const dx = x - lastScratchPoint.current.x;
-      const dy = y - lastScratchPoint.current.y;
-      if (Math.sqrt(dx * dx + dy * dy) < 7) return;
-    }
-    lastScratchPoint.current = { x, y };
-    const coverColumn = Math.max(
-      0,
-      Math.min(
-        COVER_COLUMNS - 1,
-        Math.floor(x / (sceneSize.current.width / COVER_COLUMNS)),
-      ),
-    );
-    const coverRow = Math.max(
-      0,
-      Math.min(
-        COVER_ROWS - 1,
-        Math.floor(y / (sceneSize.current.height / COVER_ROWS)),
-      ),
-    );
-    const coverCell = coverRow * COVER_COLUMNS + coverColumn;
-    setClearedCoverCells((current) =>
-      current.includes(coverCell) ? current : [...current, coverCell],
-    );
-    if (!start) discoverAtPoint(x, y);
-  };
-
-  useEffect(() => {
-    if (
-      Platform.OS !== 'web' ||
-      (activeKey !== 'nervous' && activeKey !== 'sad' && activeKey !== 'unspoken')
-    ) {
-      return;
-    }
-
-    const node = sceneRef.current as unknown as HTMLElement | null;
-    if (!node) return;
-    const trackTouch = (event: TouchEvent, start = false) => {
-      const touch = event.touches[0];
-      if (!touch) return;
-      event.preventDefault();
-      const rect = node.getBoundingClientRect();
-      recordScratchPoint(touch.clientX - rect.left, touch.clientY - rect.top, start);
-    };
-    const handleTouchStart = (event: TouchEvent) => trackTouch(event, true);
-    const handleTouchMove = (event: TouchEvent) => trackTouch(event);
-
-    node.addEventListener('touchstart', handleTouchStart, {
-      capture: true,
-      passive: false,
-    });
-    node.addEventListener('touchmove', handleTouchMove, {
-      capture: true,
-      passive: false,
-    });
-    return () => {
-      node.removeEventListener('touchstart', handleTouchStart, true);
-      node.removeEventListener('touchmove', handleTouchMove, true);
-    };
-    // Rebind when the category changes so hit-testing uses its emotion set.
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [activeKey]);
-
-  const panResponder = useMemo(
-    () =>
-      PanResponder.create({
-        onStartShouldSetPanResponder: () =>
-          activeKey === 'nervous' || activeKey === 'sad' || activeKey === 'unspoken',
-        onMoveShouldSetPanResponder: (_, gesture) =>
-          (activeKey === 'nervous' || activeKey === 'sad' || activeKey === 'unspoken') &&
-          Math.abs(gesture.dx) + Math.abs(gesture.dy) > 4,
-        onPanResponderGrant: (event) => {
-          const { locationX: x, locationY: y } = event.nativeEvent;
-          recordScratchPoint(x, y, true);
-        },
-        onPanResponderMove: (event) => {
-          const { locationX: x, locationY: y } = event.nativeEvent;
-          recordScratchPoint(x, y);
-        },
-      }),
-    // Rebuild when the category changes so hit-testing uses the correct bowl set.
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-    [activeKey],
-  );
 
   const popBalloon = (emotionKey: string) => {
     setPoppedBalloonKeys((current) =>
@@ -415,48 +300,58 @@ export function BowlDiscoveryScene({
             const { width, height } = event.nativeEvent.layout;
             sceneSize.current = { width, height };
           }}
-          {...panResponder.panHandlers}
         >
           {(activeKey === 'nervous' || activeKey === 'sad' || activeKey === 'unspoken') && (
-            <Animated.View
-              pointerEvents="none"
-              style={styles.sceneBowlField}
-            >
+            <View style={styles.coverSearchField}>
               {categoryEmotions.map((item) => {
-                const dense = categoryEmotions.length > 12;
-                const compact = categoryEmotions.length > 8;
+                const found = discoveredKeys.includes(item.key);
                 const selected = item.key === emotion?.key;
                 return (
                   <Pressable
                     key={item.key}
-                    testID={`scene-bowl-${item.key}`}
+                    testID={`cover-bowl-${item.key}`}
                     accessibilityRole="button"
-                    accessibilityState={{ selected }}
+                    accessibilityLabel={found ? item.label : `揭開${item.label}`}
+                    onPress={() => {
+                      if (found) onChoose(item);
+                      else discoverEmotion(item.key);
+                    }}
                     style={({ pressed }) => [
-                      styles.sceneBowl,
-                      {
-                        width: dense ? '19%' : compact ? '24%' : '31%',
-                      },
-                      selected && {
-                        backgroundColor: item.color + '66',
-                        borderColor: active.accent,
-                      },
-                      discoveredKeys.includes(item.key) && styles.discoveredSceneBowl,
+                      styles.coverTile,
+                      selected && { borderColor: active.accent },
+                      found && styles.coverTileFound,
                       pressed && styles.pressed,
                     ]}
                   >
-                    <EmotionVisual
-                      emotion={item}
-                      size={dense ? 38 : compact ? 43 : 51}
-                      radius={RADIUS.sm}
-                    />
-                    <Text numberOfLines={1} style={styles.sceneBowlLabel}>
-                      {item.label}
-                    </Text>
+                    <View style={{ opacity: found ? 1 : 0.28 }}>
+                      <EmotionVisual emotion={item} size={44} radius={RADIUS.sm} />
+                    </View>
+                    {found ? (
+                      <Text numberOfLines={1} style={styles.sceneBowlLabel}>
+                        {item.label}
+                      </Text>
+                    ) : (
+                      <>
+                        <View
+                          pointerEvents="none"
+                          style={[
+                            styles.coverTileMask,
+                            activeKey === 'nervous'
+                              ? styles.coverTileSand
+                              : activeKey === 'sad'
+                                ? styles.coverTileRain
+                                : styles.coverTileFog,
+                          ]}
+                        />
+                        <Text style={styles.coverTileHint}>
+                          {activeKey === 'nervous' ? '沙堆' : activeKey === 'sad' ? '雨點' : '霧'}
+                        </Text>
+                      </>
+                    )}
                   </Pressable>
                 );
               })}
-            </Animated.View>
+            </View>
           )}
 
           {activeKey === 'anger' && (
@@ -536,30 +431,6 @@ export function BowlDiscoveryScene({
                   </Animated.View>
                 );
               })}
-            </View>
-          )}
-
-          {activeKey === 'nervous' && (
-            <View pointerEvents="none" style={styles.interactionLayer}>
-              <SearchCover
-                kind="nervous"
-                clearedCells={clearedCoverCells}
-              />
-              {clearedCoverCells.length === 0 && (
-                <Text style={styles.coverPrompt}>用手指捽開啲沙 · 逐隻慢慢搵</Text>
-              )}
-            </View>
-          )}
-
-          {activeKey === 'sad' && (
-            <View pointerEvents="none" style={styles.interactionLayer}>
-              <SearchCover
-                kind="sad"
-                clearedCells={clearedCoverCells}
-              />
-              {clearedCoverCells.length === 0 && (
-                <Text style={styles.coverPrompt}>用手指抹開雨水 · 逐隻慢慢搵</Text>
-              )}
             </View>
           )}
 
@@ -677,18 +548,6 @@ export function BowlDiscoveryScene({
               <Text pointerEvents="none" style={styles.pondPrompt}>
                 追住小金魚 · 用紙網逐條撈
               </Text>
-            </View>
-          )}
-
-          {activeKey === 'unspoken' && (
-            <View pointerEvents="none" style={styles.interactionLayer}>
-              <SearchCover
-                kind="unspoken"
-                clearedCells={clearedCoverCells}
-              />
-              {clearedCoverCells.length === 0 && (
-                <Text style={styles.coverPrompt}>用手指撥開啲霧 · 逐隻慢慢搵</Text>
-              )}
             </View>
           )}
 
@@ -841,69 +700,6 @@ export function BowlDiscoveryScene({
           <Text style={styles.safetyHint}>可以隨時停低 · 冇分數 · 冇答錯</Text>
         )}
       </View>
-    </View>
-  );
-}
-
-function SearchCover({
-  kind,
-  clearedCells,
-}: {
-  kind: 'nervous' | 'sad' | 'unspoken';
-  clearedCells: number[];
-}) {
-  return (
-    <View pointerEvents="none" style={styles.coverGrid}>
-      {Array.from({ length: COVER_COLUMNS * COVER_ROWS }).map((_, index) => {
-        if (clearedCells.includes(index)) return null;
-        const column = index % COVER_COLUMNS;
-        const row = Math.floor(index / COVER_COLUMNS);
-        return (
-          <View
-            key={index}
-            testID={`cover-cell-${index}`}
-            style={[
-              styles.coverCell,
-              {
-                backgroundColor:
-                  kind === 'nervous'
-                    ? index % 3 === 0
-                      ? '#DDBF7F'
-                      : index % 3 === 1
-                        ? '#E7CF9A'
-                        : '#D4B470'
-                    : kind === 'sad'
-                      ? index % 2 === 0
-                        ? '#D7E9F3'
-                        : '#C9E0EE'
-                      : index % 2 === 0
-                        ? '#E4E7EA'
-                        : '#D9DEE2',
-                height: `${100 / COVER_ROWS + 0.7}%`,
-                left: `${(column * 100) / COVER_COLUMNS}%`,
-                top: `${(row * 100) / COVER_ROWS}%`,
-                width: `${100 / COVER_COLUMNS + 0.7}%`,
-              },
-            ]}
-          >
-            {kind === 'nervous' && (
-              <>
-                <View style={[styles.sandGrain, { left: '24%', top: '28%' }]} />
-                <View style={[styles.sandGrain, { left: '68%', top: '62%' }]} />
-              </>
-            )}
-            {kind === 'sad' && (
-              <View
-                style={[
-                  styles.coverRainStreak,
-                  { left: `${28 + ((index * 17) % 42)}%` },
-                ]}
-              />
-            )}
-            {kind === 'unspoken' && <View style={styles.coverFogWisp} />}
-          </View>
-        );
-      })}
     </View>
   );
 }
@@ -1341,6 +1137,45 @@ const styles = StyleSheet.create({
     fontSize: 12,
     fontWeight: '800',
     marginTop: 3,
+  },
+  coverSearchField: {
+    ...StyleSheet.absoluteFillObject,
+    alignContent: 'center',
+    alignItems: 'center',
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    justifyContent: 'center',
+    paddingHorizontal: 6,
+    paddingVertical: 10,
+  },
+  coverTile: {
+    alignItems: 'center',
+    borderColor: 'transparent',
+    borderRadius: RADIUS.md,
+    borderWidth: 2,
+    height: 96,
+    justifyContent: 'center',
+    margin: 4,
+    overflow: 'hidden',
+    position: 'relative',
+    width: '30%',
+  },
+  coverTileFound: {
+    backgroundColor: '#FFFFFFCC',
+  },
+  coverTileMask: {
+    ...StyleSheet.absoluteFillObject,
+    opacity: 0.88,
+  },
+  coverTileSand: { backgroundColor: '#E3C88A' },
+  coverTileRain: { backgroundColor: '#C5DCEC' },
+  coverTileFog: { backgroundColor: '#D9DEE4' },
+  coverTileHint: {
+    color: COLORS.textPrimary,
+    fontSize: 11,
+    fontWeight: '800',
+    marginTop: 2,
+    zIndex: 1,
   },
   gardenSearchField: {
     alignContent: 'center',

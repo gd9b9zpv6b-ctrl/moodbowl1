@@ -12,7 +12,7 @@ import { BowlDiscoveryScene, DISCOVERIES } from '@/src/components/ritual/bowl-di
 import type { Emotion, EmotionCategory } from '@/src/constants/emotions';
 import { COLORS, RADIUS, SPACING } from '@/src/constants/theme';
 import { wordingFor } from '@/src/lib/i18n/wording-mode';
-import { scoreBowls } from '@/src/lib/ritual/bowl-scorer';
+import { discoveryBowlsForCategory, scoreBowls } from '@/src/lib/ritual/bowl-scorer';
 import { useRitualStore } from '@/src/lib/ritual/ritual-store';
 
 export default function RitualPickScreen() {
@@ -22,7 +22,6 @@ export default function RitualPickScreen() {
   const bodyChips = useRitualStore((s) => s.bodyChips);
   const setBowl = useRitualStore((s) => s.setBowl);
   const [expanded, setExpanded] = useState(false);
-  const [mode, setMode] = useState<'discover' | 'grid'>('discover');
   const [categoryOverride, setCategoryOverride] = useState<EmotionCategory | null>(null);
   const w = wordingFor(ageGroup);
 
@@ -34,6 +33,10 @@ export default function RitualPickScreen() {
   const suggestedCategory =
     scored.default.find((item) => item.key !== 'hollow')?.category ?? 'unspoken';
   const activeCategory = categoryOverride ?? suggestedCategory;
+  const discoveryEmotions = useMemo(
+    () => discoveryBowlsForCategory(activeCategory, scored),
+    [activeCategory, scored],
+  );
 
   const onPick = (emotion: Emotion) => {
     setBowl(emotion.key);
@@ -88,6 +91,41 @@ export default function RitualPickScreen() {
           <Text style={styles.empty}>未揀湯 · 返去再嚟一次</Text>
         ) : (
           <>
+            <View style={styles.grid}>{scored.default.map(renderCard)}</View>
+
+            <Pressable
+              testID="bowl-expand-toggle"
+              onPress={() => setExpanded((v) => !v)}
+              style={styles.expandBtn}
+            >
+              <Feather
+                name={expanded ? 'chevron-up' : 'chevron-down'}
+                size={16}
+                color={COLORS.textSecondary}
+              />
+              <Text style={styles.expandText}>
+                {expanded
+                  ? w.pick_collapse
+                  : ageGroup === 'adult'
+                    ? w.pick_expand
+                    : `${w.pick_expand.replace(/\s*\(\d+\)\s*$/, '')} (${scored.expanded.length})`}
+              </Text>
+            </Pressable>
+
+            {expanded && (
+              <>
+                <View style={styles.grid}>{scored.expanded.map(renderCard)}</View>
+                <Pressable
+                  testID="bowl-see-all"
+                  onPress={() => router.push('/ritual/all')}
+                  style={styles.seeAll}
+                >
+                  <Text style={styles.seeAllText}>{w.pick_see_all}</Text>
+                </Pressable>
+              </>
+            )}
+
+            <Text style={styles.playHeading}>{w.pick_play}</Text>
             <View style={styles.chips}>
               {DISCOVERIES.map((item) => {
                 const selected = item.key === activeCategory;
@@ -97,10 +135,7 @@ export default function RitualPickScreen() {
                     testID={`discovery-${item.key}`}
                     accessibilityRole="button"
                     accessibilityState={{ selected }}
-                    onPress={() => {
-                      setCategoryOverride(item.key);
-                      setMode('discover');
-                    }}
+                    onPress={() => setCategoryOverride(item.key)}
                     style={({ pressed }) => [
                       styles.chip,
                       selected && {
@@ -117,73 +152,11 @@ export default function RitualPickScreen() {
                 );
               })}
             </View>
-
-            {mode === 'discover' ? (
-              <>
-                <BowlDiscoveryScene category={activeCategory} onChoose={onPick} />
-                <Pressable
-                  testID="bowl-pick-direct"
-                  onPress={() => setMode('grid')}
-                  style={styles.modeBtn}
-                >
-                  <Text style={styles.modeBtnText}>{w.pick_direct}</Text>
-                </Pressable>
-              </>
-            ) : (
-              <>
-                <View style={styles.grid}>{scored.default.map(renderCard)}</View>
-
-                <Pressable
-                  testID="bowl-expand-toggle"
-                  onPress={() => setExpanded((v) => !v)}
-                  style={styles.expandBtn}
-                >
-                  <Feather
-                    name={expanded ? 'chevron-up' : 'chevron-down'}
-                    size={16}
-                    color={COLORS.textSecondary}
-                  />
-                  <Text style={styles.expandText}>
-                    {expanded
-                      ? w.pick_collapse
-                      : ageGroup === 'adult'
-                        ? w.pick_expand
-                        : `${w.pick_expand.replace(/\s*\(\d+\)\s*$/, '')} (${scored.expanded.length})`}
-                  </Text>
-                </Pressable>
-
-                {expanded && (
-                  <>
-                    <View style={styles.grid}>{scored.expanded.map(renderCard)}</View>
-                    <Pressable
-                      testID="bowl-see-all"
-                      onPress={() => router.push('/ritual/all')}
-                      style={styles.seeAll}
-                    >
-                      <Text style={styles.seeAllText}>{w.pick_see_all}</Text>
-                    </Pressable>
-                  </>
-                )}
-
-                <Pressable
-                  testID="bowl-pick-play"
-                  onPress={() => setMode('discover')}
-                  style={styles.modeBtn}
-                >
-                  <Text style={styles.modeBtnText}>{w.pick_play}</Text>
-                </Pressable>
-              </>
-            )}
-
-            {mode === 'discover' && (
-              <Pressable
-                testID="bowl-see-all"
-                onPress={() => router.push('/ritual/all')}
-                style={styles.seeAll}
-              >
-                <Text style={styles.seeAllText}>{w.pick_see_all}</Text>
-              </Pressable>
-            )}
+            <BowlDiscoveryScene
+              category={activeCategory}
+              emotions={discoveryEmotions}
+              onChoose={onPick}
+            />
           </>
         )}
       </ScrollView>
@@ -272,13 +245,11 @@ const styles = StyleSheet.create({
   expandText: { fontSize: 13, color: COLORS.textSecondary, fontWeight: '600' },
   seeAll: { alignItems: 'center', paddingVertical: SPACING.sm },
   seeAllText: { fontSize: 13, color: COLORS.textSecondary },
-  modeBtn: {
-    alignItems: 'center',
-    paddingVertical: SPACING.md,
-  },
-  modeBtnText: {
+  playHeading: {
+    color: COLORS.textSecondary,
     fontSize: 13,
     fontWeight: '700',
-    color: COLORS.textSecondary,
+    marginBottom: SPACING.sm,
+    marginTop: SPACING.md,
   },
 });
