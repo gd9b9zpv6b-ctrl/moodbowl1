@@ -1,5 +1,9 @@
 import { describe, expect, it } from 'vitest';
 
+import { BODY_CHIPS } from '@/src/constants/body-chips';
+import { EMOTION_CATEGORIES } from '@/src/constants/emotions';
+import { SOUPS } from '@/src/constants/soups';
+
 import { discoveryBowlsForCategory, scoreBowls } from '../bowl-scorer';
 
 describe('scoreBowls', () => {
@@ -52,5 +56,34 @@ describe('scoreBowls', () => {
     const bowls = discoveryBowlsForCategory('nervous', scored);
     expect(bowls.length).toBeGreaterThan(0);
     expect(bowls.every((b) => b.category === 'nervous')).toBe(true);
+  });
+
+  it('still returns 6 bowls when soup is skipped (no_drink) and chips are empty', () => {
+    const { default: candidates } = scoreBowls('no_drink', []);
+    expect(candidates).toHaveLength(6);
+    expect(candidates.map((b) => b.key)).toContain('hollow');
+  });
+
+  it('returns 6 bowls for every soup, with or without a body chip', () => {
+    for (const soup of SOUPS) {
+      expect(scoreBowls(soup.key, []).default).toHaveLength(6);
+      expect(scoreBowls(soup.key, ['curled_up']).default).toHaveLength(6);
+    }
+  });
+
+  it('returns bowls in every discovery category even from an empty shortlist', () => {
+    const empty = { default: [], expanded: [] };
+    for (const category of EMOTION_CATEGORIES) {
+      const bowls = discoveryBowlsForCategory(category.key, empty);
+      expect(bowls.length).toBeGreaterThan(0);
+      expect(bowls.every((b) => b.category === category.key)).toBe(true);
+    }
+  });
+
+  it('scores every body chip without throwing', () => {
+    for (const chip of BODY_CHIPS) {
+      const { default: candidates } = scoreBowls('plain_water', [chip.key]);
+      expect(candidates).toHaveLength(6);
+    }
   });
 });

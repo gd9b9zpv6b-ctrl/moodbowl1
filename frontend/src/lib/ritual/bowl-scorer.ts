@@ -160,14 +160,14 @@ export function scoreBowls(
 }
 
 /**
- * Bowls to hide-and-seek inside a discovery scene.
- * Prefer the scored ritual shortlist so a body combo never opens an empty pit;
+ * Bowls shown inside a discovery scene.
+ * Prefer the scored ritual shortlist so a body combo never opens empty;
  * fill from the rest of the family if the user switches category.
  */
 export function discoveryBowlsForCategory(
   category: EmotionCategory,
   scored: { default: Emotion[]; expanded: Emotion[] },
-  limit = 8,
+  limit = 6,
 ): Emotion[] {
   const seen = new Set<string>();
   const out: Emotion[] = [];

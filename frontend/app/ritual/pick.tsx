@@ -1,7 +1,7 @@
 import { Feather } from '@expo/vector-icons';
 import * as Haptics from 'expo-haptics';
 import { useRouter } from 'expo-router';
-import { useMemo, useState } from 'react';
+import React, { Component, useMemo, useState, type ErrorInfo, type ReactNode } from 'react';
 import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
@@ -15,6 +15,26 @@ import { wordingFor } from '@/src/lib/i18n/wording-mode';
 import { discoveryBowlsForCategory, scoreBowls } from '@/src/lib/ritual/bowl-scorer';
 import { useRitualStore } from '@/src/lib/ritual/ritual-store';
 
+class DiscoveryErrorBoundary extends Component<
+  { children: ReactNode },
+  { hasError: boolean }
+> {
+  state = { hasError: false };
+
+  static getDerivedStateFromError() {
+    return { hasError: true };
+  }
+
+  componentDidCatch(error: Error, info: ErrorInfo) {
+    console.warn('BowlDiscoveryScene failed', error, info.componentStack);
+  }
+
+  render() {
+    if (this.state.hasError) return null;
+    return this.props.children;
+  }
+}
+
 export default function RitualPickScreen() {
   const router = useRouter();
   const ageGroup = useRitualStore((s) => s.ageGroup);
@@ -25,10 +45,10 @@ export default function RitualPickScreen() {
   const [categoryOverride, setCategoryOverride] = useState<EmotionCategory | null>(null);
   const w = wordingFor(ageGroup);
 
-  const scored = useMemo(() => {
-    if (!soup) return { default: [] as Emotion[], expanded: [] as Emotion[] };
-    return scoreBowls(soup, bodyChips);
-  }, [soup, bodyChips]);
+  const scored = useMemo(
+    () => scoreBowls(soup ?? 'no_drink', bodyChips),
+    [soup, bodyChips],
+  );
 
   const suggestedCategory =
     scored.default.find((item) => item.key !== 'hollow')?.category ?? 'unspoken';
@@ -87,78 +107,74 @@ export default function RitualPickScreen() {
       >
         <Text style={styles.title}>{w.pick_title}</Text>
 
-        {!soup ? (
-          <Text style={styles.empty}>未揀湯 · 返去再嚟一次</Text>
-        ) : (
+        <View style={styles.grid}>{scored.default.map(renderCard)}</View>
+
+        <Pressable
+          testID="bowl-expand-toggle"
+          onPress={() => setExpanded((v) => !v)}
+          style={styles.expandBtn}
+        >
+          <Feather
+            name={expanded ? 'chevron-up' : 'chevron-down'}
+            size={16}
+            color={COLORS.textSecondary}
+          />
+          <Text style={styles.expandText}>
+            {expanded
+              ? w.pick_collapse
+              : ageGroup === 'adult'
+                ? w.pick_expand
+                : `${w.pick_expand.replace(/\s*\(\d+\)\s*$/, '')} (${scored.expanded.length})`}
+          </Text>
+        </Pressable>
+
+        {expanded && (
           <>
-            <View style={styles.grid}>{scored.default.map(renderCard)}</View>
-
+            <View style={styles.grid}>{scored.expanded.map(renderCard)}</View>
             <Pressable
-              testID="bowl-expand-toggle"
-              onPress={() => setExpanded((v) => !v)}
-              style={styles.expandBtn}
+              testID="bowl-see-all"
+              onPress={() => router.push('/ritual/all')}
+              style={styles.seeAll}
             >
-              <Feather
-                name={expanded ? 'chevron-up' : 'chevron-down'}
-                size={16}
-                color={COLORS.textSecondary}
-              />
-              <Text style={styles.expandText}>
-                {expanded
-                  ? w.pick_collapse
-                  : ageGroup === 'adult'
-                    ? w.pick_expand
-                    : `${w.pick_expand.replace(/\s*\(\d+\)\s*$/, '')} (${scored.expanded.length})`}
-              </Text>
+              <Text style={styles.seeAllText}>{w.pick_see_all}</Text>
             </Pressable>
-
-            {expanded && (
-              <>
-                <View style={styles.grid}>{scored.expanded.map(renderCard)}</View>
-                <Pressable
-                  testID="bowl-see-all"
-                  onPress={() => router.push('/ritual/all')}
-                  style={styles.seeAll}
-                >
-                  <Text style={styles.seeAllText}>{w.pick_see_all}</Text>
-                </Pressable>
-              </>
-            )}
-
-            <Text style={styles.playHeading}>{w.pick_play}</Text>
-            <View style={styles.chips}>
-              {DISCOVERIES.map((item) => {
-                const selected = item.key === activeCategory;
-                return (
-                  <Pressable
-                    key={item.key}
-                    testID={`discovery-${item.key}`}
-                    accessibilityRole="button"
-                    accessibilityState={{ selected }}
-                    onPress={() => setCategoryOverride(item.key)}
-                    style={({ pressed }) => [
-                      styles.chip,
-                      selected && {
-                        backgroundColor: item.accent,
-                        borderColor: item.accent,
-                      },
-                      pressed && { opacity: 0.85 },
-                    ]}
-                  >
-                    <Text style={[styles.chipText, selected && styles.chipTextActive]}>
-                      {item.label}
-                    </Text>
-                  </Pressable>
-                );
-              })}
-            </View>
-            <BowlDiscoveryScene
-              category={activeCategory}
-              emotions={discoveryEmotions}
-              onChoose={onPick}
-            />
           </>
         )}
+
+        <Text style={styles.playHeading}>{w.pick_play}</Text>
+        <View style={styles.chips}>
+          {DISCOVERIES.map((item) => {
+            const selected = item.key === activeCategory;
+            return (
+              <Pressable
+                key={item.key}
+                testID={`discovery-${item.key}`}
+                accessibilityRole="button"
+                accessibilityState={{ selected }}
+                onPress={() => setCategoryOverride(item.key)}
+                style={({ pressed }) => [
+                  styles.chip,
+                  selected && {
+                    backgroundColor: item.accent,
+                    borderColor: item.accent,
+                  },
+                  pressed && { opacity: 0.85 },
+                ]}
+              >
+                <Text style={[styles.chipText, selected && styles.chipTextActive]}>
+                  {item.label}
+                </Text>
+              </Pressable>
+            );
+          })}
+        </View>
+        <DiscoveryErrorBoundary>
+          <BowlDiscoveryScene
+            category={activeCategory}
+            emotions={discoveryEmotions}
+            onChoose={onPick}
+          />
+        </DiscoveryErrorBoundary>
       </ScrollView>
       <RitualDiaryFooter />
     </SafeAreaView>
@@ -191,7 +207,6 @@ const styles = StyleSheet.create({
     marginBottom: SPACING.md,
     lineHeight: 34,
   },
-  empty: { fontSize: 14, color: COLORS.textSecondary },
   chips: {
     flexDirection: 'row',
     flexWrap: 'wrap',
