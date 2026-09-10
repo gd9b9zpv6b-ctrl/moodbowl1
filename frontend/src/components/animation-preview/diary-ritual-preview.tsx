@@ -1,5 +1,5 @@
 import { Feather } from '@expo/vector-icons';
-import React, { useRef, useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import {
   Animated,
   Easing,
@@ -16,6 +16,7 @@ import { EMOTION_BY_KEY } from '@/src/constants/emotions';
 import { COLORS, RADIUS, SPACING } from '@/src/constants/theme';
 
 type RitualKey = 'release' | 'share' | 'garden' | 'lock' | 'later';
+type DestLayer = 'back' | 'front';
 
 type RitualConfig = {
   key: RitualKey;
@@ -42,7 +43,7 @@ const RITUALS: RitualConfig[] = [
     key: 'release',
     label: '對摺成紙飛機',
     shortLabel: '紙飛機',
-    description: '同一頁紙沿中間對摺 · 摺好嘅就係飛機 · 然後飛走',
+    description: '同一頁紙沿中間對摺 · 摺出機鼻同機翼 · 然後飛走',
     result: '紙飛機飛走咗 · 真正刪除前會再次確認',
     accent: '#78AFC5',
     tint: '#EAF6FA',
@@ -52,7 +53,7 @@ const RITUALS: RitualConfig[] = [
     key: 'share',
     label: '對摺成信 · 放入信封',
     shortLabel: '信封',
-    description: '同一頁紙對摺、再對摺細 · 放入信封 · 合上封口',
+    description: '同一頁紙對摺細 · 沿開口滑入信封 · 再合上封口',
     result: '封好咗 · 呢度冇傳送任何日記',
     accent: '#C58EA7',
     tint: '#FFF0F5',
@@ -62,7 +63,7 @@ const RITUALS: RitualConfig[] = [
     key: 'garden',
     label: '將信埋入泥土 · 長成樹苗',
     shortLabel: '樹苗',
-    description: '同一頁紙對摺細 · 放入泥土 · 之後發芽',
+    description: '同一頁紙對摺細 · 放入泥洞 · 蓋上之後發芽',
     result: '今日嘅信長成咗一棵小樹苗',
     accent: '#7FA889',
     tint: '#EFF8ED',
@@ -114,7 +115,7 @@ export function DiaryRitualPreview() {
 
     Animated.timing(progress, {
       toValue: 1,
-      duration: 4800,
+      duration: 5600,
       easing: Easing.inOut(Easing.quad),
       useNativeDriver: false,
     }).start(({ finished }) => {
@@ -182,16 +183,22 @@ export function DiaryRitualPreview() {
 
         <View style={styles.stage}>
           <RitualDestination
+            layer="back"
             ritual={active.key}
             accent={active.accent}
             progress={progress}
           />
-
           <FoldingDiaryPage
             emotion={emotion}
             progress={progress}
             ritual={active.key}
             transform={pageTransform}
+          />
+          <RitualDestination
+            layer="front"
+            ritual={active.key}
+            accent={active.accent}
+            progress={progress}
           />
         </View>
 
@@ -225,6 +232,45 @@ export function DiaryRitualPreview() {
       </View>
     </View>
   );
+}
+
+function lerp(from: number, to: number, t: number) {
+  return from + (to - from) * t;
+}
+
+function planeClipPolygon(t: number) {
+  const pts = [
+    [lerp(50, 50, t), lerp(0, 0, t)],
+    [lerp(100, 100, t), lerp(0, 36, t)],
+    [lerp(100, 64, t), lerp(0, 42, t)],
+    [lerp(100, 64, t), lerp(100, 100, t)],
+    [lerp(0, 36, t), lerp(100, 100, t)],
+    [lerp(0, 36, t), lerp(0, 42, t)],
+    [lerp(0, 0, t), lerp(0, 36, t)],
+  ];
+  return `polygon(${pts.map(([x, y]) => `${x}% ${y}%`).join(', ')})`;
+}
+
+function usePlaneClip(progress: Animated.Value, enabled: boolean) {
+  const [clip, setClip] = useState('none');
+
+  useEffect(() => {
+    if (!enabled) {
+      setClip('none');
+      return;
+    }
+    const update = (value: number) => {
+      if (value < 0.36) {
+        setClip('none');
+        return;
+      }
+      setClip(planeClipPolygon(Math.min(1, (value - 0.36) / 0.18)));
+    };
+    const id = progress.addListener(({ value }) => update(value));
+    return () => progress.removeListener(id);
+  }, [enabled, progress]);
+
+  return clip;
 }
 
 function DiaryWriting({
@@ -332,28 +378,32 @@ function FoldingDiaryPage({
   transform: ReturnType<typeof getPageTransform>;
 }) {
   const isPlane = ritual === 'release';
+  const planeClip = usePlaneClip(progress, isPlane);
   const firstFold = progress.interpolate({
-    inputRange: [0.04, 0.34],
+    inputRange: [0.04, 0.28],
     outputRange: ['0deg', '-180deg'],
     extrapolate: 'clamp',
   });
   const secondFold = progress.interpolate({
-    inputRange: [0.4, 0.64],
+    inputRange: [0.34, 0.5],
+    outputRange: ['0deg', '-180deg'],
+    extrapolate: 'clamp',
+  });
+  const thirdFold = progress.interpolate({
+    inputRange: [0.56, 0.7],
     outputRange: ['0deg', '-180deg'],
     extrapolate: 'clamp',
   });
   const sheetHeight = isPlane
     ? PAGE_H
     : progress.interpolate({
-        inputRange: [0, 0.34, 0.38, 0.64, 0.68, 1],
+        inputRange: [0, 0.28, 0.32, 0.5, 0.54, 1],
         outputRange: [PAGE_H, PAGE_H, HALF_H, HALF_H, PACKET_H, PACKET_H],
       });
-  const sheetWidth = isPlane
-    ? progress.interpolate({
-        inputRange: [0, 0.34, 0.38, 1],
-        outputRange: [PAGE_W, PAGE_W, HALF_W, HALF_W],
-      })
-    : PAGE_W;
+  const sheetWidth = progress.interpolate({
+    inputRange: isPlane ? [0, 0.28, 0.32, 1] : [0, 0.7, 0.74, 1],
+    outputRange: [PAGE_W, PAGE_W, HALF_W, HALF_W],
+  });
 
   return (
     <Animated.View
@@ -366,16 +416,11 @@ function FoldingDiaryPage({
           height: sheetHeight,
           transform,
           width: sheetWidth,
-        },
+          ...(isPlane && planeClip !== 'none' ? { clipPath: planeClip } : null),
+        } as ViewStyle,
       ]}
     >
-      <View
-        style={[
-          styles.foldInner,
-          PRESERVE_3D,
-          isPlane ? styles.foldInnerRight : styles.foldInnerBottom,
-        ]}
-      >
+      <View style={[styles.foldInner, PRESERVE_3D, styles.foldInnerAnchor]}>
         {isPlane ? (
           <>
             <View testID="ritual-plane-body" style={[styles.stayPanel, styles.panelRight]}>
@@ -422,6 +467,15 @@ function FoldingDiaryPage({
                 </View>
               }
             />
+            <FoldFlap
+              testID="ritual-fold-side"
+              axis="y"
+              hingeSize={HALF_W}
+              angle={thirdFold}
+              style={styles.panelThird}
+              front={<PaperBack />}
+              back={<PaperBack />}
+            />
             <View style={styles.horizontalCrease} />
           </>
         )}
@@ -443,20 +497,20 @@ function getPageTransform(
       return [
         {
           translateX: progress.interpolate({
-            inputRange: [0, 0.38, 0.55, 0.78, 1],
-            outputRange: [0, 0, 48, 128, 196],
+            inputRange: [0, 0.54, 0.72, 1],
+            outputRange: [0, 0, 110, 230],
           }),
         },
         {
           translateY: progress.interpolate({
-            inputRange: [0, 0.38, 0.55, 0.78, 1],
-            outputRange: [0, 0, -18, -58, -96],
+            inputRange: [0, 0.54, 0.72, 1],
+            outputRange: [0, 0, -48, -128],
           }),
         },
         {
           rotate: progress.interpolate({
-            inputRange: [0, 0.38, 0.6, 1],
-            outputRange: ['0deg', '0deg', '-12deg', '-28deg'],
+            inputRange: [0, 0.54, 0.78, 1],
+            outputRange: ['0deg', '-8deg', '-22deg', '-34deg'],
           }),
         },
       ];
@@ -464,8 +518,8 @@ function getPageTransform(
       return [
         {
           translateY: progress.interpolate({
-            inputRange: [0, 0.66, 0.74, 0.9, 1],
-            outputRange: [0, 0, 36, 148, 156],
+            inputRange: [0, 0.74, 0.9, 1],
+            outputRange: [0, 0, 198, 206],
           }),
         },
       ];
@@ -473,14 +527,8 @@ function getPageTransform(
       return [
         {
           translateY: progress.interpolate({
-            inputRange: [0, 0.66, 0.76, 0.9, 1],
-            outputRange: [0, 0, 70, 168, 176],
-          }),
-        },
-        {
-          rotate: progress.interpolate({
-            inputRange: [0, 0.66, 1],
-            outputRange: ['0deg', '0deg', '10deg'],
+            inputRange: [0, 0.74, 0.9, 1],
+            outputRange: [0, 0, 204, 212],
           }),
         },
       ];
@@ -488,8 +536,8 @@ function getPageTransform(
       return [
         {
           translateY: progress.interpolate({
-            inputRange: [0, 0.66, 0.76, 0.9, 1],
-            outputRange: [0, 0, 58, 138, 146],
+            inputRange: [0, 0.74, 0.9, 1],
+            outputRange: [0, 0, 188, 196],
           }),
         },
       ];
@@ -497,8 +545,8 @@ function getPageTransform(
       return [
         {
           translateY: progress.interpolate({
-            inputRange: [0, 0.66, 0.76, 0.9, 1],
-            outputRange: [0, 0, 70, 148, 154],
+            inputRange: [0, 0.74, 0.9, 1],
+            outputRange: [0, 0, 196, 204],
           }),
         },
       ];
@@ -509,18 +557,27 @@ function RitualDestination({
   ritual,
   accent,
   progress,
+  layer,
 }: {
   ritual: RitualKey;
   accent: string;
   progress: Animated.Value;
+  layer: DestLayer;
 }) {
   if (ritual === 'release') {
     return null;
   }
 
   if (ritual === 'share') {
+    if (layer === 'back') {
+      return (
+        <View testID="ritual-envelope-back" style={[styles.destinationDock, { zIndex: 1 }]}>
+          <View style={[styles.bigEnvelope, { backgroundColor: '#F3E6EC', borderColor: accent }]} />
+        </View>
+      );
+    }
     return (
-      <View testID="ritual-envelope" style={styles.destinationBottom}>
+      <View testID="ritual-envelope" style={[styles.destinationDock, { zIndex: 4 }]}>
         <Animated.View
           testID="ritual-envelope-flap-open"
           style={[
@@ -529,14 +586,8 @@ function RitualDestination({
             {
               transform: [
                 {
-                  translateY: progress.interpolate({
-                    inputRange: [0, 0.18, 0.66, 0.86],
-                    outputRange: [-8, -18, -10, 8],
-                  }),
-                },
-                {
                   scaleY: progress.interpolate({
-                    inputRange: [0, 0.18, 0.66, 0.86],
+                    inputRange: [0, 0.18, 0.74, 0.9],
                     outputRange: [0.7, 1, 1, 0],
                   }),
                 },
@@ -544,13 +595,13 @@ function RitualDestination({
             },
           ]}
         />
-        <View style={[styles.bigEnvelope, { borderColor: accent }]}>
-          <View style={[styles.envelopeInner, { backgroundColor: accent + '16' }]} />
-          <View style={styles.envelopeSlot} />
+        <View style={[styles.envelopeFront, { borderColor: accent }]}>
+          <View style={styles.envelopeMouth} />
+          <View style={[styles.envelopeBelly, { backgroundColor: '#FFFDF9' }]} />
           <Animated.View
             style={{
               opacity: progress.interpolate({
-                inputRange: [0, 0.86, 0.94, 1],
+                inputRange: [0, 0.9, 0.96, 1],
                 outputRange: [0, 0, 1, 1],
               }),
             }}
@@ -566,13 +617,13 @@ function RitualDestination({
                 transform: [
                   {
                     translateY: progress.interpolate({
-                      inputRange: [0, 0.82, 0.94, 1],
+                      inputRange: [0, 0.88, 0.96, 1],
                       outputRange: [-28, -28, 0, 0],
                     }),
                   },
                   {
                     scaleY: progress.interpolate({
-                      inputRange: [0, 0.82, 0.94, 1],
+                      inputRange: [0, 0.88, 0.96, 1],
                       outputRange: [0, 0, 1, 1],
                     }),
                   },
@@ -586,42 +637,42 @@ function RitualDestination({
   }
 
   if (ritual === 'garden') {
+    if (layer === 'back') {
+      return (
+        <View testID="ritual-sapling-back" style={[styles.destinationDock, { zIndex: 1 }]}>
+          <View style={styles.soil}>
+            <Animated.View
+              testID="ritual-soil-hole"
+              style={[
+                styles.soilHole,
+                {
+                  opacity: progress.interpolate({
+                    inputRange: [0, 0.18, 0.74, 0.9],
+                    outputRange: [0.45, 1, 1, 0.2],
+                  }),
+                },
+              ]}
+            />
+          </View>
+        </View>
+      );
+    }
     return (
-      <View testID="ritual-sapling" style={styles.destinationBottom}>
-        <View style={styles.soil}>
-          <Animated.View
-            testID="ritual-soil-hole"
-            style={[
-              styles.soilHole,
-              {
-                opacity: progress.interpolate({
-                  inputRange: [0, 0.18, 0.66, 0.86],
-                  outputRange: [0.4, 1, 1, 0],
-                }),
-                transform: [
-                  {
-                    scaleX: progress.interpolate({
-                      inputRange: [0, 0.2, 0.7, 0.88],
-                      outputRange: [0.7, 1, 0.85, 0.2],
-                    }),
-                  },
-                ],
-              },
-            ]}
-          />
+      <View testID="ritual-sapling" style={[styles.destinationDock, { zIndex: 4 }]}>
+        <View style={styles.soilFront}>
           <Animated.View
             testID="ritual-soil-cover"
             style={[
               styles.soilCover,
               {
                 opacity: progress.interpolate({
-                  inputRange: [0, 0.7, 0.86, 1],
+                  inputRange: [0, 0.88, 0.94, 1],
                   outputRange: [0, 0, 1, 1],
                 }),
                 transform: [
                   {
                     scaleX: progress.interpolate({
-                      inputRange: [0, 0.7, 0.88, 1],
+                      inputRange: [0, 0.88, 0.96, 1],
                       outputRange: [0.35, 0.35, 1, 1],
                     }),
                   },
@@ -635,19 +686,19 @@ function RitualDestination({
               styles.sapling,
               {
                 opacity: progress.interpolate({
-                  inputRange: [0, 0.78, 0.86, 1],
+                  inputRange: [0, 0.9, 0.95, 1],
                   outputRange: [0, 0, 1, 1],
                 }),
                 transform: [
                   {
                     translateY: progress.interpolate({
-                      inputRange: [0, 0.78, 0.9, 1],
+                      inputRange: [0, 0.9, 0.96, 1],
                       outputRange: [42, 42, 8, -18],
                     }),
                   },
                   {
                     scale: progress.interpolate({
-                      inputRange: [0, 0.78, 0.9, 1],
+                      inputRange: [0, 0.9, 0.96, 1],
                       outputRange: [0.18, 0.18, 0.62, 1],
                     }),
                   },
@@ -667,10 +718,18 @@ function RitualDestination({
   }
 
   if (ritual === 'lock') {
+    if (layer === 'back') {
+      return (
+        <View testID="ritual-lock-box-back" style={[styles.destinationDock, { zIndex: 1 }]}>
+          <View style={[styles.lockBox, { borderColor: accent, backgroundColor: accent + '22' }]}>
+            <View style={styles.lockBoxOpening} />
+          </View>
+        </View>
+      );
+    }
     return (
-      <View testID="ritual-lock-box" style={styles.destinationBottom}>
-        <View style={[styles.lockBox, { borderColor: accent, backgroundColor: accent + '22' }]}>
-          <View style={styles.lockBoxOpening} />
+      <View testID="ritual-lock-box" style={[styles.destinationDock, { zIndex: 4 }]}>
+        <View style={styles.lockBoxFront}>
           <Animated.View
             testID="ritual-box-lid"
             style={[
@@ -680,13 +739,13 @@ function RitualDestination({
                 transform: [
                   {
                     translateY: progress.interpolate({
-                      inputRange: [0, 0.2, 0.7, 0.88, 1],
+                      inputRange: [0, 0.2, 0.74, 0.9, 1],
                       outputRange: [-42, -42, -42, 0, 0],
                     }),
                   },
                   {
                     rotate: progress.interpolate({
-                      inputRange: [0, 0.2, 0.7, 0.88, 1],
+                      inputRange: [0, 0.2, 0.74, 0.9, 1],
                       outputRange: ['-16deg', '-16deg', '-16deg', '0deg', '0deg'],
                     }),
                   },
@@ -698,13 +757,13 @@ function RitualDestination({
             testID="ritual-box-lock"
             style={{
               opacity: progress.interpolate({
-                inputRange: [0, 0.86, 0.94, 1],
+                inputRange: [0, 0.9, 0.96, 1],
                 outputRange: [0, 0, 1, 1],
               }),
               transform: [
                 {
                   scale: progress.interpolate({
-                    inputRange: [0, 0.86, 0.94, 1],
+                    inputRange: [0, 0.9, 0.96, 1],
                     outputRange: [0.55, 0.55, 1.08, 1],
                   }),
                 },
@@ -718,10 +777,19 @@ function RitualDestination({
     );
   }
 
+  if (layer === 'back') {
+    return (
+      <View testID="ritual-desk-back" style={[styles.destinationDock, { zIndex: 1 }]}>
+        <View style={[styles.deskUnit, { backgroundColor: accent + '44' }]}>
+          <View style={styles.drawerCavity} />
+        </View>
+      </View>
+    );
+  }
+
   return (
-    <View testID="ritual-desk" style={styles.destinationBottom}>
-      <View style={[styles.deskUnit, { backgroundColor: accent + '44' }]}>
-        <View style={styles.drawerCavity} />
+    <View testID="ritual-desk" style={[styles.destinationDock, { zIndex: 4 }]}>
+      <View style={styles.deskFront}>
         <Animated.View
           testID="ritual-drawer-front"
           style={[
@@ -731,8 +799,8 @@ function RitualDestination({
               transform: [
                 {
                   translateY: progress.interpolate({
-                    inputRange: [0, 0.16, 0.7, 0.9, 1],
-                    outputRange: [0, 34, 34, 0, 0],
+                    inputRange: [0, 0.16, 0.74, 0.9, 1],
+                    outputRange: [0, 40, 40, 0, 0],
                   }),
                 },
               ],
@@ -850,13 +918,9 @@ const styles = StyleSheet.create({
     position: 'absolute',
     width: PAGE_W,
   },
-  foldInnerRight: {
-    right: 0,
-    top: 0,
-  },
-  foldInnerBottom: {
+  foldInnerAnchor: {
     bottom: 0,
-    left: 0,
+    right: 0,
   },
   flap: {
     overflow: 'visible',
@@ -911,6 +975,13 @@ const styles = StyleSheet.create({
     left: 0,
     width: PAGE_W,
     zIndex: 1,
+  },
+  panelThird: {
+    bottom: 0,
+    height: PACKET_H,
+    left: 0,
+    width: HALF_W,
+    zIndex: 6,
   },
   secondFoldClip: {
     height: HALF_H,
@@ -992,13 +1063,13 @@ const styles = StyleSheet.create({
     width: PAGE_W,
     zIndex: 5,
   },
-  destinationBottom: {
+  destinationDock: {
     alignItems: 'center',
+    alignSelf: 'center',
     bottom: 8,
     justifyContent: 'flex-end',
+    pointerEvents: 'none',
     position: 'absolute',
-    width: '100%',
-    zIndex: 3,
   },
   bigEnvelope: {
     alignItems: 'center',
@@ -1010,19 +1081,31 @@ const styles = StyleSheet.create({
     position: 'relative',
     width: 142,
   },
-  envelopeInner: {
-    ...StyleSheet.absoluteFillObject,
+  envelopeFront: {
+    alignItems: 'center',
     borderRadius: RADIUS.sm,
+    borderWidth: 2,
+    height: 78,
+    justifyContent: 'center',
+    overflow: 'hidden',
+    position: 'relative',
+    width: 142,
   },
-  envelopeSlot: {
-    backgroundColor: '#FFFFFF',
-    borderColor: '#D8C7D0',
-    borderRadius: RADIUS.pill,
-    borderWidth: 1,
-    height: 10,
+  envelopeMouth: {
+    height: 20,
+    left: 12,
     position: 'absolute',
-    top: 10,
-    width: 108,
+    right: 12,
+    top: 0,
+  },
+  envelopeBelly: {
+    borderTopColor: '#D8C7D0',
+    borderTopWidth: 1,
+    bottom: 0,
+    left: 0,
+    position: 'absolute',
+    right: 0,
+    top: 18,
   },
   envelopeFlapOpen: {
     borderBottomWidth: 36,
@@ -1052,6 +1135,13 @@ const styles = StyleSheet.create({
     height: 62,
     justifyContent: 'flex-start',
     overflow: 'visible',
+    position: 'relative',
+    width: 176,
+  },
+  soilFront: {
+    alignItems: 'center',
+    height: 62,
+    justifyContent: 'flex-start',
     position: 'relative',
     width: 176,
   },
@@ -1119,6 +1209,13 @@ const styles = StyleSheet.create({
     position: 'relative',
     width: 145,
   },
+  lockBoxFront: {
+    alignItems: 'center',
+    height: 86,
+    justifyContent: 'center',
+    position: 'relative',
+    width: 145,
+  },
   lockBoxOpening: {
     backgroundColor: '#3F3348',
     borderRadius: RADIUS.sm,
@@ -1144,6 +1241,11 @@ const styles = StyleSheet.create({
     height: 82,
     justifyContent: 'flex-start',
     paddingTop: 13,
+    position: 'relative',
+    width: 220,
+  },
+  deskFront: {
+    height: 82,
     position: 'relative',
     width: 220,
   },
