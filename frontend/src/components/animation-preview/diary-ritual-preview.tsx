@@ -272,17 +272,18 @@ function PaperPlaneMarkings() {
     <View testID="ritual-plane-markings" style={styles.finishedPacket}>
       <Svg height="100%" preserveAspectRatio="none" viewBox="0 0 156 58" width="100%">
         <Path
-          d="M4 29 L152 5 L116 29 L152 53 Z"
+          d="M154 29 L6 6 L40 29 L6 52 Z"
           fill="#FFFDF8"
           stroke="#E0D1BA"
           strokeLinejoin="round"
           strokeWidth="1.6"
         />
-        <Path d="M4 29 L116 29 L152 5 Z" fill="#F3E6D0" />
-        <Path d="M4 29 L116 29 L152 53 Z" fill="#E9DCC4" />
-        <Path d="M4 29 L152 5" stroke="#CDBDA6" strokeWidth="1.3" />
-        <Path d="M4 29 L152 53" stroke="#D5C6B0" strokeWidth="1" />
-        <Path d="M116 29 L152 5" stroke="#EFE6D6" strokeWidth="1" />
+        <Path d="M154 29 L40 29 L6 6 Z" fill="#F3E6D0" />
+        <Path d="M154 29 L40 29 L6 52 Z" fill="#E9DCC4" />
+        <Path d="M6 6 L154 29" stroke="#CDBDA6" strokeWidth="1.3" />
+        <Path d="M6 52 L154 29" stroke="#D5C6B0" strokeWidth="1" />
+        <Path d="M40 29 L154 29" stroke="#EFE6D6" strokeWidth="1.2" />
+        <Path d="M132 24 L154 29 L132 34 Z" fill="#D9C4A4" />
       </Svg>
     </View>
   );
@@ -290,10 +291,10 @@ function PaperPlaneMarkings() {
 
 function planeClipPolygon(t: number) {
   const pts = [
-    [lerp(100, 96, t), lerp(0, 8, t)],
-    [lerp(0, 4, t), lerp(0, 38, t)],
-    [lerp(0, 42, t), lerp(100, 54, t)],
-    [lerp(100, 62, t), lerp(100, 96, t)],
+    [lerp(0, 4, t), lerp(0, 8, t)],
+    [lerp(100, 96, t), lerp(0, 38, t)],
+    [lerp(100, 58, t), lerp(100, 54, t)],
+    [lerp(0, 38, t), lerp(100, 96, t)],
   ];
   return `polygon(${pts.map(([x, y]) => `${x}% ${y}%`).join(', ')})`;
 }
@@ -612,25 +613,25 @@ function getPageTransform(
         {
           translateX: progress.interpolate({
             inputRange: [0, 0.48, 0.58, 0.76, 0.9, 1],
-            outputRange: [0, 0, 18, 62, 96, 118],
+            outputRange: [0, 0, 28, 78, 114, 132],
           }),
         },
         {
           translateY: progress.interpolate({
             inputRange: [0, 0.48, 0.58, 0.76, 0.9, 1],
-            outputRange: [0, 0, -10, -28, -44, -58],
+            outputRange: [0, 0, -4, -10, -14, -16],
           }),
         },
         {
           rotate: progress.interpolate({
             inputRange: [0, 0.46, 0.54, 1],
-            outputRange: ['0deg', '0deg', '-34deg', '-36deg'],
+            outputRange: ['0deg', '0deg', '-10deg', '-12deg'],
           }),
         },
         {
           scale: progress.interpolate({
             inputRange: [0, 0.48, 0.66, 0.84, 0.94, 1],
-            outputRange: [1, 1, 0.62, 0.32, 0.1, 0],
+            outputRange: [1, 1, 0.7, 0.38, 0.12, 0],
           }),
         },
       ];
@@ -1326,11 +1327,11 @@ const styles = StyleSheet.create({
   planeSpine: {
     backgroundColor: '#C4B49A',
     height: 2,
-    left: '6%',
+    left: '8%',
     position: 'absolute',
     top: '48%',
-    transform: [{ rotate: '16deg' }],
-    width: '82%',
+    transform: [{ rotate: '-8deg' }],
+    width: '84%',
     zIndex: 8,
   },
   horizontalCrease: {
