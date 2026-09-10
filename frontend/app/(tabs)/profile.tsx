@@ -313,6 +313,21 @@ export default function Profile() {
         )}
 
         <Pressable
+          testID="link-animation-preview"
+          style={styles.linkRow}
+          onPress={() => router.push('/animation-preview')}
+        >
+          <View style={[styles.linkIcon, { backgroundColor: '#E8F3F0' }]}>
+            <Feather name="play-circle" size={18} color={COLORS.primary} />
+          </View>
+          <View style={{ flex: 1 }}>
+            <Text style={styles.linkTitle}>互動動畫 · 概念預覽</Text>
+            <Text style={styles.linkHint}>試玩搵飯碗同日記完成儀式</Text>
+          </View>
+          <Feather name="chevron-right" size={20} color={COLORS.textDisabled} />
+        </Pressable>
+
+        <Pressable
           testID="link-onboarding"
           style={styles.linkRow}
           onPress={async () => {
