@@ -611,20 +611,20 @@ function getPageTransform(
       return [
         {
           translateX: progress.interpolate({
-            inputRange: [0, 0.48, 0.62, 0.76, 0.9, 1],
-            outputRange: [0, 0, 28, 62, 96, 118],
+            inputRange: [0, 0.48, 0.58, 0.76, 0.9, 1],
+            outputRange: [0, 0, 18, 62, 96, 118],
           }),
         },
         {
           translateY: progress.interpolate({
-            inputRange: [0, 0.48, 0.62, 0.76, 0.9, 1],
-            outputRange: [0, 0, -8, -22, -40, -58],
+            inputRange: [0, 0.48, 0.58, 0.76, 0.9, 1],
+            outputRange: [0, 0, -10, -28, -44, -58],
           }),
         },
         {
           rotate: progress.interpolate({
-            inputRange: [0, 0.48, 0.64, 0.82, 1],
-            outputRange: ['0deg', '6deg', '-6deg', '-16deg', '-12deg'],
+            inputRange: [0, 0.46, 0.54, 1],
+            outputRange: ['0deg', '0deg', '-34deg', '-36deg'],
           }),
         },
         {
