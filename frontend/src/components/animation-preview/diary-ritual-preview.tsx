@@ -45,8 +45,8 @@ const RITUALS: RitualConfig[] = [
     key: 'release',
     label: '對摺成紙飛機',
     shortLabel: '紙飛機',
-    description: '同一頁紙沿中間對摺 · 摺出機鼻同機翼 · 然後飛走',
-    result: '紙飛機飛走咗 · 真正刪除前會再次確認',
+    description: '同一頁紙對摺成飛機 · 向住海島飛去',
+    result: '紙飛機飛咗去海島 · 真正刪除前會再次確認',
     accent: '#78AFC5',
     tint: '#EAF6FA',
     icon: 'send',
@@ -420,6 +420,13 @@ function FoldingDiaryPage({
       ? [PAGE_W, PAGE_W, HALF_W, 156, 156]
       : [PAGE_W, PAGE_W, HALF_W, HALF_W, NOTE_W, NOTE_W],
   });
+  const sheetZ = isPlane
+    ? 3
+    : progress.interpolate({
+        inputRange: [0, 0.9, 0.92],
+        outputRange: [3, 3, 0],
+        extrapolate: 'clamp',
+      });
 
   return (
     <Animated.View
@@ -432,6 +439,7 @@ function FoldingDiaryPage({
           height: sheetHeight,
           transform,
           width: sheetWidth,
+          zIndex: sheetZ,
           ...(isPlane && planeClip !== 'none' ? { clipPath: planeClip } : null),
         } as ViewStyle,
       ]}
@@ -538,26 +546,33 @@ function getPageTransform(
   | { translateX: Animated.AnimatedInterpolation<number> }
   | { translateY: Animated.AnimatedInterpolation<number> }
   | { rotate: Animated.AnimatedInterpolation<string> }
+  | { scale: Animated.AnimatedInterpolation<number> }
 )[] {
   switch (ritual) {
     case 'release':
       return [
         {
           translateX: progress.interpolate({
-            inputRange: [0, 0.52, 0.78, 1],
-            outputRange: [0, 0, 210, 360],
+            inputRange: [0, 0.52, 0.78, 0.94, 1],
+            outputRange: [0, 0, 78, 108, 118],
           }),
         },
         {
           translateY: progress.interpolate({
-            inputRange: [0, 0.52, 0.78, 1],
-            outputRange: [0, 0, -86, -190],
+            inputRange: [0, 0.52, 0.78, 0.94, 1],
+            outputRange: [0, 0, -58, -92, -102],
           }),
         },
         {
           rotate: progress.interpolate({
-            inputRange: [0, 0.52, 0.7, 1],
-            outputRange: ['0deg', '6deg', '-16deg', '-24deg'],
+            inputRange: [0, 0.52, 0.72, 1],
+            outputRange: ['0deg', '8deg', '-10deg', '-16deg'],
+          }),
+        },
+        {
+          scale: progress.interpolate({
+            inputRange: [0, 0.52, 0.8, 1],
+            outputRange: [1, 1, 0.48, 0.28],
           }),
         },
       ];
@@ -566,7 +581,7 @@ function getPageTransform(
         {
           translateY: progress.interpolate({
             inputRange: [0, 0.84, 0.93, 1],
-            outputRange: [0, 0, 204, 210],
+            outputRange: [0, 0, 198, 206],
           }),
         },
       ];
@@ -575,7 +590,7 @@ function getPageTransform(
         {
           translateY: progress.interpolate({
             inputRange: [0, 0.84, 0.93, 1],
-            outputRange: [0, 0, 208, 214],
+            outputRange: [0, 0, 206, 214],
           }),
         },
       ];
@@ -584,7 +599,7 @@ function getPageTransform(
         {
           translateY: progress.interpolate({
             inputRange: [0, 0.84, 0.93, 1],
-            outputRange: [0, 0, 192, 198],
+            outputRange: [0, 0, 188, 196],
           }),
         },
       ];
@@ -593,7 +608,7 @@ function getPageTransform(
         {
           translateY: progress.interpolate({
             inputRange: [0, 0.84, 0.93, 1],
-            outputRange: [0, 0, 214, 220],
+            outputRange: [0, 0, 208, 216],
           }),
         },
       ];
@@ -612,7 +627,28 @@ function RitualDestination({
   layer: DestLayer;
 }) {
   if (ritual === 'release') {
-    return null;
+    if (layer === 'back') {
+      return (
+        <View testID="ritual-island" style={styles.islandScene}>
+          <View style={styles.seaBand} />
+          <View style={styles.islandBody}>
+            <View style={styles.islandShore} />
+            <View style={styles.islandHill} />
+          </View>
+        </View>
+      );
+    }
+    return (
+      <View testID="ritual-island-front" style={styles.islandFrontLayer}>
+        <View style={styles.islandHillFront} />
+        <View style={styles.palm}>
+          <View style={styles.palmTrunk} />
+          <View style={[styles.palmFrond, styles.palmFrondLeft]} />
+          <View style={[styles.palmFrond, styles.palmFrondMid]} />
+          <View style={[styles.palmFrond, styles.palmFrondRight]} />
+        </View>
+      </View>
+    );
   }
 
   if (ritual === 'share') {
@@ -624,7 +660,7 @@ function RitualDestination({
       );
     }
     return (
-      <View testID="ritual-envelope" style={[styles.destinationDock, { zIndex: 4 }]}>
+      <View testID="ritual-envelope" style={[styles.destinationDock, styles.destinationFront]}>
         <Animated.View
           testID="ritual-envelope-flap-open"
           style={[
@@ -705,7 +741,7 @@ function RitualDestination({
       );
     }
     return (
-      <View testID="ritual-sapling" style={[styles.destinationDock, { zIndex: 4 }]}>
+      <View testID="ritual-sapling" style={[styles.destinationDock, styles.destinationFront]}>
         <View style={styles.soilFront}>
           <Animated.View
             testID="ritual-soil-cover"
@@ -775,7 +811,7 @@ function RitualDestination({
       );
     }
     return (
-      <View testID="ritual-lock-box" style={[styles.destinationDock, { zIndex: 4 }]}>
+      <View testID="ritual-lock-box" style={[styles.destinationDock, styles.destinationFront]}>
         <View style={styles.lockBoxFront}>
           <View style={[styles.lockBoxFace, { backgroundColor: accent + '77', borderColor: accent }]} />
           <Animated.View
@@ -836,7 +872,7 @@ function RitualDestination({
   }
 
   return (
-    <View testID="ritual-desk" style={[styles.destinationDock, { zIndex: 4 }]}>
+    <View testID="ritual-desk" style={[styles.destinationDock, styles.destinationFront]}>
       <View style={styles.deskFront}>
         <Animated.View
           testID="ritual-drawer-front"
@@ -1142,6 +1178,96 @@ const styles = StyleSheet.create({
     justifyContent: 'flex-end',
     pointerEvents: 'none',
     position: 'absolute',
+  },
+  destinationFront: {
+    elevation: 24,
+    transform: [{ translateX: 0 }],
+    zIndex: 40,
+  },
+  islandScene: {
+    alignItems: 'center',
+    position: 'absolute',
+    right: 10,
+    top: 6,
+    width: 128,
+    zIndex: 1,
+  },
+  islandFrontLayer: {
+    alignItems: 'center',
+    elevation: 24,
+    position: 'absolute',
+    right: 10,
+    top: 6,
+    transform: [{ translateX: 0 }],
+    width: 128,
+    zIndex: 8,
+  },
+  seaBand: {
+    backgroundColor: '#7EB8C9',
+    borderRadius: 40,
+    height: 36,
+    marginTop: 52,
+    opacity: 0.55,
+    width: 128,
+  },
+  islandBody: {
+    alignItems: 'center',
+    bottom: 18,
+    position: 'absolute',
+    width: 108,
+  },
+  islandShore: {
+    backgroundColor: '#E6D2A8',
+    borderRadius: 40,
+    height: 22,
+    width: 96,
+  },
+  islandHill: {
+    backgroundColor: '#7FA889',
+    borderRadius: 28,
+    height: 38,
+    marginTop: -18,
+    width: 72,
+  },
+  islandHillFront: {
+    backgroundColor: '#6F9A7A',
+    borderRadius: 22,
+    height: 24,
+    marginTop: 34,
+    width: 58,
+  },
+  palm: {
+    alignItems: 'center',
+    height: 62,
+    marginTop: -48,
+    width: 64,
+  },
+  palmTrunk: {
+    backgroundColor: '#B08F68',
+    borderRadius: 4,
+    height: 28,
+    marginTop: 22,
+    width: 6,
+  },
+  palmFrond: {
+    backgroundColor: '#5E8F68',
+    borderRadius: 10,
+    height: 14,
+    position: 'absolute',
+    top: 12,
+    width: 28,
+  },
+  palmFrondLeft: {
+    left: 2,
+    transform: [{ rotate: '-28deg' }],
+  },
+  palmFrondMid: {
+    left: 18,
+    transform: [{ rotate: '8deg' }],
+  },
+  palmFrondRight: {
+    right: 2,
+    transform: [{ rotate: '36deg' }],
   },
   bigEnvelope: {
     alignItems: 'center',
