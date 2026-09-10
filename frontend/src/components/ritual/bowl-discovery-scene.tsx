@@ -1,5 +1,5 @@
 import { Feather } from '@expo/vector-icons';
-import React, { useEffect, useRef } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { Animated, Easing, Pressable, StyleSheet, Text, View } from 'react-native';
 
 import { EmotionVisual } from '@/src/components/emotion-visual';
@@ -73,8 +73,8 @@ export const DISCOVERIES: DiscoveryConfig[] = [
   {
     key: 'warm',
     label: '溫暖',
-    title: '花圃裏面嘅碗',
-    instruction: '撳你似嘅碗',
+    title: '淋水俾小花',
+    instruction: '揀一塊泥土淋水 · 碗會慢慢出嚟',
     emotionKey: 'happy',
     tint: '#FFF6EA',
     accent: '#E2B36A',
@@ -132,16 +132,180 @@ function BowlTile({
           <Text style={styles.fishEmoji}>🐠</Text>
         </View>
       ) : null}
-      {variant === 'warm' ? (
-        <View pointerEvents="none" style={styles.seedEmojiWrap}>
-          <Text style={styles.seedEmoji}>🌱</Text>
-        </View>
-      ) : null}
       <View style={styles.bowlVisual} pointerEvents="none">
         <EmotionVisual emotion={emotion} size={92} />
       </View>
       <Text style={styles.bowlCaption}>{emotion.label}</Text>
     </Pressable>
+  );
+}
+
+function GardenBed({
+  items,
+  accent,
+  onChoose,
+}: {
+  items: Emotion[];
+  accent: string;
+  onChoose: (emotion: Emotion) => void;
+}) {
+  const [wateredKeys, setWateredKeys] = useState<string[]>([]);
+  const [wateringKey, setWateringKey] = useState<string | null>(null);
+  const [waterTarget, setWaterTarget] = useState({ fromRight: false, x: 0 });
+  const [fieldWidth, setFieldWidth] = useState(320);
+  const waterPour = useRef(new Animated.Value(0)).current;
+  const itemKey = items.map((item) => item.key).join('|');
+
+  useEffect(() => {
+    setWateredKeys([]);
+    setWateringKey(null);
+    waterPour.stopAnimation();
+    waterPour.setValue(0);
+  }, [itemKey, waterPour]);
+
+  const waterPatch = (emotionKey: string, index: number) => {
+    if (wateringKey || wateredKeys.includes(emotionKey)) return;
+    const col = index % 3;
+    const fromRight = col >= 2;
+    const patchCenter = ((col + 0.5) * fieldWidth) / 3;
+    const streamOrigin = fieldWidth / 2 + (fromRight ? 40 : -40);
+    setWateringKey(emotionKey);
+    setWaterTarget({ fromRight, x: patchCenter - streamOrigin });
+    waterPour.setValue(0);
+    requestAnimationFrame(() => {
+      Animated.timing(waterPour, {
+        toValue: 1,
+        duration: 1450,
+        easing: Easing.inOut(Easing.quad),
+        useNativeDriver: true,
+      }).start(({ finished }) => {
+        if (finished) {
+          setWateredKeys((current) =>
+            current.includes(emotionKey) ? current : [...current, emotionKey],
+          );
+        }
+        setWateringKey(null);
+        waterPour.setValue(0);
+      });
+    });
+  };
+
+  return (
+    <View
+      style={styles.gardenScene}
+      onLayout={(event) => setFieldWidth(event.nativeEvent.layout.width)}
+    >
+      <Animated.View
+        testID="watering-can"
+        pointerEvents="none"
+        style={[
+          styles.wateringCan,
+          {
+            transform: [
+              {
+                translateX: waterPour.interpolate({
+                  inputRange: [0, 0.26, 0.86, 1],
+                  outputRange: [0, waterTarget.x, waterTarget.x, 0],
+                }),
+              },
+              {
+                translateY: waterPour.interpolate({
+                  inputRange: [0, 0.26, 0.86, 1],
+                  outputRange: [0, 5, 5, 0],
+                }),
+              },
+            ],
+          },
+        ]}
+      >
+        <Animated.View
+          style={[
+            styles.canDrawing,
+            {
+              transform: [
+                { scaleX: waterTarget.fromRight ? -1 : 1 },
+                {
+                  rotate: waterPour.interpolate({
+                    inputRange: [0, 0.3, 0.42, 0.86, 1],
+                    outputRange: waterTarget.fromRight
+                      ? ['0deg', '0deg', '14deg', '14deg', '0deg']
+                      : ['0deg', '0deg', '-14deg', '-14deg', '0deg'],
+                  }),
+                },
+              ],
+            },
+          ]}
+        >
+          <View style={[styles.canHandle, { borderColor: accent }]} />
+          <View style={[styles.canBody, { backgroundColor: accent }]}>
+            <View style={styles.canHighlight} />
+          </View>
+          <View style={[styles.canSpout, { backgroundColor: accent }]} />
+          <View style={[styles.canRose, { backgroundColor: accent }]} />
+        </Animated.View>
+        <Text style={styles.waterCount}>
+          {wateredKeys.length} / {items.length}
+        </Text>
+        <View style={[styles.waterStream, waterTarget.fromRight && styles.waterStreamFromRight]}>
+          {[0, 1, 2].map((drop) => (
+            <Animated.View
+              key={drop}
+              testID={`water-drop-${drop}`}
+              style={[
+                styles.waterDrop,
+                {
+                  left: drop * 12,
+                  opacity: waterPour.interpolate({
+                    inputRange: [0, 0.4 + drop * 0.04, 0.82, 0.92, 1],
+                    outputRange: [0, 0, 1, 0, 0],
+                  }),
+                  transform: [
+                    {
+                      translateY: waterPour.interpolate({
+                        inputRange: [0, 0.4, 0.9, 1],
+                        outputRange: [0, 0, 74 + drop * 7, 82 + drop * 7],
+                      }),
+                    },
+                  ],
+                },
+              ]}
+            />
+          ))}
+        </View>
+      </Animated.View>
+
+      <View style={styles.gardenSearchField}>
+        {items.map((item, index) => {
+          const found = wateredKeys.includes(item.key);
+          return (
+            <Pressable
+              key={item.key}
+              testID={found ? `bowl-discover-${item.key}` : `garden-patch-${item.key}`}
+              accessibilityRole="button"
+              accessibilityLabel={found ? item.label : '等緊淋水嘅泥土'}
+              disabled={Boolean(wateringKey) && !found}
+              onPress={() => {
+                if (found) onChoose(item);
+                else waterPatch(item.key, index);
+              }}
+              style={[styles.gardenPatch, found && { borderColor: accent }]}
+            >
+              {found ? (
+                <>
+                  <EmotionVisual emotion={item} size={72} />
+                  <Text style={styles.bowlCaption}>{item.label}</Text>
+                </>
+              ) : (
+                <>
+                  <Text style={styles.seedling}>🌱</Text>
+                  <View style={styles.gardenSoil} />
+                </>
+              )}
+            </Pressable>
+          );
+        })}
+      </View>
+    </View>
   );
 }
 
@@ -260,12 +424,7 @@ export function BowlDiscoveryScene({
       ) : null}
 
       {discovery.key === 'warm' ? (
-        <View style={styles.gardenScene}>
-          <View style={styles.soilBed} pointerEvents="none" />
-          {items.map((item) => (
-            <BowlTile key={item.key} emotion={item} onChoose={onChoose} variant="warm" />
-          ))}
-        </View>
+        <GardenBed items={items} accent={discovery.accent} onChoose={onChoose} />
       ) : null}
     </View>
   );
@@ -379,14 +538,6 @@ const styles = StyleSheet.create({
     fontSize: 22,
     opacity: 0.55,
   },
-  seedEmojiWrap: {
-    position: 'absolute',
-    top: 10,
-  },
-  seedEmoji: {
-    fontSize: 20,
-    opacity: 0.7,
-  },
   coverSearchField: {
     position: 'relative',
     flexDirection: 'row',
@@ -465,21 +616,117 @@ const styles = StyleSheet.create({
   },
   gardenScene: {
     position: 'relative',
-    minHeight: 176,
+    minHeight: 220,
+    overflow: 'visible',
+    paddingTop: 88,
+  },
+  wateringCan: {
+    alignItems: 'center',
+    height: 105,
+    left: 0,
+    position: 'absolute',
+    right: 0,
+    top: 0,
+    zIndex: 3,
+  },
+  canDrawing: { height: 54, position: 'relative', width: 100 },
+  canBody: {
+    borderBottomLeftRadius: 12,
+    borderBottomRightRadius: 12,
+    borderTopLeftRadius: 8,
+    borderTopRightRadius: 8,
+    height: 42,
+    position: 'absolute',
+    right: 7,
+    top: 8,
+    width: 52,
+  },
+  canHighlight: {
+    backgroundColor: '#FFFFFF55',
+    borderRadius: RADIUS.pill,
+    height: 27,
+    left: 9,
+    position: 'absolute',
+    top: 7,
+    width: 7,
+  },
+  canHandle: {
+    borderRadius: RADIUS.pill,
+    borderWidth: 6,
+    height: 40,
+    position: 'absolute',
+    right: -5,
+    top: 2,
+    width: 35,
+  },
+  canSpout: {
+    borderRadius: RADIUS.pill,
+    height: 10,
+    left: 9,
+    position: 'absolute',
+    top: 23,
+    transform: [{ rotate: '-18deg' }],
+    width: 48,
+  },
+  canRose: {
+    borderRadius: RADIUS.pill,
+    height: 23,
+    left: 0,
+    position: 'absolute',
+    top: 15,
+    transform: [{ rotate: '-18deg' }],
+    width: 13,
+  },
+  waterStream: {
+    height: 82,
+    left: 2,
+    position: 'absolute',
+    top: 33,
+    width: 42,
+  },
+  waterStreamFromRight: {
+    left: 'auto',
+    right: 2,
+  },
+  waterDrop: {
+    backgroundColor: '#74BDE0',
+    borderBottomLeftRadius: 8,
+    borderBottomRightRadius: 8,
+    borderTopLeftRadius: 8,
+    height: 12,
+    position: 'absolute',
+    top: 0,
+    transform: [{ rotate: '45deg' }],
+    width: 8,
+  },
+  waterCount: {
+    color: COLORS.textSecondary,
+    fontSize: 12,
+    fontWeight: '800',
+    marginTop: 3,
+  },
+  gardenSearchField: {
     flexDirection: 'row',
     flexWrap: 'wrap',
     justifyContent: 'center',
-    gap: 8,
+    gap: 10,
     overflow: 'visible',
   },
-  soilBed: {
-    position: 'absolute',
-    left: 0,
-    right: 0,
-    bottom: 0,
-    height: 56,
-    borderBottomLeftRadius: RADIUS.md,
-    borderBottomRightRadius: RADIUS.md,
-    backgroundColor: '#C4A574',
+  gardenPatch: {
+    alignItems: 'center',
+    borderColor: 'transparent',
+    borderRadius: RADIUS.md,
+    borderWidth: 2,
+    justifyContent: 'flex-end',
+    minHeight: 118,
+    paddingBottom: 8,
+    width: 104,
+  },
+  seedling: { fontSize: 28, marginBottom: -4, zIndex: 2 },
+  gardenSoil: {
+    backgroundColor: '#BFA17D',
+    borderRadius: RADIUS.pill,
+    height: 16,
+    width: 56,
   },
 });
