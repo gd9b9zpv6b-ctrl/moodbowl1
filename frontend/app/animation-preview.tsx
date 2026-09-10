@@ -58,6 +58,7 @@ export default function AnimationPreviewScreen() {
           <Principle icon="heart" text="冇分數 · 冇答錯" />
           <Principle icon="volume-1" text="聲音可以關閉" />
           <Principle icon="shield" text="預覽唔會儲存資料" />
+          <Principle icon="camera-off" text="唔可以截圖" />
         </View>
 
         <DiscoveryPreview />
