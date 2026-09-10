@@ -46,7 +46,7 @@ const RITUALS: RitualConfig[] = [
     key: 'release',
     label: '對摺成紙飛機',
     shortLabel: '紙飛機',
-    description: '同一頁紙對摺成飛機 · 向住海島飛去',
+    description: '同一頁紙對摺成飛機 · 向住海島飛到唔見',
     result: '紙飛機飛咗去海島 · 真正刪除前會再次確認',
     accent: '#78AFC5',
     tint: '#EAF6FA',
@@ -611,26 +611,26 @@ function getPageTransform(
       return [
         {
           translateX: progress.interpolate({
-            inputRange: [0, 0.48, 0.6, 0.72, 0.86, 1],
-            outputRange: [0, 0, 22, 48, 78, 92],
+            inputRange: [0, 0.48, 0.62, 0.76, 0.9, 1],
+            outputRange: [0, 0, 28, 62, 96, 118],
           }),
         },
         {
           translateY: progress.interpolate({
-            inputRange: [0, 0.48, 0.6, 0.72, 0.86, 1],
-            outputRange: [0, 0, -6, -20, -16, -34],
+            inputRange: [0, 0.48, 0.62, 0.76, 0.9, 1],
+            outputRange: [0, 0, -8, -22, -40, -58],
           }),
         },
         {
           rotate: progress.interpolate({
-            inputRange: [0, 0.48, 0.62, 0.8, 1],
-            outputRange: ['0deg', '6deg', '-4deg', '-14deg', '-8deg'],
+            inputRange: [0, 0.48, 0.64, 0.82, 1],
+            outputRange: ['0deg', '6deg', '-6deg', '-16deg', '-12deg'],
           }),
         },
         {
           scale: progress.interpolate({
-            inputRange: [0, 0.48, 0.68, 0.86, 1],
-            outputRange: [1, 1, 0.7, 0.46, 0.32],
+            inputRange: [0, 0.48, 0.66, 0.84, 0.94, 1],
+            outputRange: [1, 1, 0.62, 0.32, 0.1, 0],
           }),
         },
       ];
