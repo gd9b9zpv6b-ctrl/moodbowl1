@@ -299,14 +299,14 @@ function FoldingDiaryPage({
               {
                 transform: [
                   {
-                    scaleX: progress.interpolate({
-                      inputRange: [0, 0.34, 0.5],
-                      outputRange: [0, 0, 1],
+                    translateX: progress.interpolate({
+                      inputRange: [0, 0.3, 0.5],
+                      outputRange: [42, 42, 0],
                     }),
                   },
                   {
                     rotate: progress.interpolate({
-                      inputRange: [0, 0.34, 0.52],
+                      inputRange: [0, 0.3, 0.52],
                       outputRange: ['0deg', '0deg', '-24deg'],
                     }),
                   },
@@ -322,14 +322,14 @@ function FoldingDiaryPage({
               {
                 transform: [
                   {
-                    scaleX: progress.interpolate({
-                      inputRange: [0, 0.36, 0.52],
-                      outputRange: [0, 0, 1],
+                    translateX: progress.interpolate({
+                      inputRange: [0, 0.32, 0.52],
+                      outputRange: [-42, -42, 0],
                     }),
                   },
                   {
                     rotate: progress.interpolate({
-                      inputRange: [0, 0.36, 0.54],
+                      inputRange: [0, 0.32, 0.54],
                       outputRange: ['0deg', '0deg', '24deg'],
                     }),
                   },
@@ -344,9 +344,9 @@ function FoldingDiaryPage({
               {
                 transform: [
                   {
-                    scale: progress.interpolate({
-                      inputRange: [0, 0.42, 0.56],
-                      outputRange: [0, 0, 1],
+                    translateX: progress.interpolate({
+                      inputRange: [0, 0.4, 0.56],
+                      outputRange: [-18, -18, 0],
                     }),
                   },
                 ],
