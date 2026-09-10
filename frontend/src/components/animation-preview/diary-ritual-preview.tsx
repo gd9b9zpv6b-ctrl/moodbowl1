@@ -34,6 +34,8 @@ const PAGE_H = 170;
 const HALF_W = 113;
 const HALF_H = 85;
 const PACKET_H = 43;
+const NOTE_W = 56;
+const NOTE_H = 22;
 
 const PRESERVE_3D: ViewStyle =
   Platform.OS === 'web' ? ({ transformStyle: 'preserve-3d' } as ViewStyle) : {};
@@ -83,7 +85,7 @@ const RITUALS: RitualConfig[] = [
     key: 'later',
     label: '將信放入書枱櫃桶',
     shortLabel: '書枱',
-    description: '打開櫃桶 · 將對摺好嘅信放入去 · 再關上',
+    description: '打開櫃桶 · 將信再對摺細 · 放入櫃桶裏便 · 再關上',
     result: '已經放入書枱 · 你想幾時再決定都得',
     accent: '#B08F68',
     tint: '#FAF4EA',
@@ -115,7 +117,7 @@ export function DiaryRitualPreview() {
 
     Animated.timing(progress, {
       toValue: 1,
-      duration: 5600,
+      duration: 6400,
       easing: Easing.inOut(Easing.quad),
       useNativeDriver: false,
     }).start(({ finished }) => {
@@ -377,17 +379,27 @@ function FoldingDiaryPage({
   const isPlane = ritual === 'release';
   const planeClip = usePlaneClip(progress, isPlane);
   const firstFold = progress.interpolate({
-    inputRange: [0.04, 0.28],
+    inputRange: [0.04, 0.22],
     outputRange: ['0deg', '-180deg'],
     extrapolate: 'clamp',
   });
   const secondFold = progress.interpolate({
-    inputRange: [0.34, 0.5],
+    inputRange: [0.28, 0.4],
     outputRange: ['0deg', '-180deg'],
     extrapolate: 'clamp',
   });
   const thirdFold = progress.interpolate({
-    inputRange: [0.56, 0.7],
+    inputRange: [0.46, 0.56],
+    outputRange: ['0deg', '-180deg'],
+    extrapolate: 'clamp',
+  });
+  const fourthFold = progress.interpolate({
+    inputRange: [0.62, 0.7],
+    outputRange: ['0deg', '-180deg'],
+    extrapolate: 'clamp',
+  });
+  const fifthFold = progress.interpolate({
+    inputRange: [0.74, 0.8],
     outputRange: ['0deg', '-180deg'],
     extrapolate: 'clamp',
   });
@@ -397,16 +409,16 @@ function FoldingDiaryPage({
         outputRange: [PAGE_H, PAGE_H, PAGE_H, 58, 58],
       })
     : progress.interpolate({
-        inputRange: [0, 0.28, 0.32, 0.5, 0.54, 1],
-        outputRange: [PAGE_H, PAGE_H, HALF_H, HALF_H, PACKET_H, PACKET_H],
+        inputRange: [0, 0.22, 0.26, 0.4, 0.44, 0.7, 0.73, 1],
+        outputRange: [PAGE_H, PAGE_H, HALF_H, HALF_H, PACKET_H, PACKET_H, NOTE_H, NOTE_H],
       });
   const sheetWidth = progress.interpolate({
-    inputRange: isPlane ? [0, 0.28, 0.32, 0.52, 1] : [0, 0.7, 0.74, 1],
-    outputRange: isPlane ? [PAGE_W, PAGE_W, HALF_W, 156, 156] : [PAGE_W, PAGE_W, HALF_W, HALF_W],
-  });
-  const sheetOpacity = progress.interpolate({
-    inputRange: isPlane ? [0, 0.78, 0.9, 1] : [0, 0.88, 0.94, 1],
-    outputRange: [1, 1, 0, 0],
+    inputRange: isPlane
+      ? [0, 0.28, 0.32, 0.52, 1]
+      : [0, 0.56, 0.6, 0.8, 0.83, 1],
+    outputRange: isPlane
+      ? [PAGE_W, PAGE_W, HALF_W, 156, 156]
+      : [PAGE_W, PAGE_W, HALF_W, HALF_W, NOTE_W, NOTE_W],
   });
 
   return (
@@ -418,7 +430,6 @@ function FoldingDiaryPage({
         PRESERVE_3D,
         {
           height: sheetHeight,
-          opacity: sheetOpacity,
           transform,
           width: sheetWidth,
           ...(isPlane && planeClip !== 'none' ? { clipPath: planeClip } : null),
@@ -494,6 +505,24 @@ function FoldingDiaryPage({
               front={<PaperBack />}
               back={<PaperBack />}
             />
+            <FoldFlap
+              testID="ritual-fold-note-top"
+              axis="x"
+              hingeSize={NOTE_H}
+              angle={fourthFold}
+              style={styles.panelFourth}
+              front={<PaperBack />}
+              back={<PaperBack />}
+            />
+            <FoldFlap
+              testID="ritual-fold-note-side"
+              axis="y"
+              hingeSize={NOTE_W}
+              angle={fifthFold}
+              style={styles.panelFifth}
+              front={<PaperBack />}
+              back={<PaperBack />}
+            />
             <View style={styles.horizontalCrease} />
           </>
         )}
@@ -536,8 +565,8 @@ function getPageTransform(
       return [
         {
           translateY: progress.interpolate({
-            inputRange: [0, 0.74, 0.9, 1],
-            outputRange: [0, 0, 198, 206],
+            inputRange: [0, 0.84, 0.93, 1],
+            outputRange: [0, 0, 204, 210],
           }),
         },
       ];
@@ -545,8 +574,8 @@ function getPageTransform(
       return [
         {
           translateY: progress.interpolate({
-            inputRange: [0, 0.74, 0.9, 1],
-            outputRange: [0, 0, 204, 212],
+            inputRange: [0, 0.84, 0.93, 1],
+            outputRange: [0, 0, 208, 214],
           }),
         },
       ];
@@ -554,8 +583,8 @@ function getPageTransform(
       return [
         {
           translateY: progress.interpolate({
-            inputRange: [0, 0.74, 0.9, 1],
-            outputRange: [0, 0, 188, 196],
+            inputRange: [0, 0.84, 0.93, 1],
+            outputRange: [0, 0, 192, 198],
           }),
         },
       ];
@@ -563,8 +592,8 @@ function getPageTransform(
       return [
         {
           translateY: progress.interpolate({
-            inputRange: [0, 0.74, 0.9, 1],
-            outputRange: [0, 0, 196, 204],
+            inputRange: [0, 0.84, 0.93, 1],
+            outputRange: [0, 0, 214, 220],
           }),
         },
       ];
@@ -605,7 +634,7 @@ function RitualDestination({
               transform: [
                 {
                   scaleY: progress.interpolate({
-                    inputRange: [0, 0.18, 0.74, 0.9],
+                    inputRange: [0, 0.18, 0.84, 0.94],
                     outputRange: [0.7, 1, 1, 0],
                   }),
                 },
@@ -635,13 +664,13 @@ function RitualDestination({
                 transform: [
                   {
                     translateY: progress.interpolate({
-                      inputRange: [0, 0.88, 0.96, 1],
+                      inputRange: [0, 0.92, 0.98, 1],
                       outputRange: [-28, -28, 0, 0],
                     }),
                   },
                   {
                     scaleY: progress.interpolate({
-                      inputRange: [0, 0.88, 0.96, 1],
+                      inputRange: [0, 0.92, 0.98, 1],
                       outputRange: [0, 0, 1, 1],
                     }),
                   },
@@ -665,7 +694,7 @@ function RitualDestination({
                 styles.soilHole,
                 {
                   opacity: progress.interpolate({
-                    inputRange: [0, 0.18, 0.74, 0.9],
+                    inputRange: [0, 0.18, 0.84, 0.94],
                     outputRange: [0.45, 1, 1, 0.2],
                   }),
                 },
@@ -684,13 +713,13 @@ function RitualDestination({
               styles.soilCover,
               {
                 opacity: progress.interpolate({
-                  inputRange: [0, 0.88, 0.94, 1],
+                  inputRange: [0, 0.92, 0.97, 1],
                   outputRange: [0, 0, 1, 1],
                 }),
                 transform: [
                   {
                     scaleX: progress.interpolate({
-                      inputRange: [0, 0.88, 0.96, 1],
+                      inputRange: [0, 0.92, 0.97, 1],
                       outputRange: [0.35, 0.35, 1, 1],
                     }),
                   },
@@ -748,6 +777,7 @@ function RitualDestination({
     return (
       <View testID="ritual-lock-box" style={[styles.destinationDock, { zIndex: 4 }]}>
         <View style={styles.lockBoxFront}>
+          <View style={[styles.lockBoxFace, { backgroundColor: accent + '77', borderColor: accent }]} />
           <Animated.View
             testID="ritual-box-lid"
             style={[
@@ -757,13 +787,13 @@ function RitualDestination({
                 transform: [
                   {
                     translateY: progress.interpolate({
-                      inputRange: [0, 0.2, 0.74, 0.9, 1],
+                      inputRange: [0, 0.2, 0.84, 0.94, 1],
                       outputRange: [-42, -42, -42, 0, 0],
                     }),
                   },
                   {
                     rotate: progress.interpolate({
-                      inputRange: [0, 0.2, 0.74, 0.9, 1],
+                      inputRange: [0, 0.2, 0.84, 0.94, 1],
                       outputRange: ['-16deg', '-16deg', '-16deg', '0deg', '0deg'],
                     }),
                   },
@@ -817,8 +847,8 @@ function RitualDestination({
               transform: [
                 {
                   translateY: progress.interpolate({
-                    inputRange: [0, 0.16, 0.74, 0.9, 1],
-                    outputRange: [0, 40, 40, 0, 0],
+                    inputRange: [0, 0.16, 0.84, 0.94, 1],
+                    outputRange: [0, 48, 48, 0, 0],
                   }),
                 },
               ],
@@ -1000,6 +1030,20 @@ const styles = StyleSheet.create({
     left: 0,
     width: HALF_W,
     zIndex: 6,
+  },
+  panelFourth: {
+    bottom: NOTE_H,
+    height: NOTE_H,
+    right: 0,
+    width: HALF_W,
+    zIndex: 7,
+  },
+  panelFifth: {
+    bottom: 0,
+    height: NOTE_H,
+    left: PAGE_W - HALF_W,
+    width: NOTE_W,
+    zIndex: 8,
   },
   secondFoldClip: {
     height: HALF_H,
@@ -1243,6 +1287,16 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     position: 'relative',
     width: 145,
+  },
+  lockBoxFace: {
+    borderBottomLeftRadius: RADIUS.md,
+    borderBottomRightRadius: RADIUS.md,
+    borderWidth: 2,
+    bottom: 0,
+    left: 0,
+    position: 'absolute',
+    right: 0,
+    top: 24,
   },
   lockBoxOpening: {
     backgroundColor: '#3F3348',
