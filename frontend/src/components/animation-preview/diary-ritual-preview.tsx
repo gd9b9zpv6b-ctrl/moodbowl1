@@ -666,7 +666,7 @@ function getPageTransform(
         {
           translateY: progress.interpolate({
             inputRange: [0, 0.84, 0.93, 1],
-            outputRange: [0, 0, 208, 216],
+            outputRange: [0, 0, 212, 220],
           }),
         },
       ];
@@ -735,38 +735,62 @@ function IslandArt({ layer }: { layer: DestLayer }) {
     );
   }
 
+    return (
+      <Animated.View style={bob}>
+        <Svg height={132} viewBox="0 0 164 132" width={164}>
+          <Ellipse cx="84" cy="84" rx="26" ry="15" fill="#6FA07A" />
+          <Path
+            d="M70 90 Q73 68 68 48"
+            fill="none"
+            stroke="#C49A6C"
+            strokeLinecap="round"
+            strokeWidth="5"
+          />
+          <Path d="M68 50 Q46 34 32 46 Q52 42 68 54" fill="#5D9A6A" />
+          <Path d="M68 50 Q56 24 68 14 Q72 34 70 52" fill="#74B07E" />
+          <Path d="M68 50 Q90 26 108 40 Q88 40 70 54" fill="#5D9A6A" />
+          <Path d="M68 52 Q90 48 106 62 Q86 52 70 56" fill="#4E8A5F" />
+          <Path d="M68 52 Q48 50 36 66 Q54 54 68 56" fill="#4E8A5F" />
+          <Path
+            d="M102 92 Q106 76 104 58"
+            fill="none"
+            stroke="#B58A5C"
+            strokeLinecap="round"
+            strokeWidth="4"
+          />
+          <Path d="M104 58 Q90 44 80 52 Q96 52 104 62" fill="#5D9A6A" />
+          <Path d="M104 58 Q108 38 118 32 Q112 50 106 60" fill="#74B07E" />
+          <Path d="M104 58 Q122 46 134 56 Q116 52 106 62" fill="#5D9A6A" />
+          <Ellipse cx="58" cy="90" rx="8" ry="5" fill="#81B489" />
+          <Ellipse cx="112" cy="94" rx="7" ry="4.5" fill="#81B489" />
+          <Circle cx="54" cy="88" r="2.2" fill="#E89B8C" />
+          <Circle cx="116" cy="92" r="2" fill="#E8B07A" />
+        </Svg>
+      </Animated.View>
+    );
+}
+
+function DeskArt() {
   return (
-    <Animated.View style={bob}>
-    <Svg width={164} height={132} viewBox="0 0 164 132">
-      <Ellipse cx="84" cy="84" rx="26" ry="15" fill="#6FA07A" />
-      <Path
-        d="M70 90 Q73 68 68 48"
-        fill="none"
-        stroke="#C49A6C"
-        strokeLinecap="round"
-        strokeWidth="5"
-      />
-      <Path d="M68 50 Q46 34 32 46 Q52 42 68 54" fill="#5D9A6A" />
-      <Path d="M68 50 Q56 24 68 14 Q72 34 70 52" fill="#74B07E" />
-      <Path d="M68 50 Q90 26 108 40 Q88 40 70 54" fill="#5D9A6A" />
-      <Path d="M68 52 Q90 48 106 62 Q86 52 70 56" fill="#4E8A5F" />
-      <Path d="M68 52 Q48 50 36 66 Q54 54 68 56" fill="#4E8A5F" />
-      <Path
-        d="M102 92 Q106 76 104 58"
-        fill="none"
-        stroke="#B58A5C"
-        strokeLinecap="round"
-        strokeWidth="4"
-      />
-      <Path d="M104 58 Q90 44 80 52 Q96 52 104 62" fill="#5D9A6A" />
-      <Path d="M104 58 Q108 38 118 32 Q112 50 106 60" fill="#74B07E" />
-      <Path d="M104 58 Q122 46 134 56 Q116 52 106 62" fill="#5D9A6A" />
-      <Ellipse cx="58" cy="90" rx="8" ry="5" fill="#81B489" />
-      <Ellipse cx="112" cy="94" rx="7" ry="4.5" fill="#81B489" />
-      <Circle cx="54" cy="88" r="2.2" fill="#E89B8C" />
-      <Circle cx="116" cy="92" r="2" fill="#E8B07A" />
+    <Svg height={112} viewBox="0 0 240 112" width={240}>
+      <SvgRect fill="#8A6848" height="22" rx="3" width="11" x="32" y="88" />
+      <SvgRect fill="#8A6848" height="22" rx="3" width="11" x="197" y="88" />
+      <SvgRect fill="#7A5B3E" height="6" rx="2" width="15" x="30" y="106" />
+      <SvgRect fill="#7A5B3E" height="6" rx="2" width="15" x="195" y="106" />
+      <SvgRect fill="#C4A07A" height="64" rx="12" width="208" x="16" y="26" />
+      <SvgRect fill="#B38D68" height="64" rx="12" width="8" x="16" y="26" />
+      <SvgRect fill="#D7B48A" height="64" rx="12" width="8" x="216" y="26" />
+      <SvgRect fill="#EFD9B0" height="20" rx="10" width="224" x="8" y="12" />
+      <SvgRect fill="#F7E8C8" height="8" rx="4" width="212" x="14" y="16" />
+      <SvgRect fill="#3F2E26" height="40" rx="8" width="168" x="36" y="46" />
+      <SvgRect fill="#5C4336" height="32" rx="5" width="156" x="42" y="50" />
+      <SvgRect fill="#D7C09A" height="4" rx="2" width="148" x="46" y="74" />
+      <SvgRect fill="#C4A07A" height="7" rx="2" width="5" x="48" y="18" />
+      <Ellipse cx="50.5" cy="14" fill="#8FBE96" rx="8" ry="6" />
+      <Ellipse cx="46" cy="13" fill="#7AA97F" rx="5" ry="4" />
+      <Circle cx="198" cy="20" r="5" fill="#F4D0C9" />
+      <SvgRect fill="#E8C97A" height="3" rx="1.5" width="3" x="196.5" y="20" />
     </Svg>
-    </Animated.View>
   );
 }
 
@@ -1009,9 +1033,7 @@ function RitualDestination({
   if (layer === 'back') {
     return (
       <View testID="ritual-desk-back" style={[styles.destinationDock, { zIndex: 1 }]}>
-        <View style={[styles.deskUnit, { backgroundColor: accent + '44' }]}>
-          <View style={styles.drawerCavity} />
-        </View>
+        <DeskArt />
       </View>
     );
   }
@@ -1024,19 +1046,25 @@ function RitualDestination({
           style={[
             styles.drawerFront,
             {
-              backgroundColor: accent,
               transform: [
                 {
                   translateY: progress.interpolate({
                     inputRange: [0, 0.16, 0.84, 0.94, 1],
-                    outputRange: [0, 48, 48, 0, 0],
+                    outputRange: [0, 42, 42, 0, 0],
                   }),
                 },
               ],
             },
           ]}
         >
-          <View style={styles.drawerHandle} />
+          <View style={styles.drawerWood}>
+            <View style={styles.drawerGrain} />
+            <View style={[styles.drawerGrain, { top: 16 }]} />
+            <View style={styles.drawerHandleWrap}>
+              <View style={styles.drawerHandle} />
+              <View style={styles.drawerHandleShine} />
+            </View>
+          </View>
         </Animated.View>
       </View>
     </View>
@@ -1524,41 +1552,57 @@ const styles = StyleSheet.create({
     width: 145,
     zIndex: 2,
   },
-  deskUnit: {
-    alignItems: 'center',
-    borderRadius: RADIUS.sm,
-    height: 82,
-    justifyContent: 'flex-start',
-    paddingTop: 13,
-    position: 'relative',
-    width: 220,
-  },
   deskFront: {
-    height: 82,
+    height: 112,
     position: 'relative',
-    width: 220,
-  },
-  drawerCavity: {
-    backgroundColor: '#57483F',
-    borderRadius: RADIUS.sm,
-    height: 48,
-    width: 166,
+    width: 240,
   },
   drawerFront: {
-    alignItems: 'center',
-    borderRadius: RADIUS.sm,
-    height: 48,
-    justifyContent: 'center',
+    height: 40,
+    left: 36,
     position: 'absolute',
-    top: 13,
-    width: 166,
+    top: 46,
+    width: 168,
     zIndex: 3,
   },
+  drawerWood: {
+    ...StyleSheet.absoluteFillObject,
+    alignItems: 'center',
+    backgroundColor: '#D2B08A',
+    borderColor: '#B08A62',
+    borderRadius: 8,
+    borderWidth: 1.5,
+    justifyContent: 'center',
+    overflow: 'hidden',
+  },
+  drawerGrain: {
+    alignSelf: 'stretch',
+    backgroundColor: '#C49A72',
+    height: 1,
+    marginHorizontal: 12,
+    opacity: 0.45,
+    position: 'absolute',
+    top: 10,
+  },
+  drawerHandleWrap: {
+    alignItems: 'center',
+    height: 10,
+    justifyContent: 'center',
+    width: 42,
+  },
   drawerHandle: {
-    backgroundColor: '#FFFFFF99',
+    backgroundColor: '#E8C97A',
     borderRadius: RADIUS.pill,
-    height: 5,
-    width: 38,
+    height: 7,
+    width: 36,
+  },
+  drawerHandleShine: {
+    backgroundColor: '#FFF6D8',
+    borderRadius: RADIUS.pill,
+    height: 2,
+    position: 'absolute',
+    top: 2,
+    width: 14,
   },
   playButton: {
     alignItems: 'center',
