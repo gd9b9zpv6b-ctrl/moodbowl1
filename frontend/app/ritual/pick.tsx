@@ -8,7 +8,8 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { EmotionVisual } from '@/src/components/emotion-visual';
 import { ProgressDots } from '@/src/components/progress-dots';
 import { RitualDiaryFooter } from '@/src/components/ritual-diary-escape';
-import type { Emotion } from '@/src/constants/emotions';
+import { BowlDiscoveryScene, DISCOVERIES } from '@/src/components/ritual/bowl-discovery-scene';
+import type { Emotion, EmotionCategory } from '@/src/constants/emotions';
 import { COLORS, RADIUS, SPACING } from '@/src/constants/theme';
 import { wordingFor } from '@/src/lib/i18n/wording-mode';
 import { scoreBowls } from '@/src/lib/ritual/bowl-scorer';
@@ -21,12 +22,18 @@ export default function RitualPickScreen() {
   const bodyChips = useRitualStore((s) => s.bodyChips);
   const setBowl = useRitualStore((s) => s.setBowl);
   const [expanded, setExpanded] = useState(false);
+  const [mode, setMode] = useState<'discover' | 'grid'>('discover');
+  const [categoryOverride, setCategoryOverride] = useState<EmotionCategory | null>(null);
   const w = wordingFor(ageGroup);
 
   const scored = useMemo(() => {
     if (!soup) return { default: [] as Emotion[], expanded: [] as Emotion[] };
     return scoreBowls(soup, bodyChips);
   }, [soup, bodyChips]);
+
+  const suggestedCategory =
+    scored.default.find((item) => item.key !== 'hollow')?.category ?? 'unspoken';
+  const activeCategory = categoryOverride ?? suggestedCategory;
 
   const onPick = (emotion: Emotion) => {
     setBowl(emotion.key);
@@ -70,45 +77,112 @@ export default function RitualPickScreen() {
         <View style={styles.headerSpacer} />
       </View>
 
-      <ScrollView contentContainerStyle={styles.scroll} showsVerticalScrollIndicator={false}>
+      <ScrollView
+        contentContainerStyle={styles.scroll}
+        showsVerticalScrollIndicator={false}
+        keyboardShouldPersistTaps="handled"
+      >
         <Text style={styles.title}>{w.pick_title}</Text>
 
         {!soup ? (
           <Text style={styles.empty}>未揀湯 · 返去再嚟一次</Text>
         ) : (
           <>
-            <View style={styles.grid}>{scored.default.map(renderCard)}</View>
+            <View style={styles.chips}>
+              {DISCOVERIES.map((item) => {
+                const selected = item.key === activeCategory;
+                return (
+                  <Pressable
+                    key={item.key}
+                    testID={`discovery-${item.key}`}
+                    accessibilityRole="button"
+                    accessibilityState={{ selected }}
+                    onPress={() => {
+                      setCategoryOverride(item.key);
+                      setMode('discover');
+                    }}
+                    style={({ pressed }) => [
+                      styles.chip,
+                      selected && {
+                        backgroundColor: item.accent,
+                        borderColor: item.accent,
+                      },
+                      pressed && { opacity: 0.85 },
+                    ]}
+                  >
+                    <Text style={[styles.chipText, selected && styles.chipTextActive]}>
+                      {item.label}
+                    </Text>
+                  </Pressable>
+                );
+              })}
+            </View>
 
-            <Pressable
-              testID="bowl-expand-toggle"
-              onPress={() => setExpanded((v) => !v)}
-              style={styles.expandBtn}
-            >
-              <Feather
-                name={expanded ? 'chevron-up' : 'chevron-down'}
-                size={16}
-                color={COLORS.textSecondary}
-              />
-              <Text style={styles.expandText}>
-                {expanded
-                  ? w.pick_collapse
-                  : ageGroup === 'adult'
-                    ? w.pick_expand
-                    : `${w.pick_expand.replace(/\s*\(\d+\)\s*$/, '')} (${scored.expanded.length})`}
-              </Text>
-            </Pressable>
-
-            {expanded && (
+            {mode === 'discover' ? (
               <>
-                <View style={styles.grid}>{scored.expanded.map(renderCard)}</View>
+                <BowlDiscoveryScene category={activeCategory} onChoose={onPick} />
                 <Pressable
-                  testID="bowl-see-all"
-                  onPress={() => router.push('/ritual/all')}
-                  style={styles.seeAll}
+                  testID="bowl-pick-direct"
+                  onPress={() => setMode('grid')}
+                  style={styles.modeBtn}
                 >
-                  <Text style={styles.seeAllText}>{w.pick_see_all}</Text>
+                  <Text style={styles.modeBtnText}>{w.pick_direct}</Text>
                 </Pressable>
               </>
+            ) : (
+              <>
+                <View style={styles.grid}>{scored.default.map(renderCard)}</View>
+
+                <Pressable
+                  testID="bowl-expand-toggle"
+                  onPress={() => setExpanded((v) => !v)}
+                  style={styles.expandBtn}
+                >
+                  <Feather
+                    name={expanded ? 'chevron-up' : 'chevron-down'}
+                    size={16}
+                    color={COLORS.textSecondary}
+                  />
+                  <Text style={styles.expandText}>
+                    {expanded
+                      ? w.pick_collapse
+                      : ageGroup === 'adult'
+                        ? w.pick_expand
+                        : `${w.pick_expand.replace(/\s*\(\d+\)\s*$/, '')} (${scored.expanded.length})`}
+                  </Text>
+                </Pressable>
+
+                {expanded && (
+                  <>
+                    <View style={styles.grid}>{scored.expanded.map(renderCard)}</View>
+                    <Pressable
+                      testID="bowl-see-all"
+                      onPress={() => router.push('/ritual/all')}
+                      style={styles.seeAll}
+                    >
+                      <Text style={styles.seeAllText}>{w.pick_see_all}</Text>
+                    </Pressable>
+                  </>
+                )}
+
+                <Pressable
+                  testID="bowl-pick-play"
+                  onPress={() => setMode('discover')}
+                  style={styles.modeBtn}
+                >
+                  <Text style={styles.modeBtnText}>{w.pick_play}</Text>
+                </Pressable>
+              </>
+            )}
+
+            {mode === 'discover' && (
+              <Pressable
+                testID="bowl-see-all"
+                onPress={() => router.push('/ritual/all')}
+                style={styles.seeAll}
+              >
+                <Text style={styles.seeAllText}>{w.pick_see_all}</Text>
+              </Pressable>
             )}
           </>
         )}
@@ -141,10 +215,26 @@ const styles = StyleSheet.create({
     fontSize: 26,
     fontWeight: '800',
     color: COLORS.textPrimary,
-    marginBottom: SPACING.lg,
+    marginBottom: SPACING.md,
     lineHeight: 34,
   },
   empty: { fontSize: 14, color: COLORS.textSecondary },
+  chips: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: SPACING.sm,
+    marginBottom: SPACING.md,
+  },
+  chip: {
+    backgroundColor: COLORS.bgCard,
+    borderColor: COLORS.borderLight,
+    borderRadius: RADIUS.pill,
+    borderWidth: 1,
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+  },
+  chipText: { color: COLORS.textSecondary, fontSize: 13, fontWeight: '700' },
+  chipTextActive: { color: '#FFF' },
   grid: {
     flexDirection: 'row',
     flexWrap: 'wrap',
@@ -182,4 +272,13 @@ const styles = StyleSheet.create({
   expandText: { fontSize: 13, color: COLORS.textSecondary, fontWeight: '600' },
   seeAll: { alignItems: 'center', paddingVertical: SPACING.sm },
   seeAllText: { fontSize: 13, color: COLORS.textSecondary },
+  modeBtn: {
+    alignItems: 'center',
+    paddingVertical: SPACING.md,
+  },
+  modeBtnText: {
+    fontSize: 13,
+    fontWeight: '700',
+    color: COLORS.textSecondary,
+  },
 });

@@ -15,9 +15,9 @@ export type BowlReleaseDef = {
  * Copy is age-banded in wording packs.
  */
 export const BOWL_RELEASE_ACTIONS: BowlReleaseDef[] = [
-  { key: 'empty', emoji: '🥣' },
-  { key: 'set_aside', emoji: '🫙' },
-  { key: 'send_away', emoji: '🕊️' },
+  { key: 'empty', emoji: '🌱' },
+  { key: 'set_aside', emoji: '🗄️' },
+  { key: 'send_away', emoji: '✈️' },
   { key: 'wash', emoji: '💧' },
-  { key: 'keep_hug', emoji: '🤗' },
+  { key: 'keep_hug', emoji: '🔒' },
 ];
