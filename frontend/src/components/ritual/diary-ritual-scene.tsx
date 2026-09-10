@@ -243,6 +243,14 @@ function usePlaneClip(progress: Animated.Value, enabled: boolean) {
   return clip;
 }
 
+function diaryPageStamp(emotion: { label: string }) {
+  const now = new Date();
+  return {
+    date: `今日 · ${now.getMonth() + 1}月${now.getDate()}日`,
+    feel: `而家覺得 ${emotion.label}`,
+  };
+}
+
 function DiaryWriting({
   emotion,
   offsetX = 0,
@@ -252,13 +260,14 @@ function DiaryWriting({
   offsetX?: number;
   offsetY?: number;
 }) {
+  const stamp = diaryPageStamp(emotion);
   return (
     <View style={[styles.sheetWriting, { left: offsetX, top: offsetY }]}>
       <View style={styles.pageTop}>
         <EmotionVisual emotion={emotion} size={52} radius={RADIUS.md} />
         <View style={styles.pageHeading}>
-          <Text style={styles.pageDate}>今日 · 9月6日</Text>
-          <Text style={styles.pageEmotion}>而家覺得 焦慮</Text>
+          <Text style={styles.pageDate}>{stamp.date}</Text>
+          <Text style={styles.pageEmotion}>{stamp.feel}</Text>
         </View>
       </View>
       <View style={styles.paperLine} />
