@@ -14,6 +14,7 @@ import {
 import { EmotionVisual } from '@/src/components/emotion-visual';
 import { EMOTION_BY_KEY } from '@/src/constants/emotions';
 import { COLORS, RADIUS, SPACING } from '@/src/constants/theme';
+import { Circle, Ellipse, Path, Svg } from 'react-native-svg';
 
 type RitualKey = 'release' | 'share' | 'garden' | 'lock' | 'later';
 type DestLayer = 'back' | 'front';
@@ -615,6 +616,60 @@ function getPageTransform(
   }
 }
 
+function IslandArt({ layer }: { layer: DestLayer }) {
+  if (layer === 'back') {
+    return (
+      <Svg width={164} height={132} viewBox="0 0 164 132">
+        <Ellipse cx="82" cy="108" rx="80" ry="20" fill="#9FD0DC" />
+        <Ellipse cx="82" cy="112" rx="74" ry="16" fill="#6FAEBF" />
+        <Ellipse cx="82" cy="116" rx="62" ry="10" fill="#5A9AAD" />
+        <Ellipse cx="46" cy="104" rx="16" ry="3.5" fill="#F4FBFC" opacity="0.75" />
+        <Ellipse cx="118" cy="110" rx="11" ry="2.6" fill="#E7F6F8" opacity="0.65" />
+        <Ellipse cx="88" cy="118" rx="8" ry="2" fill="#D4EEF2" opacity="0.5" />
+        <Ellipse cx="82" cy="92" rx="54" ry="18" fill="#F3D7A4" />
+        <Ellipse cx="82" cy="90" rx="46" ry="13" fill="#E8C48A" />
+        <Ellipse cx="64" cy="74" rx="30" ry="24" fill="#8FBE96" />
+        <Ellipse cx="98" cy="78" rx="22" ry="18" fill="#7AAD84" />
+        <Circle cx="40" cy="22" r="10" fill="#FFFFFF" opacity="0.72" />
+        <Circle cx="52" cy="22" r="7" fill="#FFFFFF" opacity="0.62" />
+        <Circle cx="30" cy="26" r="6" fill="#FFFFFF" opacity="0.5" />
+      </Svg>
+    );
+  }
+
+  return (
+    <Svg width={164} height={132} viewBox="0 0 164 132">
+      <Ellipse cx="84" cy="84" rx="26" ry="15" fill="#6FA07A" />
+      <Path
+        d="M70 90 Q73 68 68 48"
+        fill="none"
+        stroke="#C49A6C"
+        strokeLinecap="round"
+        strokeWidth="5"
+      />
+      <Path d="M68 50 Q46 34 32 46 Q52 42 68 54" fill="#5D9A6A" />
+      <Path d="M68 50 Q56 24 68 14 Q72 34 70 52" fill="#74B07E" />
+      <Path d="M68 50 Q90 26 108 40 Q88 40 70 54" fill="#5D9A6A" />
+      <Path d="M68 52 Q90 48 106 62 Q86 52 70 56" fill="#4E8A5F" />
+      <Path d="M68 52 Q48 50 36 66 Q54 54 68 56" fill="#4E8A5F" />
+      <Path
+        d="M102 92 Q106 76 104 58"
+        fill="none"
+        stroke="#B58A5C"
+        strokeLinecap="round"
+        strokeWidth="4"
+      />
+      <Path d="M104 58 Q90 44 80 52 Q96 52 104 62" fill="#5D9A6A" />
+      <Path d="M104 58 Q108 38 118 32 Q112 50 106 60" fill="#74B07E" />
+      <Path d="M104 58 Q122 46 134 56 Q116 52 106 62" fill="#5D9A6A" />
+      <Ellipse cx="58" cy="90" rx="8" ry="5" fill="#81B489" />
+      <Ellipse cx="112" cy="94" rx="7" ry="4.5" fill="#81B489" />
+      <Circle cx="54" cy="88" r="2.2" fill="#E89B8C" />
+      <Circle cx="116" cy="92" r="2" fill="#E8B07A" />
+    </Svg>
+  );
+}
+
 function RitualDestination({
   ritual,
   accent,
@@ -630,23 +685,13 @@ function RitualDestination({
     if (layer === 'back') {
       return (
         <View testID="ritual-island" style={styles.islandScene}>
-          <View style={styles.seaBand} />
-          <View style={styles.islandBody}>
-            <View style={styles.islandShore} />
-            <View style={styles.islandHill} />
-          </View>
+          <IslandArt layer="back" />
         </View>
       );
     }
     return (
       <View testID="ritual-island-front" style={styles.islandFrontLayer}>
-        <View style={styles.islandHillFront} />
-        <View style={styles.palm}>
-          <View style={styles.palmTrunk} />
-          <View style={[styles.palmFrond, styles.palmFrondLeft]} />
-          <View style={[styles.palmFrond, styles.palmFrondMid]} />
-          <View style={[styles.palmFrond, styles.palmFrondRight]} />
-        </View>
+        <IslandArt layer="front" />
       </View>
     );
   }
@@ -1185,89 +1230,18 @@ const styles = StyleSheet.create({
     zIndex: 40,
   },
   islandScene: {
-    alignItems: 'center',
     position: 'absolute',
-    right: 6,
-    top: 4,
-    width: 128,
+    right: 2,
+    top: 2,
     zIndex: 1,
   },
   islandFrontLayer: {
-    alignItems: 'center',
     elevation: 24,
     position: 'absolute',
-    right: 6,
-    top: 4,
-    transform: [{ translateX: 0 }],
-    width: 128,
-    zIndex: 8,
-  },
-  seaBand: {
-    backgroundColor: '#7EB8C9',
-    borderRadius: 40,
-    height: 36,
-    marginTop: 52,
-    opacity: 0.55,
-    width: 128,
-  },
-  islandBody: {
-    alignItems: 'center',
-    bottom: 18,
-    position: 'absolute',
-    width: 108,
-  },
-  islandShore: {
-    backgroundColor: '#E6D2A8',
-    borderRadius: 40,
-    height: 22,
-    width: 96,
-  },
-  islandHill: {
-    backgroundColor: '#7FA889',
-    borderRadius: 28,
-    height: 38,
-    marginTop: -18,
-    width: 72,
-  },
-  islandHillFront: {
-    backgroundColor: '#6F9A7A',
-    borderRadius: 22,
-    height: 24,
-    marginTop: 34,
-    width: 58,
-  },
-  palm: {
-    alignItems: 'center',
-    height: 62,
-    marginTop: -48,
-    width: 64,
-  },
-  palmTrunk: {
-    backgroundColor: '#B08F68',
-    borderRadius: 4,
-    height: 28,
-    marginTop: 22,
-    width: 6,
-  },
-  palmFrond: {
-    backgroundColor: '#5E8F68',
-    borderRadius: 10,
-    height: 14,
-    position: 'absolute',
-    top: 12,
-    width: 28,
-  },
-  palmFrondLeft: {
-    left: 2,
-    transform: [{ rotate: '-28deg' }],
-  },
-  palmFrondMid: {
-    left: 18,
-    transform: [{ rotate: '8deg' }],
-  },
-  palmFrondRight: {
     right: 2,
-    transform: [{ rotate: '36deg' }],
+    top: 2,
+    transform: [{ translateX: 0 }],
+    zIndex: 8,
   },
   bigEnvelope: {
     alignItems: 'center',
