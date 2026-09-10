@@ -554,13 +554,13 @@ function getPageTransform(
         {
           translateX: progress.interpolate({
             inputRange: [0, 0.52, 0.78, 0.94, 1],
-            outputRange: [0, 0, 78, 108, 118],
+            outputRange: [0, 0, 64, 86, 92],
           }),
         },
         {
           translateY: progress.interpolate({
             inputRange: [0, 0.52, 0.78, 0.94, 1],
-            outputRange: [0, 0, -58, -92, -102],
+            outputRange: [0, 0, -24, -34, -38],
           }),
         },
         {
@@ -1187,8 +1187,8 @@ const styles = StyleSheet.create({
   islandScene: {
     alignItems: 'center',
     position: 'absolute',
-    right: 10,
-    top: 6,
+    right: 6,
+    top: 4,
     width: 128,
     zIndex: 1,
   },
@@ -1196,8 +1196,8 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     elevation: 24,
     position: 'absolute',
-    right: 10,
-    top: 6,
+    right: 6,
+    top: 4,
     transform: [{ translateX: 0 }],
     width: 128,
     zIndex: 8,
