@@ -3,10 +3,12 @@ import React, { useRef, useState } from 'react';
 import {
   Animated,
   Easing,
+  Platform,
   Pressable,
   StyleSheet,
   Text,
   View,
+  type ViewStyle,
 } from 'react-native';
 
 import { EmotionVisual } from '@/src/components/emotion-visual';
@@ -26,12 +28,21 @@ type RitualConfig = {
   icon: React.ComponentProps<typeof Feather>['name'];
 };
 
+const PAGE_W = 225;
+const PAGE_H = 170;
+const HALF_W = 113;
+const HALF_H = 85;
+const PACKET_H = 43;
+
+const PRESERVE_3D: ViewStyle =
+  Platform.OS === 'web' ? ({ transformStyle: 'preserve-3d' } as ViewStyle) : {};
+
 const RITUALS: RitualConfig[] = [
   {
     key: 'release',
-    label: '一步一步摺成紙飛機',
+    label: '對摺成紙飛機',
     shortLabel: '紙飛機',
-    description: '先摺左右機翼 · 對摺機身 · 最後先飛走',
+    description: '同一頁紙沿中間對摺 · 摺好嘅就係飛機 · 然後飛走',
     result: '紙飛機飛走咗 · 真正刪除前會再次確認',
     accent: '#78AFC5',
     tint: '#EAF6FA',
@@ -39,9 +50,9 @@ const RITUALS: RitualConfig[] = [
   },
   {
     key: 'share',
-    label: '摺好封信 · 放入信封',
+    label: '對摺成信 · 放入信封',
     shortLabel: '信封',
-    description: '日記先對摺成信紙 · 放入信封 · 再合上封口',
+    description: '同一頁紙對摺、再對摺細 · 放入信封 · 合上封口',
     result: '封好咗 · 呢度冇傳送任何日記',
     accent: '#C58EA7',
     tint: '#FFF0F5',
@@ -51,7 +62,7 @@ const RITUALS: RitualConfig[] = [
     key: 'garden',
     label: '將信埋入泥土 · 長成樹苗',
     shortLabel: '樹苗',
-    description: '摺好封信 · 放入泥土 · 泥土合上後慢慢發芽',
+    description: '同一頁紙對摺細 · 放入泥土 · 之後發芽',
     result: '今日嘅信長成咗一棵小樹苗',
     accent: '#7FA889',
     tint: '#EFF8ED',
@@ -61,7 +72,7 @@ const RITUALS: RitualConfig[] = [
     key: 'lock',
     label: '將信放入盒 · 合上再鎖好',
     shortLabel: '鎖盒',
-    description: '摺好封信 · 放入打開嘅盒 · 合蓋後上鎖',
+    description: '同一頁紙對摺細 · 放入打開嘅盒 · 合蓋後上鎖',
     result: '收好咗 · 只有你解鎖先睇到',
     accent: '#9B87B3',
     tint: '#F5F0FA',
@@ -71,7 +82,7 @@ const RITUALS: RitualConfig[] = [
     key: 'later',
     label: '將信放入書枱櫃桶',
     shortLabel: '書枱',
-    description: '打開櫃桶 · 將摺好嘅信放入去 · 再輕輕關上',
+    description: '打開櫃桶 · 將對摺好嘅信放入去 · 再關上',
     result: '已經放入書枱 · 你想幾時再決定都得',
     accent: '#B08F68',
     tint: '#FAF4EA',
@@ -103,7 +114,7 @@ export function DiaryRitualPreview() {
 
     Animated.timing(progress, {
       toValue: 1,
-      duration: 4600,
+      duration: 4800,
       easing: Easing.inOut(Easing.quad),
       useNativeDriver: false,
     }).start(({ finished }) => {
@@ -216,6 +227,99 @@ export function DiaryRitualPreview() {
   );
 }
 
+function DiaryWriting({
+  emotion,
+  offsetX = 0,
+  offsetY = 0,
+}: {
+  emotion: (typeof EMOTION_BY_KEY)[string];
+  offsetX?: number;
+  offsetY?: number;
+}) {
+  return (
+    <View style={[styles.sheetWriting, { left: offsetX, top: offsetY }]}>
+      <View style={styles.pageTop}>
+        <EmotionVisual emotion={emotion} size={52} radius={RADIUS.md} />
+        <View style={styles.pageHeading}>
+          <Text style={styles.pageDate}>今日 · 9月6日</Text>
+          <Text style={styles.pageEmotion}>而家覺得 焦慮</Text>
+        </View>
+      </View>
+      <View style={styles.paperLine} />
+      <View style={[styles.paperLine, { width: '88%' }]} />
+      <View style={[styles.paperLine, { width: '68%' }]} />
+    </View>
+  );
+}
+
+function PaperBack() {
+  return (
+    <View style={styles.paperBackFill}>
+      <View style={styles.paperBackGrain} />
+    </View>
+  );
+}
+
+function FoldFlap({
+  testID,
+  axis,
+  hingeSize,
+  angle,
+  style,
+  front,
+  back,
+}: {
+  testID?: string;
+  axis: 'x' | 'y';
+  hingeSize: number;
+  angle: Animated.AnimatedInterpolation<string>;
+  style: ViewStyle | ViewStyle[];
+  front: React.ReactNode;
+  back: React.ReactNode;
+}) {
+  const hinge = hingeSize / 2;
+  return (
+    <Animated.View
+      testID={testID}
+      style={[
+        styles.flap,
+        style,
+        PRESERVE_3D,
+        {
+          transform:
+            axis === 'y'
+              ? [
+                  { perspective: 1600 },
+                  { translateX: hinge },
+                  { rotateY: angle },
+                  { translateX: -hinge },
+                ]
+              : [
+                  { perspective: 1600 },
+                  { translateY: hinge },
+                  { rotateX: angle },
+                  { translateY: -hinge },
+                ],
+        },
+      ]}
+    >
+      <View style={[styles.face, styles.faceFront]}>{front}</View>
+      <View
+        style={[
+          styles.face,
+          styles.faceBack,
+          PRESERVE_3D,
+          {
+            transform: axis === 'y' ? [{ rotateY: '180deg' }] : [{ rotateX: '180deg' }],
+          },
+        ]}
+      >
+        {back}
+      </View>
+    </Animated.View>
+  );
+}
+
 function FoldingDiaryPage({
   emotion,
   progress,
@@ -228,189 +332,104 @@ function FoldingDiaryPage({
   transform: ReturnType<typeof getPageTransform>;
 }) {
   const isPlane = ritual === 'release';
+  const firstFold = progress.interpolate({
+    inputRange: [0.04, 0.34],
+    outputRange: ['0deg', '-180deg'],
+    extrapolate: 'clamp',
+  });
+  const secondFold = progress.interpolate({
+    inputRange: [0.4, 0.64],
+    outputRange: ['0deg', '-180deg'],
+    extrapolate: 'clamp',
+  });
   const sheetHeight = isPlane
-    ? progress.interpolate({
-        inputRange: [0, 0.16, 0.34, 0.52, 1],
-        outputRange: [170, 170, 72, 22, 22],
-      })
+    ? PAGE_H
     : progress.interpolate({
-        inputRange: [0, 0.12, 0.32, 0.36, 0.54, 1],
-        outputRange: [170, 170, 86, 86, 40, 40],
+        inputRange: [0, 0.34, 0.38, 0.64, 0.68, 1],
+        outputRange: [PAGE_H, PAGE_H, HALF_H, HALF_H, PACKET_H, PACKET_H],
       });
   const sheetWidth = isPlane
     ? progress.interpolate({
-        inputRange: [0, 0.16, 0.34, 0.52, 1],
-        outputRange: [225, 160, 118, 104, 104],
+        inputRange: [0, 0.34, 0.38, 1],
+        outputRange: [PAGE_W, PAGE_W, HALF_W, HALF_W],
       })
-    : progress.interpolate({
-        inputRange: [0, 0.32, 0.54, 0.58, 1],
-        outputRange: [225, 225, 168, 112, 112],
-      });
+    : PAGE_W;
 
   return (
     <Animated.View
       testID="ritual-diary-page"
       style={[
         styles.diaryPage,
+        styles.foldPage,
+        PRESERVE_3D,
         {
           height: sheetHeight,
-          overflow: isPlane ? 'visible' : 'hidden',
           transform,
           width: sheetWidth,
         },
       ]}
     >
-      <View style={styles.sheetWriting}>
-        <View style={styles.pageTop}>
-          <EmotionVisual emotion={emotion} size={52} radius={RADIUS.md} />
-          <View style={styles.pageHeading}>
-            <Text style={styles.pageDate}>今日 · 9月6日</Text>
-            <Text style={styles.pageEmotion}>而家覺得 焦慮</Text>
-          </View>
-        </View>
-        <View style={styles.paperLine} />
-        <View style={[styles.paperLine, { width: '88%' }]} />
-        <View style={[styles.paperLine, { width: '68%' }]} />
+      <View
+        style={[
+          styles.foldInner,
+          PRESERVE_3D,
+          isPlane ? styles.foldInnerRight : styles.foldInnerBottom,
+        ]}
+      >
+        {isPlane ? (
+          <>
+            <View testID="ritual-plane-body" style={[styles.stayPanel, styles.panelRight]}>
+              <DiaryWriting emotion={emotion} offsetX={-(PAGE_W - HALF_W)} />
+            </View>
+            <FoldFlap
+              testID="ritual-fold-left-wing"
+              axis="y"
+              hingeSize={HALF_W}
+              angle={firstFold}
+              style={styles.panelLeft}
+              front={<DiaryWriting emotion={emotion} />}
+              back={<PaperBack />}
+            />
+            <View style={styles.verticalCrease} />
+          </>
+        ) : (
+          <>
+            <View style={[styles.stayPanel, styles.panelBottom]}>
+              <DiaryWriting emotion={emotion} offsetY={-HALF_H} />
+            </View>
+            <FoldFlap
+              testID="ritual-fold-bottom"
+              axis="x"
+              hingeSize={HALF_H}
+              angle={firstFold}
+              style={styles.panelTop}
+              front={<DiaryWriting emotion={emotion} />}
+              back={
+                <View testID="ritual-folded-letter" style={[styles.secondFoldClip, PRESERVE_3D]}>
+                  <View style={[styles.stayPanel, styles.secondPanelBottom]}>
+                    <PaperBack />
+                  </View>
+                  <FoldFlap
+                    testID="ritual-fold-top"
+                    axis="x"
+                    hingeSize={PACKET_H}
+                    angle={secondFold}
+                    style={styles.secondPanelTop}
+                    front={<PaperBack />}
+                    back={<PaperBack />}
+                  />
+                  <View style={styles.secondCrease} />
+                </View>
+              }
+            />
+            <View style={styles.horizontalCrease} />
+          </>
+        )}
       </View>
-
-      {isPlane ? (
-        <>
-          <Animated.View
-            testID="ritual-plane-crease"
-            style={[
-              styles.planeCenterCrease,
-              {
-                transform: [
-                  {
-                    scaleY: progress.interpolate({
-                      inputRange: [0, 0.16, 0.28],
-                      outputRange: [0, 0, 1],
-                    }),
-                  },
-                ],
-              },
-            ]}
-          />
-          <Animated.View
-            testID="ritual-fold-left-wing"
-            style={[
-              styles.planeWing,
-              styles.planeWingLeft,
-              {
-                transform: [
-                  {
-                    translateX: progress.interpolate({
-                      inputRange: [0, 0.3, 0.5],
-                      outputRange: [42, 42, 0],
-                    }),
-                  },
-                  {
-                    rotate: progress.interpolate({
-                      inputRange: [0, 0.3, 0.52],
-                      outputRange: ['0deg', '0deg', '-24deg'],
-                    }),
-                  },
-                ],
-              },
-            ]}
-          />
-          <Animated.View
-            testID="ritual-fold-right-wing"
-            style={[
-              styles.planeWing,
-              styles.planeWingRight,
-              {
-                transform: [
-                  {
-                    translateX: progress.interpolate({
-                      inputRange: [0, 0.32, 0.52],
-                      outputRange: [-42, -42, 0],
-                    }),
-                  },
-                  {
-                    rotate: progress.interpolate({
-                      inputRange: [0, 0.32, 0.54],
-                      outputRange: ['0deg', '0deg', '24deg'],
-                    }),
-                  },
-                ],
-              },
-            ]}
-          />
-          <Animated.View
-            testID="ritual-plane-body"
-            style={[
-              styles.planeNose,
-              {
-                transform: [
-                  {
-                    translateX: progress.interpolate({
-                      inputRange: [0, 0.4, 0.56],
-                      outputRange: [-18, -18, 0],
-                    }),
-                  },
-                ],
-              },
-            ]}
-          />
-        </>
-      ) : (
-        <>
-          <Animated.View
-            testID="ritual-fold-bottom"
-            style={[
-              styles.letterCrease,
-              { top: '48%' },
-              {
-                transform: [
-                  {
-                    scaleX: progress.interpolate({
-                      inputRange: [0, 0.12, 0.28],
-                      outputRange: [0, 0, 1],
-                    }),
-                  },
-                ],
-              },
-            ]}
-          />
-          <Animated.View
-            testID="ritual-fold-top"
-            style={[
-              styles.letterCrease,
-              { top: 18 },
-              {
-                transform: [
-                  {
-                    scaleX: progress.interpolate({
-                      inputRange: [0, 0.36, 0.5],
-                      outputRange: [0, 0, 1],
-                    }),
-                  },
-                ],
-              },
-            ]}
-          />
-          <Animated.View
-            testID="ritual-folded-letter"
-            style={[
-              styles.letterSideCrease,
-              {
-                transform: [
-                  {
-                    scaleY: progress.interpolate({
-                      inputRange: [0, 0.52, 0.62],
-                      outputRange: [0, 0, 1],
-                    }),
-                  },
-                ],
-              },
-            ]}
-          />
-        </>
-      )}
     </Animated.View>
   );
 }
+
 function getPageTransform(
   ritual: RitualKey,
   progress: Animated.Value,
@@ -424,20 +443,20 @@ function getPageTransform(
       return [
         {
           translateX: progress.interpolate({
-            inputRange: [0, 0.56, 0.72, 1],
-            outputRange: [0, 8, 92, 196],
+            inputRange: [0, 0.38, 0.55, 0.78, 1],
+            outputRange: [0, 0, 48, 128, 196],
           }),
         },
         {
           translateY: progress.interpolate({
-            inputRange: [0, 0.56, 0.72, 1],
-            outputRange: [0, 6, -28, -96],
+            inputRange: [0, 0.38, 0.55, 0.78, 1],
+            outputRange: [0, 0, -18, -58, -96],
           }),
         },
         {
           rotate: progress.interpolate({
-            inputRange: [0, 0.56, 0.78, 1],
-            outputRange: ['0deg', '-6deg', '-16deg', '-28deg'],
+            inputRange: [0, 0.38, 0.6, 1],
+            outputRange: ['0deg', '0deg', '-12deg', '-28deg'],
           }),
         },
       ];
@@ -445,8 +464,8 @@ function getPageTransform(
       return [
         {
           translateY: progress.interpolate({
-            inputRange: [0, 0.5, 0.58, 0.84, 1],
-            outputRange: [0, 8, 36, 148, 156],
+            inputRange: [0, 0.66, 0.74, 0.9, 1],
+            outputRange: [0, 0, 36, 148, 156],
           }),
         },
       ];
@@ -454,14 +473,14 @@ function getPageTransform(
       return [
         {
           translateY: progress.interpolate({
-            inputRange: [0, 0.5, 0.6, 0.84, 1],
-            outputRange: [0, 10, 70, 168, 176],
+            inputRange: [0, 0.66, 0.76, 0.9, 1],
+            outputRange: [0, 0, 70, 168, 176],
           }),
         },
         {
           rotate: progress.interpolate({
-            inputRange: [0, 0.6, 1],
-            outputRange: ['0deg', '4deg', '10deg'],
+            inputRange: [0, 0.66, 1],
+            outputRange: ['0deg', '0deg', '10deg'],
           }),
         },
       ];
@@ -469,8 +488,8 @@ function getPageTransform(
       return [
         {
           translateY: progress.interpolate({
-            inputRange: [0, 0.5, 0.6, 0.84, 1],
-            outputRange: [0, 8, 58, 138, 146],
+            inputRange: [0, 0.66, 0.76, 0.9, 1],
+            outputRange: [0, 0, 58, 138, 146],
           }),
         },
       ];
@@ -478,13 +497,14 @@ function getPageTransform(
       return [
         {
           translateY: progress.interpolate({
-            inputRange: [0, 0.5, 0.6, 0.84, 1],
-            outputRange: [0, 8, 70, 148, 154],
+            inputRange: [0, 0.66, 0.76, 0.9, 1],
+            outputRange: [0, 0, 70, 148, 154],
           }),
         },
       ];
   }
 }
+
 function RitualDestination({
   ritual,
   accent,
@@ -501,227 +521,227 @@ function RitualDestination({
   if (ritual === 'share') {
     return (
       <View testID="ritual-envelope" style={styles.destinationBottom}>
+        <Animated.View
+          testID="ritual-envelope-flap-open"
+          style={[
+            styles.envelopeFlapOpen,
+            { borderBottomColor: accent + '66' },
+            {
+              transform: [
+                {
+                  translateY: progress.interpolate({
+                    inputRange: [0, 0.18, 0.66, 0.86],
+                    outputRange: [-8, -18, -10, 8],
+                  }),
+                },
+                {
+                  scaleY: progress.interpolate({
+                    inputRange: [0, 0.18, 0.66, 0.86],
+                    outputRange: [0.7, 1, 1, 0],
+                  }),
+                },
+              ],
+            },
+          ]}
+        />
+        <View style={[styles.bigEnvelope, { borderColor: accent }]}>
+          <View style={[styles.envelopeInner, { backgroundColor: accent + '16' }]} />
+          <View style={styles.envelopeSlot} />
           <Animated.View
-            testID="ritual-envelope-flap-open"
+            style={{
+              opacity: progress.interpolate({
+                inputRange: [0, 0.86, 0.94, 1],
+                outputRange: [0, 0, 1, 1],
+              }),
+            }}
+          >
+            <Feather name="heart" size={22} color={accent} />
+          </Animated.View>
+          <Animated.View
+            testID="ritual-envelope-flap"
             style={[
-              styles.envelopeFlapOpen,
-              { borderBottomColor: accent + '66' },
+              styles.envelopeFlapClosed,
+              { backgroundColor: accent + '66' },
               {
                 transform: [
                   {
                     translateY: progress.interpolate({
-                      inputRange: [0, 0.18, 0.48, 0.62],
-                      outputRange: [-8, -18, -10, 8],
+                      inputRange: [0, 0.82, 0.94, 1],
+                      outputRange: [-28, -28, 0, 0],
                     }),
                   },
                   {
                     scaleY: progress.interpolate({
-                      inputRange: [0, 0.18, 0.48, 0.62],
-                      outputRange: [0.7, 1, 1, 0],
+                      inputRange: [0, 0.82, 0.94, 1],
+                      outputRange: [0, 0, 1, 1],
                     }),
                   },
                 ],
               },
             ]}
           />
-          <View style={[styles.bigEnvelope, { borderColor: accent }]}>
-            <View style={[styles.envelopeInner, { backgroundColor: accent + '16' }]} />
-            <View style={styles.envelopeSlot} />
-            <Animated.View
-              style={{
-                opacity: progress.interpolate({
-                  inputRange: [0, 0.62, 0.78, 1],
-                  outputRange: [0, 0, 1, 1],
-                }),
-              }}
-            >
-              <Feather name="heart" size={22} color={accent} />
-            </Animated.View>
-            <Animated.View
-              testID="ritual-envelope-flap"
-              style={[
-                styles.envelopeFlapClosed,
-                { backgroundColor: accent + '66' },
-                {
-                  transform: [
-                    {
-                      translateY: progress.interpolate({
-                        inputRange: [0, 0.42, 0.62, 1],
-                        outputRange: [-28, -28, 0, 0],
-                      }),
-                    },
-                    {
-                      scaleY: progress.interpolate({
-                        inputRange: [0, 0.42, 0.62, 1],
-                        outputRange: [0, 0, 1, 1],
-                      }),
-                    },
-                  ],
-                },
-              ]}
-            />
-          </View>
         </View>
+      </View>
     );
   }
 
   if (ritual === 'garden') {
     return (
       <View testID="ritual-sapling" style={styles.destinationBottom}>
-          <View style={styles.soil}>
-            <Animated.View
-              testID="ritual-soil-hole"
-              style={[
-                styles.soilHole,
-                {
-                  opacity: progress.interpolate({
-                    inputRange: [0, 0.18, 0.46, 0.62],
-                    outputRange: [0.4, 1, 1, 0],
-                  }),
-                  transform: [
-                    {
-                      scaleX: progress.interpolate({
-                        inputRange: [0, 0.2, 0.48, 0.64],
-                        outputRange: [0.7, 1, 0.85, 0.2],
-                      }),
-                    },
-                  ],
-                },
-              ]}
-            />
-            <Animated.View
-              testID="ritual-soil-cover"
-              style={[
-                styles.soilCover,
-                {
-                  opacity: progress.interpolate({
-                    inputRange: [0, 0.36, 0.52, 1],
-                    outputRange: [0, 0, 1, 1],
-                  }),
-                  transform: [
-                    {
-                      scaleX: progress.interpolate({
-                        inputRange: [0, 0.36, 0.58, 1],
-                        outputRange: [0.35, 0.35, 1, 1],
-                      }),
-                    },
-                  ],
-                },
-              ]}
-            />
-            <Animated.View
-              testID="ritual-grown-sapling"
-              style={[
-                styles.sapling,
-                {
-                  opacity: progress.interpolate({
-                    inputRange: [0, 0.48, 0.58, 1],
-                    outputRange: [0, 0, 1, 1],
-                  }),
-                  transform: [
-                    {
-                      translateY: progress.interpolate({
-                        inputRange: [0, 0.48, 0.72, 1],
-                        outputRange: [42, 42, 8, -18],
-                      }),
-                    },
-                    {
-                      scale: progress.interpolate({
-                        inputRange: [0, 0.48, 0.72, 1],
-                        outputRange: [0.18, 0.18, 0.62, 1],
-                      }),
-                    },
-                  ],
-                },
-              ]}
-            >
-              <View style={styles.saplingCrown}>
-                <View style={[styles.saplingLeaf, styles.saplingLeafLeft]} />
-                <View style={[styles.saplingLeaf, styles.saplingLeafRight]} />
-              </View>
-              <View style={styles.saplingTrunk} />
-            </Animated.View>
-          </View>
-        </View>
-    );
-  }
-
-  if (ritual === 'lock') {
-    return (
-      <View testID="ritual-lock-box" style={styles.destinationBottom}>
-          <View style={[styles.lockBox, { borderColor: accent, backgroundColor: accent + '22' }]}>
-            <View style={styles.lockBoxOpening} />
-            <Animated.View
-              testID="ritual-box-lid"
-              style={[
-                styles.lockBoxLid,
-                { backgroundColor: accent + '88', borderColor: accent },
-                {
-                  transform: [
-                    {
-                      translateY: progress.interpolate({
-                        inputRange: [0, 0.2, 0.48, 0.68, 1],
-                        outputRange: [-42, -42, -42, 0, 0],
-                      }),
-                    },
-                    {
-                      rotate: progress.interpolate({
-                        inputRange: [0, 0.2, 0.48, 0.68, 1],
-                        outputRange: ['-16deg', '-16deg', '-16deg', '0deg', '0deg'],
-                      }),
-                    },
-                  ],
-                },
-              ]}
-            />
-            <Animated.View
-              testID="ritual-box-lock"
-              style={{
+        <View style={styles.soil}>
+          <Animated.View
+            testID="ritual-soil-hole"
+            style={[
+              styles.soilHole,
+              {
                 opacity: progress.interpolate({
-                  inputRange: [0, 0.58, 0.72, 1],
+                  inputRange: [0, 0.18, 0.66, 0.86],
+                  outputRange: [0.4, 1, 1, 0],
+                }),
+                transform: [
+                  {
+                    scaleX: progress.interpolate({
+                      inputRange: [0, 0.2, 0.7, 0.88],
+                      outputRange: [0.7, 1, 0.85, 0.2],
+                    }),
+                  },
+                ],
+              },
+            ]}
+          />
+          <Animated.View
+            testID="ritual-soil-cover"
+            style={[
+              styles.soilCover,
+              {
+                opacity: progress.interpolate({
+                  inputRange: [0, 0.7, 0.86, 1],
                   outputRange: [0, 0, 1, 1],
                 }),
                 transform: [
                   {
-                    scale: progress.interpolate({
-                      inputRange: [0, 0.58, 0.78, 1],
-                      outputRange: [0.55, 0.55, 1.08, 1],
+                    scaleX: progress.interpolate({
+                      inputRange: [0, 0.7, 0.88, 1],
+                      outputRange: [0.35, 0.35, 1, 1],
                     }),
                   },
                 ],
-              }}
-            >
-              <Feather name="lock" size={27} color={accent} />
-            </Animated.View>
-          </View>
-      </View>
-    );
-  }
-
-  return (
-    <View testID="ritual-desk" style={styles.destinationBottom}>
-        <View style={[styles.deskUnit, { backgroundColor: accent + '44' }]}>
-          <View style={styles.drawerCavity} />
+              },
+            ]}
+          />
           <Animated.View
-            testID="ritual-drawer-front"
+            testID="ritual-grown-sapling"
             style={[
-              styles.drawerFront,
+              styles.sapling,
               {
-                backgroundColor: accent,
+                opacity: progress.interpolate({
+                  inputRange: [0, 0.78, 0.86, 1],
+                  outputRange: [0, 0, 1, 1],
+                }),
                 transform: [
                   {
                     translateY: progress.interpolate({
-                      inputRange: [0, 0.16, 0.58, 0.78, 1],
-                      outputRange: [0, 34, 34, 0, 0],
+                      inputRange: [0, 0.78, 0.9, 1],
+                      outputRange: [42, 42, 8, -18],
+                    }),
+                  },
+                  {
+                    scale: progress.interpolate({
+                      inputRange: [0, 0.78, 0.9, 1],
+                      outputRange: [0.18, 0.18, 0.62, 1],
                     }),
                   },
                 ],
               },
             ]}
           >
-            <View style={styles.drawerHandle} />
+            <View style={styles.saplingCrown}>
+              <View style={[styles.saplingLeaf, styles.saplingLeafLeft]} />
+              <View style={[styles.saplingLeaf, styles.saplingLeafRight]} />
+            </View>
+            <View style={styles.saplingTrunk} />
           </Animated.View>
         </View>
+      </View>
+    );
+  }
+
+  if (ritual === 'lock') {
+    return (
+      <View testID="ritual-lock-box" style={styles.destinationBottom}>
+        <View style={[styles.lockBox, { borderColor: accent, backgroundColor: accent + '22' }]}>
+          <View style={styles.lockBoxOpening} />
+          <Animated.View
+            testID="ritual-box-lid"
+            style={[
+              styles.lockBoxLid,
+              { backgroundColor: accent + '88', borderColor: accent },
+              {
+                transform: [
+                  {
+                    translateY: progress.interpolate({
+                      inputRange: [0, 0.2, 0.7, 0.88, 1],
+                      outputRange: [-42, -42, -42, 0, 0],
+                    }),
+                  },
+                  {
+                    rotate: progress.interpolate({
+                      inputRange: [0, 0.2, 0.7, 0.88, 1],
+                      outputRange: ['-16deg', '-16deg', '-16deg', '0deg', '0deg'],
+                    }),
+                  },
+                ],
+              },
+            ]}
+          />
+          <Animated.View
+            testID="ritual-box-lock"
+            style={{
+              opacity: progress.interpolate({
+                inputRange: [0, 0.86, 0.94, 1],
+                outputRange: [0, 0, 1, 1],
+              }),
+              transform: [
+                {
+                  scale: progress.interpolate({
+                    inputRange: [0, 0.86, 0.94, 1],
+                    outputRange: [0.55, 0.55, 1.08, 1],
+                  }),
+                },
+              ],
+            }}
+          >
+            <Feather name="lock" size={27} color={accent} />
+          </Animated.View>
+        </View>
+      </View>
+    );
+  }
+
+  return (
+    <View testID="ritual-desk" style={styles.destinationBottom}>
+      <View style={[styles.deskUnit, { backgroundColor: accent + '44' }]}>
+        <View style={styles.drawerCavity} />
+        <Animated.View
+          testID="ritual-drawer-front"
+          style={[
+            styles.drawerFront,
+            {
+              backgroundColor: accent,
+              transform: [
+                {
+                  translateY: progress.interpolate({
+                    inputRange: [0, 0.16, 0.7, 0.9, 1],
+                    outputRange: [0, 34, 34, 0, 0],
+                  }),
+                },
+              ],
+            },
+          ]}
+        >
+          <View style={styles.drawerHandle} />
+        </Animated.View>
+      </View>
     </View>
   );
 }
@@ -799,7 +819,7 @@ const styles = StyleSheet.create({
     height: 310,
     justifyContent: 'flex-start',
     marginTop: SPACING.md,
-    overflow: 'hidden',
+    overflow: 'visible',
     paddingTop: 28,
     position: 'relative',
   },
@@ -809,19 +829,114 @@ const styles = StyleSheet.create({
     borderRadius: RADIUS.sm,
     borderWidth: 1,
     elevation: 2,
-    height: 170,
+    height: PAGE_H,
     padding: 0,
     shadowColor: '#4C4C4C',
     shadowOffset: { width: 0, height: 3 },
     shadowOpacity: 0.1,
     shadowRadius: 7,
-    width: 225,
+    width: PAGE_W,
     zIndex: 2,
   },
-  sheetWriting: {
+  foldPage: {
+    backgroundColor: 'transparent',
+    borderWidth: 0,
+    elevation: 0,
+    overflow: 'visible',
+    shadowOpacity: 0,
+  },
+  foldInner: {
+    height: PAGE_H,
+    position: 'absolute',
+    width: PAGE_W,
+  },
+  foldInnerRight: {
+    right: 0,
+    top: 0,
+  },
+  foldInnerBottom: {
+    bottom: 0,
+    left: 0,
+  },
+  flap: {
+    overflow: 'visible',
+    position: 'absolute',
+  },
+  face: {
     ...StyleSheet.absoluteFillObject,
+    backfaceVisibility: 'hidden',
+    overflow: 'hidden',
+  },
+  faceFront: {
+    backgroundColor: '#FFFEFA',
+    borderColor: '#E8E4DA',
+    borderWidth: 1,
+  },
+  faceBack: {
+    backgroundColor: '#EFE8DC',
+    borderColor: '#D9D0C2',
+    borderWidth: 1,
+  },
+  stayPanel: {
+    backgroundColor: '#FFFEFA',
+    borderColor: '#E8E4DA',
+    borderWidth: 1,
+    overflow: 'hidden',
+    position: 'absolute',
+  },
+  panelLeft: {
+    height: PAGE_H,
+    left: 0,
+    top: 0,
+    width: HALF_W,
+    zIndex: 4,
+  },
+  panelRight: {
+    height: PAGE_H,
+    right: 0,
+    top: 0,
+    width: HALF_W,
+    zIndex: 1,
+  },
+  panelTop: {
+    height: HALF_H,
+    left: 0,
+    top: 0,
+    width: PAGE_W,
+    zIndex: 4,
+  },
+  panelBottom: {
+    bottom: 0,
+    height: HALF_H,
+    left: 0,
+    width: PAGE_W,
+    zIndex: 1,
+  },
+  secondFoldClip: {
+    height: HALF_H,
+    overflow: 'visible',
+    width: PAGE_W,
+  },
+  secondPanelTop: {
+    height: PACKET_H,
+    left: 0,
+    top: 0,
+    width: PAGE_W,
+    zIndex: 3,
+  },
+  secondPanelBottom: {
+    bottom: 0,
+    height: PACKET_H,
+    left: 0,
+    width: PAGE_W,
+    zIndex: 1,
+  },
+  sheetWriting: {
+    height: PAGE_H,
     overflow: 'hidden',
     padding: 14,
+    position: 'absolute',
+    width: PAGE_W,
   },
   pageTop: { alignItems: 'center', flexDirection: 'row', gap: SPACING.sm },
   pageHeading: { flex: 1 },
@@ -840,57 +955,42 @@ const styles = StyleSheet.create({
     opacity: 0.8,
     width: '100%',
   },
-  planeCenterCrease: {
+  paperBackFill: {
+    ...StyleSheet.absoluteFillObject,
+    backgroundColor: '#EFE8DC',
+  },
+  paperBackGrain: {
+    ...StyleSheet.absoluteFillObject,
+    backgroundColor: '#E4D8C8',
+    margin: 10,
+    opacity: 0.28,
+  },
+  verticalCrease: {
     backgroundColor: '#C9B79A',
-    bottom: 2,
-    left: '50%',
+    height: PAGE_H,
+    left: PAGE_W / 2 - 0.5,
     position: 'absolute',
-    top: 2,
-    width: 1,
-  },
-  planeWing: {
-    backgroundColor: '#FFFEFA',
-    borderColor: '#E8E4DA',
-    borderWidth: 1,
-    height: 12,
-    position: 'absolute',
-    top: 4,
-    width: 46,
-  },
-  planeWingLeft: {
-    left: -38,
-  },
-  planeWingRight: {
-    right: -38,
-  },
-  planeNose: {
-    borderBottomColor: 'transparent',
-    borderBottomWidth: 11,
-    borderLeftColor: '#FFFEFA',
-    borderLeftWidth: 26,
-    borderTopColor: 'transparent',
-    borderTopWidth: 11,
-    height: 0,
-    position: 'absolute',
-    right: -18,
     top: 0,
-    width: 0,
+    width: 1,
+    zIndex: 5,
   },
-  letterCrease: {
-    alignSelf: 'center',
+  horizontalCrease: {
     backgroundColor: '#C9B79A',
     height: 1,
-    left: 10,
+    left: 0,
     position: 'absolute',
-    right: 10,
+    top: HALF_H,
+    width: PAGE_W,
+    zIndex: 5,
   },
-  letterSideCrease: {
+  secondCrease: {
     backgroundColor: '#C9B79A',
-    bottom: 4,
+    height: 1,
+    left: 0,
     position: 'absolute',
-    right: '50%',
-    top: 4,
-    width: 1,
+    top: PACKET_H,
+    width: PAGE_W,
+    zIndex: 5,
   },
   destinationBottom: {
     alignItems: 'center',
@@ -899,67 +999,6 @@ const styles = StyleSheet.create({
     position: 'absolute',
     width: '100%',
     zIndex: 3,
-  },
-  foldSteps: {
-    alignItems: 'center',
-    flexDirection: 'row',
-    gap: 6,
-    justifyContent: 'center',
-    position: 'absolute',
-    top: 8,
-    width: '100%',
-  },
-  foldStep: {
-    backgroundColor: '#FFFFFFCC',
-    borderRadius: RADIUS.pill,
-    fontSize: 9,
-    fontWeight: '800',
-    overflow: 'hidden',
-    paddingHorizontal: 8,
-    paddingVertical: 5,
-  },
-  paperPlaneFlight: {
-    height: 58,
-    left: '50%',
-    position: 'absolute',
-    top: 92,
-    width: 82,
-    zIndex: 4,
-  },
-  planeTrail: {
-    borderBottomWidth: 2,
-    borderStyle: 'dashed',
-    height: 12,
-    left: -48,
-    opacity: 0.55,
-    position: 'absolute',
-    top: 31,
-    width: 54,
-  },
-  paperPlaneBody: {
-    borderBottomColor: 'transparent',
-    borderBottomWidth: 18,
-    borderLeftWidth: 58,
-    borderTopColor: 'transparent',
-    borderTopWidth: 18,
-    height: 0,
-    left: 4,
-    position: 'absolute',
-    top: 10,
-    width: 0,
-  },
-  paperPlaneWing: {
-    borderLeftColor: 'transparent',
-    borderLeftWidth: 37,
-    borderRightColor: 'transparent',
-    borderRightWidth: 6,
-    borderTopWidth: 27,
-    height: 0,
-    left: 13,
-    position: 'absolute',
-    top: 26,
-    transform: [{ rotate: '-8deg' }],
-    width: 0,
   },
   bigEnvelope: {
     alignItems: 'center',
