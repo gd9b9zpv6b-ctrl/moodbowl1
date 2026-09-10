@@ -268,7 +268,6 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: COLORS.borderLight,
   },
-  drinkEmoji: { fontSize: 28 },
   drinkLabel: { fontSize: 14, fontWeight: '700', color: COLORS.textPrimary },
   drinkHint: { fontSize: 12, color: COLORS.textSecondary, marginTop: 2 },
   chipPanel: {
