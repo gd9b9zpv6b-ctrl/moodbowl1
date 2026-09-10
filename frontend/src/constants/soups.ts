@@ -12,6 +12,8 @@ export type SoupDef = {
   key: SoupKey;
   emoji: string;
   label: string;
+  /** Optional food art · used when emoji is a poor stand-in (e.g. 苦瓜). */
+  image?: any;
   /** Fallback subs · wording packs override per mode. */
   subLower: string;
   subUpper: string;
@@ -55,6 +57,7 @@ export const SOUPS: SoupDef[] = [
     key: 'bitter_tea',
     emoji: '🥒',
     label: '苦瓜',
+    image: require('../../assets/foods/kugua.png'),
     subLower: '好累 · 想休息',
     subUpper: '心情有啲沉重 · 需要唞一唞',
   },

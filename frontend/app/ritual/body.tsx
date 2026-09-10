@@ -12,6 +12,7 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { BodyScanFigure } from '@/src/components/body-scan-figure';
+import { FoodOfferVisual } from '@/src/components/food-offer-visual';
 import { ProgressDots } from '@/src/components/progress-dots';
 import { RitualDiaryFooter } from '@/src/components/ritual-diary-escape';
 import {
@@ -134,7 +135,7 @@ export default function RitualBodyScreen() {
 
         {drink && (
           <View style={styles.drinkChip} testID="body-drink-context">
-            <Text style={styles.drinkEmoji}>{drink.emoji}</Text>
+            <FoodOfferVisual food={drink} size={32} />
             <View style={{ flex: 1 }}>
               <Text style={styles.drinkLabel}>
                 呢樣「{drink.label}」· 戳碗仔睇反應

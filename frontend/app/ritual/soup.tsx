@@ -14,6 +14,7 @@ import {
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
+import { FoodOfferVisual } from '@/src/components/food-offer-visual';
 import { ProgressDots } from '@/src/components/progress-dots';
 import { RitualDiaryFooter } from '@/src/components/ritual-diary-escape';
 import { SOUPS, type SoupKey } from '@/src/constants/soups';
@@ -175,7 +176,7 @@ export default function RitualSoupScreen() {
             accessibilityLabel="碗星靈"
           />
           {offering && pickedSoup && (
-            <Animated.Text
+            <Animated.View
               style={[
                 styles.flyingDrink,
                 {
@@ -188,8 +189,8 @@ export default function RitualSoupScreen() {
                 },
               ]}
             >
-              {pickedSoup.emoji}
-            </Animated.Text>
+              <FoodOfferVisual food={pickedSoup} size={44} />
+            </Animated.View>
           )}
           {offering && pickedSoup && (
             <Text testID="soup-offer-caption" style={styles.offerCaption}>
@@ -216,7 +217,9 @@ export default function RitualSoupScreen() {
                   pressed && !offering && { transform: [{ scale: 0.96 }], opacity: 0.9 },
                 ]}
               >
-                <Text style={styles.emoji}>{soup.emoji}</Text>
+                <View style={styles.emoji}>
+                  <FoodOfferVisual food={soup} size={48} />
+                </View>
                 <Text style={styles.label}>{soup.label}</Text>
                 <Text style={styles.cardSub}>{w.soup_subs[soup.key]}</Text>
               </Pressable>
@@ -276,7 +279,6 @@ const styles = StyleSheet.create({
   },
   flyingDrink: {
     position: 'absolute',
-    fontSize: 44,
     top: '42%',
   },
   offerCaption: {
@@ -310,7 +312,7 @@ const styles = StyleSheet.create({
     borderColor: COLORS.primary,
     backgroundColor: COLORS.primaryLight,
   },
-  emoji: { fontSize: 40, marginBottom: SPACING.sm },
+  emoji: { marginBottom: SPACING.sm, alignItems: 'center', justifyContent: 'center' },
   label: {
     fontSize: 15,
     fontWeight: '700',

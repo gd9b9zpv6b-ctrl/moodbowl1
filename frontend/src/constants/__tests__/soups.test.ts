@@ -17,6 +17,7 @@ describe('ritual food offering', () => {
   });
 
   it('keeps lookup by key for body / persist', () => {
+    expect(SOUP_BY_KEY.bitter_tea.image).toBeTruthy();
     expect(SOUP_BY_KEY.strawberry_milk.label).toBe('雪糕');
     expect(SOUP_BY_KEY.no_drink.label).toBe('唔想食');
   });
