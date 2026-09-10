@@ -14,7 +14,7 @@ import {
 import { EmotionVisual } from '@/src/components/emotion-visual';
 import { EMOTION_BY_KEY } from '@/src/constants/emotions';
 import { COLORS, RADIUS, SPACING } from '@/src/constants/theme';
-import { Circle, Ellipse, Path, Svg } from 'react-native-svg';
+import { Circle, Ellipse, Path, Rect as SvgRect, Svg } from 'react-native-svg';
 
 type RitualKey = 'release' | 'share' | 'garden' | 'lock' | 'later';
 type DestLayer = 'back' | 'front';
@@ -35,8 +35,8 @@ const PAGE_H = 170;
 const HALF_W = 113;
 const HALF_H = 85;
 const PACKET_H = 43;
-const NOTE_W = 56;
-const NOTE_H = 22;
+const NOTE_W = 44;
+const NOTE_H = 18;
 
 const PRESERVE_3D: ViewStyle =
   Platform.OS === 'web' ? ({ transformStyle: 'preserve-3d' } as ViewStyle) : {};
@@ -241,6 +241,53 @@ function lerp(from: number, to: number, t: number) {
   return from + (to - from) * t;
 }
 
+function useProgressFlag(progress: Animated.Value, threshold: number) {
+  const [on, setOn] = useState(false);
+  useEffect(() => {
+    const id = progress.addListener(({ value }) => {
+      const next = value >= threshold;
+      setOn((prev) => (prev === next ? prev : next));
+    });
+    return () => progress.removeListener(id);
+  }, [progress, threshold]);
+  return on;
+}
+
+function FoldedNote() {
+  return (
+    <View testID="ritual-folded-note" style={styles.finishedPacket}>
+      <Svg height="100%" preserveAspectRatio="none" viewBox="0 0 44 18" width="100%">
+        <SvgRect fill="#F7F1E4" height="17" rx="2.5" stroke="#D7C6AA" strokeWidth="1" width="43" x="0.5" y="0.5" />
+        <Path d="M1 9 H43" stroke="#E3D3B8" strokeWidth="1" />
+        <Path d="M22 1 V17" stroke="#EDE1CE" strokeWidth="0.8" />
+        <SvgRect fill="#E7A8B8" height="7" rx="1" width="9" x="31" y="5" />
+        <Path d="M31 5 L35.5 8.5 L40 5" fill="none" stroke="#F7F1E4" strokeWidth="0.8" />
+      </Svg>
+    </View>
+  );
+}
+
+function PaperPlaneMarkings() {
+  return (
+    <View testID="ritual-plane-markings" style={styles.finishedPacket}>
+      <Svg height="100%" preserveAspectRatio="none" viewBox="0 0 156 58" width="100%">
+        <Path
+          d="M4 29 L152 5 L116 29 L152 53 Z"
+          fill="#FFFDF8"
+          stroke="#E0D1BA"
+          strokeLinejoin="round"
+          strokeWidth="1.6"
+        />
+        <Path d="M4 29 L116 29 L152 5 Z" fill="#F3E6D0" />
+        <Path d="M4 29 L116 29 L152 53 Z" fill="#E9DCC4" />
+        <Path d="M4 29 L152 5" stroke="#CDBDA6" strokeWidth="1.3" />
+        <Path d="M4 29 L152 53" stroke="#D5C6B0" strokeWidth="1" />
+        <Path d="M116 29 L152 5" stroke="#EFE6D6" strokeWidth="1" />
+      </Svg>
+    </View>
+  );
+}
+
 function planeClipPolygon(t: number) {
   const pts = [
     [lerp(100, 96, t), lerp(0, 8, t)],
@@ -379,6 +426,7 @@ function FoldingDiaryPage({
 }) {
   const isPlane = ritual === 'release';
   const planeClip = usePlaneClip(progress, isPlane);
+  const packetReady = useProgressFlag(progress, isPlane ? 0.48 : 0.81);
   const firstFold = progress.interpolate({
     inputRange: [0.04, 0.22],
     outputRange: ['0deg', '-180deg'],
@@ -438,14 +486,22 @@ function FoldingDiaryPage({
         PRESERVE_3D,
         {
           height: sheetHeight,
+          overflow: packetReady ? 'hidden' : 'visible',
           transform,
           width: sheetWidth,
           zIndex: sheetZ,
-          ...(isPlane && planeClip !== 'none' ? { clipPath: planeClip } : null),
+          ...(isPlane && !packetReady && planeClip !== 'none' ? { clipPath: planeClip } : null),
         } as ViewStyle,
       ]}
     >
-      <View style={[styles.foldInner, PRESERVE_3D, styles.foldInnerAnchor]}>
+      <View
+        style={[
+          styles.foldInner,
+          styles.foldInnerAnchor,
+          !packetReady && PRESERVE_3D,
+          packetReady && styles.hiddenPacket,
+        ]}
+      >
         {isPlane ? (
           <>
             <View testID="ritual-plane-body" style={[styles.stayPanel, styles.panelRight]}>
@@ -536,6 +592,7 @@ function FoldingDiaryPage({
           </>
         )}
       </View>
+      {packetReady ? isPlane ? <PaperPlaneMarkings /> : <FoldedNote /> : null}
     </Animated.View>
   );
 }
@@ -554,26 +611,26 @@ function getPageTransform(
       return [
         {
           translateX: progress.interpolate({
-            inputRange: [0, 0.52, 0.78, 0.94, 1],
-            outputRange: [0, 0, 64, 86, 92],
+            inputRange: [0, 0.48, 0.6, 0.72, 0.86, 1],
+            outputRange: [0, 0, 22, 48, 78, 92],
           }),
         },
         {
           translateY: progress.interpolate({
-            inputRange: [0, 0.52, 0.78, 0.94, 1],
-            outputRange: [0, 0, -24, -34, -38],
+            inputRange: [0, 0.48, 0.6, 0.72, 0.86, 1],
+            outputRange: [0, 0, -6, -20, -16, -34],
           }),
         },
         {
           rotate: progress.interpolate({
-            inputRange: [0, 0.52, 0.72, 1],
-            outputRange: ['0deg', '8deg', '-10deg', '-16deg'],
+            inputRange: [0, 0.48, 0.62, 0.8, 1],
+            outputRange: ['0deg', '6deg', '-4deg', '-14deg', '-8deg'],
           }),
         },
         {
           scale: progress.interpolate({
-            inputRange: [0, 0.52, 0.8, 1],
-            outputRange: [1, 1, 0.48, 0.28],
+            inputRange: [0, 0.48, 0.68, 0.86, 1],
+            outputRange: [1, 1, 0.7, 0.46, 0.32],
           }),
         },
       ];
@@ -616,10 +673,50 @@ function getPageTransform(
   }
 }
 
+const ISLAND_BOB = new Animated.Value(0);
+let islandBobRunning = false;
+
+function ensureIslandBob() {
+  if (islandBobRunning) return;
+  islandBobRunning = true;
+  Animated.loop(
+    Animated.sequence([
+      Animated.timing(ISLAND_BOB, {
+        duration: 2200,
+        easing: Easing.inOut(Easing.sin),
+        toValue: 1,
+        useNativeDriver: false,
+      }),
+      Animated.timing(ISLAND_BOB, {
+        duration: 2200,
+        easing: Easing.inOut(Easing.sin),
+        toValue: 0,
+        useNativeDriver: false,
+      }),
+    ]),
+  ).start();
+}
+
 function IslandArt({ layer }: { layer: DestLayer }) {
+  useEffect(() => {
+    ensureIslandBob();
+  }, []);
+
+  const bob = {
+    transform: [
+      {
+        translateY: ISLAND_BOB.interpolate({
+          inputRange: [0, 1],
+          outputRange: [0, layer === 'back' ? 3 : 4],
+        }),
+      },
+    ],
+  };
+
   if (layer === 'back') {
     return (
-      <Svg width={164} height={132} viewBox="0 0 164 132">
+      <Animated.View style={bob}>
+        <Svg height={132} viewBox="0 0 164 132" width={164}>
         <Ellipse cx="82" cy="108" rx="80" ry="20" fill="#9FD0DC" />
         <Ellipse cx="82" cy="112" rx="74" ry="16" fill="#6FAEBF" />
         <Ellipse cx="82" cy="116" rx="62" ry="10" fill="#5A9AAD" />
@@ -634,10 +731,12 @@ function IslandArt({ layer }: { layer: DestLayer }) {
         <Circle cx="52" cy="22" r="7" fill="#FFFFFF" opacity="0.62" />
         <Circle cx="30" cy="26" r="6" fill="#FFFFFF" opacity="0.5" />
       </Svg>
+      </Animated.View>
     );
   }
 
   return (
+    <Animated.View style={bob}>
     <Svg width={164} height={132} viewBox="0 0 164 132">
       <Ellipse cx="84" cy="84" rx="26" ry="15" fill="#6FA07A" />
       <Path
@@ -667,6 +766,7 @@ function IslandArt({ layer }: { layer: DestLayer }) {
       <Circle cx="54" cy="88" r="2.2" fill="#E89B8C" />
       <Circle cx="116" cy="92" r="2" fill="#E8B07A" />
     </Svg>
+    </Animated.View>
   );
 }
 
@@ -1041,6 +1141,13 @@ const styles = StyleSheet.create({
     elevation: 0,
     overflow: 'visible',
     shadowOpacity: 0,
+  },
+  finishedPacket: {
+    ...StyleSheet.absoluteFillObject,
+    zIndex: 12,
+  },
+  hiddenPacket: {
+    opacity: 0,
   },
   foldInner: {
     height: PAGE_H,
