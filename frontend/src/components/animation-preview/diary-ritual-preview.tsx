@@ -240,13 +240,10 @@ function lerp(from: number, to: number, t: number) {
 
 function planeClipPolygon(t: number) {
   const pts = [
-    [lerp(50, 50, t), lerp(0, 0, t)],
-    [lerp(100, 100, t), lerp(0, 36, t)],
-    [lerp(100, 64, t), lerp(0, 42, t)],
-    [lerp(100, 64, t), lerp(100, 100, t)],
-    [lerp(0, 36, t), lerp(100, 100, t)],
-    [lerp(0, 36, t), lerp(0, 42, t)],
-    [lerp(0, 0, t), lerp(0, 36, t)],
+    [lerp(100, 96, t), lerp(0, 8, t)],
+    [lerp(0, 4, t), lerp(0, 38, t)],
+    [lerp(0, 42, t), lerp(100, 54, t)],
+    [lerp(100, 62, t), lerp(100, 96, t)],
   ];
   return `polygon(${pts.map(([x, y]) => `${x}% ${y}%`).join(', ')})`;
 }
@@ -395,14 +392,21 @@ function FoldingDiaryPage({
     extrapolate: 'clamp',
   });
   const sheetHeight = isPlane
-    ? PAGE_H
+    ? progress.interpolate({
+        inputRange: [0, 0.32, 0.36, 0.52, 1],
+        outputRange: [PAGE_H, PAGE_H, PAGE_H, 58, 58],
+      })
     : progress.interpolate({
         inputRange: [0, 0.28, 0.32, 0.5, 0.54, 1],
         outputRange: [PAGE_H, PAGE_H, HALF_H, HALF_H, PACKET_H, PACKET_H],
       });
   const sheetWidth = progress.interpolate({
-    inputRange: isPlane ? [0, 0.28, 0.32, 1] : [0, 0.7, 0.74, 1],
-    outputRange: [PAGE_W, PAGE_W, HALF_W, HALF_W],
+    inputRange: isPlane ? [0, 0.28, 0.32, 0.52, 1] : [0, 0.7, 0.74, 1],
+    outputRange: isPlane ? [PAGE_W, PAGE_W, HALF_W, 156, 156] : [PAGE_W, PAGE_W, HALF_W, HALF_W],
+  });
+  const sheetOpacity = progress.interpolate({
+    inputRange: isPlane ? [0, 0.78, 0.9, 1] : [0, 0.88, 0.94, 1],
+    outputRange: [1, 1, 0, 0],
   });
 
   return (
@@ -414,6 +418,7 @@ function FoldingDiaryPage({
         PRESERVE_3D,
         {
           height: sheetHeight,
+          opacity: sheetOpacity,
           transform,
           width: sheetWidth,
           ...(isPlane && planeClip !== 'none' ? { clipPath: planeClip } : null),
@@ -436,6 +441,19 @@ function FoldingDiaryPage({
               back={<PaperBack />}
             />
             <View style={styles.verticalCrease} />
+            <Animated.View
+              testID="ritual-plane-spine"
+              style={[
+                styles.planeSpine,
+                {
+                  opacity: progress.interpolate({
+                    inputRange: [0.38, 0.5],
+                    outputRange: [0, 1],
+                    extrapolate: 'clamp',
+                  }),
+                },
+              ]}
+            />
           </>
         ) : (
           <>
@@ -497,20 +515,20 @@ function getPageTransform(
       return [
         {
           translateX: progress.interpolate({
-            inputRange: [0, 0.54, 0.72, 1],
-            outputRange: [0, 0, 110, 230],
+            inputRange: [0, 0.52, 0.78, 1],
+            outputRange: [0, 0, 210, 360],
           }),
         },
         {
           translateY: progress.interpolate({
-            inputRange: [0, 0.54, 0.72, 1],
-            outputRange: [0, 0, -48, -128],
+            inputRange: [0, 0.52, 0.78, 1],
+            outputRange: [0, 0, -86, -190],
           }),
         },
         {
           rotate: progress.interpolate({
-            inputRange: [0, 0.54, 0.78, 1],
-            outputRange: ['0deg', '-8deg', '-22deg', '-34deg'],
+            inputRange: [0, 0.52, 0.7, 1],
+            outputRange: ['0deg', '6deg', '-16deg', '-24deg'],
           }),
         },
       ];
@@ -1045,6 +1063,16 @@ const styles = StyleSheet.create({
     width: 1,
     zIndex: 5,
   },
+  planeSpine: {
+    backgroundColor: '#C4B49A',
+    height: 2,
+    left: '6%',
+    position: 'absolute',
+    top: '48%',
+    transform: [{ rotate: '16deg' }],
+    width: '82%',
+    zIndex: 8,
+  },
   horizontalCrease: {
     backgroundColor: '#C9B79A',
     height: 1,
@@ -1156,10 +1184,10 @@ const styles = StyleSheet.create({
   soilCover: {
     backgroundColor: '#A98763',
     borderRadius: RADIUS.pill,
-    height: 18,
+    height: 36,
     position: 'absolute',
-    top: 8,
-    width: 96,
+    top: 4,
+    width: 132,
   },
   sapling: {
     alignItems: 'center',
