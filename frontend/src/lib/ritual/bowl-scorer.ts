@@ -88,7 +88,7 @@ const CHIP_BOWL_SCORES: Record<BodyChipKey, string[]> = {
   floaty: ['peaceful', 'free', 'calm', 'empty', 'foggy', 'blank'],
 };
 
-/** When body chips are present, dampen drink prior so craving ≠ state. */
+/** When body chips are present, dampen food prior so craving ≠ state. */
 const SOUP_WEIGHT_WITH_CHIPS = 0.35;
 const SOUP_WEIGHT_SOLO = 1;
 const CHIP_BOWL_BONUS = 8;

@@ -1,5 +1,5 @@
 /**
- * Somatic body chips · L2 clarification after drink metaphor.
+ * Somatic body chips · L2 clarification after food metaphor.
  * Grouped by body region for pokeable 碗仔 scan.
  *
  * `emoji` is the single source for chip list + floating decor on 碗仔.
