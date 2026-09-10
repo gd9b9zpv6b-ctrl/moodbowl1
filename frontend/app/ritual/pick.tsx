@@ -16,7 +16,7 @@ import { discoveryBowlsForCategory, scoreBowls } from '@/src/lib/ritual/bowl-sco
 import { useRitualStore } from '@/src/lib/ritual/ritual-store';
 
 class DiscoveryErrorBoundary extends Component<
-  { children: ReactNode },
+  { children: ReactNode; resetKey: string; fallback: ReactNode },
   { hasError: boolean }
 > {
   state = { hasError: false };
@@ -25,12 +25,18 @@ class DiscoveryErrorBoundary extends Component<
     return { hasError: true };
   }
 
+  componentDidUpdate(prevProps: { resetKey: string }) {
+    if (prevProps.resetKey !== this.props.resetKey && this.state.hasError) {
+      this.setState({ hasError: false });
+    }
+  }
+
   componentDidCatch(error: Error, info: ErrorInfo) {
     console.warn('BowlDiscoveryScene failed', error, info.componentStack);
   }
 
   render() {
-    if (this.state.hasError) return null;
+    if (this.state.hasError) return this.props.fallback;
     return this.props.children;
   }
 }
@@ -107,6 +113,48 @@ export default function RitualPickScreen() {
       >
         <Text style={styles.title}>{w.pick_title}</Text>
 
+        <Text style={styles.playHeading}>{w.pick_play}</Text>
+        <View style={styles.chips}>
+          {DISCOVERIES.map((item) => {
+            const selected = item.key === activeCategory;
+            return (
+              <Pressable
+                key={item.key}
+                testID={`discovery-${item.key}`}
+                accessibilityRole="button"
+                accessibilityState={{ selected }}
+                onPress={() => setCategoryOverride(item.key)}
+                style={({ pressed }) => [
+                  styles.chip,
+                  selected && {
+                    backgroundColor: item.accent,
+                    borderColor: item.accent,
+                  },
+                  pressed && { opacity: 0.85 },
+                ]}
+              >
+                <Text style={[styles.chipText, selected && styles.chipTextActive]}>
+                  {item.label}
+                </Text>
+              </Pressable>
+            );
+          })}
+        </View>
+        <DiscoveryErrorBoundary
+          resetKey={activeCategory}
+          fallback={
+            <View style={styles.grid}>{discoveryEmotions.map(renderCard)}</View>
+          }
+        >
+          <BowlDiscoveryScene
+            key={activeCategory}
+            category={activeCategory}
+            emotions={discoveryEmotions}
+            onChoose={onPick}
+          />
+        </DiscoveryErrorBoundary>
+
+        <Text style={styles.playHeading}>{w.pick_direct}</Text>
         <View style={styles.grid}>{scored.default.map(renderCard)}</View>
 
         <Pressable
@@ -140,41 +188,6 @@ export default function RitualPickScreen() {
             </Pressable>
           </>
         )}
-
-        <Text style={styles.playHeading}>{w.pick_play}</Text>
-        <View style={styles.chips}>
-          {DISCOVERIES.map((item) => {
-            const selected = item.key === activeCategory;
-            return (
-              <Pressable
-                key={item.key}
-                testID={`discovery-${item.key}`}
-                accessibilityRole="button"
-                accessibilityState={{ selected }}
-                onPress={() => setCategoryOverride(item.key)}
-                style={({ pressed }) => [
-                  styles.chip,
-                  selected && {
-                    backgroundColor: item.accent,
-                    borderColor: item.accent,
-                  },
-                  pressed && { opacity: 0.85 },
-                ]}
-              >
-                <Text style={[styles.chipText, selected && styles.chipTextActive]}>
-                  {item.label}
-                </Text>
-              </Pressable>
-            );
-          })}
-        </View>
-        <DiscoveryErrorBoundary>
-          <BowlDiscoveryScene
-            category={activeCategory}
-            emotions={discoveryEmotions}
-            onChoose={onPick}
-          />
-        </DiscoveryErrorBoundary>
       </ScrollView>
     </SafeAreaView>
   );
