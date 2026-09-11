@@ -127,6 +127,7 @@ export default function RitualRegulateScreen() {
   const soup = useRitualStore((s) => s.soup);
   const bodyChips = useRitualStore((s) => s.bodyChips);
   const selectedBowlKey = useRitualStore((s) => s.selectedBowlKey);
+  const decorations = useRitualStore((s) => s.decorations);
   const regulationUsed = useRitualStore((s) => s.regulationUsed);
   const addRegulation = useRitualStore((s) => s.addRegulation);
   const ensureBowl = useRitualStore((s) => s.ensureBowl);
@@ -276,6 +277,8 @@ export default function RitualRegulateScreen() {
       />
       <GentleStretch
         visible={active === 'gentle_stretch'}
+        emotion={emotion}
+        decorations={decorations}
         onClose={closeActivity}
         onComplete={() => completeActivity()}
       />
