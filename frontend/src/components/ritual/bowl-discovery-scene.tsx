@@ -1,17 +1,31 @@
 import { Feather } from '@expo/vector-icons';
-import React, { useEffect, useRef, useState } from 'react';
+import React, { useEffect, useMemo, useRef, useState } from 'react';
 import {
   Animated,
   Easing,
+  PanResponder,
+  Platform,
   Pressable,
   StyleSheet,
   Text,
   View,
+  type GestureResponderEvent,
 } from 'react-native';
 
 import { EmotionVisual } from '@/src/components/emotion-visual';
 import { EMOTION_BY_KEY, EMOTIONS, type Emotion, type EmotionCategory } from '@/src/constants/emotions';
 import { COLORS, RADIUS, SPACING } from '@/src/constants/theme';
+import {
+  BALLOON_COLUMNS,
+  BALLOON_ROWS,
+  COVER_COLUMNS,
+  COVER_ROWS,
+  bowlIndexAt,
+  coverCellAt,
+  farEnoughFromLast,
+  shouldDiscoverAfterHits,
+} from '@/src/lib/ritual/cover-scratch';
+import { localTapInMeasuredBox, type TapNative } from '@/src/lib/ritual/decor-tap';
 
 type DiscoveryKey = EmotionCategory;
 
@@ -30,8 +44,8 @@ export const DISCOVERIES: DiscoveryConfig[] = [
   {
     key: 'anger',
     label: '憤怒',
-    title: '輕輕放走個波',
-    instruction: '撳一下氣球 · 睇下藏住邊隻飯碗',
+    title: '輕輕撥開啲波',
+    instruction: '喺成片氣球裏面慢慢撥 · 搵藏住嘅飯碗',
     emotionKey: 'angry',
     tint: '#FFF0EC',
     accent: '#E98D83',
@@ -41,7 +55,7 @@ export const DISCOVERIES: DiscoveryConfig[] = [
     key: 'nervous',
     label: '緊張',
     title: '慢慢撥開啲沙',
-    instruction: '撳一下沙堆 · 睇下藏住邊隻飯碗',
+    instruction: '用手指來回捽開成片沙 · 喺沙裏面搵碗',
     emotionKey: 'anxious',
     tint: '#FFF7E9',
     accent: '#D9B46E',
@@ -51,7 +65,7 @@ export const DISCOVERIES: DiscoveryConfig[] = [
     key: 'sad',
     label: '傷心',
     title: '抹走窗上嘅雨',
-    instruction: '撳一下雨點 · 睇下邊隻似你',
+    instruction: '用手指抹走成片雨水 · 睇下邊隻似你',
     emotionKey: 'sad',
     tint: '#EEF7FF',
     accent: '#82B9D8',
@@ -71,7 +85,7 @@ export const DISCOVERIES: DiscoveryConfig[] = [
     key: 'unspoken',
     label: '講唔出',
     title: '撥開眼前嘅霧',
-    instruction: '撳一下霧團 · 慢慢搵',
+    instruction: '用手指撥開成片霧 · 慢慢搵藏住嘅碗',
     emotionKey: 'foggy',
     tint: '#F1F3F6',
     accent: '#9AA8B6',
@@ -90,6 +104,22 @@ export const DISCOVERIES: DiscoveryConfig[] = [
 ];
 
 const SOFT_EASING = Easing.out(Easing.quad);
+const COVER_GAMES = new Set(['anger', 'nervous', 'sad', 'unspoken']);
+const BALLOON_COLORS = ['#F4A19A', '#E98D83', '#F6B8A2', '#E07A70', '#F2C4B0', '#D9786E'];
+
+function windowScroll() {
+  if (typeof window === 'undefined') return { x: 0, y: 0 };
+  return {
+    x: window.scrollX || window.pageXOffset || 0,
+    y: window.scrollY || window.pageYOffset || 0,
+  };
+}
+
+function coverGridFor(kind: 'anger' | 'nervous' | 'sad' | 'unspoken') {
+  return kind === 'anger'
+    ? { columns: BALLOON_COLUMNS, rows: BALLOON_ROWS }
+    : { columns: COVER_COLUMNS, rows: COVER_ROWS };
+}
 
 export function BowlDiscoveryScene({
   category,
@@ -104,7 +134,7 @@ export function BowlDiscoveryScene({
   const [revealed, setRevealed] = useState(false);
   const [selectedEmotionKey, setSelectedEmotionKey] = useState<string | null>(null);
   const [discoveredKeys, setDiscoveredKeys] = useState<string[]>([]);
-  const [poppedBalloonKeys, setPoppedBalloonKeys] = useState<string[]>([]);
+  const [clearedCoverCells, setClearedCoverCells] = useState<number[]>([]);
   const [scoopingFishKey, setScoopingFishKey] = useState<string | null>(null);
   const [scoopTarget, setScoopTarget] = useState({ x: 0, y: 0 });
   const [wateringEmotionKey, setWateringEmotionKey] = useState<string | null>(null);
@@ -115,7 +145,10 @@ export function BowlDiscoveryScene({
   const scoopMove = useRef(new Animated.Value(0)).current;
   const waterPour = useRef(new Animated.Value(0)).current;
   const sceneRef = useRef<View>(null);
-  const sceneSize = useRef({ width: 320, height: 340 });
+  const sceneBox = useRef({ x: 0, y: 0, width: 320, height: 400 });
+  const lastScratchPoint = useRef({ x: 0, y: 0 });
+  const scratchHits = useRef<Record<string, number>>({});
+  const isCoverGame = COVER_GAMES.has(activeKey);
 
   const active = DISCOVERIES.find((item) => item.key === activeKey) ?? DISCOVERIES[0];
   const passed = emotions?.filter((item) => item.category === activeKey) ?? [];
@@ -128,11 +161,13 @@ export function BowlDiscoveryScene({
     setRevealed(false);
     setSelectedEmotionKey(null);
     setDiscoveredKeys([]);
-    setPoppedBalloonKeys([]);
+    setClearedCoverCells([]);
     setScoopingFishKey(null);
     setScoopTarget({ x: 0, y: 0 });
     setWateringEmotionKey(null);
     setWaterTarget({ fromRight: false, x: 0 });
+    scratchHits.current = {};
+    lastScratchPoint.current = { x: 0, y: 0 };
     reveal.setValue(0);
     scoopMove.stopAnimation();
     scoopMove.setValue(0);
@@ -212,21 +247,96 @@ export function BowlDiscoveryScene({
     return () => movement.stop();
   }, [activeKey, fishSwim]);
 
-  const popBalloon = (emotionKey: string) => {
-    setPoppedBalloonKeys((current) =>
-      current.includes(emotionKey) ? current : [...current, emotionKey],
+  const discoverAtPoint = (x: number, y: number) => {
+    const index = bowlIndexAt(
+      x,
+      y,
+      sceneBox.current.width,
+      sceneBox.current.height,
+      categoryEmotions.length,
     );
-    discoverEmotion(emotionKey);
+    if (index == null) return;
+    const item = categoryEmotions[index];
+    if (!item) return;
+    const hits = (scratchHits.current[item.key] ?? 0) + 1;
+    scratchHits.current[item.key] = hits;
+    if (shouldDiscoverAfterHits(hits)) discoverEmotion(item.key);
   };
+
+  const recordScratchPoint = (x: number, y: number, start = false) => {
+    if (!Number.isFinite(x) || !Number.isFinite(y)) return;
+    if (!farEnoughFromLast(x, y, lastScratchPoint.current, start)) return;
+    lastScratchPoint.current = { x, y };
+    const kind = activeKey as 'anger' | 'nervous' | 'sad' | 'unspoken';
+    const { columns, rows } = coverGridFor(kind);
+    const cell = coverCellAt(
+      x,
+      y,
+      sceneBox.current.width,
+      sceneBox.current.height,
+      columns,
+      rows,
+    );
+    setClearedCoverCells((current) =>
+      current.includes(cell) ? current : [...current, cell],
+    );
+    discoverAtPoint(x, y);
+  };
+
+  const localFromNative = (native: TapNative) =>
+    localTapInMeasuredBox(native, sceneBox.current, windowScroll());
+
+  useEffect(() => {
+    if (Platform.OS !== 'web' || !isCoverGame) return;
+    const node = sceneRef.current as unknown as HTMLElement | null;
+    if (!node) return;
+    const trackTouch = (event: TouchEvent, start = false) => {
+      const touch = event.touches[0];
+      if (!touch) return;
+      event.preventDefault();
+      const rect = node.getBoundingClientRect();
+      recordScratchPoint(touch.clientX - rect.left, touch.clientY - rect.top, start);
+    };
+    const handleTouchStart = (event: TouchEvent) => trackTouch(event, true);
+    const handleTouchMove = (event: TouchEvent) => trackTouch(event);
+    node.addEventListener('touchstart', handleTouchStart, { capture: true, passive: false });
+    node.addEventListener('touchmove', handleTouchMove, { capture: true, passive: false });
+    return () => {
+      node.removeEventListener('touchstart', handleTouchStart, true);
+      node.removeEventListener('touchmove', handleTouchMove, true);
+    };
+    // Rebind when the category changes so hit-testing uses its emotion set.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [activeKey]);
+
+  const panResponder = useMemo(
+    () =>
+      PanResponder.create({
+        onStartShouldSetPanResponder: () => COVER_GAMES.has(activeKey),
+        onMoveShouldSetPanResponder: (_, gesture) =>
+          COVER_GAMES.has(activeKey) && Math.abs(gesture.dx) + Math.abs(gesture.dy) > 4,
+        onPanResponderGrant: (event: GestureResponderEvent) => {
+          const local = localFromNative(event.nativeEvent);
+          recordScratchPoint(local.x, local.y, true);
+        },
+        onPanResponderMove: (event: GestureResponderEvent) => {
+          const local = localFromNative(event.nativeEvent);
+          recordScratchPoint(local.x, local.y);
+        },
+      }),
+    // Rebuild when the category changes so hit-testing uses the correct bowl set.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [activeKey],
+  );
 
   const catchFish = (emotionKey: string, index: number) => {
     if (scoopingFishKey || discoveredKeys.includes(emotionKey)) return;
     const column = index % 5;
     const row = Math.floor(index / 5);
-    const fishX = ((column + 0.5) * sceneSize.current.width) / 5;
+    const fishX = ((column + 0.5) * sceneBox.current.width) / 5;
     const fishY = 50 + row * 74;
     const netRingCenter = {
-      x: sceneSize.current.width - 88,
+      x: sceneBox.current.width - 88,
       y: 76,
     };
     setScoopingFishKey(emotionKey);
@@ -257,9 +367,9 @@ export function BowlDiscoveryScene({
   const waterEmotion = (emotionKey: string, index: number) => {
     if (wateringEmotionKey || discoveredKeys.includes(emotionKey)) return;
     const column = index % 4;
-    const patchX = ((column + 0.5) * sceneSize.current.width) / 4;
+    const patchX = ((column + 0.5) * sceneBox.current.width) / 4;
     const fromRight = column >= 2;
-    const streamOrigin = sceneSize.current.width / 2 + (fromRight ? 48 : -48);
+    const streamOrigin = sceneBox.current.width / 2 + (fromRight ? 48 : -48);
     setWateringEmotionKey(emotionKey);
     setWaterTarget({ fromRight, x: patchX - streamOrigin });
     waterPour.setValue(0);
@@ -309,139 +419,83 @@ export function BowlDiscoveryScene({
           style={styles.scene}
           onLayout={(event) => {
             const { width, height } = event.nativeEvent.layout;
-            sceneSize.current = { width, height };
+            sceneBox.current = { ...sceneBox.current, width, height };
+            sceneRef.current?.measureInWindow((x, y) => {
+              sceneBox.current = { x, y, width, height };
+            });
           }}
+          {...panResponder.panHandlers}
         >
-          {(activeKey === 'nervous' || activeKey === 'sad' || activeKey === 'unspoken') && (
-            <View style={styles.coverSearchField}>
+          {isCoverGame && (
+            <View pointerEvents="none" style={styles.sceneBowlField}>
               {categoryEmotions.map((item) => {
                 const found = discoveredKeys.includes(item.key);
                 const selected = item.key === emotion?.key;
+                const dense = categoryEmotions.length > 4;
                 return (
-                  <Pressable
+                  <View
                     key={item.key}
-                    testID={`cover-bowl-${item.key}`}
-                    accessibilityRole="button"
-                    accessibilityLabel={found ? item.label : `揭開${item.label}`}
-                    onPress={() => {
-                      if (found) onChoose(item);
-                      else discoverEmotion(item.key);
-                    }}
-                    style={({ pressed }) => [
-                      styles.coverTile,
-                      selected && { borderColor: active.accent },
-                      found && styles.coverTileFound,
-                      pressed && styles.pressed,
+                    testID={`scene-bowl-${item.key}`}
+                    style={[
+                      styles.sceneBowl,
+                      { width: dense ? '31%' : '46%' },
+                      found && styles.discoveredSceneBowl,
+                      selected && found && { borderColor: active.accent },
                     ]}
                   >
-                    <View style={{ opacity: found ? 1 : 0.28 }}>
-                      <EmotionVisual emotion={item} size={44} radius={RADIUS.sm} />
-                    </View>
+                    <EmotionVisual
+                      emotion={item}
+                      size={dense ? 46 : 58}
+                      radius={RADIUS.sm}
+                    />
                     {found ? (
                       <Text numberOfLines={1} style={styles.sceneBowlLabel}>
                         {item.label}
                       </Text>
-                    ) : (
-                      <>
-                        <View
-                          pointerEvents="none"
-                          style={[
-                            styles.coverTileMask,
-                            activeKey === 'nervous'
-                              ? styles.coverTileSand
-                              : activeKey === 'sad'
-                                ? styles.coverTileRain
-                                : styles.coverTileFog,
-                          ]}
-                        />
-                        <Text style={styles.coverTileHint}>
-                          {activeKey === 'nervous' ? '沙堆' : activeKey === 'sad' ? '雨點' : '霧'}
-                        </Text>
-                      </>
-                    )}
-                  </Pressable>
+                    ) : null}
+                  </View>
                 );
               })}
             </View>
           )}
 
           {activeKey === 'anger' && (
-            <View style={styles.balloonField}>
-              {categoryEmotions.map((item, index) => {
-                const popped = poppedBalloonKeys.includes(item.key);
-                const selected = item.key === selectedEmotionKey;
-                return (
-                  <Animated.View
-                    key={item.key}
-                    style={[
-                      styles.balloonSlot,
-                      {
-                        transform: [
-                          {
-                            translateX: balloonFloat.interpolate({
-                              inputRange: [0, 1],
-                              outputRange:
-                                index % 3 === 0
-                                  ? [-4, 5]
-                                  : index % 3 === 1
-                                    ? [4, -3]
-                                    : [-2, 4],
-                            }),
-                          },
-                          {
-                            translateY: balloonFloat.interpolate({
-                              inputRange: [0, 1],
-                              outputRange:
-                                index % 2 === 0 ? [7, -8] : [-6, 8],
-                            }),
-                          },
-                        ],
-                      },
-                    ]}
-                  >
-                    <Pressable
-                      testID={`anger-balloon-${item.key}`}
-                      accessibilityRole="button"
-                      accessibilityLabel={
-                        popped ? `${item.label}飯碗` : `第 ${index + 1} 個氣球`
-                      }
-                      onPress={() => {
-                        if (popped) onChoose(item);
-                        else popBalloon(item.key);
-                      }}
-                      style={({ pressed }) => [
-                        styles.miniBalloonPressable,
-                        pressed && styles.pressed,
-                      ]}
-                    >
-                      <View
-                        style={[
-                          styles.miniBalloon,
-                          { backgroundColor: item.color + 'E8' },
-                          popped && styles.miniBalloonPopped,
-                          selected && { borderColor: active.accent },
-                        ]}
-                      >
-                        {popped ? (
-                          <EmotionVisual emotion={item} size={58} radius={RADIUS.sm} />
-                        ) : (
-                          <View style={styles.miniBalloonShine} />
-                        )}
-                      </View>
-                      {!popped ? (
-                        <>
-                          <View style={[styles.miniBalloonKnot, { borderTopColor: item.color }]} />
-                          <View style={styles.miniBalloonString} />
-                        </>
-                      ) : (
-                        <Text numberOfLines={1} style={styles.poppedBalloonLabel}>
-                          {item.label}
-                        </Text>
-                      )}
-                    </Pressable>
-                  </Animated.View>
-                );
-              })}
+            <View pointerEvents="none" style={styles.interactionLayer}>
+              <SearchCover
+                kind="anger"
+                clearedCells={clearedCoverCells}
+                float={balloonFloat}
+              />
+              {clearedCoverCells.length === 0 && (
+                <Text style={styles.coverPrompt}>喺成片氣球裏面撥開 · 搵藏住嘅飯碗</Text>
+              )}
+            </View>
+          )}
+
+          {activeKey === 'nervous' && (
+            <View pointerEvents="none" style={styles.interactionLayer}>
+              <SearchCover kind="nervous" clearedCells={clearedCoverCells} />
+              {clearedCoverCells.length === 0 && (
+                <Text style={styles.coverPrompt}>用手指捽開成片沙 · 喺沙裏面搵碗</Text>
+              )}
+            </View>
+          )}
+
+          {activeKey === 'sad' && (
+            <View pointerEvents="none" style={styles.interactionLayer}>
+              <SearchCover kind="sad" clearedCells={clearedCoverCells} />
+              {clearedCoverCells.length === 0 && (
+                <Text style={styles.coverPrompt}>用手指抹走成片雨水 · 逐隻慢慢搵</Text>
+              )}
+            </View>
+          )}
+
+          {activeKey === 'unspoken' && (
+            <View pointerEvents="none" style={styles.interactionLayer}>
+              <SearchCover kind="unspoken" clearedCells={clearedCoverCells} />
+              {clearedCoverCells.length === 0 && (
+                <Text style={styles.coverPrompt}>用手指撥開成片霧 · 慢慢搵藏住嘅碗</Text>
+              )}
             </View>
           )}
 
@@ -715,6 +769,122 @@ export function BowlDiscoveryScene({
   );
 }
 
+function SearchCover({
+  kind,
+  clearedCells,
+  float,
+}: {
+  kind: 'anger' | 'nervous' | 'sad' | 'unspoken';
+  clearedCells: number[];
+  float?: Animated.Value;
+}) {
+  const { columns, rows } = coverGridFor(kind);
+  return (
+    <View pointerEvents="none" style={styles.coverGrid}>
+      {Array.from({ length: columns * rows }).map((_, index) => {
+        if (clearedCells.includes(index)) return null;
+        const column = index % columns;
+        const row = Math.floor(index / columns);
+        const left = (column * 100) / columns;
+        const top = (row * 100) / rows;
+
+        if (kind === 'anger') {
+          const size = 172 + ((index * 13) % 22);
+          const driftX = ((index * 11) % 9) - 4;
+          const driftY = ((index * 7) % 9) - 4;
+          const balloon = (
+            <View
+              testID={`cover-balloon-${index}`}
+              style={[
+                styles.coverBalloon,
+                {
+                  backgroundColor: BALLOON_COLORS[index % BALLOON_COLORS.length],
+                  height: `${size / rows}%`,
+                  left: `${left + driftX * 0.35}%`,
+                  top: `${top + driftY * 0.3}%`,
+                  width: `${size / columns}%`,
+                },
+              ]}
+            >
+              <View style={styles.coverBalloonShine} />
+            </View>
+          );
+          if (!float) return <React.Fragment key={index}>{balloon}</React.Fragment>;
+          return (
+            <Animated.View
+              key={index}
+              style={{
+                transform: [
+                  {
+                    translateY: float.interpolate({
+                      inputRange: [0, 1],
+                      outputRange: index % 2 === 0 ? [5, -6] : [-4, 6],
+                    }),
+                  },
+                  {
+                    translateX: float.interpolate({
+                      inputRange: [0, 1],
+                      outputRange: index % 3 === 0 ? [-3, 4] : [3, -3],
+                    }),
+                  },
+                ],
+              }}
+            >
+              {balloon}
+            </Animated.View>
+          );
+        }
+
+        return (
+          <View
+            key={index}
+            testID={`cover-cell-${index}`}
+            style={[
+              styles.coverCell,
+              {
+                backgroundColor:
+                  kind === 'nervous'
+                    ? index % 3 === 0
+                      ? '#DDBF7F'
+                      : index % 3 === 1
+                        ? '#E7CF9A'
+                        : '#D4B470'
+                    : kind === 'sad'
+                      ? index % 2 === 0
+                        ? '#D7E9F3'
+                        : '#C9E0EE'
+                      : index % 2 === 0
+                        ? '#E4E7EA'
+                        : '#D9DEE2',
+                height: `${100 / rows + 2.4}%`,
+                left: `${left}%`,
+                top: `${top}%`,
+                width: `${100 / columns + 2.4}%`,
+              },
+            ]}
+          >
+            {kind === 'nervous' && (
+              <>
+                <View style={[styles.sandGrain, { left: '24%', top: '28%' }]} />
+                <View style={[styles.sandGrain, { left: '68%', top: '62%' }]} />
+              </>
+            )}
+            {kind === 'sad' && (
+              <View
+                style={[
+                  styles.coverRainStreak,
+                  { left: `${28 + ((index * 17) % 42)}%` },
+                ]}
+              />
+            )}
+            {kind === 'unspoken' && <View style={styles.coverFogWisp} />}
+          </View>
+        );
+      })}
+    </View>
+  );
+}
+
 const styles = StyleSheet.create({
   eyebrow: {
     color: COLORS.textSecondary,
@@ -830,6 +1000,21 @@ const styles = StyleSheet.create({
     position: 'absolute',
     top: '14%',
     width: '136%',
+  },
+  coverBalloon: {
+    borderRadius: 999,
+    overflow: 'hidden',
+    position: 'absolute',
+  },
+  coverBalloonShine: {
+    backgroundColor: '#FFFFFF88',
+    borderRadius: RADIUS.pill,
+    height: '28%',
+    left: '22%',
+    position: 'absolute',
+    top: '16%',
+    transform: [{ rotate: '18deg' }],
+    width: '12%',
   },
   sceneBowlField: {
     ...StyleSheet.absoluteFillObject,
