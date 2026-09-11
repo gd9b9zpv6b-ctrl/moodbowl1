@@ -15,6 +15,7 @@ import {
 } from '@/src/constants/bowl-decorations';
 import type { Emotion } from '@/src/constants/emotions';
 import { COLORS, RADIUS } from '@/src/constants/theme';
+import { tapToPct } from '@/src/lib/ritual/decor-tap';
 
 type Props = {
   emotion?: Emotion | null;
@@ -32,9 +33,12 @@ type Props = {
   placing?: boolean;
 };
 
-function clampPct(n: number): number {
-  if (!Number.isFinite(n)) return 50;
-  return Math.max(5, Math.min(95, n));
+function windowScroll() {
+  if (typeof window === 'undefined') return { x: 0, y: 0 };
+  return {
+    x: window.scrollX || window.pageXOffset || 0,
+    y: window.scrollY || window.pageYOffset || 0,
+  };
 }
 
 /**
@@ -58,36 +62,22 @@ export function BowlWithDecor({
 
   const handlePlaceEvent = (e: GestureResponderEvent) => {
     if (!onPlace) return;
-    const { locationX, locationY, pageX, pageY } = e.nativeEvent;
-
-    const finish = (lx: number, ly: number, w: number, h: number) => {
-      const width = w > 0 ? w : size;
-      const height = h > 0 ? h : size;
-      onPlace(clampPct((lx / width) * 100), clampPct((ly / height) * 100));
+    const native = e.nativeEvent as GestureResponderEvent['nativeEvent'] & {
+      clientX?: number;
+      clientY?: number;
     };
 
-    // Prefer page coords + measure — CSS scale / Safari often report locationX/Y as 0
+    const apply = (box: { x: number; y: number; width: number; height: number }) => {
+      const pct = tapToPct(native, box, windowScroll());
+      onPlace(pct.x, pct.y);
+    };
+
     boxRef.current?.measureInWindow((wx, wy, w, h) => {
-      const hasPage =
-        typeof pageX === 'number' &&
-        typeof pageY === 'number' &&
-        Number.isFinite(pageX) &&
-        Number.isFinite(pageY);
-      if (hasPage && w > 0 && h > 0) {
-        finish(pageX - wx, pageY - wy, w, h);
+      if (w > 0 && h > 0) {
+        apply({ x: wx, y: wy, width: w, height: h });
         return;
       }
-      const locOk =
-        typeof locationX === 'number' &&
-        typeof locationY === 'number' &&
-        Number.isFinite(locationX) &&
-        Number.isFinite(locationY);
-      if (locOk) {
-        finish(locationX, locationY, w || size, h || size);
-        return;
-      }
-      // Fallback · center
-      finish(size / 2, size / 2, size, size);
+      apply({ x: 0, y: 0, width: size, height: size });
     });
   };
 
@@ -140,6 +130,8 @@ export function BowlWithDecor({
                 {
                   left: `${placed.x}%`,
                   top: `${placed.y}%`,
+                  width: emojiSize,
+                  height: emojiSize,
                   marginLeft: -emojiSize / 2,
                   marginTop: -emojiSize / 2,
                 },
@@ -159,6 +151,8 @@ export function BowlWithDecor({
               {
                 left: `${placed.x}%`,
                 top: `${placed.y}%`,
+                width: emojiSize,
+                height: emojiSize,
                 marginLeft: -emojiSize / 2,
                 marginTop: -emojiSize / 2,
               },
@@ -189,6 +183,8 @@ const styles = StyleSheet.create({
   sticker: {
     position: 'absolute',
     zIndex: 2,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   emptyBowl: {
     backgroundColor: COLORS.bgCard,
