@@ -43,3 +43,28 @@ export function isReleasingReleaseKey(
 ): boolean {
   return key === 'empty' || key === 'send_away' || key === 'wash' || key === 'let_flow';
 }
+
+/**
+ * Write attempts for `diaries.bowl_release`.
+ * `let_flow` is new · live DBs that still have migration 007 reject it.
+ * Fall back to retired `wash` (same releasing stance), then omit the column.
+ */
+export function bowlReleaseWriteAttempts(
+  key: BowlReleaseKey | null | undefined,
+): Array<BowlReleaseKey | null> {
+  if (!key) return [null];
+  if (key === 'let_flow') return ['let_flow', 'wash', null];
+  return [key, null];
+}
+
+export function isBowlReleaseConstraintError(
+  error: { message?: string; code?: string } | null | undefined,
+): boolean {
+  if (!error) return false;
+  const message = (error.message || '').toLowerCase();
+  if (error.code === '23514') return message.includes('bowl_release');
+  return (
+    message.includes('bowl_release') &&
+    (message.includes('check') || message.includes('violat') || message.includes('invalid'))
+  );
+}
