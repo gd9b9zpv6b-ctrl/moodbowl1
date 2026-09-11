@@ -1,6 +1,15 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { Animated, Easing, StyleSheet, Text, View } from 'react-native';
-import { Path, Rect, Svg } from 'react-native-svg';
+import {
+  Circle,
+  Defs,
+  Ellipse,
+  LinearGradient,
+  Path,
+  Rect,
+  Stop,
+  Svg,
+} from 'react-native-svg';
 
 import { BowlWithDecor } from '@/src/components/bowl-with-decor';
 import type { PlacedDecoration } from '@/src/constants/bowl-decorations';
@@ -17,6 +26,140 @@ type Props = {
   diaryMode?: boolean;
   onDone?: () => void;
 };
+
+/** Winding creek through the meadow · same path for water, sand, and current. */
+const RIVER =
+  'M-24 248 C46 214 86 276 148 246 C208 218 248 278 344 236';
+
+function CreekBackdrop({ flow }: { flow: Animated.AnimatedInterpolation<number> }) {
+  const currentA = flow.interpolate({
+    inputRange: [0, 1],
+    outputRange: [-30, 80],
+  });
+  const currentB = flow.interpolate({
+    inputRange: [0, 1],
+    outputRange: [-10, 110],
+  });
+  const sparkle = flow.interpolate({
+    inputRange: [0, 0.35, 0.7, 1],
+    outputRange: [0.2, 0.55, 0.25, 0.5],
+  });
+
+  return (
+    <View pointerEvents="none" style={StyleSheet.absoluteFill}>
+      <Svg height="100%" preserveAspectRatio="xMidYMid slice" viewBox="0 0 320 360" width="100%">
+        <Defs>
+          <LinearGradient id="creekSky" x1="0" x2="0" y1="0" y2="1">
+            <Stop offset="0" stopColor="#A9D8F0" />
+            <Stop offset="0.55" stopColor="#D4EDE0" />
+            <Stop offset="1" stopColor="#8FBF73" />
+          </LinearGradient>
+          <LinearGradient id="creekWater" x1="0" x2="0" y1="0" y2="1">
+            <Stop offset="0" stopColor="#9FDBEE" />
+            <Stop offset="0.4" stopColor="#5BB4CE" />
+            <Stop offset="1" stopColor="#2F87A6" />
+          </LinearGradient>
+        </Defs>
+
+        <Rect fill="url(#creekSky)" height="360" width="320" />
+        <Circle cx="262" cy="54" fill="#F8E7A6" opacity="0.95" r="20" />
+        <Circle cx="262" cy="54" fill="#FFF6C8" opacity="0.35" r="32" />
+
+        <Ellipse cx="78" cy="46" fill="#FFFFFF" opacity="0.55" rx="34" ry="12" />
+        <Ellipse cx="108" cy="42" fill="#FFFFFF" opacity="0.4" rx="22" ry="9" />
+        <Ellipse cx="196" cy="36" fill="#FFFFFF" opacity="0.45" rx="28" ry="10" />
+
+        <Path d="M-20 168 C70 128 130 176 210 142 C260 122 300 150 340 136 L340 220 L-20 220 Z" fill="#8FB89A" />
+        <Path d="M-20 186 C90 154 160 198 340 168 L340 230 L-20 230 Z" fill="#6F9F7E" />
+
+        <Path d="M0 176 C80 158 170 188 320 166 L320 360 L0 360 Z" fill="#8FBF73" />
+        <Path d="M0 214 C90 196 180 228 320 206 L320 360 L0 360 Z" fill="#74A85C" />
+        <Path d="M0 292 C120 274 200 310 320 288 L320 360 L0 360 Z" fill="#5E9148" />
+
+        <Path
+          d={RIVER}
+          fill="none"
+          stroke="#CDB892"
+          strokeLinecap="round"
+          strokeWidth="78"
+        />
+        <Path
+          d={RIVER}
+          fill="none"
+          stroke="#E6D3A8"
+          strokeLinecap="round"
+          strokeWidth="66"
+        />
+        <Path
+          d={RIVER}
+          fill="none"
+          stroke="url(#creekWater)"
+          strokeLinecap="round"
+          strokeWidth="52"
+        />
+        <Path
+          d={RIVER}
+          fill="none"
+          opacity="0.28"
+          stroke="#EAF8FF"
+          strokeLinecap="round"
+          strokeWidth="10"
+        />
+        <Path
+          d={RIVER}
+          fill="none"
+          opacity="0.22"
+          stroke="#1F6F88"
+          strokeLinecap="round"
+          strokeWidth="16"
+          strokeDasharray="10 18"
+        />
+
+        <Ellipse cx="38" cy="286" fill="#B7A58A" rx="16" ry="8" />
+        <Ellipse cx="58" cy="292" fill="#C8B59A" rx="10" ry="6" />
+        <Ellipse cx="92" cy="304" fill="#A99478" rx="14" ry="7" />
+        <Ellipse cx="246" cy="298" fill="#C2B093" rx="15" ry="7" />
+        <Ellipse cx="272" cy="308" fill="#B39E82" rx="11" ry="6" />
+        <Ellipse cx="168" cy="218" fill="#C9B89A" opacity="0.85" rx="9" ry="5" />
+
+        <Path d="M28 262 L31 214" stroke="#4F7A48" strokeLinecap="round" strokeWidth="3" />
+        <Ellipse cx="31" cy="210" fill="#3F6238" rx="7" ry="11" />
+        <Path d="M42 266 L46 222" stroke="#4F7A48" strokeLinecap="round" strokeWidth="3" />
+        <Ellipse cx="46" cy="218" fill="#466C3E" rx="6" ry="10" />
+        <Path d="M268 254 L272 206" stroke="#4F7A48" strokeLinecap="round" strokeWidth="3" />
+        <Ellipse cx="272" cy="202" fill="#3F6238" rx="7" ry="11" />
+        <Path d="M284 258 L289 214" stroke="#4F7A48" strokeLinecap="round" strokeWidth="3" />
+        <Ellipse cx="289" cy="210" fill="#466C3E" rx="6" ry="10" />
+
+        <Path d="M18 318 C28 300 40 300 48 318 Z" fill="#4F8A3E" />
+        <Path d="M70 328 C80 310 94 310 102 328 Z" fill="#457C36" />
+        <Path d="M210 322 C220 304 234 304 242 322 Z" fill="#4F8A3E" />
+        <Path d="M286 332 C296 314 310 314 318 332 Z" fill="#3F7030" />
+      </Svg>
+
+      <Animated.View
+        style={[
+          styles.currentLayer,
+          { opacity: sparkle, transform: [{ translateX: currentA }] },
+        ]}
+      >
+        <View style={[styles.glint, { left: 36, top: 18 }]} />
+        <View style={[styles.glint, styles.glintLong, { left: 110, top: 42 }]} />
+        <View style={[styles.glint, { left: 188, top: 8 }]} />
+      </Animated.View>
+      <Animated.View
+        style={[
+          styles.currentLayer,
+          { opacity: 0.35, transform: [{ translateX: currentB }] },
+        ]}
+      >
+        <View style={[styles.glint, styles.glintSoft, { left: 70, top: 30 }]} />
+        <View style={[styles.glint, styles.glintLong, { left: 150, top: 16 }]} />
+        <View style={[styles.glint, styles.glintSoft, { left: 230, top: 38 }]} />
+      </Animated.View>
+    </View>
+  );
+}
 
 /**
  * Stream ending: fold the bowl / diary page into a paper boat,
@@ -60,18 +203,18 @@ export function StreamDriftScene({
   }, [diaryMode, onDone, progress]);
 
   const craftX = progress.interpolate({
-    inputRange: [0, 0.42, 0.5, 1],
-    outputRange: [86, 78, 70, 248],
+    inputRange: [0, 0.42, 0.52, 0.72, 1],
+    outputRange: [78, 70, 64, 150, 248],
     extrapolate: 'clamp',
   });
   const craftY = progress.interpolate({
-    inputRange: [0, 0.36, 0.5, 0.72, 1],
-    outputRange: [-78, -70, 8, 2, 6],
+    inputRange: [0, 0.36, 0.5, 0.64, 0.8, 1],
+    outputRange: [-92, -84, 10, 22, 4, 14],
     extrapolate: 'clamp',
   });
   const bob = progress.interpolate({
     inputRange: [0.5, 0.62, 0.74, 0.86, 1],
-    outputRange: [0, 5, -4, 5, 0],
+    outputRange: [0, 6, -5, 6, 0],
     extrapolate: 'clamp',
   });
   const craftOpacity = progress.interpolate({
@@ -81,7 +224,12 @@ export function StreamDriftScene({
   });
   const craftScale = progress.interpolate({
     inputRange: [0, 0.1, 0.42, 0.7, 1],
-    outputRange: [0.92, 1, 1, 0.9, 0.6],
+    outputRange: [0.92, 1, 1, 0.88, 0.58],
+    extrapolate: 'clamp',
+  });
+  const craftTilt = progress.interpolate({
+    inputRange: [0.5, 0.64, 0.8, 1],
+    outputRange: ['0deg', '-8deg', '6deg', '-4deg'],
     extrapolate: 'clamp',
   });
 
@@ -116,25 +264,6 @@ export function StreamDriftScene({
     extrapolate: 'clamp',
   });
 
-  const rippleA = progress.interpolate({
-    inputRange: [0, 0.35, 0.7, 1],
-    outputRange: [0.15, 0.55, 0.2, 0.4],
-    extrapolate: 'clamp',
-  });
-  const rippleB = progress.interpolate({
-    inputRange: [0, 0.2, 0.55, 0.9],
-    outputRange: [0.4, 0.15, 0.6, 0.2],
-    extrapolate: 'clamp',
-  });
-  const rippleShift = progress.interpolate({
-    inputRange: [0, 1],
-    outputRange: [0, 36],
-  });
-  const leafX = progress.interpolate({
-    inputRange: [0, 1],
-    outputRange: [40, 220],
-  });
-
   const subject = emotion ? (
     <BowlWithDecor emotion={emotion} size={88} radius={RADIUS.md} decorations={decorations} />
   ) : (
@@ -146,50 +275,7 @@ export function StreamDriftScene({
   return (
     <View testID="stream-drift-scene" style={styles.card}>
       <View style={styles.stage}>
-        <View style={styles.sky} />
-        <View style={styles.hillFar} />
-        <View style={styles.hillNear} />
-
-        <View style={styles.creek}>
-          <View style={styles.water}>
-            <Svg height="100%" width="100%" viewBox="0 0 320 150" preserveAspectRatio="none">
-              <Path
-                d="M0 40 C40 18 70 62 110 40 C150 18 180 64 220 38 C260 16 290 58 320 36 L320 150 L0 150 Z"
-                fill="#7CB8C9"
-              />
-              <Path
-                d="M0 58 C50 38 80 78 130 56 C180 34 210 80 260 54 C290 40 310 70 320 58 L320 150 L0 150 Z"
-                fill="#6AADC2"
-              />
-            </Svg>
-          </View>
-          <Animated.View style={[styles.ripple, { opacity: rippleA, left: 36 }]} />
-          <Animated.View
-            style={[
-              styles.ripple,
-              styles.rippleWide,
-              { opacity: rippleB, left: 118, transform: [{ translateX: rippleShift }] },
-            ]}
-          />
-          <Animated.View
-            style={[
-              styles.ripple,
-              { opacity: rippleA, left: 210, top: 28, transform: [{ translateX: rippleShift }] },
-            ]}
-          />
-          <Animated.View
-            style={[styles.leaf, { transform: [{ translateX: leafX }, { translateY: bob }] }]}
-          />
-        </View>
-
-        <View style={styles.bankFar} />
-        <View style={styles.bankNear} />
-        <View style={styles.reedLeft} />
-        <View style={styles.reedLeftHead} />
-        <View style={styles.reedRight} />
-        <View style={styles.reedRightHead} />
-        <View style={styles.pebbleA} />
-        <View style={styles.pebbleB} />
+        <CreekBackdrop flow={progress} />
 
         <Animated.View
           testID="stream-fold-craft"
@@ -200,6 +286,7 @@ export function StreamDriftScene({
               transform: [
                 { translateX: craftX },
                 { translateY: Animated.add(craftY, bob) },
+                { rotate: craftTilt },
                 { scale: craftScale },
               ],
             },
@@ -226,9 +313,9 @@ export function StreamDriftScene({
                 stroke="#E6D9C2"
                 strokeWidth="1.6"
               />
-              <Path d="M22 26 H98" stroke="#E4D4B8" strokeWidth="3" strokeLinecap="round" />
-              <Path d="M22 40 H86" stroke="#E4D4B8" strokeWidth="3" strokeLinecap="round" />
-              <Path d="M22 54 H74" stroke="#E4D4B8" strokeWidth="3" strokeLinecap="round" />
+              <Path d="M22 26 H98" stroke="#E4D4B8" strokeLinecap="round" strokeWidth="3" />
+              <Path d="M22 40 H86" stroke="#E4D4B8" strokeLinecap="round" strokeWidth="3" />
+              <Path d="M22 54 H74" stroke="#E4D4B8" strokeLinecap="round" strokeWidth="3" />
             </Svg>
             <Animated.View style={[styles.crease, { opacity: creaseOpacity }]} />
           </Animated.View>
@@ -246,12 +333,7 @@ export function StreamDriftScene({
               <Path d="M10 22 L60 38 L110 22 L86 22 L60 8 L34 22 Z" fill="#F4E6C8" />
               <Path d="M34 22 L60 8 L86 22 Z" fill="#E9D4A8" />
               <Path d="M18 22 L60 34 L102 22 L86 22 L60 14 L34 22 Z" fill="#FBF3DE" />
-              <Path
-                d="M10 22 L60 38 L110 22"
-                fill="none"
-                stroke="#D7C39A"
-                strokeWidth={1.4}
-              />
+              <Path d="M10 22 L60 38 L110 22" fill="none" stroke="#D7C39A" strokeWidth={1.4} />
             </Svg>
           </Animated.View>
         </Animated.View>
@@ -263,151 +345,45 @@ export function StreamDriftScene({
 
 const styles = StyleSheet.create({
   card: {
-    backgroundColor: '#E4F1EA',
+    backgroundColor: '#D7EBDF',
     borderRadius: RADIUS.lg,
     overflow: 'hidden',
     padding: SPACING.md,
     width: '100%',
   },
   stage: {
-    backgroundColor: '#CDE6F2',
+    backgroundColor: '#A9D8F0',
     borderRadius: RADIUS.md,
     height: 360,
     overflow: 'hidden',
     position: 'relative',
     width: '100%',
   },
-  sky: {
-    ...StyleSheet.absoluteFillObject,
-    backgroundColor: '#CDE6F2',
-  },
-  hillFar: {
-    backgroundColor: '#A7C9B4',
-    borderRadius: 80,
+  currentLayer: {
     height: 90,
-    left: -24,
-    position: 'absolute',
-    top: 78,
-    width: '62%',
-  },
-  hillNear: {
-    backgroundColor: '#8FB89F',
-    borderRadius: 90,
-    height: 80,
-    position: 'absolute',
-    right: -30,
-    top: 96,
-    width: '58%',
-  },
-  creek: {
-    bottom: 42,
-    height: 148,
-    left: 0,
-    overflow: 'hidden',
-    position: 'absolute',
-    right: 0,
-  },
-  water: {
-    ...StyleSheet.absoluteFillObject,
-  },
-  ripple: {
-    backgroundColor: '#FFFFFF55',
-    borderRadius: RADIUS.pill,
-    height: 8,
-    left: 40,
-    position: 'absolute',
-    top: 46,
-    width: 54,
-  },
-  rippleWide: {
-    height: 10,
-    top: 72,
-    width: 78,
-  },
-  leaf: {
-    backgroundColor: '#7FA889',
-    borderRadius: 8,
-    height: 10,
-    left: 0,
-    position: 'absolute',
-    top: 88,
-    width: 16,
-  },
-  bankFar: {
-    backgroundColor: '#B7D4A8',
-    borderTopLeftRadius: 40,
-    borderTopRightRadius: 40,
-    height: 36,
     left: 0,
     position: 'absolute',
     right: 0,
-    top: 168,
+    top: 206,
   },
-  bankNear: {
-    backgroundColor: '#9FCA8C',
-    bottom: 0,
-    height: 52,
-    left: 0,
-    position: 'absolute',
-    right: 0,
-  },
-  reedLeft: {
-    backgroundColor: '#5E8F62',
+  glint: {
+    backgroundColor: '#F4FCFF',
     borderRadius: RADIUS.pill,
-    bottom: 46,
-    height: 54,
-    left: 22,
+    height: 5,
     position: 'absolute',
-    width: 6,
+    width: 28,
   },
-  reedLeftHead: {
-    backgroundColor: '#4F7348',
-    borderRadius: RADIUS.pill,
-    bottom: 92,
-    height: 16,
-    left: 18,
-    position: 'absolute',
-    width: 14,
+  glintLong: {
+    height: 6,
+    width: 46,
   },
-  reedRight: {
-    backgroundColor: '#5E8F62',
-    borderRadius: RADIUS.pill,
-    bottom: 50,
-    height: 62,
-    position: 'absolute',
-    right: 28,
-    width: 6,
-  },
-  reedRightHead: {
-    backgroundColor: '#4F7348',
-    borderRadius: RADIUS.pill,
-    bottom: 104,
-    height: 16,
-    position: 'absolute',
-    right: 24,
-    width: 14,
-  },
-  pebbleA: {
-    backgroundColor: '#C5B8A4',
-    borderRadius: RADIUS.pill,
-    bottom: 18,
-    height: 14,
-    left: 48,
-    position: 'absolute',
-    width: 22,
-  },
-  pebbleB: {
-    backgroundColor: '#B7A894',
-    borderRadius: RADIUS.pill,
-    bottom: 16,
-    height: 12,
-    position: 'absolute',
-    right: 64,
-    width: 18,
+  glintSoft: {
+    backgroundColor: '#D7F3FA',
+    width: 34,
   },
   craftWrap: {
     alignItems: 'center',
-    bottom: 78,
+    bottom: 86,
     height: 120,
     justifyContent: 'center',
     left: 0,
