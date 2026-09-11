@@ -73,7 +73,7 @@ const HOLD_MS = 4200;
 const FADE_MS = 750;
 
 /**
- * 「同碗睇啲嘢」· soft photo slideshow with cinematic crossfade.
+ * 「一齊睇溫柔畫面」· soft photo slideshow with cinematic crossfade.
  */
 export function SoftScenes({ visible, onClose, onComplete }: Props) {
   const [index, setIndex] = useState(0);

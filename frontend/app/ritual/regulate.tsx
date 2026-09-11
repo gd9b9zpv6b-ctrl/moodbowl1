@@ -9,6 +9,7 @@ import {
   RegulateStateStage,
   STATE_REACTION,
 } from '@/src/components/regulate-state-stage';
+import { RegulateActivityIcon } from '@/src/components/regulation/activity-icon';
 import { AffirmationSlideshow } from '@/src/components/regulation/affirmation-slideshow';
 import { BoxBreathing } from '@/src/components/regulation/box-breathing';
 import { Breath478 } from '@/src/components/regulation/breath-4-7-8';
@@ -77,7 +78,7 @@ const ACTIVITY_LABELS: Record<AgeGroup, Record<string, string>> = {
     punch_bag: '大力撳沙包！',
     ice_breath: '凍凍哋呼吸',
     box_breathing: '畫個四方唞氣',
-    soft_scenes: '睇得意動物／風景',
+    soft_scenes: '打開小窗睇風景',
     slideshow_affirmations: '聽溫柔小故事',
     soft_breath: '慢慢唞一陣',
     grounding_5_4_3_2_1: '玩 5-4-3-2-1',
@@ -92,7 +93,7 @@ const ACTIVITY_LABELS: Record<AgeGroup, Record<string, string>> = {
     punch_bag: '打沙包 · 撳快啲',
     ice_breath: '冰塊呼吸 · 4-7-8',
     box_breathing: '冷靜 box breathing',
-    soft_scenes: '靚靚風景／小動物',
+    soft_scenes: '打開小窗 · 睇溫柔畫面',
     slideshow_affirmations: '溫柔小故事',
     soft_breath: '慢慢唞一陣',
     grounding_5_4_3_2_1: '五感 5-4-3-2-1',
@@ -107,7 +108,7 @@ const ACTIVITY_LABELS: Record<AgeGroup, Record<string, string>> = {
     punch_bag: '釋放 · 打沙包',
     ice_breath: '冰塊呼吸引導',
     box_breathing: 'Box breathing',
-    soft_scenes: '溫柔畫面',
+    soft_scenes: '打開小窗睇溫柔畫面',
     slideshow_affirmations: '溫柔金句',
     soft_breath: '慢慢呼吸',
     grounding_5_4_3_2_1: '五感 grounding',
@@ -215,7 +216,7 @@ export default function RitualRegulateScreen() {
               ]}
             >
               <View style={[styles.activityIcon, { backgroundColor: reaction.tint }]}>
-                <Text style={styles.activityEmoji}>{reaction.emoji}</Text>
+                <RegulateActivityIcon activityKey={a.key} size={30} />
               </View>
               <Text style={styles.activityLabel}>{labels[a.key] || a.key}</Text>
               {done ? (
@@ -335,7 +336,6 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
   },
-  activityEmoji: { fontSize: 20 },
   activityLabel: { flex: 1, fontSize: 15, fontWeight: '700', color: COLORS.textPrimary },
   skip: { alignItems: 'center', paddingVertical: SPACING.md, marginTop: SPACING.sm },
   skipText: { fontSize: 14, fontWeight: '700', color: COLORS.textSecondary },

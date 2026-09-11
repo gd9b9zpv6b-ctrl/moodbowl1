@@ -343,7 +343,7 @@ export const WORDING: Record<WordingMode, WordingPack> = {
       keep_hug: '放入盒 · 鎖好……',
     },
     release_finish: '搞掂 · 儲存',
-    release_regulate: '陪碗做啲嘢',
+    release_regulate: '碗陪你一陣',
     release_share_heading: '想唔想有人留意吓你?',
     release_done_title: '你搞掂啦',
     release_done_sub: (m) => `你今日肯坐低同自己相處咗 ${m} 分鐘 · 好厲害 · 好棒`,
@@ -353,7 +353,7 @@ export const WORDING: Record<WordingMode, WordingPack> = {
     release_smile_done: '多謝你嘅笑',
     release_home: '回主頁',
     regulate_skip: '唔洗 · 我 OK',
-    regulate_eyebrow: '陪碗做啲嘢',
+    regulate_eyebrow: '碗陪你一陣',
     regulate_sub_by_state: {
       sympathetic_fire: '你好似有啲熱辣辣 · 嚟！一齊用力出氣',
       dorsal_sad: '你好似有啲唔開心 · 一齊睇吓得意畫面',
@@ -396,7 +396,7 @@ export const WORDING: Record<WordingMode, WordingPack> = {
     /** Companion job titles · same as upper · age live in sub lines. */
     regulate_by_state: {
       sympathetic_fire: '同碗一齊發洩',
-      dorsal_sad: '同碗睇啲嘢',
+      dorsal_sad: '一齊睇溫柔畫面',
       sympathetic_anxious: '碗陪你落地',
       dorsal_freeze: '碗想搞醒你',
       ventral_regulated: '留住呢個瞬間',
@@ -483,7 +483,7 @@ export const WORDING: Record<WordingMode, WordingPack> = {
       keep_hug: '放入盒 · 鎖好……',
     },
     release_finish: '搞掂 · 儲存',
-    release_regulate: '陪碗做啲嘢',
+    release_regulate: '碗陪你一陣',
     release_share_heading: '想唔想有人留意吓你?',
     release_done_title: '你搞掂啦',
     release_done_sub: (m) => `你今日肯坐低同自己相處咗 ${m} 分鐘 · 好厲害 · 好棒`,
@@ -493,7 +493,7 @@ export const WORDING: Record<WordingMode, WordingPack> = {
     release_smile_done: '多謝你嘅笑',
     release_home: '回主頁',
     regulate_skip: '唔洗 · 我 OK',
-    regulate_eyebrow: '陪碗做啲嘢',
+    regulate_eyebrow: '碗陪你一陣',
     regulate_sub_by_state: {
       sympathetic_fire: '睇落你有啲熱辣辣 · 一齊發洩同慢慢呼吸',
       dorsal_sad: '睇落有啲重 · 一齊睇啲溫柔得意嘅畫面',
@@ -536,7 +536,7 @@ export const WORDING: Record<WordingMode, WordingPack> = {
     },
     regulate_by_state: {
       sympathetic_fire: '同碗一齊發洩',
-      dorsal_sad: '同碗睇啲嘢',
+      dorsal_sad: '一齊睇溫柔畫面',
       sympathetic_anxious: '碗陪你落地',
       dorsal_freeze: '碗想搞醒你',
       ventral_regulated: '留住呢個瞬間',
@@ -623,7 +623,7 @@ export const WORDING: Record<WordingMode, WordingPack> = {
       keep_hug: '放入盒 · 鎖好……',
     },
     release_finish: '儲存打卡',
-    release_regulate: '陪自己做啲調節',
+    release_regulate: '陪自己一陣',
     release_share_heading: '想唔想有人留意吓你?',
     release_done_title: '你搞掂啦',
     release_done_sub: (m) => `你今日肯坐低同自己相處咗 ${m} 分鐘 · 好厲害 · 好棒`,
@@ -633,7 +633,7 @@ export const WORDING: Record<WordingMode, WordingPack> = {
     release_smile_done: '多謝你嘅笑',
     release_home: '回主頁',
     regulate_skip: '暫時唔使 · 我 OK',
-    regulate_eyebrow: '陪自己做啲調節',
+    regulate_eyebrow: '陪自己一陣',
     regulate_sub_by_state: {
       sympathetic_fire: '身體有啲被点燃 · 一齊釋放同呼吸',
       dorsal_sad: '能量偏低 · 一齊睇啲溫柔畫面托住自己',
@@ -675,7 +675,7 @@ export const WORDING: Record<WordingMode, WordingPack> = {
     },
     regulate_by_state: {
       sympathetic_fire: '一齊釋放一下',
-      dorsal_sad: '睇啲溫柔嘅畫面',
+      dorsal_sad: '一齊睇溫柔畫面',
       sympathetic_anxious: '陪你慢慢落地',
       dorsal_freeze: '輕輕搞醒少少感覺',
       ventral_regulated: '留住呢個瞬間',
