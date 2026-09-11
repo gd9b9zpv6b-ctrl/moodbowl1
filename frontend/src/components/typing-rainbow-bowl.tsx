@@ -225,7 +225,7 @@ export function TypingRainbowBowl({
       ) : null}
 
       <Animated.View style={{ transform: [{ scale: pulse }] }}>
-        <View style={[styles.bowlClip, { width: size, height: size, borderRadius: RADIUS.lg }]}>
+        <View style={[styles.bowlClip, { width: size, height: size }]}>
           {emotion ? (
             <EmotionVisual emotion={emotion} size={size} radius={RADIUS.lg} />
           ) : (
@@ -400,6 +400,7 @@ const styles = StyleSheet.create({
     overflow: 'visible',
     alignItems: 'center',
     justifyContent: 'center',
+    backgroundColor: 'transparent',
   },
   emptyBowl: {
     borderRadius: RADIUS.lg,

@@ -13,6 +13,7 @@ import {
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
+import { BowlHabitat } from '@/src/components/ritual/bowl-habitat';
 import {
   TypingRainbowBowl,
   TypingRainbowProgress,
@@ -68,7 +69,9 @@ export default function RitualTalkScreen() {
           showsVerticalScrollIndicator={false}
         >
           <View style={styles.bowlBlock}>
-            <TypingRainbowBowl emotion={emotion} charCount={count} size={140} />
+            <BowlHabitat category={emotion?.category}>
+              <TypingRainbowBowl emotion={emotion} charCount={count} size={140} />
+            </BowlHabitat>
             <View style={styles.speech}>
               <Text style={styles.speechText}>{w.talk_speech}</Text>
             </View>

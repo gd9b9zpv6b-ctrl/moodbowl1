@@ -14,7 +14,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { BodyScanFigure } from '@/src/components/body-scan-figure';
 import { FoodOfferVisual } from '@/src/components/food-offer-visual';
 import { ProgressDots } from '@/src/components/progress-dots';
-import { RitualDiaryFooter } from '@/src/components/ritual-diary-escape';
+import { RitualDiaryEscape } from '@/src/components/ritual-diary-escape';
 import {
   BODY_CHIPS,
   type BodyChipKey,
@@ -126,6 +126,7 @@ export default function RitualBodyScreen() {
           >
             <Text style={styles.skip}>{w.body_skip}</Text>
           </Pressable>
+          <RitualDiaryEscape />
         </View>
       </View>
 
@@ -219,7 +220,6 @@ export default function RitualBodyScreen() {
           <Text style={styles.ctaText}>{w.body_cta}</Text>
         </Pressable>
       </ScrollView>
-      <RitualDiaryFooter />
     </SafeAreaView>
   );
 }
@@ -242,7 +242,7 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   skip: { fontSize: 12, color: COLORS.textSecondary, fontWeight: '600', textAlign: 'right' },
-  headerRight: { alignItems: 'flex-end', gap: 2, maxWidth: 110 },
+  headerRight: { alignItems: 'flex-end', gap: 4, maxWidth: 128 },
   scroll: { paddingHorizontal: SPACING.lg, paddingBottom: SPACING.xxl },
   title: {
     fontSize: 22,

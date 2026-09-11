@@ -17,6 +17,8 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { BowlWithDecor } from '@/src/components/bowl-with-decor';
 import { ReleaseActionAnim } from '@/src/components/release-action-anim';
+import { DiaryRitualScene, diaryRitualForRelease } from '@/src/components/ritual/diary-ritual-scene';
+import { StreamDriftScene } from '@/src/components/ritual/stream-drift-scene';
 import { STATE_REACTION } from '@/src/components/regulate-state-stage';
 import { encodeDecorations } from '@/src/constants/bowl-decorations';
 import {
@@ -33,6 +35,7 @@ import {
 import { wordingFor } from '@/src/lib/i18n/wording-mode';
 import { pickPraise } from '@/src/lib/ritual/praise-pool';
 import { detectState } from '@/src/lib/ritual/state-detector';
+import { usesStreamDriftScene } from '@/src/lib/ritual/stream-drift';
 import { useRitualStore } from '@/src/lib/ritual/ritual-store';
 
 const SMILE_HOLD_MS = 2000;
@@ -280,17 +283,34 @@ export default function RitualReleaseScreen() {
   }
 
   if (phase === 'anim' && picked) {
+    const paperRitual = diaryRitualForRelease(picked);
     return (
       <SafeAreaView style={styles.safe} edges={['top', 'bottom']}>
         <View style={styles.animWrap}>
-          <ReleaseActionAnim
-            action={picked}
-            emotion={emotion}
-            decorations={decorations}
-            diaryMode={!hasBowl}
-            caption={animCaptions[picked]}
-            onDone={onAnimDone}
-          />
+          {usesStreamDriftScene(picked) ? (
+            <StreamDriftScene
+              emotion={emotion}
+              decorations={decorations}
+              diaryMode={!hasBowl}
+              onDone={onAnimDone}
+            />
+          ) : paperRitual ? (
+            <DiaryRitualScene
+              ritual={paperRitual}
+              emotion={emotion}
+              caption={animCaptions[picked]}
+              onDone={onAnimDone}
+            />
+          ) : (
+            <ReleaseActionAnim
+              action={picked}
+              emotion={emotion}
+              decorations={decorations}
+              diaryMode={!hasBowl}
+              caption={animCaptions[picked]}
+              onDone={onAnimDone}
+            />
+          )}
           <Pressable
             testID="release-anim-skip"
             onPress={onAnimDone}
@@ -532,7 +552,8 @@ const styles = StyleSheet.create({
     flex: 1,
     alignItems: 'center',
     justifyContent: 'center',
-    paddingHorizontal: SPACING.lg,
+    paddingHorizontal: SPACING.md,
+    width: '100%',
   },
   animSkip: {
     marginTop: SPACING.lg,

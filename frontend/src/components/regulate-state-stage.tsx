@@ -1,6 +1,7 @@
 import { useEffect, useRef } from 'react';
 import { Animated, Easing, StyleSheet, Text, View } from 'react-native';
 
+import { WatchWindowIcon } from '@/src/components/regulation/activity-icon';
 import type { NSState } from '@/src/lib/ritual/state-detector';
 import { COLORS, RADIUS, SPACING } from '@/src/constants/theme';
 
@@ -16,7 +17,7 @@ export const STATE_REACTION: Record<
     pulseMs: 420,
   },
   dorsal_sad: {
-    emoji: '💧',
+    emoji: '🪟',
     tint: '#E0F2FE',
     accent: '#38BDF8',
     feel: '有啲重',
@@ -122,14 +123,18 @@ export function RegulateStateStage({ state, title, subtitle }: Props) {
       <Text style={[styles.feelChip, { backgroundColor: meta.accent }]}>
         碗 feel 到 · {meta.feel}
       </Text>
-      <Animated.Text
+      <Animated.View
         style={[
-          styles.emoji,
+          styles.mark,
           { transform: [{ scale: pulse }, { translateY }] },
         ]}
       >
-        {meta.emoji}
-      </Animated.Text>
+        {state === 'dorsal_sad' ? (
+          <WatchWindowIcon size={72} />
+        ) : (
+          <Text style={styles.emoji}>{meta.emoji}</Text>
+        )}
+      </Animated.View>
       <Text testID="regulate-state-title" style={styles.title}>
         {title}
       </Text>
@@ -159,9 +164,14 @@ const styles = StyleSheet.create({
     marginBottom: SPACING.md,
     overflow: 'hidden',
   },
+  mark: {
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginBottom: SPACING.sm,
+    minHeight: 72,
+  },
   emoji: {
     fontSize: 64,
-    marginBottom: SPACING.sm,
   },
   title: {
     fontSize: 22,
