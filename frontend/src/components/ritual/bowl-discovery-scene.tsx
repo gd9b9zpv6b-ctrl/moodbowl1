@@ -419,7 +419,12 @@ export function BowlDiscoveryScene({
         <View
           ref={sceneRef}
           testID={`discovery-stage-${activeKey}`}
-          style={styles.scene}
+          style={[
+            styles.scene,
+            activeKey === 'nervous' && styles.sceneSand,
+            activeKey === 'unspoken' && styles.sceneFog,
+            activeKey === 'sad' && styles.sceneRain,
+          ]}
           onLayout={(event) => {
             const { width, height } = event.nativeEvent.layout;
             sceneBox.current = { ...sceneBox.current, width, height };
@@ -433,7 +438,6 @@ export function BowlDiscoveryScene({
             <View pointerEvents="none" style={styles.sceneBowlField}>
               {categoryEmotions.map((item) => {
                 const found = discoveredKeys.includes(item.key);
-                const selected = item.key === emotion?.key;
                 const dense = categoryEmotions.length > 4;
                 return (
                   <View
@@ -442,8 +446,6 @@ export function BowlDiscoveryScene({
                     style={[
                       styles.sceneBowl,
                       { width: dense ? '31%' : '46%' },
-                      found && styles.discoveredSceneBowl,
-                      selected && found && { borderColor: active.accent },
                     ]}
                   >
                     <EmotionVisual
@@ -945,7 +947,6 @@ const styles = StyleSheet.create({
   pressed: { opacity: 0.85 },
   stageCard: {
     borderRadius: RADIUS.lg,
-    overflow: 'hidden',
     padding: SPACING.md,
   },
   stageHeader: { alignItems: 'center', flexDirection: 'row', gap: SPACING.sm },
@@ -974,8 +975,7 @@ const styles = StyleSheet.create({
   },
   scene: {
     alignItems: 'center',
-    backgroundColor: '#FFFFFF88',
-    borderRadius: RADIUS.md,
+    backgroundColor: 'transparent',
     minHeight: 400,
     height: 400,
     justifyContent: 'center',
@@ -984,6 +984,9 @@ const styles = StyleSheet.create({
     position: 'relative',
     touchAction: 'none',
   },
+  sceneSand: { backgroundColor: '#E8D19A' },
+  sceneFog: { backgroundColor: '#E4E7EA' },
+  sceneRain: { backgroundColor: '#D4E6F0' },
   interactionLayer: {
     ...StyleSheet.absoluteFillObject,
     zIndex: 2,
@@ -1035,15 +1038,11 @@ const styles = StyleSheet.create({
   warmBowlField: { paddingTop: 96 },
   sceneBowl: {
     alignItems: 'center',
-    borderColor: 'transparent',
-    borderRadius: RADIUS.sm,
-    borderWidth: 2,
     justifyContent: 'center',
     marginVertical: 2,
     minHeight: 58,
     padding: 3,
   },
-  discoveredSceneBowl: { backgroundColor: '#FFFFFFCC' },
   sceneBowlLabel: {
     color: COLORS.textPrimary,
     fontSize: 9,
