@@ -8,7 +8,7 @@ export type DiaryRitualKey = 'release' | 'share' | 'garden' | 'lock' | 'later';
  *
  * `share` (envelope) is reserved for a future send-to-adult flow —
  * notify-teacher is a switch, not a release ending.
- * `let_flow` (and retired `wash` rows) play the creek scene, not paper folding.
+ * `let_flow` (and retired `wash` rows) fold a paper boat, then drift on the creek.
  */
 export const DIARY_RITUAL_FOR_RELEASE: Record<BowlReleaseKey, DiaryRitualKey | null> = {
   empty: 'garden',

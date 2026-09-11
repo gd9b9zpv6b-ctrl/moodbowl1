@@ -1,12 +1,22 @@
-/** Timing + copy for the creek / paper-boat release. */
+/** Timing + copy for fold-a-boat, then let it drift. */
 
-export const STREAM_DURATION_MS = 5200;
+export const STREAM_DURATION_MS = 6800;
+
+export type StreamPhase = 'page' | 'folding' | 'boat' | 'drifting';
+
+export function streamPhaseForProgress(progress: number): StreamPhase {
+  if (progress < 0.14) return 'page';
+  if (progress < 0.42) return 'folding';
+  if (progress < 0.52) return 'boat';
+  return 'drifting';
+}
 
 export function streamCaptionForProgress(progress: number, diaryMode = false): string {
-  if (progress < 0.16) return diaryMode ? '摺成紙船……' : '輕輕放到水面……';
-  if (progress < 0.42) return diaryMode ? '放入小河……' : '放入小河……';
-  if (progress < 0.78) return '等佢自己漂走……';
-  return diaryMode ? '紙船漂遠咗' : '漂遠咗 · 流水帶走';
+  const phase = streamPhaseForProgress(progress);
+  if (phase === 'page') return diaryMode ? '攤開呢頁……' : '攤開一張紙……';
+  if (phase === 'folding') return '摺成一隻紙船……';
+  if (phase === 'boat') return '放入小河……';
+  return diaryMode ? '紙船漂遠咗' : '紙船漂遠咗 · 流水帶走';
 }
 
 /** New picker key, plus retired wash rows that still play this scene. */

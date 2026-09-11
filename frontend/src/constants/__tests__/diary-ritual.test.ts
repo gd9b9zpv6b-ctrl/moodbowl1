@@ -48,7 +48,8 @@ describe('release paper-ritual copy', () => {
       expect(pack.release_actions.set_aside.label).toContain('書枱');
       expect(pack.release_actions.send_away.label).toContain('紙飛機');
       expect(pack.release_actions.keep_hug.label).toContain('鎖');
-      expect(pack.release_actions.let_flow.label.length).toBeGreaterThan(0);
+      expect(pack.release_actions.let_flow.label).toContain('紙船');
+      expect(pack.release_actions.let_flow.hint).toMatch(/摺|船/);
       expect(pack.release_actions.let_flow.label).not.toMatch(/洗|沖涼/);
       expect(pack.release_actions.wash.label.length).toBeGreaterThan(0);
       expect(pack.pick_direct.length).toBeGreaterThan(0);

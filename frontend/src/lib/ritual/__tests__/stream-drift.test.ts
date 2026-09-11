@@ -2,21 +2,31 @@ import { describe, expect, it } from 'vitest';
 
 import {
   streamCaptionForProgress,
+  streamPhaseForProgress,
   usesStreamDriftScene,
 } from '../stream-drift';
 
+describe('streamPhaseForProgress', () => {
+  it('folds a boat before the craft starts drifting', () => {
+    expect(streamPhaseForProgress(0)).toBe('page');
+    expect(streamPhaseForProgress(0.28)).toBe('folding');
+    expect(streamPhaseForProgress(0.46)).toBe('boat');
+    expect(streamPhaseForProgress(0.7)).toBe('drifting');
+  });
+});
+
 describe('streamCaptionForProgress', () => {
-  it('walks the bowl from the bank to drifting away', () => {
-    expect(streamCaptionForProgress(0)).toBe('輕輕放到水面……');
-    expect(streamCaptionForProgress(0.25)).toBe('放入小河……');
-    expect(streamCaptionForProgress(0.55)).toBe('等佢自己漂走……');
-    expect(streamCaptionForProgress(0.9)).toBe('漂遠咗 · 流水帶走');
+  it('names the fold first, then the drift', () => {
+    expect(streamCaptionForProgress(0)).toBe('攤開一張紙……');
+    expect(streamCaptionForProgress(0.28)).toBe('摺成一隻紙船……');
+    expect(streamCaptionForProgress(0.46)).toBe('放入小河……');
+    expect(streamCaptionForProgress(0.8)).toBe('紙船漂遠咗 · 流水帶走');
   });
 
-  it('uses a paper-boat line in diary mode', () => {
-    expect(streamCaptionForProgress(0, true)).toBe('摺成紙船……');
-    expect(streamCaptionForProgress(0.25, true)).toBe('放入小河……');
-    expect(streamCaptionForProgress(0.9, true)).toBe('紙船漂遠咗');
+  it('uses the diary page when there is no bowl', () => {
+    expect(streamCaptionForProgress(0, true)).toBe('攤開呢頁……');
+    expect(streamCaptionForProgress(0.28, true)).toBe('摺成一隻紙船……');
+    expect(streamCaptionForProgress(0.8, true)).toBe('紙船漂遠咗');
   });
 });
 

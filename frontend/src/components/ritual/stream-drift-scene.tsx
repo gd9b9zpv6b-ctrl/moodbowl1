@@ -1,6 +1,6 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { Animated, Easing, StyleSheet, Text, View } from 'react-native';
-import { Path, Svg } from 'react-native-svg';
+import { Path, Rect, Svg } from 'react-native-svg';
 
 import { BowlWithDecor } from '@/src/components/bowl-with-decor';
 import type { PlacedDecoration } from '@/src/constants/bowl-decorations';
@@ -19,8 +19,8 @@ type Props = {
 };
 
 /**
- * Stream ending: set the bowl (or a folded paper boat) on a creek
- * and let the current carry it out of sight.
+ * Stream ending: fold the bowl / diary page into a paper boat,
+ * set it on the creek, then let the current carry it away.
  */
 export function StreamDriftScene({
   emotion,
@@ -59,31 +59,63 @@ export function StreamDriftScene({
     };
   }, [diaryMode, onDone, progress]);
 
-  const boatX = progress.interpolate({
-    inputRange: [0, 0.14, 1],
-    outputRange: [18, 28, 248],
+  const craftX = progress.interpolate({
+    inputRange: [0, 0.42, 0.5, 1],
+    outputRange: [86, 78, 70, 248],
     extrapolate: 'clamp',
   });
-  const boatY = progress.interpolate({
-    inputRange: [0, 0.22, 0.48, 0.74, 1],
-    outputRange: [8, -4, 6, -5, 2],
+  const craftY = progress.interpolate({
+    inputRange: [0, 0.36, 0.5, 0.72, 1],
+    outputRange: [-78, -70, 8, 2, 6],
     extrapolate: 'clamp',
   });
-  const boatBob = progress.interpolate({
-    inputRange: [0, 0.18, 0.36, 0.54, 0.72, 0.9, 1],
-    outputRange: [0, 5, -4, 6, -3, 4, 0],
+  const bob = progress.interpolate({
+    inputRange: [0.5, 0.62, 0.74, 0.86, 1],
+    outputRange: [0, 5, -4, 5, 0],
     extrapolate: 'clamp',
   });
-  const boatOpacity = progress.interpolate({
-    inputRange: [0, 0.08, 0.72, 1],
+  const craftOpacity = progress.interpolate({
+    inputRange: [0, 0.04, 0.78, 1],
     outputRange: [0, 1, 1, 0],
     extrapolate: 'clamp',
   });
-  const boatScale = progress.interpolate({
-    inputRange: [0, 0.12, 0.7, 1],
-    outputRange: [0.86, 1, 0.92, 0.62],
+  const craftScale = progress.interpolate({
+    inputRange: [0, 0.1, 0.42, 0.7, 1],
+    outputRange: [0.92, 1, 1, 0.9, 0.6],
     extrapolate: 'clamp',
   });
+
+  const subjectOpacity = progress.interpolate({
+    inputRange: [0, 0.1, 0.22],
+    outputRange: [1, 1, 0],
+    extrapolate: 'clamp',
+  });
+  const pageOpacity = progress.interpolate({
+    inputRange: [0.04, 0.12, 0.22, 0.3],
+    outputRange: [0, 1, 1, 0],
+    extrapolate: 'clamp',
+  });
+  const hatOpacity = progress.interpolate({
+    inputRange: [0.22, 0.3, 0.36, 0.44],
+    outputRange: [0, 1, 1, 0],
+    extrapolate: 'clamp',
+  });
+  const boatOpacity = progress.interpolate({
+    inputRange: [0.36, 0.44, 1],
+    outputRange: [0, 1, 1],
+    extrapolate: 'clamp',
+  });
+  const pageFold = progress.interpolate({
+    inputRange: [0.12, 0.3],
+    outputRange: [1, 0.62],
+    extrapolate: 'clamp',
+  });
+  const creaseOpacity = progress.interpolate({
+    inputRange: [0.14, 0.22, 0.32],
+    outputRange: [0, 1, 0],
+    extrapolate: 'clamp',
+  });
+
   const rippleA = progress.interpolate({
     inputRange: [0, 0.35, 0.7, 1],
     outputRange: [0.15, 0.55, 0.2, 0.4],
@@ -103,8 +135,8 @@ export function StreamDriftScene({
     outputRange: [40, 220],
   });
 
-  const cargo = emotion ? (
-    <BowlWithDecor emotion={emotion} size={92} radius={RADIUS.md} decorations={decorations} />
+  const subject = emotion ? (
+    <BowlWithDecor emotion={emotion} size={88} radius={RADIUS.md} decorations={decorations} />
   ) : (
     <View style={styles.diaryCard}>
       <Text style={styles.diaryEmoji}>{diaryMode ? '📔' : '🥣'}</Text>
@@ -146,7 +178,7 @@ export function StreamDriftScene({
             ]}
           />
           <Animated.View
-            style={[styles.leaf, { transform: [{ translateX: leafX }, { translateY: boatBob }] }]}
+            style={[styles.leaf, { transform: [{ translateX: leafX }, { translateY: bob }] }]}
           />
         </View>
 
@@ -160,25 +192,68 @@ export function StreamDriftScene({
         <View style={styles.pebbleB} />
 
         <Animated.View
+          testID="stream-fold-craft"
           style={[
-            styles.boatWrap,
+            styles.craftWrap,
             {
-              opacity: boatOpacity,
+              opacity: craftOpacity,
               transform: [
-                { translateX: boatX },
-                { translateY: Animated.add(boatY, boatBob) },
-                { scale: boatScale },
+                { translateX: craftX },
+                { translateY: Animated.add(craftY, bob) },
+                { scale: craftScale },
               ],
             },
           ]}
         >
-          <View style={styles.cargo}>{cargo}</View>
-          <Svg height={54} viewBox="0 0 120 44" width={120} style={styles.boatSvg}>
-            <Path d="M10 22 L60 38 L110 22 L86 22 L60 8 L34 22 Z" fill="#F4E6C8" />
-            <Path d="M34 22 L60 8 L86 22 Z" fill="#E9D4A8" />
-            <Path d="M18 22 L60 34 L102 22 L86 22 L60 14 L34 22 Z" fill="#FBF3DE" />
-            <Path d="M10 22 L60 38 L110 22" fill="none" stroke="#D7C39A" strokeWidth={1.4} />
-          </Svg>
+          <Animated.View style={[styles.layer, { opacity: subjectOpacity }]}>
+            {subject}
+          </Animated.View>
+
+          <Animated.View
+            style={[
+              styles.layer,
+              { opacity: pageOpacity, transform: [{ scaleY: pageFold }, { scaleX: pageFold }] },
+            ]}
+          >
+            <Svg height={86} viewBox="0 0 120 86" width={120}>
+              <Rect
+                x="10"
+                y="8"
+                width="100"
+                height="70"
+                rx="5"
+                fill="#FFFDF8"
+                stroke="#E6D9C2"
+                strokeWidth="1.6"
+              />
+              <Path d="M22 26 H98" stroke="#E4D4B8" strokeWidth="3" strokeLinecap="round" />
+              <Path d="M22 40 H86" stroke="#E4D4B8" strokeWidth="3" strokeLinecap="round" />
+              <Path d="M22 54 H74" stroke="#E4D4B8" strokeWidth="3" strokeLinecap="round" />
+            </Svg>
+            <Animated.View style={[styles.crease, { opacity: creaseOpacity }]} />
+          </Animated.View>
+
+          <Animated.View style={[styles.layer, { opacity: hatOpacity }]}>
+            <Svg height={70} viewBox="0 0 120 70" width={120}>
+              <Path d="M8 46 L60 10 L112 46 L96 60 L24 60 Z" fill="#F4E6C8" />
+              <Path d="M24 46 L60 16 L96 46 Z" fill="#FBF3DE" />
+              <Path d="M8 46 L60 10 L112 46" fill="none" stroke="#D7C39A" strokeWidth="1.5" />
+            </Svg>
+          </Animated.View>
+
+          <Animated.View style={[styles.layer, { opacity: boatOpacity }]}>
+            <Svg height={54} viewBox="0 0 120 44" width={120}>
+              <Path d="M10 22 L60 38 L110 22 L86 22 L60 8 L34 22 Z" fill="#F4E6C8" />
+              <Path d="M34 22 L60 8 L86 22 Z" fill="#E9D4A8" />
+              <Path d="M18 22 L60 34 L102 22 L86 22 L60 14 L34 22 Z" fill="#FBF3DE" />
+              <Path
+                d="M10 22 L60 38 L110 22"
+                fill="none"
+                stroke="#D7C39A"
+                strokeWidth={1.4}
+              />
+            </Svg>
+          </Animated.View>
         </Animated.View>
       </View>
       <Text style={styles.caption}>{line}</Text>
@@ -256,7 +331,6 @@ const styles = StyleSheet.create({
     left: 0,
     position: 'absolute',
     top: 88,
-    transform: [{ rotate: '24deg' }],
     width: 16,
   },
   bankFar: {
@@ -331,19 +405,28 @@ const styles = StyleSheet.create({
     right: 64,
     width: 18,
   },
-  boatWrap: {
+  craftWrap: {
     alignItems: 'center',
     bottom: 78,
+    height: 120,
+    justifyContent: 'center',
     left: 0,
     position: 'absolute',
     width: 132,
   },
-  boatSvg: {
-    marginTop: -4,
+  layer: {
+    ...StyleSheet.absoluteFillObject,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
-  cargo: {
-    marginBottom: -22,
-    zIndex: 2,
+  crease: {
+    backgroundColor: '#D7C39A',
+    height: 64,
+    left: '50%',
+    marginLeft: -1,
+    position: 'absolute',
+    top: 14,
+    width: 2,
   },
   diaryCard: {
     alignItems: 'center',
