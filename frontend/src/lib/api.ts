@@ -151,7 +151,7 @@ export type Entry = {
   hearted_by_me: boolean;
   bowl_color_tint?: string | null;
   bowl_size?: string | null;      // S|M|L|XL intensity
-  bowl_release?: string | null;   // empty|set_aside|send_away|wash|let_flow|keep_hug · 想點處理
+  bowl_release?: string | null;   // empty|share|set_aside|send_away|wash|let_flow|keep_hug · 想點處理
   shared_with_class?: boolean;
   /** 「想老師留意」notify only · preferred over shared_with_class */
   notify_teacher?: boolean;

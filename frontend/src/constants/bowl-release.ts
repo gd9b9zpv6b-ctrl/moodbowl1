@@ -2,6 +2,7 @@ export type BowlReleaseKey =
   | 'empty'
   | 'set_aside'
   | 'send_away'
+  | 'share'
   | 'wash'
   | 'let_flow'
   | 'keep_hug';
@@ -19,6 +20,7 @@ export const STORED_BOWL_RELEASE_KEYS: readonly BowlReleaseKey[] = [
   'empty',
   'set_aside',
   'send_away',
+  'share',
   'wash',
   'let_flow',
   'keep_hug',
@@ -27,21 +29,27 @@ export const STORED_BOWL_RELEASE_KEYS: readonly BowlReleaseKey[] = [
 /**
  * Symbolic actions · what to do with today's bowl after writing.
  * Copy is age-banded in wording packs.
- * `wash` stays stored for historical rows but is not offered here.
+ * `wash` and `set_aside` stay stored for historical rows but are not offered here.
  */
 export const BOWL_RELEASE_ACTIONS: BowlReleaseDef[] = [
   { key: 'empty', emoji: '🌱' },
-  { key: 'set_aside', emoji: '🗄️' },
+  { key: 'share', emoji: '✉️' },
   { key: 'send_away', emoji: '✈️' },
   { key: 'let_flow', emoji: '🌊' },
   { key: 'keep_hug', emoji: '🔒' },
 ];
 
-/** Bury / send / stream (and retired wash) · healthy active release. */
+/** Bury / envelope / send / stream (and retired wash) · healthy active release. */
 export function isReleasingReleaseKey(
   key: BowlReleaseKey | string | null | undefined,
 ): boolean {
-  return key === 'empty' || key === 'send_away' || key === 'wash' || key === 'let_flow';
+  return (
+    key === 'empty' ||
+    key === 'send_away' ||
+    key === 'share' ||
+    key === 'wash' ||
+    key === 'let_flow'
+  );
 }
 
 /**
@@ -54,6 +62,7 @@ export function bowlReleaseWriteAttempts(
 ): Array<BowlReleaseKey | null> {
   if (!key) return [null];
   if (key === 'let_flow') return ['let_flow', 'wash', null];
+  if (key === 'share') return ['share', 'send_away', null];
   return [key, null];
 }
 

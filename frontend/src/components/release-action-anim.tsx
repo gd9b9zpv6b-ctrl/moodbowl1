@@ -128,6 +128,39 @@ export function ReleaseActionAnim({
         ]);
         break;
 
+      case 'share':
+        // Slide into an envelope, then seal
+        anim = Animated.parallel([
+          Animated.timing(bowlY, {
+            toValue: 0.35,
+            duration: 700,
+            easing: Easing.out(Easing.cubic),
+            useNativeDriver: true,
+          }),
+          Animated.timing(bowlScale, {
+            toValue: 0.7,
+            duration: 700,
+            useNativeDriver: true,
+          }),
+          Animated.sequence([
+            Animated.delay(280),
+            Animated.parallel([
+              Animated.timing(fxOpacity, {
+                toValue: 1,
+                duration: 280,
+                useNativeDriver: true,
+              }),
+              Animated.timing(fxScale, {
+                toValue: 1.15,
+                duration: 500,
+                easing: Easing.out(Easing.back(1.2)),
+                useNativeDriver: true,
+              }),
+            ]),
+          ]),
+        ]);
+        break;
+
       case 'send_away':
         // Float up and fade · bird flies
         anim = Animated.parallel([
@@ -319,11 +352,13 @@ export function ReleaseActionAnim({
         : '💧'
       : action === 'set_aside'
         ? '🫙'
-        : action === 'send_away'
-          ? '🕊️'
-          : action === 'let_flow' || action === 'wash'
-            ? '🌊'
-            : '🤗';
+        : action === 'share'
+          ? '✉️'
+          : action === 'send_away'
+            ? '🕊️'
+            : action === 'let_flow' || action === 'wash'
+              ? '🌊'
+              : '🤗';
 
   return (
     <View style={styles.wrap} testID={`release-anim-${action}`}>
@@ -363,6 +398,20 @@ export function ReleaseActionAnim({
               {
                 opacity: fxOpacity,
                 transform: [{ translateY: lidY }, { scale: 1.2 }],
+              },
+            ]}
+          >
+            {fxEmoji}
+          </Animated.Text>
+        )}
+
+        {action === 'share' && (
+          <Animated.Text
+            style={[
+              styles.fx,
+              {
+                opacity: fxOpacity,
+                transform: [{ translateY: lidY }, { scale: fxScale }],
               },
             ]}
           >

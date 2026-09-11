@@ -17,8 +17,9 @@ describe('diaryRitualForRelease', () => {
     );
   });
 
-  it('plays paper-folding sequences for bury, drawer, plane, and lock-box', () => {
+  it('plays paper-folding sequences for bury, envelope, drawer, plane, and lock-box', () => {
     expect(diaryRitualForRelease('empty')).toBe('garden');
+    expect(diaryRitualForRelease('share')).toBe('share');
     expect(diaryRitualForRelease('set_aside')).toBe('later');
     expect(diaryRitualForRelease('send_away')).toBe('release');
     expect(diaryRitualForRelease('keep_hug')).toBe('lock');
@@ -29,22 +30,25 @@ describe('diaryRitualForRelease', () => {
     expect(diaryRitualForRelease('wash')).toBeNull();
   });
 
-  it('does not offer wash in the picker', () => {
+  it('offers envelope share instead of the retired desk drawer', () => {
     expect(BOWL_RELEASE_ACTIONS.map((action) => action.key)).toEqual([
       'empty',
-      'set_aside',
+      'share',
       'send_away',
       'let_flow',
       'keep_hug',
     ]);
+    expect(BOWL_RELEASE_ACTIONS.map((action) => action.key)).not.toContain('set_aside');
   });
 });
 
 describe('release paper-ritual copy', () => {
-  it('names the four paper endings plus the stream choice in every wording band', () => {
+  it('names the envelope, paper endings, and stream choice in every wording band', () => {
     for (const mode of ['lower', 'upper', 'adult'] as const) {
       const pack = wordingFor(mode);
       expect(pack.release_actions.empty.label).toContain('泥土');
+      expect(pack.release_actions.share.label).toContain('信封');
+      expect(pack.release_actions.share.hint).toMatch(/信|分享/);
       expect(pack.release_actions.set_aside.label).toContain('書枱');
       expect(pack.release_actions.send_away.label).toContain('紙飛機');
       expect(pack.release_actions.keep_hug.label).toContain('鎖');
@@ -52,6 +56,7 @@ describe('release paper-ritual copy', () => {
       expect(pack.release_actions.let_flow.hint).toMatch(/摺|船/);
       expect(pack.release_actions.let_flow.label).not.toMatch(/洗|沖涼/);
       expect(pack.release_actions.wash.label.length).toBeGreaterThan(0);
+      expect(pack.release_anim_captions.share).toContain('信封');
       expect(pack.pick_direct.length).toBeGreaterThan(0);
       expect(pack.pick_play.length).toBeGreaterThan(0);
     }

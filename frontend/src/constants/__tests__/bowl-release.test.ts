@@ -10,6 +10,10 @@ describe('bowlReleaseWriteAttempts', () => {
     expect(bowlReleaseWriteAttempts('let_flow')).toEqual(['let_flow', 'wash', null]);
   });
 
+  it('tries share, then send_away, then omits the key', () => {
+    expect(bowlReleaseWriteAttempts('share')).toEqual(['share', 'send_away', null]);
+  });
+
   it('only falls back to omit for already-allowed keys', () => {
     expect(bowlReleaseWriteAttempts('empty')).toEqual(['empty', null]);
     expect(bowlReleaseWriteAttempts(null)).toEqual([null]);

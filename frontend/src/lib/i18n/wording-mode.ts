@@ -310,6 +310,7 @@ export const WORDING: Record<WordingMode, WordingPack> = {
     release_sub: '用一個小動作 · 同今日嘅感覺道別或者抱一抱',
     release_actions: {
       empty: { label: '埋入泥土', hint: '摺好呢頁 · 會長成一棵小樹苗' },
+      share: { label: '摺成信放入信封', hint: '摺成一封信 · 交俾你想分享嘅人' },
       set_aside: { label: '放入書枱', hint: '打開櫃桶收埋 · 遲啲再諗' },
       send_away: { label: '摺成紙飛機', hint: '向住海島飛到唔見' },
       wash: { label: '洗乾淨', hint: '入去沖涼房沖一沖 · 出返嚟乾淨曬' },
@@ -320,6 +321,7 @@ export const WORDING: Record<WordingMode, WordingPack> = {
     release_diary_sub: '用一個小動作 · 同呢頁日記道別或者留低',
     release_diary_actions: {
       empty: { label: '埋入泥土', hint: '將呢頁摺好埋低 · 會長成樹苗' },
+      share: { label: '摺成信放入信封', hint: '摺成一封信 · 交俾你想分享嘅人' },
       set_aside: { label: '放入書枱', hint: '放入櫃桶 · 遲啲再決定都得' },
       send_away: { label: '摺成紙飛機', hint: '向住海島飛走 · 輕輕放手' },
       wash: { label: '抹乾淨', hint: '入去沖一沖 · 出返嚟清爽晒' },
@@ -328,6 +330,7 @@ export const WORDING: Record<WordingMode, WordingPack> = {
     },
     release_anim_captions: {
       empty: '摺好 · 埋入泥土……',
+      share: '摺成信 · 放入信封……',
       set_aside: '放入櫃桶……',
       send_away: '摺成紙飛機 · 飛走……',
       wash: '入去沖涼房……',
@@ -336,6 +339,7 @@ export const WORDING: Record<WordingMode, WordingPack> = {
     },
     release_diary_anim_captions: {
       empty: '將呢頁埋入泥土……',
+      share: '摺成信 · 放入信封……',
       set_aside: '放入書枱櫃桶……',
       send_away: '紙飛機飛走……',
       wash: '入去沖一沖……',
@@ -450,6 +454,7 @@ export const WORDING: Record<WordingMode, WordingPack> = {
     release_sub: '揀一個象徵動作 · 幫自己同呢份感覺道別或者安頓',
     release_actions: {
       empty: { label: '埋入泥土', hint: '摺好呢頁 · 會長成一棵小樹苗' },
+      share: { label: '摺成信放入信封', hint: '摺成一封信 · 交俾你想分享嘅人' },
       set_aside: { label: '放入書枱', hint: '打開櫃桶收埋 · 遲啲再諗' },
       send_away: { label: '摺成紙飛機', hint: '向住海島飛走 · 輕輕放手' },
       wash: { label: '洗乾淨', hint: '入去沖涼房沖一沖 · 出返嚟乾淨曬' },
@@ -460,6 +465,7 @@ export const WORDING: Record<WordingMode, WordingPack> = {
     release_diary_sub: '揀一個象徵動作 · 幫自己同呢頁日記道別或者安頓',
     release_diary_actions: {
       empty: { label: '埋入泥土', hint: '將呢頁摺好埋低 · 會長成樹苗' },
+      share: { label: '摺成信放入信封', hint: '摺成一封信 · 交俾你想分享嘅人' },
       set_aside: { label: '放入書枱', hint: '放入櫃桶 · 遲啲再決定都得' },
       send_away: { label: '摺成紙飛機', hint: '向住海島飛走' },
       wash: { label: '抹乾淨', hint: '入去沖一沖 · 出返嚟清爽晒' },
@@ -468,6 +474,7 @@ export const WORDING: Record<WordingMode, WordingPack> = {
     },
     release_anim_captions: {
       empty: '摺好 · 埋入泥土……',
+      share: '摺成信 · 放入信封……',
       set_aside: '放入櫃桶……',
       send_away: '摺成紙飛機 · 飛走……',
       wash: '入去沖涼房……',
@@ -476,6 +483,7 @@ export const WORDING: Record<WordingMode, WordingPack> = {
     },
     release_diary_anim_captions: {
       empty: '將呢頁埋入泥土……',
+      share: '摺成信 · 放入信封……',
       set_aside: '放入書枱櫃桶……',
       send_away: '紙飛機飛走……',
       wash: '入去沖一沖……',
@@ -590,6 +598,7 @@ export const WORDING: Record<WordingMode, WordingPack> = {
     release_sub: '用一個象徵動作 · 為今日嘅情緒做個收束',
     release_actions: {
       empty: { label: '埋入泥土', hint: '摺好安放 · 讓它長成樹苗' },
+      share: { label: '摺成信放入信封', hint: '摺成一封信 · 交俾你想分享嘅人' },
       set_aside: { label: '放入書枱', hint: '暫收櫃桶 · 稍後再決定' },
       send_away: { label: '摺成紙飛機', hint: '向海島飛走 · 象徵放手' },
       wash: { label: '清洗', hint: '入去沖涼房沖一沖 · 出返嚟乾淨曬' },
@@ -600,6 +609,7 @@ export const WORDING: Record<WordingMode, WordingPack> = {
     release_diary_sub: '用一個象徵動作 · 為呢頁日記做個收束',
     release_diary_actions: {
       empty: { label: '埋入泥土', hint: '將呢頁摺好埋低 · 長成樹苗' },
+      share: { label: '摺成信放入信封', hint: '摺成一封信 · 交俾你想分享嘅人' },
       set_aside: { label: '放入書枱', hint: '暫收櫃桶 · 稍後再決定' },
       send_away: { label: '摺成紙飛機', hint: '向海島飛走 · 象徵放手' },
       wash: { label: '抹乾淨', hint: '入去沖一沖 · 出返嚟清爽晒' },
@@ -608,6 +618,7 @@ export const WORDING: Record<WordingMode, WordingPack> = {
     },
     release_anim_captions: {
       empty: '摺好 · 埋入泥土……',
+      share: '摺成信 · 放入信封……',
       set_aside: '放入櫃桶……',
       send_away: '摺成紙飛機 · 飛走……',
       wash: '清洗 · 入去沖涼房……',
@@ -616,6 +627,7 @@ export const WORDING: Record<WordingMode, WordingPack> = {
     },
     release_diary_anim_captions: {
       empty: '將呢頁埋入泥土……',
+      share: '摺成信 · 放入信封……',
       set_aside: '放入書枱櫃桶……',
       send_away: '紙飛機飛走……',
       wash: '入去沖一沖……',

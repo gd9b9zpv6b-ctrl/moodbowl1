@@ -44,7 +44,7 @@ create table if not exists public.diaries (
   bowl_size            text        default 'M'
                                     check (bowl_size in ('S','M','L','XL')),
   bowl_steam           text,                          -- v2 · nullable
-  bowl_release         text,                          -- empty|set_aside|send_away|wash|let_flow|keep_hug
+  bowl_release         text,                          -- empty|share|set_aside|send_away|wash|let_flow|keep_hug
 
   -- Diary text
   diary_text           text,
