@@ -18,6 +18,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { BowlWithDecor } from '@/src/components/bowl-with-decor';
 import { ReleaseActionAnim } from '@/src/components/release-action-anim';
 import { DiaryRitualScene, diaryRitualForRelease } from '@/src/components/ritual/diary-ritual-scene';
+import { WashShowerScene } from '@/src/components/ritual/wash-shower-scene';
 import { STATE_REACTION } from '@/src/components/regulate-state-stage';
 import { encodeDecorations } from '@/src/constants/bowl-decorations';
 import {
@@ -285,7 +286,14 @@ export default function RitualReleaseScreen() {
     return (
       <SafeAreaView style={styles.safe} edges={['top', 'bottom']}>
         <View style={styles.animWrap}>
-          {paperRitual ? (
+          {picked === 'wash' ? (
+            <WashShowerScene
+              emotion={emotion}
+              decorations={decorations}
+              diaryMode={!hasBowl}
+              onDone={onAnimDone}
+            />
+          ) : paperRitual ? (
             <DiaryRitualScene
               ritual={paperRitual}
               emotion={emotion}

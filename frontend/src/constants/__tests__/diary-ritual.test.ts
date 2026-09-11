@@ -21,7 +21,7 @@ describe('diaryRitualForRelease', () => {
     expect(diaryRitualForRelease('keep_hug')).toBe('lock');
   });
 
-  it('keeps wash on the water splash so historical wash rows stay releasing', () => {
+  it('keeps wash off paper folding so the shower scene can play', () => {
     expect(diaryRitualForRelease('wash')).toBeNull();
   });
 });
