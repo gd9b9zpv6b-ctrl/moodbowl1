@@ -20,13 +20,13 @@ describe('streamCaptionForProgress', () => {
     expect(streamCaptionForProgress(0)).toBe('攤開一張紙……');
     expect(streamCaptionForProgress(0.28)).toBe('摺成一隻紙船……');
     expect(streamCaptionForProgress(0.46)).toBe('放入小河……');
-    expect(streamCaptionForProgress(0.8)).toBe('紙船漂遠咗 · 流水帶走');
+    expect(streamCaptionForProgress(0.8)).toBe('紙船跟水慢慢走 · 流水帶走');
   });
 
   it('uses the diary page when there is no bowl', () => {
     expect(streamCaptionForProgress(0, true)).toBe('攤開呢頁……');
     expect(streamCaptionForProgress(0.28, true)).toBe('摺成一隻紙船……');
-    expect(streamCaptionForProgress(0.8, true)).toBe('紙船漂遠咗');
+    expect(streamCaptionForProgress(0.8, true)).toBe('紙船跟水慢慢走');
   });
 });
 

@@ -29,6 +29,12 @@ export const STORED_BOWL_RELEASE_KEYS: readonly BowlReleaseKey[] = [
 /**
  * Symbolic actions · what to do with today's bowl after writing.
  * Copy is age-banded in wording packs.
+ * Meanings locked in picker hints:
+ *   empty      泥土 · 安放，等它轉化成樹苗
+ *   share      信封 · 交俾你想分享嘅人（唔傳日記）
+ *   send_away  飛機 · 一次過送遠
+ *   let_flow   紙船 · 交俾流水慢慢帶走
+ *   keep_hug   鎖盒 · 暫時收埋，得自己知
  * `wash` and `set_aside` stay stored for historical rows but are not offered here.
  */
 export const BOWL_RELEASE_ACTIONS: BowlReleaseDef[] = [

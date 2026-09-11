@@ -47,13 +47,15 @@ describe('release paper-ritual copy', () => {
     for (const mode of ['lower', 'upper', 'adult'] as const) {
       const pack = wordingFor(mode);
       expect(pack.release_actions.empty.label).toContain('泥土');
+      expect(pack.release_actions.empty.hint).toMatch(/安放|樹苗/);
       expect(pack.release_actions.share.label).toContain('信封');
       expect(pack.release_actions.share.hint).toMatch(/信|分享/);
       expect(pack.release_actions.set_aside.label).toContain('書枱');
       expect(pack.release_actions.send_away.label).toContain('紙飛機');
+      expect(pack.release_actions.send_away.hint).toContain('送遠');
       expect(pack.release_actions.keep_hug.label).toContain('鎖');
       expect(pack.release_actions.let_flow.label).toContain('紙船');
-      expect(pack.release_actions.let_flow.hint).toMatch(/摺|船/);
+      expect(pack.release_actions.let_flow.hint).toMatch(/慢慢|流水/);
       expect(pack.release_actions.let_flow.label).not.toMatch(/洗|沖涼/);
       expect(pack.release_actions.wash.label.length).toBeGreaterThan(0);
       expect(pack.release_anim_captions.share).toContain('信封');
