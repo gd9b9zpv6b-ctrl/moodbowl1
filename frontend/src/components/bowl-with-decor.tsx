@@ -62,15 +62,37 @@ export function BowlWithDecor({
 
   const handlePlaceEvent = (e: GestureResponderEvent) => {
     if (!onPlace) return;
-    const native = e.nativeEvent as GestureResponderEvent['nativeEvent'] & {
+    const n = e.nativeEvent as GestureResponderEvent['nativeEvent'] & {
       clientX?: number;
       clientY?: number;
     };
+    // Snapshot now — measureInWindow is async and the event can be zeroed.
+    const snap = {
+      locationX: n.locationX,
+      locationY: n.locationY,
+      pageX: n.pageX,
+      pageY: n.pageY,
+      clientX: n.clientX,
+      clientY: n.clientY,
+    };
 
     const apply = (box: { x: number; y: number; width: number; height: number }) => {
-      const pct = tapToPct(native, box, windowScroll());
+      const pct = tapToPct(snap, box, windowScroll());
       onPlace(pct.x, pct.y);
     };
+
+    // locationX/Y are already local to the overlay; skip async measure.
+    if (
+      typeof snap.locationX === 'number' &&
+      Number.isFinite(snap.locationX) &&
+      snap.locationX !== 0 &&
+      typeof snap.locationY === 'number' &&
+      Number.isFinite(snap.locationY) &&
+      snap.locationY !== 0
+    ) {
+      apply({ x: 0, y: 0, width: size, height: size });
+      return;
+    }
 
     boxRef.current?.measureInWindow((wx, wy, w, h) => {
       if (w > 0 && h > 0) {
@@ -111,7 +133,8 @@ export function BowlWithDecor({
             pointerEvents="none"
             style={{
               fontSize: emojiSize,
-              lineHeight: emojiSize + 4,
+              lineHeight: emojiSize,
+              textAlign: 'center',
             }}
           >
             {decor.emoji}
