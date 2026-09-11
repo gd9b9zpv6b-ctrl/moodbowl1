@@ -1,8 +1,6 @@
 import { describe, expect, it } from 'vitest';
 
 import {
-  BALLOON_COLUMNS,
-  BALLOON_ROWS,
   COVER_COLUMNS,
   COVER_ROWS,
   bowlIndexAt,
@@ -20,10 +18,6 @@ describe('coverCellAt', () => {
     expect(coverCellAt(319, 399, 320, 400, COVER_COLUMNS, COVER_ROWS)).toBe(
       COVER_COLUMNS * COVER_ROWS - 1,
     );
-  });
-
-  it('uses the balloon grid when the sky is packed with balloons', () => {
-    expect(coverCellAt(200, 220, 320, 400, BALLOON_COLUMNS, BALLOON_ROWS)).toBeGreaterThan(0);
   });
 });
 

@@ -16,8 +16,6 @@ import { EmotionVisual } from '@/src/components/emotion-visual';
 import { EMOTION_BY_KEY, EMOTIONS, type Emotion, type EmotionCategory } from '@/src/constants/emotions';
 import { COLORS, RADIUS, SPACING } from '@/src/constants/theme';
 import {
-  BALLOON_COLUMNS,
-  BALLOON_ROWS,
   COVER_COLUMNS,
   COVER_ROWS,
   bowlIndexAt,
@@ -44,8 +42,8 @@ export const DISCOVERIES: DiscoveryConfig[] = [
   {
     key: 'anger',
     label: '憤怒',
-    title: '輕輕撥開啲波',
-    instruction: '喺成片氣球裏面慢慢撥 · 搵藏住嘅飯碗',
+    title: '輕輕放走個波',
+    instruction: '撳一下氣球 · 睇下藏住邊隻飯碗',
     emotionKey: 'angry',
     tint: '#FFF0EC',
     accent: '#E98D83',
@@ -104,8 +102,7 @@ export const DISCOVERIES: DiscoveryConfig[] = [
 ];
 
 const SOFT_EASING = Easing.out(Easing.quad);
-const COVER_GAMES = new Set(['anger', 'nervous', 'sad', 'unspoken']);
-const BALLOON_COLORS = ['#F4A19A', '#E98D83', '#F6B8A2', '#E07A70', '#F2C4B0', '#D9786E'];
+const COVER_GAMES = new Set(['nervous', 'sad', 'unspoken']);
 
 function windowScroll() {
   if (typeof window === 'undefined') return { x: 0, y: 0 };
@@ -115,10 +112,8 @@ function windowScroll() {
   };
 }
 
-function coverGridFor(kind: 'anger' | 'nervous' | 'sad' | 'unspoken') {
-  return kind === 'anger'
-    ? { columns: BALLOON_COLUMNS, rows: BALLOON_ROWS }
-    : { columns: COVER_COLUMNS, rows: COVER_ROWS };
+function coverGridFor() {
+  return { columns: COVER_COLUMNS, rows: COVER_ROWS };
 }
 
 export function BowlDiscoveryScene({
@@ -134,6 +129,7 @@ export function BowlDiscoveryScene({
   const [revealed, setRevealed] = useState(false);
   const [selectedEmotionKey, setSelectedEmotionKey] = useState<string | null>(null);
   const [discoveredKeys, setDiscoveredKeys] = useState<string[]>([]);
+  const [poppedBalloonKeys, setPoppedBalloonKeys] = useState<string[]>([]);
   const [clearedCoverCells, setClearedCoverCells] = useState<number[]>([]);
   const [scoopingFishKey, setScoopingFishKey] = useState<string | null>(null);
   const [scoopTarget, setScoopTarget] = useState({ x: 0, y: 0 });
@@ -161,6 +157,7 @@ export function BowlDiscoveryScene({
     setRevealed(false);
     setSelectedEmotionKey(null);
     setDiscoveredKeys([]);
+    setPoppedBalloonKeys([]);
     setClearedCoverCells([]);
     setScoopingFishKey(null);
     setScoopTarget({ x: 0, y: 0 });
@@ -247,6 +244,13 @@ export function BowlDiscoveryScene({
     return () => movement.stop();
   }, [activeKey, fishSwim]);
 
+  const popBalloon = (emotionKey: string) => {
+    setPoppedBalloonKeys((current) =>
+      current.includes(emotionKey) ? current : [...current, emotionKey],
+    );
+    discoverEmotion(emotionKey);
+  };
+
   const discoverAtPoint = (x: number, y: number) => {
     const index = bowlIndexAt(
       x,
@@ -267,8 +271,7 @@ export function BowlDiscoveryScene({
     if (!Number.isFinite(x) || !Number.isFinite(y)) return;
     if (!farEnoughFromLast(x, y, lastScratchPoint.current, start)) return;
     lastScratchPoint.current = { x, y };
-    const kind = activeKey as 'anger' | 'nervous' | 'sad' | 'unspoken';
-    const { columns, rows } = coverGridFor(kind);
+    const { columns, rows } = coverGridFor();
     const cell = coverCellAt(
       x,
       y,
@@ -460,15 +463,82 @@ export function BowlDiscoveryScene({
           )}
 
           {activeKey === 'anger' && (
-            <View pointerEvents="none" style={styles.interactionLayer}>
-              <SearchCover
-                kind="anger"
-                clearedCells={clearedCoverCells}
-                float={balloonFloat}
-              />
-              {clearedCoverCells.length === 0 && (
-                <Text style={styles.coverPrompt}>喺成片氣球裏面撥開 · 搵藏住嘅飯碗</Text>
-              )}
+            <View style={styles.balloonField}>
+              {categoryEmotions.map((item, index) => {
+                const popped = poppedBalloonKeys.includes(item.key);
+                const selected = item.key === selectedEmotionKey;
+                return (
+                  <Animated.View
+                    key={item.key}
+                    style={[
+                      styles.balloonSlot,
+                      {
+                        transform: [
+                          {
+                            translateX: balloonFloat.interpolate({
+                              inputRange: [0, 1],
+                              outputRange:
+                                index % 3 === 0
+                                  ? [-4, 5]
+                                  : index % 3 === 1
+                                    ? [4, -3]
+                                    : [-2, 4],
+                            }),
+                          },
+                          {
+                            translateY: balloonFloat.interpolate({
+                              inputRange: [0, 1],
+                              outputRange:
+                                index % 2 === 0 ? [7, -8] : [-6, 8],
+                            }),
+                          },
+                        ],
+                      },
+                    ]}
+                  >
+                    <Pressable
+                      testID={`anger-balloon-${item.key}`}
+                      accessibilityRole="button"
+                      accessibilityLabel={
+                        popped ? `${item.label}飯碗` : `第 ${index + 1} 個氣球`
+                      }
+                      onPress={() => {
+                        if (popped) onChoose(item);
+                        else popBalloon(item.key);
+                      }}
+                      style={({ pressed }) => [
+                        styles.miniBalloonPressable,
+                        pressed && styles.pressed,
+                      ]}
+                    >
+                      <View
+                        style={[
+                          styles.miniBalloon,
+                          { backgroundColor: item.color + 'E8' },
+                          popped && styles.miniBalloonPopped,
+                          selected && { borderColor: active.accent },
+                        ]}
+                      >
+                        {popped ? (
+                          <EmotionVisual emotion={item} size={58} radius={RADIUS.sm} />
+                        ) : (
+                          <View style={styles.miniBalloonShine} />
+                        )}
+                      </View>
+                      {!popped ? (
+                        <>
+                          <View style={[styles.miniBalloonKnot, { borderTopColor: item.color }]} />
+                          <View style={styles.miniBalloonString} />
+                        </>
+                      ) : (
+                        <Text numberOfLines={1} style={styles.poppedBalloonLabel}>
+                          {item.label}
+                        </Text>
+                      )}
+                    </Pressable>
+                  </Animated.View>
+                );
+              })}
             </View>
           )}
 
@@ -772,13 +842,11 @@ export function BowlDiscoveryScene({
 function SearchCover({
   kind,
   clearedCells,
-  float,
 }: {
-  kind: 'anger' | 'nervous' | 'sad' | 'unspoken';
+  kind: 'nervous' | 'sad' | 'unspoken';
   clearedCells: number[];
-  float?: Animated.Value;
 }) {
-  const { columns, rows } = coverGridFor(kind);
+  const { columns, rows } = coverGridFor();
   return (
     <View pointerEvents="none" style={styles.coverGrid}>
       {Array.from({ length: columns * rows }).map((_, index) => {
@@ -787,53 +855,6 @@ function SearchCover({
         const row = Math.floor(index / columns);
         const left = (column * 100) / columns;
         const top = (row * 100) / rows;
-
-        if (kind === 'anger') {
-          const size = 172 + ((index * 13) % 22);
-          const driftX = ((index * 11) % 9) - 4;
-          const driftY = ((index * 7) % 9) - 4;
-          const balloon = (
-            <View
-              testID={`cover-balloon-${index}`}
-              style={[
-                styles.coverBalloon,
-                {
-                  backgroundColor: BALLOON_COLORS[index % BALLOON_COLORS.length],
-                  height: `${size / rows}%`,
-                  left: `${left + driftX * 0.35}%`,
-                  top: `${top + driftY * 0.3}%`,
-                  width: `${size / columns}%`,
-                },
-              ]}
-            >
-              <View style={styles.coverBalloonShine} />
-            </View>
-          );
-          if (!float) return <React.Fragment key={index}>{balloon}</React.Fragment>;
-          return (
-            <Animated.View
-              key={index}
-              style={{
-                transform: [
-                  {
-                    translateY: float.interpolate({
-                      inputRange: [0, 1],
-                      outputRange: index % 2 === 0 ? [5, -6] : [-4, 6],
-                    }),
-                  },
-                  {
-                    translateX: float.interpolate({
-                      inputRange: [0, 1],
-                      outputRange: index % 3 === 0 ? [-3, 4] : [3, -3],
-                    }),
-                  },
-                ],
-              }}
-            >
-              {balloon}
-            </Animated.View>
-          );
-        }
 
         return (
           <View
@@ -1000,21 +1021,6 @@ const styles = StyleSheet.create({
     position: 'absolute',
     top: '14%',
     width: '136%',
-  },
-  coverBalloon: {
-    borderRadius: 999,
-    overflow: 'hidden',
-    position: 'absolute',
-  },
-  coverBalloonShine: {
-    backgroundColor: '#FFFFFF88',
-    borderRadius: RADIUS.pill,
-    height: '28%',
-    left: '22%',
-    position: 'absolute',
-    top: '16%',
-    transform: [{ rotate: '18deg' }],
-    width: '12%',
   },
   sceneBowlField: {
     ...StyleSheet.absoluteFillObject,

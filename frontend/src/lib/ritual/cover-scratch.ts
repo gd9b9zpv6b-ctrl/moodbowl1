@@ -1,9 +1,7 @@
-/** Grid math for the full-sheet hide-and-seek covers (sand, rain, fog, balloons). */
+/** Grid math for the full-sheet hide-and-seek covers (sand, rain, fog). */
 
 export const COVER_COLUMNS = 8;
 export const COVER_ROWS = 10;
-export const BALLOON_COLUMNS = 5;
-export const BALLOON_ROWS = 6;
 export const SCRATCH_HIT_THRESHOLD = 3;
 export const SCRATCH_MOVE_MIN = 7;
 
