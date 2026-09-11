@@ -3,7 +3,7 @@ import React, { useEffect, useRef, useState } from 'react';
 import { Animated, Easing, Pressable, StyleSheet, Text, View } from 'react-native';
 
 import { EmotionVisual } from '@/src/components/emotion-visual';
-import { EMOTION_BY_KEY, type Emotion, type EmotionCategory } from '@/src/constants/emotions';
+import { EMOTION_BY_KEY, EMOTIONS, type Emotion, type EmotionCategory } from '@/src/constants/emotions';
 import { COLORS, RADIUS, SPACING } from '@/src/constants/theme';
 
 type DiscoveryKey = EmotionCategory;
@@ -122,23 +122,17 @@ function HideSeekField({
     setWaterFromRight(fromRight);
     setWaterX(patchCenter - streamOrigin);
     waterPour.setValue(0);
-    let done = false;
-    const finish = () => {
-      if (done) return;
-      done = true;
+    Animated.timing(waterPour, {
+      toValue: 1,
+      duration: 700,
+      easing: Easing.inOut(Easing.quad),
+      useNativeDriver: false,
+    }).start();
+    setTimeout(() => {
       reveal(key);
       setWatering(false);
       waterPour.setValue(0);
-    };
-    Animated.timing(waterPour, {
-      toValue: 1,
-      duration: 900,
-      easing: Easing.inOut(Easing.quad),
-      useNativeDriver: false,
-    }).start(({ finished }) => {
-      if (finished) finish();
-    });
-    setTimeout(finish, 950);
+    }, 420);
   };
 
   const onPressTile = (item: Emotion, index: number) => {
@@ -227,7 +221,6 @@ function HideSeekField({
               testID={found ? `bowl-discover-${item.key}` : `discover-hide-${variant}-${item.key}`}
               accessibilityRole="button"
               accessibilityLabel={found ? item.label : hiddenLabel}
-              disabled={watering && !found}
               onPress={() => onPressTile(item, index)}
               style={[styles.hideTile, found && { borderColor: accent }]}
             >
@@ -289,7 +282,8 @@ export function BowlDiscoveryScene({
 }) {
   const discovery = DISCOVERIES.find((item) => item.key === category) ?? DISCOVERIES[4];
   const hero = EMOTION_BY_KEY[discovery.emotionKey];
-  const items = emotions.length ? emotions : hero ? [hero] : [];
+  const family = EMOTIONS.filter((item) => item.category === category);
+  const items = emotions.length ? emotions : hero ? [hero, ...family.filter((item) => item.key !== hero.key)].slice(0, 6) : family.slice(0, 6);
 
   return (
     <View testID={`bowl-discovery-${discovery.key}`} style={[styles.scene, { backgroundColor: discovery.tint }]}>
@@ -303,12 +297,16 @@ export function BowlDiscoveryScene({
         </View>
       </View>
       <Text style={styles.instruction}>{discovery.instruction}</Text>
-      <HideSeekField
-        items={items}
-        variant={discovery.key}
-        accent={discovery.accent}
-        onChoose={onChoose}
-      />
+      {items.length === 0 ? (
+        <Text style={styles.instruction}>呢個分類暫時未有碗 · 試下第二個</Text>
+      ) : (
+        <HideSeekField
+          items={items}
+          variant={discovery.key}
+          accent={discovery.accent}
+          onChoose={onChoose}
+        />
+      )}
     </View>
   );
 }
@@ -369,8 +367,9 @@ const styles = StyleSheet.create({
     justifyContent: 'flex-end',
     paddingBottom: 8,
     borderWidth: 2,
-    borderColor: 'transparent',
+    borderColor: 'rgba(45, 49, 66, 0.06)',
     borderRadius: RADIUS.md,
+    backgroundColor: 'rgba(255,255,255,0.72)',
   },
   bowlCaption: {
     marginTop: 4,
