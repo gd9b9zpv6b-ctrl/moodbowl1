@@ -243,6 +243,8 @@ export default function RitualRegulateScreen() {
 
       <Breath478
         visible={active === 'breath_4_7_8'}
+        activityKey={activeKey}
+        title={activeKey ? labels[activeKey] : '呼吸'}
         onClose={closeActivity}
         onComplete={() => completeActivity()}
       />
