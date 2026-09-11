@@ -18,7 +18,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { BowlWithDecor } from '@/src/components/bowl-with-decor';
 import { ReleaseActionAnim } from '@/src/components/release-action-anim';
 import { DiaryRitualScene, diaryRitualForRelease } from '@/src/components/ritual/diary-ritual-scene';
-import { WashShowerScene } from '@/src/components/ritual/wash-shower-scene';
+import { StreamDriftScene } from '@/src/components/ritual/stream-drift-scene';
 import { STATE_REACTION } from '@/src/components/regulate-state-stage';
 import { encodeDecorations } from '@/src/constants/bowl-decorations';
 import {
@@ -35,6 +35,7 @@ import {
 import { wordingFor } from '@/src/lib/i18n/wording-mode';
 import { pickPraise } from '@/src/lib/ritual/praise-pool';
 import { detectState } from '@/src/lib/ritual/state-detector';
+import { usesStreamDriftScene } from '@/src/lib/ritual/stream-drift';
 import { useRitualStore } from '@/src/lib/ritual/ritual-store';
 
 const SMILE_HOLD_MS = 2000;
@@ -286,8 +287,8 @@ export default function RitualReleaseScreen() {
     return (
       <SafeAreaView style={styles.safe} edges={['top', 'bottom']}>
         <View style={styles.animWrap}>
-          {picked === 'wash' ? (
-            <WashShowerScene
+          {usesStreamDriftScene(picked) ? (
+            <StreamDriftScene
               emotion={emotion}
               decorations={decorations}
               diaryMode={!hasBowl}

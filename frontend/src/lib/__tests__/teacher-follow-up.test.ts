@@ -34,13 +34,22 @@ describe('teacher follow-up · Phase A rules', () => {
   });
 
   it('active release suppresses size-based alerts', () => {
-    const r = evaluateNegativeBowlFollowUp({
+    const washed = evaluateNegativeBowlFollowUp({
       emotionKey: 'sad',
       size: 'XL',
       previousSize: 'M',
       releaseKey: 'wash',
     });
-    expect(r.watch).toBe(false);
+    expect(washed.watch).toBe(false);
+
+    const drifted = evaluateNegativeBowlFollowUp({
+      emotionKey: 'sad',
+      size: 'XL',
+      previousSize: 'M',
+      releaseKey: 'let_flow',
+    });
+    expect(drifted.watch).toBe(false);
+    expect(handlingStanceOf({ releaseKey: 'let_flow' })).toBe('releasing');
   });
 
   it('parked / holding only alert at L/XL', () => {

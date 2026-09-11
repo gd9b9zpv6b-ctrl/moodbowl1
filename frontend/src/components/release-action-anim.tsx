@@ -168,50 +168,57 @@ export function ReleaseActionAnim({
         ]);
         break;
 
+      case 'let_flow':
       case 'wash':
-        // Splash droplets + sparkle
+        // Drift downstream and fade
         anim = Animated.parallel([
-          Animated.sequence([
-            Animated.timing(bowlScale, {
-              toValue: 1.06,
-              duration: 220,
-              useNativeDriver: true,
-            }),
-            Animated.timing(bowlScale, {
-              toValue: 1,
-              duration: 220,
-              useNativeDriver: true,
-            }),
-            Animated.timing(bowlScale, {
-              toValue: 1.04,
-              duration: 220,
-              useNativeDriver: true,
-            }),
-            Animated.timing(bowlScale, {
-              toValue: 1,
-              duration: 220,
-              useNativeDriver: true,
-            }),
-          ]),
-          Animated.timing(splash, {
+          Animated.timing(bowlX, {
             toValue: 1,
-            duration: 1000,
-            easing: Easing.out(Easing.cubic),
+            duration: 1100,
+            easing: Easing.inOut(Easing.quad),
             useNativeDriver: true,
           }),
           Animated.sequence([
-            Animated.timing(fxOpacity, {
-              toValue: 1,
-              duration: 200,
+            Animated.timing(bowlY, {
+              toValue: -0.18,
+              duration: 280,
               useNativeDriver: true,
             }),
-            Animated.delay(700),
-            Animated.timing(fxOpacity, {
+            Animated.timing(bowlY, {
+              toValue: 0.12,
+              duration: 280,
+              useNativeDriver: true,
+            }),
+            Animated.timing(bowlY, {
+              toValue: -0.08,
+              duration: 280,
+              useNativeDriver: true,
+            }),
+            Animated.timing(bowlY, {
               toValue: 0,
-              duration: 350,
+              duration: 260,
               useNativeDriver: true,
             }),
           ]),
+          Animated.sequence([
+            Animated.delay(700),
+            Animated.timing(bowlOpacity, {
+              toValue: 0,
+              duration: 400,
+              useNativeDriver: true,
+            }),
+          ]),
+          Animated.timing(fxOpacity, {
+            toValue: 0.85,
+            duration: 280,
+            useNativeDriver: true,
+          }),
+          Animated.timing(splash, {
+            toValue: 1,
+            duration: 900,
+            easing: Easing.out(Easing.cubic),
+            useNativeDriver: true,
+          }),
         ]);
         break;
 
@@ -292,9 +299,9 @@ export function ReleaseActionAnim({
     inputRange: [0, 1],
     outputRange: [0.4, 1.5],
   });
-  const splashOpacity = splash.interpolate({
-    inputRange: [0, 0.3, 1],
-    outputRange: [0, 1, 0],
+  const translateX = bowlX.interpolate({
+    inputRange: [0, 1],
+    outputRange: [0, 96],
   });
 
   const subject = emotion ? (
@@ -314,8 +321,8 @@ export function ReleaseActionAnim({
         ? '🫙'
         : action === 'send_away'
           ? '🕊️'
-          : action === 'wash'
-            ? '✨'
+          : action === 'let_flow' || action === 'wash'
+            ? '🌊'
             : '🤗';
 
   return (
@@ -325,6 +332,7 @@ export function ReleaseActionAnim({
           style={{
             opacity: bowlOpacity,
             transform: [
+              { translateX },
               { translateY },
               { rotate },
               { scale: bowlScale },
@@ -376,30 +384,19 @@ export function ReleaseActionAnim({
           </Animated.Text>
         )}
 
-        {action === 'wash' && (
-          <>
-            <Animated.Text
-              style={[
-                styles.fxSide,
-                styles.leftDrop,
-                { opacity: splashOpacity, transform: [{ scale: splashScale }] },
-              ]}
-            >
-              💧
-            </Animated.Text>
-            <Animated.Text
-              style={[
-                styles.fxSide,
-                styles.rightDrop,
-                { opacity: splashOpacity, transform: [{ scale: splashScale }] },
-              ]}
-            >
-              💧
-            </Animated.Text>
-            <Animated.Text style={[styles.fx, { opacity: fxOpacity, top: '18%' }]}>
-              ✨
-            </Animated.Text>
-          </>
+        {(action === 'let_flow' || action === 'wash') && (
+          <Animated.Text
+            style={[
+              styles.fx,
+              {
+                opacity: fxOpacity,
+                top: '62%',
+                transform: [{ translateX: 28 }, { scale: splashScale }],
+              },
+            ]}
+          >
+            {fxEmoji}
+          </Animated.Text>
         )}
 
         {action === 'keep_hug' && (

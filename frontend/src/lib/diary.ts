@@ -275,7 +275,7 @@ export type RitualDiaryDraft = {
   bowl_color_tint: string | null;
   bowl_size: 'S' | 'M' | 'L' | 'XL';
   /** Symbolic 「想點處理」action */
-  bowl_release?: 'empty' | 'set_aside' | 'send_away' | 'wash' | 'keep_hug' | null;
+  bowl_release?: import('@/src/constants/bowl-release').BowlReleaseKey | null;
   diary_text: string | null;
   check_in_type: 'full' | 'hug_only' | 'quick_diary';
   is_public: boolean;
