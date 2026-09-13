@@ -1,6 +1,13 @@
 import { Feather } from '@expo/vector-icons';
-import React, { useEffect, useState } from 'react';
-import { Image, StyleSheet, View, ViewStyle } from 'react-native';
+import React, { useMemo } from 'react';
+import {
+  Image,
+  StyleSheet,
+  View,
+  type ImageSourcePropType,
+  type ViewStyle,
+} from 'react-native';
+import { Ellipse, Path, Svg } from 'react-native-svg';
 
 import { Emotion } from '@/src/constants/emotions';
 import { COLORS, RADIUS } from '@/src/constants/theme';
@@ -12,54 +19,83 @@ type Props = {
   style?: ViewStyle;
 };
 
+/** Metro `require()` ids break inside RN-web Modals unless we resolve a URI. */
+export function resolveEmotionImageSource(image: unknown): ImageSourcePropType | null {
+  if (image == null) return null;
+  if (typeof image === 'number') {
+    const resolved =
+      typeof Image.resolveAssetSource === 'function'
+        ? Image.resolveAssetSource(image)
+        : null;
+    if (resolved?.uri) return { uri: resolved.uri };
+    return image;
+  }
+  if (typeof image === 'object' && image && 'uri' in image && typeof (image as { uri?: string }).uri === 'string') {
+    return image as ImageSourcePropType;
+  }
+  return image as ImageSourcePropType;
+}
+
+function BowlSilhouette({ size, color }: { size: number; color: string }) {
+  return (
+    <Svg height={size} viewBox="0 0 40 40" width={size}>
+      <Ellipse cx="20" cy="26" fill={color} opacity={0.95} rx="13" ry="7" />
+      <Path d="M9 24 C9 15 31 15 31 24" fill={color} />
+      <Ellipse cx="20" cy="16" fill="#FFFDF6" opacity={0.55} rx="8" ry="3" />
+    </Svg>
+  );
+}
+
 /**
- * Renders an emotion's PNG mascot when one exists, otherwise falls back to a
- * Feather icon inside a coloured circle.
- *
- * Use RN Image (not expo-image) so Metro-bundled PNGs stay visible on web
- * tunnels. Bowl art is never recolored — ritual “顏色” changes the backdrop.
+ * Emotion PNG mascot. Never clip the bowl into a circle.
+ * If the PNG is missing, show a bowl silhouette — not a Feather circle.
  */
 export function EmotionVisual({ emotion, size, radius, style }: Props) {
-  const [failed, setFailed] = useState(false);
-
-  useEffect(() => {
-    setFailed(false);
-  }, [emotion?.key, emotion?.image]);
+  const source = useMemo(
+    () => resolveEmotionImageSource(emotion?.image),
+    [emotion?.image],
+  );
 
   if (!emotion) return null;
-  const r = radius ?? RADIUS.sm;
-  const showImage = !!emotion.image && !failed;
 
-  if (showImage) {
+  if (source) {
     return (
       <Image
         accessibilityLabel={emotion.label}
-        source={emotion.image}
+        source={source}
         resizeMode="contain"
-        onError={() => setFailed(true)}
         style={[{ width: size, height: size }, style]}
       />
     );
   }
 
-  const iconSize = Math.round(size * 0.5);
+  const r = radius ?? RADIUS.sm;
+  if (emotion.icon) {
+    const iconSize = Math.round(size * 0.5);
+    return (
+      <View
+        style={[
+          styles.iconWrap,
+          { width: size, height: size, borderRadius: r, backgroundColor: emotion.color },
+          style,
+        ]}
+      >
+        <Feather
+          name={emotion.icon as 'circle'}
+          size={iconSize}
+          color={emotion.iconTint || COLORS.textPrimary}
+        />
+      </View>
+    );
+  }
+
   return (
-    <View
-      style={[
-        styles.iconWrap,
-        { width: size, height: size, borderRadius: r, backgroundColor: emotion.color },
-        style,
-      ]}
-    >
-      <Feather
-        name={(emotion.icon as any) || 'circle'}
-        size={iconSize}
-        color={emotion.iconTint || COLORS.textPrimary}
-      />
+    <View style={[{ width: size, height: size, overflow: 'visible' }, style]}>
+      <BowlSilhouette color={emotion.color} size={size} />
     </View>
   );
 }
 
 const styles = StyleSheet.create({
-  iconWrap: { alignItems: 'center', justifyContent: 'center' },
+  iconWrap: { alignItems: 'center', justifyContent: 'center', overflow: 'visible' },
 });

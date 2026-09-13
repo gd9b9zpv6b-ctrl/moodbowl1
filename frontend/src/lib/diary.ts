@@ -4,6 +4,11 @@ import {
   isBowlSize,
   type BowlSize,
 } from '@/src/constants/bowl-size';
+import {
+  bowlReleaseWriteAttempts,
+  isBowlReleaseConstraintError,
+  type BowlReleaseKey,
+} from '@/src/constants/bowl-release';
 import { resolvedBowlKey } from '@/src/constants/emotions';
 import { soupForDb } from '@/src/lib/ritual/soup-persist';
 import { supabase } from '@/src/lib/supabase-client';
@@ -275,7 +280,7 @@ export type RitualDiaryDraft = {
   bowl_color_tint: string | null;
   bowl_size: 'S' | 'M' | 'L' | 'XL';
   /** Symbolic 「想點處理」action */
-  bowl_release?: 'empty' | 'set_aside' | 'send_away' | 'wash' | 'keep_hug' | null;
+  bowl_release?: BowlReleaseKey | null;
   diary_text: string | null;
   check_in_type: 'full' | 'hug_only' | 'quick_diary';
   is_public: boolean;
@@ -334,28 +339,39 @@ function ritualLegacyAwarePayload(userId: string, draft: RitualDiaryDraft) {
 /** Full ritual check-in · writes ritual + Phase 2 columns when available. */
 export async function createRitualDiaryEntry(draft: RitualDiaryDraft): Promise<Entry> {
   const userId = await requireUserId();
+  const attempts = bowlReleaseWriteAttempts(draft.bowl_release);
+  let lastError: { message?: string; code?: string } | null = null;
 
-  const full = await supabase
-    .from('diaries')
-    .insert(ritualLegacyAwarePayload(userId, draft))
-    .select('*')
-    .single();
+  for (const release of attempts) {
+    const nextDraft = { ...draft, bowl_release: release };
+    const full = await supabase
+      .from('diaries')
+      .insert(ritualLegacyAwarePayload(userId, nextDraft))
+      .select('*')
+      .single();
 
-  if (!full.error && full.data) {
-    return diaryRowToEntry(full.data as DiaryRow);
+    if (!full.error && full.data) {
+      return diaryRowToEntry(full.data as DiaryRow);
+    }
+    lastError = full.error;
+
+    if (isMissingColumnError(full.error)) {
+      const bridge = ritualBridgePayload(userId, nextDraft) as Record<string, unknown>;
+      // Older DBs may lack notify_teacher / bowl_release
+      delete bridge.notify_teacher;
+      delete bridge.bowl_release;
+      const fallback = await supabase.from('diaries').insert(bridge).select('*').single();
+      if (fallback.error || !fallback.data) throw friendlyDiaryError(fallback.error);
+      return diaryRowToEntry(fallback.data as DiaryRow);
+    }
+
+    if (isBowlReleaseConstraintError(full.error)) {
+      continue;
+    }
+    throw friendlyDiaryError(full.error);
   }
 
-  if (isMissingColumnError(full.error)) {
-    const bridge = ritualBridgePayload(userId, draft) as Record<string, unknown>;
-    // Older DBs may lack notify_teacher / bowl_release
-    delete bridge.notify_teacher;
-    delete bridge.bowl_release;
-    const fallback = await supabase.from('diaries').insert(bridge).select('*').single();
-    if (fallback.error || !fallback.data) throw friendlyDiaryError(fallback.error);
-    return diaryRowToEntry(fallback.data as DiaryRow);
-  }
-
-  throw friendlyDiaryError(full.error);
+  throw friendlyDiaryError(lastError);
 }
 
 export async function markRitualSmileCompleted(id: string): Promise<void> {
@@ -632,23 +648,33 @@ export async function saveRitualWithActivities(
         row = data[0] as DiaryRow;
       }
       if (row?.id) {
-        // RPC may predate bowl_release · best-effort patch for teacher follow-up
+        // RPC may predate bowl_release · best-effort patch for teacher follow-up.
+        // let_flow may be rejected by an older check constraint · keep the diary row.
         if (draft.bowl_release) {
-          try {
-            const patched = await supabase
-              .from('diaries')
-              .update({ bowl_release: draft.bowl_release })
-              .eq('id', row.id)
-              .select('*')
-              .single();
-            if (!patched.error && patched.data) {
-              return diaryRowToEntry(patched.data as DiaryRow);
+          for (const release of bowlReleaseWriteAttempts(draft.bowl_release)) {
+            if (!release) break;
+            try {
+              const patched = await supabase
+                .from('diaries')
+                .update({ bowl_release: release })
+                .eq('id', row.id)
+                .select('*')
+                .single();
+              if (!patched.error && patched.data) {
+                return diaryRowToEntry(patched.data as DiaryRow);
+              }
+              if (
+                !isBowlReleaseConstraintError(patched.error) &&
+                !isMissingColumnError(patched.error)
+              ) {
+                break;
+              }
+            } catch {
+              break;
             }
-          } catch {
-            // Column may not exist yet · keep RPC row
           }
         }
-        return diaryRowToEntry({ ...row, bowl_release: draft.bowl_release || row.bowl_release });
+        return diaryRowToEntry(row);
       }
     }
   } catch {

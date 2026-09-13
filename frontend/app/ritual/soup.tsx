@@ -16,7 +16,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { FoodOfferVisual } from '@/src/components/food-offer-visual';
 import { ProgressDots } from '@/src/components/progress-dots';
-import { RitualDiaryFooter } from '@/src/components/ritual-diary-escape';
+import { RitualDiaryEscape } from '@/src/components/ritual-diary-escape';
 import { SOUPS, type SoupKey } from '@/src/constants/soups';
 import { COLORS, RADIUS, SPACING } from '@/src/constants/theme';
 import { wordingFor } from '@/src/lib/i18n/wording-mode';
@@ -150,7 +150,7 @@ export default function RitualSoupScreen() {
           <Feather name="chevron-left" size={22} color={COLORS.textPrimary} />
         </Pressable>
         <ProgressDots total={3} active={1} />
-        <View style={styles.headerSpacer} />
+        <RitualDiaryEscape />
       </View>
 
       <ScrollView
@@ -227,7 +227,6 @@ export default function RitualSoupScreen() {
           })}
         </View>
       </ScrollView>
-      <RitualDiaryFooter />
     </SafeAreaView>
   );
 }
@@ -249,7 +248,6 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
   },
-  headerSpacer: { width: 40 },
   scroll: {
     paddingHorizontal: SPACING.lg,
     paddingBottom: SPACING.xxl,

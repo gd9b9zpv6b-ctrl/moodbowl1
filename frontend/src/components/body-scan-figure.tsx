@@ -27,7 +27,7 @@ const WANJAI_BASE = require('../../assets/mascots/wanjai-base.png');
 type Props = {
   selected: BodyChipKey[];
   focusRegion: BodyRegionKey | null;
-  onSelectRegion: (region: BodyRegionKey) => void;
+  onSelectRegion: (region: BodyRegionKey | null) => void;
   idlePrompt: string;
 };
 
@@ -91,17 +91,12 @@ const HOTSPOTS: {
   width: `${number}%`;
   height: `${number}%`;
 }[] = [
-  // 頭 · bowl cup above neck (neck ~46%); keep clear of rice tip (~0–16%)
-  { region: 'head', top: '26%', left: '30%', width: '40%', height: '16%' },
-  // 心 · upper torso just below neck
-  { region: 'chest', top: '49%', left: '36%', width: '28%', height: '7%' },
-  // 肚 · lower torso center, under heart
-  { region: 'belly', top: '58%', left: '36%', width: '28%', height: '10%' },
-  // 手 · left/right mitten lobes (~25–36% / 63–74% at mid-hand)
-  { region: 'hands', top: '54%', left: '18%', width: '18%', height: '16%' },
-  { region: 'hands', top: '54%', left: '64%', width: '18%', height: '16%' },
-  // 腳 · stubby legs + feet
-  { region: 'whole', top: '74%', left: '32%', width: '36%', height: '20%' },
+  { region: 'head', top: '20%', left: '24%', width: '52%', height: '24%' },
+  { region: 'chest', top: '45%', left: '30%', width: '40%', height: '12%' },
+  { region: 'belly', top: '56%', left: '30%', width: '40%', height: '14%' },
+  { region: 'hands', top: '50%', left: '10%', width: '22%', height: '20%' },
+  { region: 'hands', top: '50%', left: '68%', width: '22%', height: '20%' },
+  { region: 'whole', top: '70%', left: '26%', width: '48%', height: '26%' },
 ];
 
 function FloatingDecor({ emoji, delay }: { emoji: string; delay: number }) {
@@ -315,7 +310,6 @@ export function BodyScanFigure({
         {HOTSPOTS.map((hs, i) => {
           const active = focusRegion === hs.region;
           const lit = regionLit(hs.region);
-          if (!active && !lit) return null;
           return (
             <Animated.View
               key={`glow-${hs.region}-${i}`}
@@ -329,7 +323,7 @@ export function BodyScanFigure({
                   height: hs.height,
                   borderColor: REGION_COLORS[hs.region],
                   backgroundColor: REGION_COLORS[hs.region],
-                  opacity: active ? glow : 0.2,
+                  opacity: active ? glow : lit ? 0.28 : 0.14,
                 },
               ]}
             />
@@ -365,9 +359,20 @@ export function BodyScanFigure({
         ))}
       </Animated.View>
 
-      <Text style={styles.pokeHint}>戳碗頭／心／肚／手／腳 · 唔使戳頭髮</Text>
+      <Text style={styles.pokeHint}>撳頭／心／肚／手／腳 · 或者直接撳下面感覺</Text>
 
       <View style={styles.regionRow}>
+        <Pressable
+          testID="body-region-tab-all"
+          onPress={() => onSelectRegion(null)}
+          style={[
+            styles.regionTab,
+            styles.regionTabWide,
+            focusRegion == null && { backgroundColor: COLORS.primaryLight },
+          ]}
+        >
+          <Text style={styles.regionTabText}>全部</Text>
+        </Pressable>
         {(['head', 'chest', 'belly', 'hands', 'whole'] as BodyRegionKey[]).map((r) => (
           <Pressable
             key={r}
@@ -489,16 +494,23 @@ const styles = StyleSheet.create({
   },
   regionRow: {
     flexDirection: 'row',
+    flexWrap: 'wrap',
+    justifyContent: 'center',
     gap: 8,
   },
   regionTab: {
-    width: 42,
-    height: 42,
-    borderRadius: 21,
+    minWidth: 48,
+    height: 48,
+    borderRadius: 24,
     borderWidth: 2,
+    borderColor: COLORS.borderLight,
     alignItems: 'center',
     justifyContent: 'center',
     backgroundColor: COLORS.bgCard,
+    paddingHorizontal: 10,
+  },
+  regionTabWide: {
+    minWidth: 58,
   },
   regionTabText: {
     fontSize: 14,

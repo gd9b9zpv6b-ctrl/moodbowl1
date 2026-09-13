@@ -10,6 +10,12 @@ import {
 } from '@/src/constants/emotions';
 
 describe('emotion bowl family', () => {
+  it('keeps discovery hero bowls in the family', () => {
+    for (const key of ['angry', 'anxious', 'sad', 'ashamed', 'foggy', 'happy']) {
+      expect(EMOTION_BY_KEY[key]?.key).toBe(key);
+    }
+  });
+
   it('gives every emotion a mascot image', () => {
     const missing = EMOTIONS.filter((e) => !e.image).map((e) => e.key);
     expect(missing).toEqual([]);

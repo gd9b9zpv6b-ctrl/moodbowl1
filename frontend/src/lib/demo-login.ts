@@ -2,6 +2,7 @@ import type { Session, User as SupabaseUser } from '@supabase/supabase-js';
 
 import type { User } from '@/src/lib/api';
 import { DEMO_PASSWORD, demoRoleForEmail } from '@/src/lib/demo-accounts';
+import { loadFeaturedByDate, parseFeaturedByDate } from '@/src/lib/featured-by-date';
 import type { UserRole } from '@/src/lib/role-storage';
 import { supabase } from '@/src/lib/supabase-client';
 
@@ -26,7 +27,7 @@ function userFromSession(authUser: SupabaseUser, role: UserRole): User {
     has_secret_pin: false,
     diary_style: {},
     active_icon_pack: 'classic',
-    featured_by_date: {},
+    featured_by_date: parseFeaturedByDate(authUser.user_metadata?.featured_by_date),
     role,
   };
 }
@@ -93,7 +94,14 @@ export async function signInDemoAccount(email: string, roleHint?: UserRole): Pro
     demoRoleForEmail(payload.user.email || email) ||
     'student';
 
-  return userFromSession(sessionUser, role);
+  const user = userFromSession(sessionUser, role);
+  return {
+    ...user,
+    featured_by_date: await loadFeaturedByDate(
+      sessionUser.id,
+      sessionUser.user_metadata?.featured_by_date,
+    ),
+  };
 }
 
 export type { Session };

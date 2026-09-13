@@ -61,7 +61,7 @@ describe('teacher follow-up · aligned rules', () => {
       evaluateNegativeBowlFollowUp({
         emotionKey: 'angry',
         size: 'XL',
-        releaseKey: 'wash',
+        releaseKey: 'let_flow',
       }).watch,
     ).toBe(false);
     expect(

@@ -7,7 +7,7 @@
  * - 「想老師留意」: notify only · no diary / emotion / size details
  * - 「想屋企留意」: separate from teacher notify (does not create teacher asks_help)
  * - 「蓋住放低」/「抱住留低」: only when intensity is L/XL
- * - Active release (倒/送/洗): no size-based alerts (healthy coping)
+ * - Active release (埋/送/漂, plus retired 洗): no size-based alerts (healthy coping)
  * - 「少咗」+ active release: healthy · do not flag
  */
 
@@ -16,18 +16,16 @@ import {
   isBowlSize,
   type BowlSize,
 } from '@/src/constants/bowl-size';
-import type { BowlReleaseKey } from '@/src/constants/bowl-release';
+import {
+  isReleasingReleaseKey,
+  STORED_BOWL_RELEASE_KEYS,
+  type BowlReleaseKey,
+} from '@/src/constants/bowl-release';
 import { EMOTION_BY_KEY, type EmotionCategory } from '@/src/constants/emotions';
 
 const NEGATIVE_CATEGORIES: EmotionCategory[] = ['sad', 'nervous', 'wound', 'anger'];
 
-const RELEASE_KEYS: BowlReleaseKey[] = [
-  'empty',
-  'set_aside',
-  'send_away',
-  'wash',
-  'keep_hug',
-];
+const RELEASE_KEYS: readonly BowlReleaseKey[] = STORED_BOWL_RELEASE_KEYS;
 
 export type TeacherFollowUpCue =
   | 'still_strong'
@@ -118,7 +116,7 @@ export function handlingStanceOf(input: {
   const key = isBowlReleaseKey(input.releaseKey) ? input.releaseKey : null;
   if (key === 'set_aside') return 'parked';
   if (key === 'keep_hug') return 'holding';
-  if (key === 'empty' || key === 'send_away' || key === 'wash') return 'releasing';
+  if (isReleasingReleaseKey(key)) return 'releasing';
   return 'unknown';
 }
 
@@ -186,8 +184,7 @@ export function evaluateNegativeBowlFollowUp(input: {
     const prev = isBowlSize(input.previousSize) ? input.previousSize : null;
     const idx = bowlSizeIndex(size);
     const strong = idx >= 2; // L / XL
-    const isReleasing =
-      releaseKey === 'empty' || releaseKey === 'send_away' || releaseKey === 'wash';
+    const isReleasing = isReleasingReleaseKey(releaseKey);
     const isParked = releaseKey === 'set_aside';
     const isHolding = releaseKey === 'keep_hug';
 

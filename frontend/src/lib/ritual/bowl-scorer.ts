@@ -158,3 +158,35 @@ export function scoreBowls(
 
   return { default: defaultList, expanded };
 }
+
+/**
+ * Bowls shown inside a discovery scene.
+ * Prefer the scored ritual shortlist so a body combo never opens empty;
+ * fill from the rest of the family if the user switches category.
+ */
+export function discoveryBowlsForCategory(
+  category: EmotionCategory,
+  scored: { default: Emotion[]; expanded: Emotion[] },
+  limit = 6,
+): Emotion[] {
+  const seen = new Set<string>();
+  const out: Emotion[] = [];
+  const push = (bowl: Emotion) => {
+    if (bowl.category !== category || seen.has(bowl.key)) return;
+    seen.add(bowl.key);
+    out.push(bowl);
+  };
+  for (const bowl of scored.default) {
+    push(bowl);
+    if (out.length >= limit) return out;
+  }
+  for (const bowl of scored.expanded) {
+    push(bowl);
+    if (out.length >= limit) return out;
+  }
+  for (const bowl of EMOTIONS) {
+    push(bowl);
+    if (out.length >= limit) return out;
+  }
+  return out;
+}
