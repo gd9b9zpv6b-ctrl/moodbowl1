@@ -42,6 +42,8 @@ describe('wording packs', () => {
     expect(wordingFor('lower').regulate_by_state.sympathetic_fire).toBe('同碗一齊發洩');
     expect(wordingFor('lower').regulate_by_state.dorsal_sad).toBe('一齊睇溫柔畫面');
     expect(wordingFor('lower').regulate_eyebrow).toBe('碗陪你一陣');
+    expect(wordingFor('lower').pick_play_locked).toMatch(/下次|下一次/);
+    expect(wordingFor('upper').pick_play_locked).toMatch(/下次|下一次/);
     expect(wordingFor('upper').regulate_by_state.dorsal_freeze).toBe('碗想搞醒你');
     expect(wordingFor('lower').release_done_title).toBe('你搞掂啦');
   });

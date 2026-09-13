@@ -61,6 +61,7 @@ describe('release paper-ritual copy', () => {
       expect(pack.release_anim_captions.share).toContain('信封');
       expect(pack.pick_direct.length).toBeGreaterThan(0);
       expect(pack.pick_play.length).toBeGreaterThan(0);
+      expect(pack.pick_play_locked.length).toBeGreaterThan(0);
     }
   });
 });

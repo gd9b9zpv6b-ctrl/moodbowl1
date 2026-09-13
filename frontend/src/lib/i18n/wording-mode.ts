@@ -30,6 +30,8 @@ export type WordingPack = {
   pick_direct: string;
   /** Switch back from the scored grid to the discovery game. */
   pick_play: string;
+  /** After the first wipe / pop in this diary. */
+  pick_play_locked: string;
   customize_got_bowl: (bowlLabel: string) => string;
   customize_title: (bowlLabel: string) => string;
   customize_sub: string;
@@ -283,6 +285,7 @@ export const WORDING: Record<WordingMode, WordingPack> = {
     pick_see_all: '睇全部碗',
     pick_direct: '唔想玩 · 直接揀',
     pick_play: '用小遊戲搵碗',
+    pick_play_locked: '呢篇已經玩緊呢場 · 下次寫先換',
     talk_got_bowl: (bowl) => `你今日嘅碗係「${bowl}」`,
     talk_title: (bowl) => `同 ${bowl} 講吓今日發生咩事`,
     talk_speech: '我聽緊 · 慢慢講',
@@ -427,6 +430,7 @@ export const WORDING: Record<WordingMode, WordingPack> = {
     pick_see_all: '冇一個 fit? 睇全部',
     pick_direct: '唔想玩 · 直接揀',
     pick_play: '用小遊戲搵碗',
+    pick_play_locked: '呢篇日記已經玩緊呢場 · 下一次寫先可以換',
     talk_got_bowl: (bowl) => `你今日嘅碗係「${bowl}」`,
     talk_title: (bowl) => `同 ${bowl} 講吓今日發生咩事`,
     talk_speech: '我聽緊 · 慢慢講',
@@ -571,6 +575,7 @@ export const WORDING: Record<WordingMode, WordingPack> = {
     pick_see_all: '睇完整圖鑑',
     pick_direct: '跳過互動 · 直接選擇',
     pick_play: '用小遊戲搵碗',
+    pick_play_locked: '呢次已經開始搵碗 · 下次寫日記先換另一場',
     talk_got_bowl: (bowl) => `你今日對應嘅碗係「${bowl}」`,
     talk_title: (bowl) => `同「${bowl}」講今日發生咩事`,
     talk_speech: '我喺度 · 你可以慢慢寫',

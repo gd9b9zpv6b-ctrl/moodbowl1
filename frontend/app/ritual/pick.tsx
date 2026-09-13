@@ -12,6 +12,7 @@ import type { Emotion, EmotionCategory } from '@/src/constants/emotions';
 import { COLORS, RADIUS, SPACING } from '@/src/constants/theme';
 import { wordingFor } from '@/src/lib/i18n/wording-mode';
 import { discoveryBowlsForCategory, scoreBowls } from '@/src/lib/ritual/bowl-scorer';
+import { canSwitchDiscovery } from '@/src/lib/ritual/discovery-lock';
 import { useRitualStore } from '@/src/lib/ritual/ritual-store';
 
 class DiscoveryErrorBoundary extends Component<
@@ -38,7 +39,7 @@ class DiscoveryErrorBoundary extends Component<
     if (this.state.hasError) {
       return (
         <Text style={{ color: COLORS.textSecondary, fontSize: 13, lineHeight: 20 }}>
-          呢場遊戲開唔到 · 撳上面轉個分類再試
+          呢場遊戲開唔到 · 可以撳下面睇全部碗
         </Text>
       );
     }
@@ -52,6 +53,8 @@ export default function RitualPickScreen() {
   const soup = useRitualStore((s) => s.soup);
   const bodyChips = useRitualStore((s) => s.bodyChips);
   const setBowl = useRitualStore((s) => s.setBowl);
+  const lockedCategory = useRitualStore((s) => s.discoveryLockedCategory);
+  const lockDiscovery = useRitualStore((s) => s.lockDiscovery);
   const [categoryOverride, setCategoryOverride] = useState<EmotionCategory | null>(null);
   const w = wordingFor(ageGroup);
 
@@ -62,7 +65,8 @@ export default function RitualPickScreen() {
 
   const suggestedCategory =
     scored.default.find((item) => item.key !== 'hollow')?.category ?? 'unspoken';
-  const activeCategory = categoryOverride ?? suggestedCategory;
+  const activeCategory = lockedCategory ?? categoryOverride ?? suggestedCategory;
+  const locked = !!lockedCategory;
   const discoveryEmotions = useMemo(
     () => discoveryBowlsForCategory(activeCategory, scored),
     [activeCategory, scored],
@@ -95,27 +99,39 @@ export default function RitualPickScreen() {
         keyboardShouldPersistTaps="handled"
       >
         <Text style={styles.title}>{w.pick_title}</Text>
-        <Text style={styles.playHeading}>{w.pick_play}</Text>
+        <Text style={styles.playHeading}>{locked ? w.pick_play_locked : w.pick_play}</Text>
         <View style={styles.chips}>
           {DISCOVERIES.map((item) => {
             const selected = item.key === activeCategory;
+            const switchable = canSwitchDiscovery(lockedCategory, item.key);
             return (
               <Pressable
                 key={item.key}
                 testID={`discovery-${item.key}`}
                 accessibilityRole="button"
-                accessibilityState={{ selected }}
-                onPress={() => setCategoryOverride(item.key)}
+                accessibilityState={{ selected, disabled: !switchable }}
+                disabled={!switchable}
+                onPress={() => {
+                  if (!canSwitchDiscovery(lockedCategory, item.key)) return;
+                  setCategoryOverride(item.key);
+                }}
                 style={({ pressed }) => [
                   styles.chip,
                   selected && {
                     backgroundColor: item.accent,
                     borderColor: item.accent,
                   },
-                  pressed && { opacity: 0.85 },
+                  locked && !selected && styles.chipLocked,
+                  pressed && switchable && { opacity: 0.85 },
                 ]}
               >
-                <Text style={[styles.chipText, selected && styles.chipTextActive]}>
+                <Text
+                  style={[
+                    styles.chipText,
+                    selected && styles.chipTextActive,
+                    locked && !selected && styles.chipTextLocked,
+                  ]}
+                >
                   {item.label}
                 </Text>
               </Pressable>
@@ -128,8 +144,17 @@ export default function RitualPickScreen() {
             category={activeCategory}
             emotions={discoveryEmotions}
             onChoose={onPick}
+            onPlayStart={() => lockDiscovery(activeCategory)}
+            allowReset={!locked}
           />
         </DiscoveryErrorBoundary>
+        <Pressable
+          testID="pick-see-all"
+          onPress={() => router.push('/ritual/all')}
+          style={styles.seeAll}
+        >
+          <Text style={styles.seeAllText}>{w.pick_see_all}</Text>
+        </Pressable>
       </ScrollView>
     </SafeAreaView>
   );
@@ -176,6 +201,14 @@ const styles = StyleSheet.create({
   },
   chipText: { color: COLORS.textSecondary, fontSize: 13, fontWeight: '700' },
   chipTextActive: { color: '#FFF' },
+  chipLocked: { opacity: 0.4 },
+  chipTextLocked: { color: COLORS.textDisabled },
+  seeAll: {
+    alignSelf: 'center',
+    marginTop: SPACING.lg,
+    paddingVertical: SPACING.sm,
+  },
+  seeAllText: { color: COLORS.primary, fontSize: 13, fontWeight: '700' },
   playHeading: {
     color: COLORS.textSecondary,
     fontSize: 13,

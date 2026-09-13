@@ -120,10 +120,15 @@ export function BowlDiscoveryScene({
   category,
   emotions,
   onChoose,
+  onPlayStart,
+  allowReset = true,
 }: {
   category: EmotionCategory;
   emotions?: Emotion[];
   onChoose: (emotion: Emotion) => void;
+  /** First wipe / pop / scoop / water in this diary. */
+  onPlayStart?: () => void;
+  allowReset?: boolean;
 }) {
   const activeKey = category;
   const [revealed, setRevealed] = useState(false);
@@ -135,6 +140,8 @@ export function BowlDiscoveryScene({
   const [scoopTarget, setScoopTarget] = useState({ x: 0, y: 0 });
   const [wateringEmotionKey, setWateringEmotionKey] = useState<string | null>(null);
   const [waterTarget, setWaterTarget] = useState({ fromRight: false, x: 0 });
+  const [hasPlayed, setHasPlayed] = useState(false);
+  const playedRef = useRef(false);
   const reveal = useRef(new Animated.Value(0)).current;
   const balloonFloat = useRef(new Animated.Value(0)).current;
   const fishSwim = useRef(new Animated.Value(0)).current;
@@ -163,6 +170,8 @@ export function BowlDiscoveryScene({
     setScoopTarget({ x: 0, y: 0 });
     setWateringEmotionKey(null);
     setWaterTarget({ fromRight: false, x: 0 });
+    setHasPlayed(false);
+    playedRef.current = false;
     scratchHits.current = {};
     lastScratchPoint.current = { x: 0, y: 0 };
     reveal.setValue(0);
@@ -244,7 +253,15 @@ export function BowlDiscoveryScene({
     return () => movement.stop();
   }, [activeKey, fishSwim]);
 
+  const markPlayed = () => {
+    if (playedRef.current) return;
+    playedRef.current = true;
+    setHasPlayed(true);
+    onPlayStart?.();
+  };
+
   const popBalloon = (emotionKey: string) => {
+    markPlayed();
     setPoppedBalloonKeys((current) =>
       current.includes(emotionKey) ? current : [...current, emotionKey],
     );
@@ -270,6 +287,7 @@ export function BowlDiscoveryScene({
   const recordScratchPoint = (x: number, y: number, start = false) => {
     if (!Number.isFinite(x) || !Number.isFinite(y)) return;
     if (!farEnoughFromLast(x, y, lastScratchPoint.current, start)) return;
+    markPlayed();
     lastScratchPoint.current = { x, y };
     const { columns, rows } = coverGridFor();
     const cell = coverCellAt(
@@ -334,6 +352,7 @@ export function BowlDiscoveryScene({
 
   const catchFish = (emotionKey: string, index: number) => {
     if (scoopingFishKey || discoveredKeys.includes(emotionKey)) return;
+    markPlayed();
     const column = index % 5;
     const row = Math.floor(index / 5);
     const fishX = ((column + 0.5) * sceneBox.current.width) / 5;
@@ -369,6 +388,7 @@ export function BowlDiscoveryScene({
 
   const waterEmotion = (emotionKey: string, index: number) => {
     if (wateringEmotionKey || discoveredKeys.includes(emotionKey)) return;
+    markPlayed();
     const column = index % 4;
     const patchX = ((column + 0.5) * sceneBox.current.width) / 4;
     const fromRight = column >= 2;
@@ -406,14 +426,18 @@ export function BowlDiscoveryScene({
             <Text style={styles.stageTitle}>{active.title}</Text>
             <Text style={styles.stageInstruction}>{active.instruction}</Text>
           </View>
-          <Pressable
-            testID="discovery-reset"
-            accessibilityLabel="重新搵"
-            onPress={() => reset()}
-            style={({ pressed }) => [styles.resetButton, pressed && styles.pressed]}
-          >
-            <Feather name="rotate-ccw" size={17} color={COLORS.textSecondary} />
-          </Pressable>
+          {allowReset && !hasPlayed ? (
+            <Pressable
+              testID="discovery-reset"
+              accessibilityLabel="重新搵"
+              onPress={() => reset()}
+              style={({ pressed }) => [styles.resetButton, pressed && styles.pressed]}
+            >
+              <Feather name="rotate-ccw" size={17} color={COLORS.textSecondary} />
+            </Pressable>
+          ) : (
+            <View style={styles.resetButton} />
+          )}
         </View>
 
         <View

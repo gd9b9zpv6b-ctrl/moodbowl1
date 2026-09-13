@@ -7,7 +7,8 @@ import {
 } from '@/src/constants/bowl-decorations';
 import type { BowlReleaseKey } from '@/src/constants/bowl-release';
 import type { BowlSize } from '@/src/constants/bowl-size';
-import { UNPICKED_BOWL_KEY } from '@/src/constants/emotions';
+import { UNPICKED_BOWL_KEY, type EmotionCategory } from '@/src/constants/emotions';
+import { lockDiscoveryCategory } from '@/src/lib/ritual/discovery-lock';
 import type { SoupKey } from '@/src/constants/soups';
 
 export type { BowlSize } from '@/src/constants/bowl-size';
@@ -32,6 +33,8 @@ type RitualState = {
   shareFamily: boolean;
   shareTimeline: boolean;
   regulationUsed: string[];
+  /** First discovery game started in this diary · next diary clears via reset(). */
+  discoveryLockedCategory: EmotionCategory | null;
   startedAt: number | null;
   ageGroup: AgeGroup;
 
@@ -56,6 +59,8 @@ type RitualState = {
     shareTimeline?: boolean;
   }) => void;
   addRegulation: (key: string) => void;
+  /** First wipe / pop / scoop / water in this diary locks that game. */
+  lockDiscovery: (category: EmotionCategory) => void;
   skipChips: () => void;
   setAgeGroup: (ageGroup: AgeGroup) => void;
   ensureStarted: () => void;
@@ -76,6 +81,7 @@ const initialState = {
   shareFamily: false,
   shareTimeline: true,
   regulationUsed: [] as string[],
+  discoveryLockedCategory: null as EmotionCategory | null,
   startedAt: null as number | null,
   ageGroup: 'upper' as AgeGroup,
 };
@@ -149,6 +155,12 @@ export const useRitualStore = create<RitualState>((set, get) => ({
     const used = get().regulationUsed;
     if (used.includes(key)) return;
     set({ regulationUsed: [...used, key] });
+  },
+
+  lockDiscovery: (category) => {
+    const next = lockDiscoveryCategory(get().discoveryLockedCategory, category);
+    if (next === get().discoveryLockedCategory) return;
+    set({ discoveryLockedCategory: next });
   },
 
   skipChips: () => set({ bodyChips: [] }),

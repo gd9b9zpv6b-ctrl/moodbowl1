@@ -19,4 +19,12 @@ describe('ritual store bowl fallback', () => {
     useRitualStore.getState().ensureBowl();
     expect(useRitualStore.getState().selectedBowlKey).toBe('sad');
   });
+
+  it('locks the first discovery game until the diary resets', () => {
+    useRitualStore.getState().lockDiscovery('sad');
+    useRitualStore.getState().lockDiscovery('anger');
+    expect(useRitualStore.getState().discoveryLockedCategory).toBe('sad');
+    useRitualStore.getState().reset();
+    expect(useRitualStore.getState().discoveryLockedCategory).toBeNull();
+  });
 });
