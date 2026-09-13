@@ -6,6 +6,7 @@ import { Alert, AppState, AppStateStatus, Platform } from 'react-native';
 
 import { api, loadToken, onApiActivity, onAuthInvalid, setToken, User } from './api';
 import { demoRoleForEmail } from './demo-accounts';
+import { loadFeaturedByDate, parseFeaturedByDate } from './featured-by-date';
 import { RoleStorage, UserRole } from './role-storage';
 import { supabase } from './supabase-client';
 
@@ -113,7 +114,7 @@ function userFromAuth(
     has_secret_pin: extra.has_secret_pin ?? false,
     diary_style: extra.diary_style ?? {},
     active_icon_pack: extra.active_icon_pack ?? 'classic',
-    featured_by_date: extra.featured_by_date ?? {},
+    featured_by_date: parseFeaturedByDate(extra.featured_by_date),
     role,
   };
 }
@@ -177,7 +178,13 @@ async function loadAppUser(authUser: SupabaseUser): Promise<User> {
     // Supabase Auth remains usable while the compatibility backend is offline.
   }
 
-  return userFromAuth(authUser, profile, compatibility);
+  const user = userFromAuth(authUser, profile, compatibility);
+  const featured = await loadFeaturedByDate(
+    authUser.id,
+    authUser.user_metadata?.featured_by_date,
+    user.featured_by_date,
+  );
+  return { ...user, featured_by_date: featured };
 }
 
 export function AuthProvider({ children }: { children: React.ReactNode }) {
@@ -206,8 +213,14 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       // Never drop a valid Supabase session just because profile enrichment failed.
       console.warn('[auth] hydrate fallback', e);
       const fallback = userFromAuth(session.user);
-      if (mountedRef.current) setUser(fallback);
-      return fallback;
+      const featured = await loadFeaturedByDate(
+        session.user.id,
+        session.user.user_metadata?.featured_by_date,
+        fallback.featured_by_date,
+      );
+      const next = { ...fallback, featured_by_date: featured };
+      if (mountedRef.current) setUser(next);
+      return next;
     }
   }, [setUser]);
 

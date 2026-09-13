@@ -8,6 +8,13 @@ vi.mock('@/src/lib/supabase-client', () => ({
   supabase: { auth: { setSession } },
 }));
 
+vi.mock('@react-native-async-storage/async-storage', () => ({
+  default: {
+    getItem: vi.fn().mockResolvedValue(null),
+    setItem: vi.fn(),
+  },
+}));
+
 const authUser = {
   id: 'student-1',
   email: 'student@demo.moodful.app',

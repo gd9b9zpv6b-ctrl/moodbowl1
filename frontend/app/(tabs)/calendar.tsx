@@ -16,6 +16,7 @@ import { COLORS, RADIUS, SPACING } from '@/src/constants/theme';
 import { api, Entry, User } from '@/src/lib/api';
 import { useAuth } from '@/src/lib/auth-context';
 import { listMyDiaryEntriesForMonth } from '@/src/lib/diary';
+import { persistFeaturedByDate, withFeaturedEntry } from '@/src/lib/featured-by-date';
 import { isLegacyBackendConfigured } from '@/src/lib/legacy-backend';
 
 function currentMonthKey(d = new Date()) {
@@ -106,13 +107,24 @@ export default function CalendarScreen() {
   const featuredIdForSelected = featuredByDate[selectedDate] || entriesForDay[0]?.id;
 
   const setFeatured = async (entryId: string) => {
-    if (!isLegacyBackendConfigured()) return;
+    if (!user || featuredIdForSelected === entryId) return;
     setFeaturing(entryId);
+    const nextMap = withFeaturedEntry(user.featured_by_date, selectedDate, entryId);
+    setUser({ ...user, featured_by_date: nextMap });
     try {
-      const updated = await api.post<User>(`/entries/${entryId}/feature`);
-      setUser(updated);
+      await persistFeaturedByDate(user.id, nextMap);
+      if (isLegacyBackendConfigured()) {
+        const updated = await api.post<User>(`/entries/${entryId}/feature`);
+        if (updated?.featured_by_date) {
+          setUser({
+            ...user,
+            ...updated,
+            featured_by_date: { ...nextMap, ...updated.featured_by_date },
+          });
+        }
+      }
     } catch {
-      // ignore
+      // Optimistic local pick already applied.
     } finally {
       setFeaturing(null);
     }
