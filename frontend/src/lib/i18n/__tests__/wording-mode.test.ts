@@ -67,6 +67,10 @@ describe('wording packs', () => {
         expect(pack.region_labels[region.key]?.length).toBeGreaterThan(0);
       }
       expect(pack.body_vessel.length).toBeGreaterThan(0);
+      expect(pack.body_cta_empty).toMatch(/未肯定|見碗/);
+      expect(pack.body_easy_hint.length).toBeGreaterThan(0);
+      expect(pack.body_clarify).toMatch(/見到啱|略過|唔知|唔肯定/);
+      expect(pack.body_title).not.toMatch(/掃描|覺察/);
     }
   });
 

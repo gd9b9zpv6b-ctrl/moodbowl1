@@ -16,6 +16,7 @@ import { FoodOfferVisual } from '@/src/components/food-offer-visual';
 import { ProgressDots } from '@/src/components/progress-dots';
 import { RitualDiaryEscape } from '@/src/components/ritual-diary-escape';
 import {
+  BODY_CHIP_BY_KEY,
   BODY_CHIPS,
   type BodyChipKey,
   type BodyRegionKey,
@@ -23,6 +24,7 @@ import {
 import { SOUP_BY_KEY } from '@/src/constants/soups';
 import { COLORS, RADIUS, SPACING } from '@/src/constants/theme';
 import { wordingFor } from '@/src/lib/i18n/wording-mode';
+import { suggestChipsForSoup } from '@/src/lib/ritual/body-suggest';
 import { useRitualStore } from '@/src/lib/ritual/ritual-store';
 
 /** Speech mirrors the chip description · same meaning as floating decor. */
@@ -71,19 +73,24 @@ export default function RitualBodyScreen() {
   const toggleChip = useRitualStore((s) => s.toggleChip);
   const skipChips = useRitualStore((s) => s.skipChips);
   const [toast, setToast] = useState<string | null>(null);
-  const [focusRegion, setFocusRegion] = useState<BodyRegionKey | null>('head');
+  const [focusRegion, setFocusRegion] = useState<BodyRegionKey | null>(null);
   const [gagLine, setGagLine] = useState<string | null>(null);
   const w = wordingFor(ageGroup);
   const drink = soup ? SOUP_BY_KEY[soup] : null;
+  const easyChips = useMemo(() => suggestChipsForSoup(soup), [soup]);
 
   const visibleChips = useMemo(() => {
-    if (!focusRegion) return BODY_CHIPS;
-    return BODY_CHIPS.filter((c) => c.region === focusRegion);
-  }, [focusRegion]);
+    const list = !focusRegion
+      ? BODY_CHIPS
+      : BODY_CHIPS.filter((c) => c.region === focusRegion);
+    if (focusRegion) return list;
+    const easy = new Set(easyChips);
+    return [...list].sort((a, b) => Number(easy.has(b.key)) - Number(easy.has(a.key)));
+  }, [focusRegion, easyChips]);
 
   const idlePrompt =
     gagLine ||
-    (focusRegion ? REGION_PROMPTS[focusRegion] : w.body_vessel);
+    (focusRegion ? REGION_PROMPTS[focusRegion] : w.body_clarify);
 
   const onToggle = (key: BodyChipKey) => {
     const wasSelected = bodyChips.includes(key);
@@ -139,7 +146,7 @@ export default function RitualBodyScreen() {
             <FoodOfferVisual food={drink} size={32} />
             <View style={{ flex: 1 }}>
               <Text style={styles.drinkLabel}>
-                呢樣「{drink.label}」· 戳碗仔睇反應
+                請咗「{drink.label}」· 身體有冇反應?
               </Text>
               <Text style={styles.drinkHint}>{w.body_vessel}</Text>
             </View>
@@ -151,17 +158,41 @@ export default function RitualBodyScreen() {
           focusRegion={focusRegion}
           onSelectRegion={(region) => {
             setFocusRegion(region);
-            setGagLine(REGION_PROMPTS[region]);
+            setGagLine(region ? REGION_PROMPTS[region] : w.body_vessel);
             Haptics.selectionAsync().catch(() => {});
           }}
           idlePrompt={idlePrompt}
         />
 
+        <View style={styles.easyPanel} testID="body-easy-picks">
+          <Text style={styles.easyTitle}>{w.body_easy_hint}</Text>
+          <View style={styles.easyRow}>
+            {easyChips.map((key) => {
+              const chip = BODY_CHIP_BY_KEY[key];
+              const active = bodyChips.includes(key);
+              if (!chip) return null;
+              return (
+                <Pressable
+                  key={key}
+                  testID={`body-easy-${key}`}
+                  onPress={() => onToggle(key)}
+                  style={[styles.easyChip, active && styles.chipActive]}
+                >
+                  <Text style={styles.easyEmoji}>{chip.emoji}</Text>
+                  <Text style={[styles.chipLabel, active && styles.chipLabelActive]}>
+                    {w.chip_labels[key]}
+                  </Text>
+                </Pressable>
+              );
+            })}
+          </View>
+        </View>
+
         <View style={styles.chipPanel}>
           <Text style={styles.chipPanelTitle}>
             {focusRegion
-              ? `揀「${w.region_labels[focusRegion]}」嘅感覺`
-              : '揀身體感覺'}
+              ? `「${w.region_labels[focusRegion]}」仲可以揀`
+              : '或者睇晒全部感覺'}
             <Text style={styles.chipCount}> · {bodyChips.length}/3</Text>
           </Text>
           <View style={styles.chipWrap}>
@@ -213,11 +244,12 @@ export default function RitualBodyScreen() {
 
         <Pressable
           testID="ritual-body-next"
-          disabled={bodyChips.length < 1}
           onPress={goPick}
-          style={[styles.cta, bodyChips.length < 1 && { opacity: 0.6 }]}
+          style={styles.cta}
         >
-          <Text style={styles.ctaText}>{w.body_cta}</Text>
+          <Text style={styles.ctaText}>
+            {bodyChips.length < 1 ? w.body_cta_empty : w.body_cta}
+          </Text>
         </Pressable>
       </ScrollView>
     </SafeAreaView>
@@ -270,6 +302,33 @@ const styles = StyleSheet.create({
   },
   drinkLabel: { fontSize: 14, fontWeight: '700', color: COLORS.textPrimary },
   drinkHint: { fontSize: 12, color: COLORS.textSecondary, marginTop: 2 },
+  easyPanel: {
+    backgroundColor: COLORS.bgCard,
+    borderRadius: RADIUS.lg,
+    padding: SPACING.md,
+    marginBottom: SPACING.md,
+    borderWidth: 1,
+    borderColor: COLORS.primaryLight,
+  },
+  easyTitle: {
+    fontSize: 14,
+    fontWeight: '800',
+    color: COLORS.textPrimary,
+    marginBottom: SPACING.sm,
+  },
+  easyRow: { flexDirection: 'row', flexWrap: 'wrap', gap: SPACING.sm },
+  easyChip: {
+    flexGrow: 1,
+    minWidth: '30%',
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    paddingHorizontal: 12,
+    paddingVertical: 12,
+    borderRadius: RADIUS.md,
+    backgroundColor: COLORS.bgInput,
+  },
+  easyEmoji: { fontSize: 18 },
   chipPanel: {
     backgroundColor: COLORS.bgCard,
     borderRadius: RADIUS.lg,

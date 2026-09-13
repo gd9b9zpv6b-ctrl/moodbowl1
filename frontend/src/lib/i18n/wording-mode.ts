@@ -20,6 +20,10 @@ export type WordingPack = {
   body_vessel: string;
   body_hint: string;
   body_cta: string;
+  /** Next even when they picked nothing. */
+  body_cta_empty: string;
+  /** Short row of food-matched easy taps. */
+  body_easy_hint: string;
   body_skip: string;
   region_labels: Record<BodyRegionKey, string>;
   pick_title: string;
@@ -272,11 +276,13 @@ export const WORDING: Record<WordingMode, WordingPack> = {
     soup_sub: '揀一樣請佢 · 慢慢揀就得',
     soup_offer_done: (food) => `請咗「${food}」俾碗星靈 · 佢好開心`,
     soup_offer_skip: '碗星靈明白 · 今日唔使食',
-    body_title: '戳戳碗仔 · 邊度喺度嘈?',
-    body_clarify: '碗仔係你嘅身體地圖 · 撳吓邊度有感覺',
-    body_vessel: '由米堆戳到腳趾 · 最多揀 3 樣最嘈嘅',
-    body_hint: '最多揀 3 樣 · 唔好塞爆碗仔!',
+    body_title: '碗仔邊度有感覺?',
+    body_clarify: '見到啱就撳 · 唔知都得',
+    body_vessel: '最多揀 3 樣 · 唔知就略過',
+    body_hint: '最多揀 3 樣就得啦',
     body_cta: '準備見碗 →',
+    body_cta_empty: '未肯定都可以去見碗 →',
+    body_easy_hint: '而家可能似呢啲 · 撳一下就得',
     body_skip: '略過 →',
     region_labels: REGION_LOWER,
     pick_title: '你今日似邊個? 揀一個',
@@ -417,11 +423,13 @@ export const WORDING: Record<WordingMode, WordingPack> = {
     soup_sub: '揀一樣請佢 · 可以係想安慰自己嘅味道 · 下一步會對齊身體',
     soup_offer_done: (food) => `請咗「${food}」俾碗星靈 · 精靈收咗`,
     soup_offer_skip: '碗星靈明白 · 今日唔使食',
-    body_title: '戳戳碗仔 · 身體掃描',
-    body_clarify: '想食甜唔等於開心 · 戳碗仔睇真相',
-    body_vessel: '撳碗仔部位 · 睇吓浮起咩感覺',
-    body_hint: '揀 3 樣就夠 · 碗滿啦!',
+    body_title: '碗仔邊度有感覺?',
+    body_clarify: '見到啱就撳 · 唔知可以略過',
+    body_vessel: '最多揀 3 樣 · 唔知就略過',
+    body_hint: '揀 3 樣就夠啦',
     body_cta: '準備見碗 →',
+    body_cta_empty: '未肯定都可以去見碗 →',
+    body_easy_hint: '跟住你請嘅嘢 · 而家可能似呢啲',
     body_skip: '暫時略過 →',
     region_labels: REGION_UPPER,
     pick_title: '你今日似邊個? 揀一個',
@@ -562,11 +570,13 @@ export const WORDING: Record<WordingMode, WordingPack> = {
     soup_sub: '用一樣食物請佢 · 可以係狀態 · 亦可以係想慰藉自己嘅味道',
     soup_offer_done: (food) => `已請「${food}」俾碗星靈`,
     soup_offer_skip: '碗星靈明白 · 今日可以唔食',
-    body_title: '戳戳碗仔 · 身體覺察',
-    body_clarify: '想食甜可以係開心 · 亦可以係想被安慰 · 身體幫你分清楚',
-    body_vessel: '撳碗仔部位 · 睇吓浮起嘅感覺',
-    body_hint: '唔使完美 · 揀而家最明顯嘅',
+    body_title: '身體而家邊度有感覺?',
+    body_clarify: '見到啱就撳 · 唔肯定可以略過',
+    body_vessel: '最多揀 3 樣 · 唔肯定就略過',
+    body_hint: '唔使完美 · 3 樣就夠',
     body_cta: '下一步 · 睇碗 →',
+    body_cta_empty: '未肯定都可以去見碗 →',
+    body_easy_hint: '跟住你請嘅食物 · 而家可能似呢啲',
     body_skip: '略過身體感覺 →',
     region_labels: REGION_ADULT,
     pick_title: '邊個碗最贴近你而家?',
