@@ -163,7 +163,7 @@ export function EntryEditModal({ visible, entry, onClose, onSaved, onDeleted }: 
                 <View style={styles.heroStack}>
                   {selectedEmotions.slice(0, 4).map((e) => (
                     <View key={e.key} style={styles.heroStackItem}>
-                      <EmotionVisual emotion={e} size={80} radius={RADIUS.md} />
+                      <EmotionVisual emotion={e} size={96} />
                     </View>
                   ))}
                   {selectedEmotions.length > 4 && (
@@ -173,7 +173,7 @@ export function EntryEditModal({ visible, entry, onClose, onSaved, onDeleted }: 
                   )}
                 </View>
               ) : (
-                <EmotionVisual emotion={primaryEmotion} size={100} radius={RADIUS.lg} />
+                <EmotionVisual emotion={primaryEmotion} size={112} />
               )}
               <Text style={styles.emotionLabel}>
                 {selectedEmotions.map((e) => e.label).join(' · ') || primaryEmotion?.label}
@@ -205,7 +205,9 @@ export function EntryEditModal({ visible, entry, onClose, onSaved, onDeleted }: 
                       active && styles.chipActive,
                     ]}
                   >
-                    <EmotionVisual emotion={e} size={48} radius={RADIUS.sm} />
+                    <View style={styles.chipBowl}>
+                      <EmotionVisual emotion={e} size={72} />
+                    </View>
                     <Text style={styles.chipLabel}>{e.label}</Text>
                     {active && (
                       <View style={styles.chipBadge}>
@@ -296,9 +298,7 @@ const styles = StyleSheet.create({
     gap: SPACING.xs,
   },
   heroStackItem: {
-    borderWidth: 2,
-    borderColor: COLORS.bgCard,
-    borderRadius: RADIUS.md + 2,
+    overflow: 'visible',
   },
   heroMore: {
     minWidth: 36,
@@ -335,8 +335,16 @@ const styles = StyleSheet.create({
     borderRadius: RADIUS.md,
     padding: SPACING.xs,
     alignItems: 'center',
-    minWidth: 70,
+    minWidth: 84,
     position: 'relative',
+    overflow: 'visible',
+  },
+  chipBowl: {
+    width: 72,
+    height: 72,
+    alignItems: 'center',
+    justifyContent: 'center',
+    overflow: 'visible',
   },
   chipActive: { borderWidth: 3, borderColor: COLORS.primary },
   chipLabel: { fontSize: 11, fontWeight: '600', color: COLORS.textPrimary, marginTop: 2 },
